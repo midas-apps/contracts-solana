@@ -1,0 +1,19 @@
+[toolchain]
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+data_feed = "3gzjMNSbos3eXopGnzHqQ137htQwCjG93N4f9T6avoim"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "Localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+deploy-mtbill = "yarn run ts-node ./scripts/deploy-mtbill-token.ts"

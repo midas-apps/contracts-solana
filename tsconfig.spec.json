@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/out-tsc",
+    "types": ["jest", "chai"],
+    "target": "ES2021",
+    "composite": true,
+    "declaration": true,
+    "esModuleInterop": true
+  },
+  "include": ["tests/**/*.test.ts", "tests/**/*.ts", "target/types/*.ts"]
+}
