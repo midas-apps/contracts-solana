@@ -12,7 +12,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
       name: "mTBILL",
       symbol: "mTBILL",
       additionalMetadata: [],
-      uri: "",
+      uri: "TODO",
     },
     payer,
   });
