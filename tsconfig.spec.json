@@ -6,7 +6,10 @@
     "target": "ES2021",
     "composite": true,
     "declaration": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "paths": {
+      "@/*": ["./*"]
+    }
   },
   "include": ["tests/**/*.test.ts", "tests/**/*.ts", "target/types/*.ts"]
 }

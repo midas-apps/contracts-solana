@@ -15,5 +15,5 @@ cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test = "yarn jest --maxWorkers=1 --testTimeout=1000000"
 deploy-mtbill = "yarn run ts-node ./scripts/deploy-mtbill-token.ts"

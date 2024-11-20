@@ -8,18 +8,20 @@ use crate::{
 #[derive(Accounts)]
 pub struct NewManualFeed<'info> {
     #[account(mut)]
-    pub payer: Signer<'info>,
+    pub authority: Signer<'info>,
 
     #[account(
         init,
-        payer = payer,
+        payer = authority,
         seeds = [ManualFeedState::SEED, base_feed.key().as_ref()],
         bump,
         space = 8 + ManualFeedState::INIT_SPACE
     )]
     pub manual_feed: Account<'info, ManualFeedState>,
 
-    #[account()]
+    #[account(
+        has_one = authority
+    )]
     pub base_feed: Account<'info, FeedState>,
 
     pub system_program: Program<'info, System>,
