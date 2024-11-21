@@ -6,6 +6,7 @@ skip-lint = false
 
 [programs.localnet]
 data_feed = "3gzjMNSbos3eXopGnzHqQ137htQwCjG93N4f9T6avoim"
+midas_vaults = "6eFgYZCZZFTe61T4YxWsiHHAunCLTh9V7TAjj8DxuZwm"
 
 [registry]
 url = "https://api.apr.dev"

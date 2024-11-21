@@ -1,6 +1,7 @@
 import {
   createMint,
   initBankrun,
+  parseUnits,
   processTransaction,
   toBN,
 } from "../helpers/common.helpers";
@@ -8,7 +9,10 @@ import {
 import { Program } from "@coral-xyz/anchor";
 
 import * as DATA_FEED_IDL from "../../target/idl/data_feed.json";
-import { generateFeedAcccount } from "../helpers/data-feed.helpers";
+import {
+  generateFeedAcccount,
+  getManualFeedStatePda,
+} from "../helpers/data-feed.helpers";
 import { DataFeed } from "@/target/types/data_feed";
 
 export const dataFeedFixture = async () => {
@@ -20,7 +24,13 @@ export const dataFeedFixture = async () => {
   const dataFeed = generateFeedAcccount();
 
   const createFeedTx = await dataFeedProgram.methods
-    .newFeed(authority.publicKey, 9)
+    .newFeed(
+      authority.publicKey,
+      getManualFeedStatePda(dataFeed.publicKey),
+      parseUnits("0.1"),
+      parseUnits("10"),
+      3600
+    )
     .accounts({
       feed: dataFeed.publicKey,
       payer: authority.publicKey,
