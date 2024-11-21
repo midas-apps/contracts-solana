@@ -17,15 +17,30 @@ pub struct NewFeed<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handle(ctx: Context<NewFeed>, authority: Pubkey, target_decimals: u8) -> Result<()> {
+pub fn handle(
+    ctx: Context<NewFeed>,
+    authority: Pubkey,
+    underlying_feed: Pubkey,
+    min_price: u64,
+    max_price: u64,
+    max_staleness: u32,
+) -> Result<()> {
     let state = &mut ctx.accounts.feed;
 
     state.authority = authority;
-    state.target_decimals = target_decimals;
+    state.underlying_feed = underlying_feed;
+
+    state.min_price = min_price;
+    state.max_price = max_price;
+    state.max_staleness = max_staleness;
 
     emit!(NewFeedCreatedEvent {
         feed: ctx.accounts.feed.key(),
-        target_decimals: target_decimals
+        authority,
+        underlying_feed,
+        min_price,
+        max_price,
+        max_staleness
     });
 
     Ok(())

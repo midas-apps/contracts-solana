@@ -1,9 +1,12 @@
 use anchor_lang::prelude::*;
 
-use crate::{events::SetManualModeEvent, state::FeedState};
+use crate::{
+    events::SetFeedModeEvent,
+    state::{FeedMode, FeedState},
+};
 
 #[derive(Accounts)]
-pub struct SetManualMode<'info> {
+pub struct SetFeedMode<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
@@ -13,14 +16,14 @@ pub struct SetManualMode<'info> {
     pub base_feed: Account<'info, FeedState>,
 }
 
-pub fn handle(ctx: Context<SetManualMode>, enabled: bool) -> Result<()> {
+pub fn handle(ctx: Context<SetFeedMode>, new_mode: FeedMode) -> Result<()> {
     let state = &mut ctx.accounts.base_feed;
 
-    state.manual_mode_enabled = enabled;
+    state.mode = new_mode.clone();
 
-    emit!(SetManualModeEvent {
+    emit!(SetFeedModeEvent {
         feed: ctx.accounts.base_feed.key(),
-        enabled
+        new_mode: new_mode
     });
 
     Ok(())
