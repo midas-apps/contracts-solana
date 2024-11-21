@@ -21,7 +21,7 @@ pub fn handle(ctx: Context<NewGreenlist>, authority: Pubkey) -> Result<()> {
     let greenlist = &mut ctx.accounts.greenlist;
 
     greenlist.authority = authority;
-    greenlist.enabled = false;
+    greenlist.enforced = false;
 
     // TODO: emit event
     Ok(())
