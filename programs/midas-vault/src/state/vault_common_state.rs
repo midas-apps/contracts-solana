@@ -4,6 +4,7 @@ use anchor_lang::prelude::*;
 #[derive(InitSpace)]
 pub struct VaultCommonState {
     pub authority: Pubkey,
+    pub ac: Pubkey,
     pub paused: bool,
     pub greenlist_enforced: bool,
 

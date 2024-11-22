@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::state::{AccountGreenListState, PauseInxState, VaultCommonState};
+use crate::state::{PauseInxState, VaultCommonState};
 
 #[derive(Accounts)]
 #[instruction(fn_id: u8)]
@@ -19,7 +19,7 @@ pub struct UnPauseInx<'info> {
         seeds = [PauseInxState::SEED, vault_common_state.key().as_ref(), fn_id.to_le_bytes().as_ref()],
         bump
     )]
-    pub pause_inx_state: Account<'info, AccountGreenListState>,
+    pub pause_inx_state: Account<'info, PauseInxState>,
 
     pub system_program: Program<'info, System>,
 }

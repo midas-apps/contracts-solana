@@ -1,23 +1,23 @@
 use anchor_lang::prelude::*;
 
-use crate::state::GreenListState;
+use crate::state::AccessControlState;
 
 #[derive(Accounts)]
-pub struct NewGreenlist<'info> {
+pub struct NewAccessControl<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
 
     #[account(
         init,
         payer = payer,
-        space = 8 + GreenListState::INIT_SPACE
+        space = 8 + AccessControlState::INIT_SPACE
     )]
-    pub greenlist: Account<'info, GreenListState>,
+    pub greenlist: Account<'info, AccessControlState>,
 
     pub system_program: Program<'info, System>,
 }
 
-pub fn handle(ctx: Context<NewGreenlist>, authority: Pubkey) -> Result<()> {
+pub fn handle(ctx: Context<NewAccessControl>, authority: Pubkey) -> Result<()> {
     let greenlist = &mut ctx.accounts.greenlist;
 
     greenlist.authority = authority;

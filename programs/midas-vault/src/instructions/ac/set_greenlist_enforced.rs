@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::state::GreenListState;
+use crate::state::AccessControlState;
 
 #[derive(Accounts)]
 pub struct SetGreenListEnforced<'info> {
@@ -10,13 +10,13 @@ pub struct SetGreenListEnforced<'info> {
     #[account(
         has_one = authority
     )]
-    pub greenlist: Account<'info, GreenListState>,
+    pub ac: Account<'info, AccessControlState>,
 }
 
 pub fn handle(ctx: Context<SetGreenListEnforced>, new_value: bool) -> Result<()> {
-    let greenlist = &mut ctx.accounts.greenlist;
+    let ac = &mut ctx.accounts.ac;
 
-    greenlist.enforced = new_value;
+    ac.enforced = new_value;
 
     // TODO: emit event
     Ok(())
