@@ -7,6 +7,7 @@ pub struct NewAccountAccessControl<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
 
+    /// CHECK:
     #[account(mut)]
     pub account: AccountInfo<'info>,
 

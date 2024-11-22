@@ -7,6 +7,7 @@ pub struct UpdateAccountAccessControl<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
+    /// CHECK:
     #[account(mut)]
     pub account: AccountInfo<'info>,
 

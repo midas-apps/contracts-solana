@@ -4,7 +4,7 @@ use crate::state::{PauseInxState, VaultCommonState};
 
 #[derive(Accounts)]
 #[instruction(fn_id: u8)]
-pub struct PauseInx<'info> {
+pub struct UpdatePauseInx<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
@@ -14,9 +14,7 @@ pub struct PauseInx<'info> {
     pub vault_common_state: Account<'info, VaultCommonState>,
 
     #[account(
-        init,
-        payer = authority,
-        space = 8 + PauseInxState::INIT_SPACE,
+        mut,
         seeds = [PauseInxState::SEED, vault_common_state.key().as_ref(), fn_id.to_le_bytes().as_ref()],
         bump
     )]
@@ -25,7 +23,9 @@ pub struct PauseInx<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handle(ctx: Context<PauseInx>, fn_id: u8) -> Result<()> {
+pub fn handle(ctx: Context<UpdatePauseInx>, fn_id: u8, paused: bool) -> Result<()> {
+    ctx.accounts.pause_inx_state.paused = paused;
+
     // TODO: add event
     Ok(())
 }

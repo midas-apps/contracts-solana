@@ -13,7 +13,7 @@ declare_id!("6eFgYZCZZFTe61T4YxWsiHHAunCLTh9V7TAjj8DxuZwm");
 pub mod midas_vaults {
     use super::*;
 
-    pub fn new_greenlist(ctx: Context<NewGreenlist>) -> Result<()> {
+    pub fn new_ac(ctx: Context<NewAccessControl>) -> Result<()> {
         Ok(())
     }
 }
