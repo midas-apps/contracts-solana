@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 #[account]
 #[derive(InitSpace)]
 pub struct VaultCommonAccountState {
-    pub free_from_mint_amount: bool,
+    pub free_from_min_amount: bool,
     pub waived_fee: bool,
 }
 
