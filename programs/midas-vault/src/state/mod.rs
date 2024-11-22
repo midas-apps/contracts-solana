@@ -13,8 +13,8 @@ pub use pause_inx_state::*;
 pub mod payment_mint_state;
 pub use payment_mint_state::*;
 
-pub mod mint_vault_request;
-pub use mint_vault_request::*;
+pub mod mint_vault_request_state;
+pub use mint_vault_request_state::*;
 
 pub mod vault_common_account_state;
 pub use vault_common_account_state::*;
