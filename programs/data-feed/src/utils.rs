@@ -5,7 +5,7 @@ use switchboard_on_demand::PullFeedAccountData;
 
 use crate::state::{FeedState, ManualFeedState};
 
-pub fn get_price_in_base_9<'info>(data_feed: &FeedState, feed: AccountInfo<'info>) -> Result<u64> {
+pub fn get_price_in_base_9<'info>(data_feed: &FeedState, feed: &AccountInfo<'info>) -> Result<u64> {
     require_keys_eq!(
         data_feed.underlying_feed,
         feed.key(),

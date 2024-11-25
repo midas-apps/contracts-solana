@@ -1,5 +1,8 @@
 pub const MANUAL_FULLFILMENT_TOKEN: i32 = 0; // FIXME
 pub const STABLECOIN_RATE: u64 = 10u64.pow(9);
 pub const ONE_HUNDRED_PERCENT: u64 = 100 * 100;
+pub const MAX_UINT64: u64 = u64::max_value(); // 18446744073709551615
 
-pub mod seeds {}
+pub mod seeds {
+    pub const VAULT: &[u8; 5] = b"vault";
+}

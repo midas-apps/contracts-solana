@@ -4,6 +4,7 @@ use anchor_lang::prelude::*;
 #[derive(InitSpace)]
 pub struct VaultCommonAccountState {
     pub free_from_min_amount: bool,
+    pub free_from_min_first_deposit: bool,
     pub waived_fee: bool,
 }
 

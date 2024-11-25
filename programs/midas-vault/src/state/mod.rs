@@ -18,3 +18,6 @@ pub use mint_vault_request_state::*;
 
 pub mod vault_common_account_state;
 pub use vault_common_account_state::*;
+
+pub mod minter_vault_state;
+pub use minter_vault_state::*;
