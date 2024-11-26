@@ -1,5 +1,6 @@
-import { Idl, Program, BN } from "@coral-xyz/anchor";
+import { Idl, Program } from "@coral-xyz/anchor";
 import * as anchor from "@coral-xyz/anchor";
+import BN from "bn.js";
 import {
   Connection,
   Keypair,
@@ -31,6 +32,7 @@ import { BankrunProvider } from "anchor-bankrun";
 import { parseUnits as parseUnitsViem } from "viem";
 import { ZERO_ADDRESS } from "../constants/common.constants";
 import { DataFeed } from "@/target/types/data_feed";
+import { MidasVaults } from "@/target/types/midas_vaults";
 // import { ZERO_ADDRESS } from "test/constants/common.constants";
 
 export type OptionalCommonParams = {
@@ -41,6 +43,7 @@ export type OptionalCommonParams = {
 };
 
 export type DataFeedProgram = Program<DataFeed>;
+export type VaultsProgram = Program<MidasVaults>;
 
 export function numToHex(decimalCode: number): string {
   const hexCode = `0x${decimalCode.toString(16).toUpperCase()}`;

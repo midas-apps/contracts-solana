@@ -15,3 +15,6 @@ pub use update_vault_common::*;
 
 pub mod new_vault_common_account;
 pub use new_vault_common_account::*;
+
+pub mod new_vault_common;
+pub use new_vault_common::*;

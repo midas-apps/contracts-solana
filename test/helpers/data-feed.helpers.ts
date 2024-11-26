@@ -6,6 +6,10 @@ import {
   DATA_FEED_SEEDS,
 } from "../constants/data-feed.constants";
 
+export const DataFeedMode = {
+  manual: { manual: {} },
+  switchboard: { switchboard: {} },
+};
 export const generateFeedAcccount = () => {
   return Keypair.generate();
 };

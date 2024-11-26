@@ -1,6 +1,7 @@
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { DataFeedFixtureReturnType } from "../fixture/dafa-feed.fixture";
 import {
+  DataFeedMode,
   fetchDataFeedState,
   fetchManualFeedState,
   generateFeedAcccount,
@@ -10,6 +11,8 @@ import {
   expectTxNotReverted,
   expectTxReverted,
   OptionalCommonParams,
+  parseUnits,
+  toBN,
 } from "../helpers/common.helpers";
 import { SYSTEM_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/native/system";
 
@@ -21,12 +24,18 @@ export const createNewFeed = async (
   fixture: CommonDataFeedParams,
   {
     feed,
+    underlyingFeed,
     authority,
-    decimals,
+    maxPrice,
+    maxStaleness,
+    minPrice,
   }: {
     authority?: PublicKey;
     feed?: Keypair;
-    decimals?: bigint;
+    underlyingFeed?: PublicKey;
+    minPrice?: bigint;
+    maxPrice?: bigint;
+    maxStaleness?: number;
   },
   opt?: OptionalCommonParams
 ) => {
@@ -34,12 +43,20 @@ export const createNewFeed = async (
 
   authority ??= owner.publicKey;
   feed ??= generateFeedAcccount();
-  decimals ??= 9n;
+  minPrice ??= parseUnits("0.1");
+  maxPrice ??= parseUnits("10");
+  maxStaleness ??= 3600;
 
   const from = opt?.from ?? owner;
 
   const tx = await dataFeedProgram.methods
-    .newFeed(authority, +decimals.toString())
+    .newFeed(
+      authority,
+      underlyingFeed,
+      toBN(minPrice),
+      toBN(maxPrice),
+      maxStaleness
+    )
     .accounts({
       feed: feed.publicKey,
       payer: from.publicKey,
@@ -56,8 +73,9 @@ export const createNewFeed = async (
   const feedFetched = await fetchDataFeedState(dataFeedProgram, feed.publicKey);
 
   expect(feedFetched.authority.equals(authority)).toBe(true);
-  expect(feedFetched.manualModeEnabled).toBe(false);
-  expect(feedFetched.targetDecimals).toBe(9);
+  expect(feedFetched.mode).toMatchObject(DataFeedMode.manual);
+
+  return feed;
 };
 
 export const createNewManualFeed = async (
@@ -71,9 +89,14 @@ export const createNewManualFeed = async (
   },
   opt?: OptionalCommonParams
 ) => {
-  const { dataFeedProgram, authority: owner, context, dataFeed } = fixture;
+  const {
+    dataFeedProgram,
+    authority: owner,
+    context,
+    dataFeedMTBill,
+  } = fixture;
 
-  baseFeed ??= dataFeed.publicKey;
+  baseFeed ??= dataFeedMTBill.publicKey;
   decimals ??= 9;
 
   const feedPda = getManualFeedStatePda(baseFeed);
