@@ -9,3 +9,9 @@ pub use mint_instant::*;
 
 pub mod mint_request;
 pub use mint_request::*;
+
+pub mod approve_mint_request;
+pub use approve_mint_request::*;
+
+pub mod reject_mint_request;
+pub use reject_mint_request::*;

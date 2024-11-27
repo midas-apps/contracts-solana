@@ -62,6 +62,19 @@ pub mod midas_vaults {
         minter_vault::mint_request::handle(ctx, amount_token, referrer_id)
     }
 
+    pub fn approve_mint_request(
+        ctx: Context<ApproveMintRequest>,
+        request_id: u64,
+        new_out_rate: u64,
+        is_safe: bool,
+    ) -> Result<()> {
+        minter_vault::approve_mint_request::handle(ctx, request_id, new_out_rate, is_safe)
+    }
+
+    pub fn reject_mint_request(context: Context<RejectMintRequest>, request_id: u64) -> Result<()> {
+        minter_vault::reject_mint_request::handle(context, request_id)
+    }
+
     /** Common Vault Instructions */
 
     pub fn new_common_vault(
