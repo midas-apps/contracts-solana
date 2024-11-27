@@ -54,6 +54,14 @@ pub mod midas_vaults {
         minter_vault::mint_instant::handle(ctx, amount_token, min_receive_amount, referrer_id)
     }
 
+    pub fn mint_request(
+        ctx: Context<MintRequest>,
+        amount_token: u64,
+        referrer_id: [u8; 32],
+    ) -> Result<()> {
+        minter_vault::mint_request::handle(ctx, amount_token, referrer_id)
+    }
+
     /** Common Vault Instructions */
 
     pub fn new_common_vault(

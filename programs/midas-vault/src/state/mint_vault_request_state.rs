@@ -7,7 +7,7 @@ pub struct MintVaultRequestState {
     pub payment_mint: Pubkey,
     pub deposited_usd: u64,
     pub deposited_usd_wo_fees: u64,
-    pub m_mint_price: u64,
+    pub m_mint_rate: u64,
 }
 
 impl MintVaultRequestState {

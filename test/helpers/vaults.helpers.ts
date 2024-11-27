@@ -80,6 +80,21 @@ export const fetchMinterVaultState = (
   return program.account.minterVaultState.fetchNullable(vault);
 };
 
+export const fetchMinterVaultRequestState = async (
+  program: VaultsProgram,
+  request: PublicKey,
+  allowNull = false
+) => {
+  try {
+    return await program.account.mintVaultRequestState.fetchNullable(request);
+  } catch (err) {
+    if (!allowNull) {
+      throw err;
+    }
+    return null;
+  }
+};
+
 export const fetchPaymentMintState = async (
   program: VaultsProgram,
   mintState: PublicKey,
@@ -141,6 +156,21 @@ export const getReservePda = (vault: PublicKey) => {
 export const getMinterVaultPda = (commonVault: PublicKey) => {
   const [pda] = findPDA(
     [VAULTS_SEEDS.MINTER_VAULT, commonVault],
+    VAULTS_PROGRAM_ID
+  );
+  return pda;
+};
+
+export const getMinterVaultRequestPda = (
+  vault: PublicKey,
+  request_id: bigint
+) => {
+  const [pda] = findPDA(
+    [
+      VAULTS_SEEDS.MINTER_VAULT_REQUEST,
+      vault,
+      new BN(request_id.toString()).toArrayLike(Buffer, "le", 8),
+    ],
     VAULTS_PROGRAM_ID
   );
   return pda;

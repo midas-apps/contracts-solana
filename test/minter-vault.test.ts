@@ -11,6 +11,7 @@ import { VAULTS_PROGRAM_ID } from "./constants/vaults.constants";
 import {
   addPaymentToken,
   mintInstant,
+  mintRequest,
   newAcAccount,
   newMintAuthority,
   newVaultCommonAccount,
@@ -33,6 +34,17 @@ describe.only("minter-vault", () => {
       await newVaultCommonAccount(fixture, {});
       await newAcAccount(fixture, {});
       await mintInstant(fixture, {}, {});
+    });
+  });
+
+  describe("mint_request", () => {
+    it("should create mint request", async () => {
+      const fixture = await vaultsFixture();
+
+      await addPaymentToken(fixture, {});
+      await newVaultCommonAccount(fixture, {});
+      await newAcAccount(fixture, {});
+      await mintRequest(fixture, {}, {});
     });
   });
 });

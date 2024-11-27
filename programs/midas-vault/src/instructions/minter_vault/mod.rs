@@ -6,3 +6,6 @@ pub use update_minter_vault::*;
 
 pub mod mint_instant;
 pub use mint_instant::*;
+
+pub mod mint_request;
+pub use mint_request::*;

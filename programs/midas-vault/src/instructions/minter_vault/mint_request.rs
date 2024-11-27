@@ -3,13 +3,13 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion};
 
 use crate::{
-    constants::seeds, errors::MidasVaultsError, state::{
-        AccessControlState, AccountAccessControlState, MintAuthorityState, MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState, VaultCommonState
+    constants::{seeds, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, state::{
+        AccessControlState, AccountAccessControlState, MintAuthorityState, MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState, VaultCommonState
     }, utils::{mint_token, minter::{self}, require_and_update_limit, transfer_token}
 };
 
 #[derive(Accounts)]
-pub struct MintInstant<'info> {
+pub struct MintRequest<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
 
@@ -27,17 +27,19 @@ pub struct MintInstant<'info> {
 
     #[account(
         mut,
-        seeds = [MintAuthorityState::SEED, minter_vault.mint_authority_pda_seed.as_ref()],
-        bump
-    )]
-    pub mint_authority: Box<Account<'info, MintAuthorityState>>,
-
-    #[account(
-        mut,
         seeds = [MinterVaultState::SEED, vault_common.key().as_ref()],
         bump
     )]
     pub minter_vault: Account<'info, MinterVaultState>,
+
+    #[account(
+        init,
+        payer = signer,
+        space = 8 + MintVaultRequestState::INIT_SPACE,
+        seeds = [MintVaultRequestState::SEED, minter_vault.key().as_ref(), &vault_common.requests_count.to_le_bytes()],
+        bump
+    )]
+    pub mint_request: Account<'info, MintVaultRequestState>,
 
     #[account(
         constraint = vault_common.ac.eq(&ac.key())
@@ -80,28 +82,12 @@ pub struct MintInstant<'info> {
     )]
     pub payment_mint_signer_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
-
-    #[account(
-        mut,
-        associated_token::token_program = m_mint_token_program,
-        associated_token::mint = m_mint,
-        associated_token::authority = signer,
-    )]
-    pub m_mint_signer_ata: Box<InterfaceAccount<'info, TokenAccount>>,
-
     #[account(
         mut,
         seeds = [PaymentMintState::SEED, vault_common.key().as_ref(), payment_mint.key().as_ref()],
         bump
     )]
     pub payment_mint_state: Account<'info, PaymentMintState>,
-
-    #[account(
-        mut,
-        mint::token_program = m_mint_token_program,
-        address = vault_common.m_mint
-    )]
-    pub m_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
         address = vault_common.m_mint_feed
@@ -132,15 +118,12 @@ pub struct MintInstant<'info> {
     pub pause_inx_state: Account<'info, PauseInxState>,
 
     pub payment_mint_token_program: Interface<'info, TokenInterface>,
-    pub m_mint_token_program: Interface<'info, TokenInterface>,
-
     pub system_program: Program<'info, System>,
 }
 
 pub fn handle(
-    ctx: Context<MintInstant>,
+    ctx: Context<MintRequest>,
     amount_token: u64,
-    min_receive_amount: u64,
     referrer_id: [u8; 32],
 ) -> Result<()> {
     // TODO: use separate mint authority to manage burn and mints
@@ -158,16 +141,8 @@ pub fn handle(
         &mut ctx.accounts.vault_common_signer,
         &mut ctx.accounts.minter_vault,
         amount_token_base9,
-        true
+        false
     )?;
-
-    // FIXME: error
-    require_gte!(
-        params.m_token_amount, min_receive_amount as u128,
-        MidasVaultsError::Test
-    );
-
-    require_and_update_limit(&mut ctx.accounts.vault_common, params.m_token_amount)?;
 
     transfer_token(
         &ctx.accounts.vault_common.key(), 
@@ -195,16 +170,14 @@ pub fn handle(
         
     }
     
-    mint_token(
-        &ctx.accounts.minter_vault.mint_authority_pda_seed.as_ref(), 
-        &ctx.accounts.m_mint_token_program,
-        &ctx.accounts.m_mint, 
-        &ctx.accounts.mint_authority.to_account_info(), 
-        &ctx.accounts.m_mint_signer_ata, 
-        params.m_token_amount.try_into().unwrap()
-    )?;
+    let mint_request = &mut ctx.accounts.mint_request;
 
-    msg!("TRANSFERRED3");
+    mint_request.user = ctx.accounts.signer.key();
+    mint_request.payment_mint = ctx.accounts.payment_mint.key();
+    mint_request.deposited_usd = params.mint_amount_in_usd.try_into()?;
+    mint_request.deposited_usd_wo_fees = params.amount_token_wo_fee.checked_mul(params.mint_in_rate).unwrap().checked_div(ONE.into()).unwrap().try_into().unwrap();
+    mint_request.m_mint_rate = params.m_token_rate.try_into().unwrap();
+    
 
 
     // TODO: add event
