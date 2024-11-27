@@ -40,7 +40,7 @@ pub struct UpdatePaymentToken<'info> {
 pub fn handle(
     ctx: Context<UpdatePaymentToken>,
     fee: Option<u64>,
-    allowance: Option<u64>,
+    allowance: Option<u128>,
     stable: Option<bool>,
 ) -> Result<()> {
     let state = &mut ctx.accounts.payment_mint_state;

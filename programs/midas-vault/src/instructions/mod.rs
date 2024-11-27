@@ -9,3 +9,6 @@ pub use vault_common::*;
 
 pub mod minter_vault;
 pub use minter_vault::*;
+
+pub mod mint_authority;
+pub use mint_authority::*;

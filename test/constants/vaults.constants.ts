@@ -10,4 +10,7 @@ export const VAULTS_SEEDS = {
   PAUSE_INX: "pause_inx_state",
   PAYMENT_MINT: "payment_mint",
   VAULT_COMMON_ACCOUNT: "vault_account_state",
+  RESERVE: "vault",
+  MINT_AUTHORITY: "mint_authority",
+  MINTER_VAULT: "minter_vault",
 };

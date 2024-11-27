@@ -12,8 +12,17 @@ import {
 } from "../constants/data-feed.constants";
 import { VAULTS_PROGRAM_ID, VAULTS_SEEDS } from "../constants/vaults.constants";
 import { BN } from "@coral-xyz/anchor";
+import keccak256 from "keccak256";
 
 export const generateAcAcccount = () => {
+  return Keypair.generate();
+};
+
+export const generateCommonVaultAccount = () => {
+  return Keypair.generate();
+};
+
+export const generateMinterVaultAccount = () => {
   return Keypair.generate();
 };
 
@@ -28,11 +37,40 @@ export const fetchVaultCommonState = (
   return program.account.vaultCommonState.fetchNullable(vault);
 };
 
-export const fetchVaultCommonAccountState = (
+export const fetchVaultCommonAccountState = async (
   program: VaultsProgram,
-  commonAccount: PublicKey
+  commonAccount: PublicKey,
+  allowNull = false
 ) => {
-  return program.account.vaultCommonAccountState.fetchNullable(commonAccount);
+  // TODO: refactor
+  try {
+    return await program.account.vaultCommonAccountState.fetchNullable(
+      commonAccount
+    );
+  } catch (err) {
+    if (!allowNull) {
+      throw new Error("Payment mint state is null");
+    }
+    return null;
+  }
+};
+
+export const fetchMintAuthorityState = async (
+  program: VaultsProgram,
+  mintAuthority: PublicKey,
+  allowNull = false
+) => {
+  // TODO: refactor
+  try {
+    return await program.account.mintAuthorityState.fetchNullable(
+      mintAuthority
+    );
+  } catch (err) {
+    if (!allowNull) {
+      throw new Error("Payment mint state is null");
+    }
+    return null;
+  }
 };
 
 export const fetchMinterVaultState = (
@@ -42,11 +80,20 @@ export const fetchMinterVaultState = (
   return program.account.minterVaultState.fetchNullable(vault);
 };
 
-export const fetchPaymentMintState = (
+export const fetchPaymentMintState = async (
   program: VaultsProgram,
-  mintState: PublicKey
+  mintState: PublicKey,
+  allowNull = false
 ) => {
-  return program.account.paymentMintState.fetchNullable(mintState);
+  // TODO: refactor
+  try {
+    return await program.account.paymentMintState.fetchNullable(mintState);
+  } catch (err) {
+    if (!allowNull) {
+      throw new Error("Payment mint state is null");
+    }
+    return null;
+  }
 };
 
 export const fetchPauseInxState = (
@@ -56,11 +103,47 @@ export const fetchPauseInxState = (
   return program.account.pauseInxState.fetchNullable(pauseInxState);
 };
 
-export const fetchAccountAcState = (
+export const fetchAccountAcState = async (
   program: VaultsProgram,
-  accountAc: PublicKey
+  accountAc: PublicKey,
+  allowNull = false
 ) => {
-  return program.account.accountAccessControlState.fetchNullable(accountAc);
+  // TODO: refactor
+  try {
+    return await program.account.accountAccessControlState.fetchNullable(
+      accountAc
+    );
+  } catch (err) {
+    if (!allowNull) {
+      throw new Error("Payment mint state is null");
+    }
+    return null;
+  }
+};
+
+export const mintAuthoritySeedToBuffer = (seed: string) => {
+  return keccak256(Buffer.from(seed));
+};
+
+export const getMintAuthorityPda = (seed: string | Buffer) => {
+  const buff =
+    seed instanceof Buffer ? seed : mintAuthoritySeedToBuffer(seed as string);
+
+  const [pda] = findPDA([VAULTS_SEEDS.MINT_AUTHORITY, buff], VAULTS_PROGRAM_ID);
+  return pda;
+};
+
+export const getReservePda = (vault: PublicKey) => {
+  const [pda] = findPDA([VAULTS_SEEDS.RESERVE, vault], VAULTS_PROGRAM_ID);
+  return pda;
+};
+
+export const getMinterVaultPda = (commonVault: PublicKey) => {
+  const [pda] = findPDA(
+    [VAULTS_SEEDS.MINTER_VAULT, commonVault],
+    VAULTS_PROGRAM_ID
+  );
+  return pda;
 };
 
 export const getAccountAcStatePda = (ac: PublicKey, account: PublicKey) => {

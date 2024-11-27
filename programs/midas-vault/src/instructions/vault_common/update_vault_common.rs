@@ -21,7 +21,7 @@ pub fn handle(
     tokens_receiver: Option<Pubkey>,
     fee_receiver: Option<Pubkey>,
     instant_fee: Option<u64>,
-    instant_daily_limit: Option<u64>,
+    instant_daily_limit: Option<u128>,
     variation_tolerance: Option<u64>,
     min_amount: Option<u64>,
 ) -> Result<()> {

@@ -17,4 +17,6 @@ wallet = "~/.config/solana/id.json"
 
 [scripts]
 test = "yarn jest --maxWorkers=1 --testTimeout=1000000"
+test-minter = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/minter-vault.test.ts"
+
 deploy-mtbill = "yarn run ts-node ./scripts/deploy-mtbill-token.ts"

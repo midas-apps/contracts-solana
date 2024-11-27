@@ -1,9 +1,8 @@
 use anchor_lang::{prelude::*, solana_program::clock::SECONDS_PER_DAY};
 
 use anchor_spl::{
-    token::{
-        mint_to, spl_token::instruction::mint_to_checked, transfer_checked, MintTo, TransferChecked,
-    },
+    token::{transfer_checked, TransferChecked},
+    token_2022::{mint_to, MintTo},
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
 use data_feed::{
@@ -13,13 +12,13 @@ use data_feed::{
 };
 
 use crate::{
-    constants::{seeds, MAX_UINT64, ONE_HUNDRED_PERCENT, STABLECOIN_RATE},
+    constants::{seeds, MAX_UINT128, ONE_HUNDRED_PERCENT, STABLECOIN_RATE},
     errors::MidasVaultsError,
     midas_vaults,
     program::MidasVaults,
     state::{
-        payment_mint_state, MinterVaultState, PaymentMintState, VaultCommonAccountState,
-        VaultCommonState,
+        payment_mint_state, MintAuthorityState, MinterVaultState, PaymentMintState,
+        VaultCommonAccountState, VaultCommonState,
     },
 };
 
@@ -27,20 +26,20 @@ pub fn require_and_update_min_amount(
     common: &VaultCommonState,
     common_account: &mut VaultCommonAccountState,
     minter: Option<&MinterVaultState>,
-    amount: u64,
+    amount: u128,
 ) -> Result<()> {
     if common_account.free_from_min_amount {
         return Ok(());
     }
 
-    require_gte!(amount, common.min_amount, MidasVaultsError::Test);
+    require_gte!(amount, common.min_amount as u128, MidasVaultsError::Test);
 
     if let Some(minter) = minter {
         if !common_account.free_from_min_first_deposit {
             // FIXME: error
             require_gte!(
                 amount,
-                minter.first_deposit_min_m_tokens,
+                minter.first_deposit_min_m_tokens as u128,
                 MidasVaultsError::Test,
             );
 
@@ -51,8 +50,11 @@ pub fn require_and_update_min_amount(
     Ok(())
 }
 
-pub fn require_and_update_allowance(mint_config: &mut PaymentMintState, amount: u64) -> Result<()> {
-    if mint_config.allowance == MAX_UINT64 {
+pub fn require_and_update_allowance(
+    mint_config: &mut PaymentMintState,
+    amount: u128,
+) -> Result<()> {
+    if mint_config.allowance == MAX_UINT128 {
         return Ok(());
     }
 
@@ -64,12 +66,12 @@ pub fn require_and_update_allowance(mint_config: &mut PaymentMintState, amount: 
     Ok(())
 }
 
-pub fn require_and_update_limit(common: &mut VaultCommonState, amount: u64) -> Result<()> {
+pub fn require_and_update_limit(common: &mut VaultCommonState, amount: u128) -> Result<()> {
     let current_day = get_current_ts()?
         .checked_div(SECONDS_PER_DAY as u32)
         .unwrap();
 
-    let new_limit = if common.instant_last_day == current_day {
+    let new_limit_used = if common.instant_last_day == current_day {
         common.instant_daily_limit_used + amount
     } else {
         amount
@@ -78,11 +80,11 @@ pub fn require_and_update_limit(common: &mut VaultCommonState, amount: u64) -> R
     // FIXME: error
     require_gte!(
         common.instant_daily_limit,
-        new_limit,
+        new_limit_used,
         MidasVaultsError::Test
     );
 
-    common.instant_daily_limit_used = new_limit;
+    common.instant_daily_limit_used = new_limit_used;
     common.instant_last_day = current_day;
 
     Ok(())
@@ -90,8 +92,8 @@ pub fn require_and_update_limit(common: &mut VaultCommonState, amount: u64) -> R
 
 pub fn require_variation_tolerance(
     common: &VaultCommonState,
-    price: u64,
-    new_price: u64,
+    price: u128,
+    new_price: u128,
 ) -> Result<()> {
     let price_diff = if new_price >= price {
         new_price - price
@@ -100,7 +102,7 @@ pub fn require_variation_tolerance(
     };
 
     let price_diff_percent = price_diff
-        .checked_mul(ONE_HUNDRED_PERCENT)
+        .checked_mul(ONE_HUNDRED_PERCENT.into())
         .unwrap()
         .checked_div(price)
         .unwrap();
@@ -108,7 +110,7 @@ pub fn require_variation_tolerance(
     // FIXME: error
     require_gte!(
         common.variation_tolerance,
-        price_diff_percent,
+        price_diff_percent as u64,
         MidasVaultsError::Test
     );
 
@@ -119,40 +121,40 @@ pub fn get_fee_amount(
     mint_config: &PaymentMintState,
     common: &VaultCommonState,
     account_common: &VaultCommonAccountState,
-    amount: u64,
+    amount: u128,
     is_instant: bool,
-    additional_fee: u64,
-) -> Result<u64> {
+    additional_fee: u128,
+) -> Result<u128> {
     if account_common.waived_fee {
         return Ok(0);
     }
 
     let mut fee_percent = if additional_fee == 0 {
-        mint_config.fee
+        mint_config.fee.into()
     } else {
         additional_fee
     };
 
     if is_instant {
-        fee_percent += common.instant_fee;
+        fee_percent += common.instant_fee as u128;
     }
 
-    if fee_percent > ONE_HUNDRED_PERCENT {
-        fee_percent = ONE_HUNDRED_PERCENT;
+    if fee_percent > ONE_HUNDRED_PERCENT.into() {
+        fee_percent = ONE_HUNDRED_PERCENT.into();
     }
 
     Ok(amount
         .checked_mul(fee_percent)
         .unwrap()
-        .checked_div(ONE_HUNDRED_PERCENT)
+        .checked_div(ONE_HUNDRED_PERCENT.into())
         .unwrap())
 }
 
-pub fn get_token_rate(data_feed: &FeedState, feed: &AccountInfo<'_>, stable: bool) -> Result<u64> {
+pub fn get_token_rate(data_feed: &FeedState, feed: &AccountInfo<'_>, stable: bool) -> Result<u128> {
     let price = get_price_in_base_9(data_feed, feed)?;
 
     if stable {
-        return Ok(STABLECOIN_RATE);
+        return Ok(STABLECOIN_RATE.into());
     }
 
     Ok(price)
@@ -169,16 +171,23 @@ pub fn validate_fee(fee: u64, check_min: bool) -> Result<()> {
 }
 
 pub fn transfer_token<'info>(
-    vault: &Pubkey,
+    vault_common: &Pubkey,
     token_program: &Interface<'info, TokenInterface>,
     mint: &Box<InterfaceAccount<'info, Mint>>,
     authority: &AccountInfo<'info>,
     from: &Box<InterfaceAccount<'info, TokenAccount>>,
     to: &Box<InterfaceAccount<'info, TokenAccount>>,
-    amount: u64,
+    amount_base9: u128,
 ) -> Result<()> {
-    let (_, vault_pda_bump_seed) =
-        Pubkey::find_program_address(&[seeds::VAULT, vault.as_ref()], &MidasVaults::id());
+    let (_, vault_pda_bump_seed) = Pubkey::find_program_address(
+        &[MinterVaultState::SEED, vault_common.as_ref()],
+        &MidasVaults::id(),
+    );
+
+    let amount: u64 =
+        decimals_conversion::convert_from_base_9(amount_base9, mint.decimals)?.try_into()?;
+
+    msg!("TRANSFER AMOUNT {}", amount);
 
     transfer_checked(
         CpiContext::new_with_signer(
@@ -189,7 +198,11 @@ pub fn transfer_token<'info>(
                 from: from.to_account_info(),
                 to: to.to_account_info(),
             },
-            &[&[seeds::VAULT, vault.as_ref(), &[vault_pda_bump_seed]]],
+            &[&[
+                MinterVaultState::SEED,
+                vault_common.as_ref(),
+                &[vault_pda_bump_seed],
+            ]],
         ),
         amount,
         mint.decimals,
@@ -199,7 +212,7 @@ pub fn transfer_token<'info>(
 }
 
 pub fn mint_token<'info>(
-    vault: &Pubkey,
+    mint_authority_pda_seed: &[u8],
     token_program: &Interface<'info, TokenInterface>,
     mint: &Box<InterfaceAccount<'info, Mint>>,
     authority: &AccountInfo<'info>,
@@ -207,8 +220,10 @@ pub fn mint_token<'info>(
     amount: u64,
 ) -> Result<()> {
     // TODO: replace with minter
-    let (_, vault_pda_bump_seed) =
-        Pubkey::find_program_address(&[seeds::VAULT, vault.as_ref()], &MidasVaults::id());
+    let (_, vault_pda_bump_seed) = Pubkey::find_program_address(
+        &[MintAuthorityState::SEED, mint_authority_pda_seed],
+        &MidasVaults::id(),
+    );
 
     mint_to(
         CpiContext::new_with_signer(
@@ -218,7 +233,11 @@ pub fn mint_token<'info>(
                 mint: mint.to_account_info(),
                 to: to.to_account_info(),
             },
-            &[&[seeds::VAULT, vault.as_ref(), &[vault_pda_bump_seed]]],
+            &[&[
+                MintAuthorityState::SEED,
+                mint_authority_pda_seed,
+                &[vault_pda_bump_seed],
+            ]],
         ),
         amount,
     )?;
@@ -232,12 +251,12 @@ pub mod minter {
     use super::*;
 
     pub struct CalcAndValidateDepositReturn {
-        pub mint_amount_in_usd: u64,
-        pub fee_token_amount: u64,
-        pub amount_token_wo_fee: u64,
-        pub m_token_amount: u64,
-        pub mint_in_rate: u64,
-        pub m_token_rate: u64,
+        pub mint_amount_in_usd: u128,
+        pub fee_token_amount: u128,
+        pub amount_token_wo_fee: u128,
+        pub m_token_amount: u128,
+        pub mint_in_rate: u128,
+        pub m_token_rate: u128,
         pub decimals: u8,
     }
 
@@ -252,7 +271,7 @@ pub mod minter {
         common_account: &mut VaultCommonAccountState,
         minter: &mut MinterVaultState,
 
-        payment_amount: u64,
+        payment_amount: u128,
         is_instant: bool,
     ) -> Result<CalcAndValidateDepositReturn> {
         require_gt!(payment_amount, 0, MidasVaultsError::Test);
@@ -285,9 +304,17 @@ pub mod minter {
 
         let fee_in_usd = (fee_token_amount.checked_mul(mint_in_rate))
             .unwrap()
-            .checked_div(10u64.pow(9))
+            .checked_div(10u128.pow(9))
             .unwrap();
 
+        msg!(
+            "AMOUNTS {} {} {} {} {}",
+            mint_amount_in_usd,
+            fee_in_usd,
+            fee_token_amount,
+            mint_in_rate,
+            payment_amount
+        );
         let (m_token_amount, m_token_rate) = convert_usd_to_m_token(
             m_data_feed,
             m_feed,
@@ -313,8 +340,8 @@ pub mod minter {
         payment_mint_state: &PaymentMintState,
         data_feed: &FeedState,
         feed: &AccountInfo<'_>,
-        amount: u64,
-    ) -> Result<(u64, u64)> {
+        amount: u128,
+    ) -> Result<(u128, u128)> {
         require_gt!(amount, 0, MidasVaultsError::Test);
 
         let rate = get_token_rate(data_feed, feed, payment_mint_state.stable)?;
@@ -324,7 +351,7 @@ pub mod minter {
             amount
                 .checked_mul(rate)
                 .unwrap()
-                .checked_div(10u64.pow(9))
+                .checked_div(10u128.pow(9))
                 .unwrap(),
             rate,
         ))
@@ -333,8 +360,8 @@ pub mod minter {
     pub fn convert_usd_to_m_token(
         data_feed: &FeedState,
         feed: &AccountInfo<'_>,
-        amount: u64,
-    ) -> Result<(u64, u64)> {
+        amount: u128,
+    ) -> Result<(u128, u128)> {
         require_gt!(amount, 0, MidasVaultsError::Test);
 
         let rate = get_token_rate(data_feed, feed, false)?;
@@ -342,7 +369,7 @@ pub mod minter {
 
         Ok((
             amount
-                .checked_mul(10u64.pow(9))
+                .checked_mul(10u128.pow(9))
                 .unwrap()
                 .checked_div(rate)
                 .unwrap(),
@@ -355,7 +382,7 @@ pub fn get_current_ts() -> Result<u32> {
     Ok(Clock::get().unwrap().unix_timestamp as u32)
 }
 
-pub fn truncate(value: u64, decimals: u8) -> Result<u64> {
+pub fn truncate(value: u128, decimals: u8) -> Result<u128> {
     return Ok(decimals_conversion::convert_to_base_9(
         decimals_conversion::convert_from_base_9(value, decimals)?,
         decimals,

@@ -39,7 +39,12 @@ pub struct AddPaymentToken<'info> {
     pub data_feed_program: Program<'info, DataFeed>,
 }
 
-pub fn handle(ctx: Context<AddPaymentToken>, fee: u64, allowance: u64, stable: bool) -> Result<()> {
+pub fn handle(
+    ctx: Context<AddPaymentToken>,
+    fee: u64,
+    allowance: u128,
+    stable: bool,
+) -> Result<()> {
     let state = &mut ctx.accounts.payment_mint_state;
 
     // TODO: add fee validation

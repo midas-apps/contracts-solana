@@ -14,13 +14,28 @@ declare_id!("6eFgYZCZZFTe61T4YxWsiHHAunCLTh9V7TAjj8DxuZwm");
 pub mod midas_vaults {
     use super::*;
 
+    /** Mint Authority Instructions */
+
+    pub fn new_mint_authority(
+        ctx: Context<NewMintAuthority>,
+        mint_authority_pda_seed: [u8; 32],
+        authority: Pubkey,
+    ) -> Result<()> {
+        mint_authority::new_mint_authority::handle(ctx, mint_authority_pda_seed, authority)
+    }
+
     /** Minter Vault Instructions */
 
     pub fn new_minter_vault(
         ctx: Context<NewMinterVault>,
         first_deposit_min_m_tokens: u64,
+        mint_authority_pda_seed: [u8; 32],
     ) -> Result<()> {
-        minter_vault::new_minter_vault::handle(ctx, first_deposit_min_m_tokens)
+        minter_vault::new_minter_vault::handle(
+            ctx,
+            first_deposit_min_m_tokens,
+            mint_authority_pda_seed,
+        )
     }
 
     pub fn update_minter_vault(
@@ -51,7 +66,7 @@ pub mod midas_vaults {
         tokens_receiver: Pubkey,
         fee_receiver: Pubkey,
         instant_fee: u64,
-        instant_daily_limit: u64,
+        instant_daily_limit: u128,
         variation_tolerance: u64,
         min_amount: u64,
     ) -> Result<()> {
@@ -76,7 +91,7 @@ pub mod midas_vaults {
         tokens_receiver: Option<Pubkey>,
         fee_receiver: Option<Pubkey>,
         instant_fee: Option<u64>,
-        instant_daily_limit: Option<u64>,
+        instant_daily_limit: Option<u128>,
         variation_tolerance: Option<u64>,
         min_amount: Option<u64>,
     ) -> Result<()> {
@@ -95,7 +110,7 @@ pub mod midas_vaults {
     pub fn add_payment_token(
         ctx: Context<AddPaymentToken>,
         fee: u64,
-        allowance: u64,
+        allowance: u128,
         stable: bool,
     ) -> Result<()> {
         vault_common::add_payment_token::handle(ctx, fee, allowance, stable)
@@ -108,7 +123,7 @@ pub mod midas_vaults {
     pub fn update_payment_token(
         ctx: Context<UpdatePaymentToken>,
         fee: Option<u64>,
-        allowance: Option<u64>,
+        allowance: Option<u128>,
         stable: Option<bool>,
     ) -> Result<()> {
         vault_common::update_payment_token::handle(ctx, fee, allowance, stable)

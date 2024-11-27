@@ -16,7 +16,7 @@ import {
 } from "../helpers/data-feed.helpers";
 import { DataFeed } from "@/target/types/data_feed";
 import { MidasVaults } from "@/target/types/midas_vaults";
-import { Transaction } from "@solana/web3.js";
+import { Keypair, Transaction } from "@solana/web3.js";
 
 export const dataFeedFixture = async () => {
   const { provider, context, accounts } = await initBankrun();
@@ -38,98 +38,50 @@ export const dataFeedFixture = async () => {
     dataFeedMTBill.publicKey
   );
 
-  {
+  // TODO: move to helpers
+  const createManualFeed = async (feed: Keypair) => {
     const createFeedTx = new Transaction().add(
       await dataFeedProgram.methods
         .newFeed(
           authority.publicKey,
-          getManualFeedStatePda(dataFeedMTBill.publicKey),
+          getManualFeedStatePda(feed.publicKey),
           toBN(parseUnits("0.1")),
           toBN(parseUnits("10")),
           3600
         )
         .accounts({
-          feed: dataFeedMTBill.publicKey,
+          feed: feed.publicKey,
           payer: authority.publicKey,
         })
         .instruction(),
       await dataFeedProgram.methods
         .newManualFeed(9)
         .accountsPartial({
-          baseFeed: dataFeedMTBill.publicKey,
+          baseFeed: feed.publicKey,
           authority: authority.publicKey,
         })
         .instruction(),
       await dataFeedProgram.methods
         .setFeedMode({ manual: {} })
         .accountsPartial({
-          baseFeed: dataFeedMTBill.publicKey,
+          baseFeed: feed.publicKey,
           authority: authority.publicKey,
         })
         .instruction(),
       await dataFeedProgram.methods
         .setManualPrice(toBN(parseUnits("1")))
         .accountsPartial({
-          baseFeed: dataFeedMTBill.publicKey,
+          baseFeed: feed.publicKey,
           authority: authority.publicKey,
         })
         .instruction()
     );
 
-    await processTransaction(context, createFeedTx, [
-      authority,
-      dataFeedMTBill,
-    ]);
+    await processTransaction(context, createFeedTx, [authority, feed]);
+  };
 
-    console.log("ABOBA");
-  }
-
-  {
-    const createFeedTx = new Transaction().add(
-      await dataFeedProgram.methods
-        .newFeed(
-          authority.publicKey,
-          getManualFeedStatePda(dataFeedPaymentToken.publicKey),
-          toBN(parseUnits("0.1")),
-          toBN(parseUnits("10")),
-          3600
-        )
-        .accountsPartial({
-          feed: dataFeedPaymentToken.publicKey,
-          payer: authority.publicKey,
-        })
-        .instruction(),
-      await dataFeedProgram.methods
-        .newManualFeed(9)
-        .accountsPartial({
-          baseFeed: dataFeedPaymentToken.publicKey,
-          authority: authority.publicKey,
-        })
-        .instruction(),
-      await dataFeedProgram.methods
-        .setFeedMode({ manual: {} })
-        .accountsPartial({
-          baseFeed: dataFeedPaymentToken.publicKey,
-          authority: authority.publicKey,
-        })
-        .instruction(),
-      await dataFeedProgram.methods
-        .setManualPrice(toBN(parseUnits("1")))
-        .accountsPartial({
-          baseFeed: dataFeedPaymentToken.publicKey,
-          authority: authority.publicKey,
-        })
-        .instruction()
-    );
-
-    await processTransaction(context, createFeedTx, [
-      authority,
-      dataFeedPaymentToken,
-    ]);
-    console.log("ABOBA2");
-  }
-
-  // const depositVaultCommon = await vaultsProgram.;
+  await createManualFeed(dataFeedMTBill);
+  await createManualFeed(dataFeedPaymentToken);
 
   return {
     provider,
@@ -142,6 +94,7 @@ export const dataFeedFixture = async () => {
     authority,
     regularAccounts,
     context,
+    createManualFeed,
   };
 };
 

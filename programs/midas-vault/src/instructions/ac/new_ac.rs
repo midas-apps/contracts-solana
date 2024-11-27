@@ -12,16 +12,16 @@ pub struct NewAccessControl<'info> {
         payer = payer,
         space = 8 + AccessControlState::INIT_SPACE
     )]
-    pub greenlist: Account<'info, AccessControlState>,
+    pub ac: Account<'info, AccessControlState>,
 
     pub system_program: Program<'info, System>,
 }
 
 pub fn handle(ctx: Context<NewAccessControl>, authority: Pubkey) -> Result<()> {
-    let greenlist = &mut ctx.accounts.greenlist;
+    let ac = &mut ctx.accounts.ac;
 
-    greenlist.authority = authority;
-    greenlist.enforced = false;
+    ac.authority = authority;
+    ac.enforced = false;
 
     // TODO: emit event
     Ok(())

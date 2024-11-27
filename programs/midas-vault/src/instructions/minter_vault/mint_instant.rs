@@ -1,10 +1,10 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
-use data_feed::{program::DataFeed, state::FeedState};
+use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion};
 
 use crate::{
     constants::seeds, errors::MidasVaultsError, state::{
-        AccessControlState, AccountAccessControlState, MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState, VaultCommonState
+        AccessControlState, AccountAccessControlState, MintAuthorityState, MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState, VaultCommonState
     }, utils::{mint_token, minter::{self}, require_and_update_limit, transfer_token}
 };
 
@@ -26,12 +26,17 @@ pub struct MintInstant<'info> {
     pub vault_common_signer: Account<'info, VaultCommonAccountState>,
 
     #[account(
-        seeds = [seeds::VAULT, minter_vault.key().as_ref()],
+        mut,
+        seeds = [MintAuthorityState::SEED, minter_vault.mint_authority_pda_seed.as_ref()],
         bump
     )]
-    pub reserve: Account<'info, VaultCommonState>,
+    pub mint_authority: Box<Account<'info, MintAuthorityState>>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [MinterVaultState::SEED, vault_common.key().as_ref()],
+        bump
+    )]
     pub minter_vault: Account<'info, MinterVaultState>,
 
     #[account(
@@ -92,6 +97,7 @@ pub struct MintInstant<'info> {
     pub payment_mint_state: Account<'info, PaymentMintState>,
 
     #[account(
+        mut,
         mint::token_program = m_mint_token_program,
         address = vault_common.m_mint
     )]
@@ -139,6 +145,8 @@ pub fn handle(
 ) -> Result<()> {
     // TODO: use separate mint authority to manage burn and mints
 
+    let amount_token_base9 = decimals_conversion::convert_to_base_9(amount_token.into(), ctx.accounts.payment_mint.decimals).unwrap();
+
     let params= minter::calc_and_validate_deposit(
         &ctx.accounts.payment_mint,
         &ctx.accounts.payment_mint_data_feed,
@@ -149,50 +157,55 @@ pub fn handle(
         &ctx.accounts.vault_common,
         &mut ctx.accounts.vault_common_signer,
         &mut ctx.accounts.minter_vault,
-        amount_token,
+        amount_token_base9,
         false
     )?;
 
     // FIXME: error
     require_gte!(
-        params.m_token_amount, min_receive_amount,
+        params.m_token_amount, min_receive_amount as u128,
         MidasVaultsError::Test
     );
 
     require_and_update_limit(&mut ctx.accounts.vault_common, params.m_token_amount)?;
 
     transfer_token(
-        &ctx.accounts.minter_vault.key(), 
+        &ctx.accounts.vault_common.key(), 
         &ctx.accounts.payment_mint_token_program,
         &ctx.accounts.payment_mint, 
-        &ctx.accounts.vault_common.to_account_info(), 
+        &ctx.accounts.signer.to_account_info(), 
         &ctx.accounts.payment_mint_signer_ata, 
         &ctx.accounts.payment_mint_tokens_receiver_ata, 
         params.amount_token_wo_fee
     )?;
 
+    msg!("TRANSFERRED1");
+
     if params.fee_token_amount > 0 { 
         transfer_token(
-            &ctx.accounts.minter_vault.key(), 
+            &ctx.accounts.vault_common.key(), 
             &ctx.accounts.payment_mint_token_program,
             &ctx.accounts.payment_mint, 
-            &ctx.accounts.vault_common.to_account_info(), 
+            &ctx.accounts.signer.to_account_info(), 
             &ctx.accounts.payment_mint_signer_ata, 
             &ctx.accounts.payment_mint_fee_receiver_ata, 
             params.fee_token_amount
         )?;
+    msg!("TRANSFERRED2");
+        
     }
     
     mint_token(
-        &ctx.accounts.minter_vault.key(), 
+        &ctx.accounts.minter_vault.mint_authority_pda_seed.as_ref(), 
         &ctx.accounts.m_mint_token_program,
         &ctx.accounts.m_mint, 
-        &ctx.accounts.vault_common.to_account_info(), 
-        &ctx.accounts.payment_mint_signer_ata, 
-        params.fee_token_amount
+        &ctx.accounts.mint_authority.to_account_info(), 
+        &ctx.accounts.m_mint_signer_ata, 
+        params.m_token_amount.try_into().unwrap()
     )?;
 
-    // mToken.mint(user, mintAmount);
+    msg!("TRANSFERRED3");
+
 
     // TODO: add event
     Ok(())

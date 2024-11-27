@@ -5,7 +5,10 @@ use switchboard_on_demand::PullFeedAccountData;
 
 use crate::state::{FeedState, ManualFeedState};
 
-pub fn get_price_in_base_9<'info>(data_feed: &FeedState, feed: &AccountInfo<'info>) -> Result<u64> {
+pub fn get_price_in_base_9<'info>(
+    data_feed: &FeedState,
+    feed: &AccountInfo<'info>,
+) -> Result<u128> {
     require_keys_eq!(
         data_feed.underlying_feed,
         feed.key(),
@@ -41,15 +44,18 @@ pub fn get_price_in_base_9<'info>(data_feed: &FeedState, feed: &AccountInfo<'inf
 
     let current_ts = get_current_ts()?;
 
-    let update_diff = last_updated_at.checked_sub(current_ts).unwrap();
+    if last_updated_at > 0 {
+        let update_diff = last_updated_at.checked_sub(current_ts).unwrap();
 
-    require_gte!(
-        data_feed.max_staleness,
-        update_diff,
-        DataFeedError::InvalidFeedProvided // FIXME: error
-    );
+        require_gte!(
+            data_feed.max_staleness,
+            update_diff,
+            DataFeedError::InvalidFeedProvided // FIXME: error
+        );
+    }
 
-    let price = decimals_conversion::convert_to_base_9(raw_price, decimals)?;
+    let price = decimals_conversion::convert_to_base_9(raw_price.into(), decimals)?;
+
     msg!("price: {}, {}", raw_price, price);
 
     Ok(price)
@@ -62,7 +68,7 @@ pub fn get_current_ts() -> Result<u32> {
 pub mod decimals_conversion {
     use anchor_lang::Result;
 
-    pub fn convert(value: u64, value_decimals: u8, target_decimals: u8) -> Result<u64> {
+    pub fn convert(value: u128, value_decimals: u8, target_decimals: u8) -> Result<u128> {
         if value == 0 {
             return Ok(0);
         }
@@ -72,18 +78,18 @@ pub mod decimals_conversion {
         }
 
         let adjusted_amount = if (value_decimals > target_decimals) {
-            value / (10 as u64).pow((value_decimals - target_decimals).into())
+            value / (10 as u128).pow((value_decimals - target_decimals).into())
         } else {
-            value * (10 as u64).pow((target_decimals - value_decimals).into())
+            value * (10 as u128).pow((target_decimals - value_decimals).into())
         };
 
         Ok(adjusted_amount)
     }
-    pub fn convert_to_base_9(value: u64, value_decimals: u8) -> Result<u64> {
+    pub fn convert_to_base_9(value: u128, value_decimals: u8) -> Result<u128> {
         convert(value, value_decimals, 9)
     }
 
-    pub fn convert_from_base_9(value: u64, target_decimals: u8) -> Result<u64> {
+    pub fn convert_from_base_9(value: u128, target_decimals: u8) -> Result<u128> {
         convert(value, 9, target_decimals)
     }
 }

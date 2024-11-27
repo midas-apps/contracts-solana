@@ -5,6 +5,7 @@ import {
   SystemProgram,
   Transaction,
   PublicKey,
+  Signer,
 } from "@solana/web3.js";
 
 import {
@@ -36,14 +37,21 @@ export const createMTokenMint = async ({
   metadata,
   authority,
   connection,
+  sendTxFn,
 }: {
   connection: Connection;
   payer: Keypair;
   mint?: Keypair;
   metadata: Omit<TokenMetadata, "updateAuthority" | "mint">;
   authority: PublicKey;
+  sendTxFn?: (
+    connection: Connection,
+    transaction: Transaction,
+    signers: Array<Signer>
+  ) => Promise<unknown>;
 }) => {
   mint ??= Keypair.generate();
+  sendTxFn ??= sendAndConfirmTransaction;
 
   const fullMetadata = {
     ...metadata,
@@ -96,12 +104,7 @@ export const createMTokenMint = async ({
     })
   );
 
-  await sendAndConfirmTransaction(
-    connection,
-    mintTransaction,
-    [payer, mint],
-    undefined
-  );
+  await sendTxFn(connection, mintTransaction, [payer, mint]);
 
   return mint;
 };

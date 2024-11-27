@@ -5,7 +5,7 @@ use anchor_lang::prelude::*;
 pub struct PaymentMintState {
     pub data_feed: Pubkey,
     pub fee: u64,
-    pub allowance: u64,
+    pub allowance: u128,
     pub stable: bool,
 }
 

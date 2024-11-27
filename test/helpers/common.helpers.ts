@@ -11,6 +11,7 @@ import {
   Transaction,
 } from "@solana/web3.js";
 import {
+  createApproveInstruction,
   createAssociatedTokenAccountInstruction,
   createInitializeMint2Instruction,
   getAccount,
@@ -234,16 +235,51 @@ export const createMint = async (
   return keypair.publicKey;
 };
 
+export const approveMintInstruction = (
+  mint: PublicKey,
+  payer: Signer,
+  approveTo: PublicKey,
+  amount: bigint,
+  programId = TOKEN_PROGRAM_ID
+) => {
+  return createApproveInstruction(
+    findATA(mint, payer.publicKey, programId),
+    approveTo,
+    payer.publicKey,
+    amount,
+    undefined,
+    programId
+  );
+};
+
+export const approveMint = async (
+  ctx: ProgramTestContext,
+  mint: PublicKey,
+  payer: Signer,
+  approveTo: PublicKey,
+  amount: bigint,
+  programId = TOKEN_PROGRAM_ID
+) => {
+  await processTransaction(
+    ctx,
+    new Transaction().add(
+      approveMintInstruction(mint, payer, approveTo, amount, programId)
+    ),
+    [payer]
+  );
+};
+
 export const getOrCreateAta = async (
   context: ProgramTestContext,
   connection: Connection,
   mint: PublicKey,
   owner: PublicKey,
-  signer: Keypair
+  signer: Keypair,
+  program = TOKEN_PROGRAM_ID
 ) => {
-  const ata = getAssociatedTokenAddressSync(mint, owner, true);
+  const ata = getAssociatedTokenAddressSync(mint, owner, true, program);
   try {
-    const ataAccount = await getAccount(connection, ata);
+    const ataAccount = await getAccount(connection, ata, undefined, program);
 
     return {
       ataAccount,
@@ -256,13 +292,13 @@ export const getOrCreateAta = async (
       e?.message?.includes("Could not find")
     ) {
       const ix = new Transaction().add(
-        createAtaInx(signer.publicKey, ata, mint, owner)
+        createAtaInx(signer.publicKey, ata, mint, owner, program)
       );
 
       await processTransaction(context, ix, [signer]);
 
-      const ataAccount = await getAccount(connection, ata);
-      const newAta = findATA(mint, owner);
+      const ataAccount = await getAccount(connection, ata, undefined, program);
+      const newAta = findATA(mint, owner, program);
 
       return {
         ataAccount,
@@ -274,21 +310,27 @@ export const getOrCreateAta = async (
   }
 };
 
-export const findATA = (token: PublicKey, address: PublicKey): PublicKey => {
-  return getAssociatedTokenAddressSync(token, address, true);
+export const findATA = (
+  token: PublicKey,
+  address: PublicKey,
+  program = TOKEN_PROGRAM_ID
+): PublicKey => {
+  return getAssociatedTokenAddressSync(token, address, true, program);
 };
 
 export function createAtaInx(
   payer: PublicKey,
   ataAccount: PublicKey,
   mint: PublicKey,
-  owner = payer
+  owner = payer,
+  program = TOKEN_PROGRAM_ID
 ) {
   return createAssociatedTokenAccountInstruction(
     payer,
     ataAccount,
     owner,
-    mint
+    mint,
+    program
   );
 }
 
@@ -315,17 +357,16 @@ export const getTime = async (ctx: ProgramTestContext) => {
 };
 
 export const getBalance = async (
-  ctx: ProgramTestContext,
   connection: Connection,
   owner: PublicKey,
-  mint: PublicKey = ZERO_ADDRESS
+  mint: PublicKey = ZERO_ADDRESS,
+  programId = TOKEN_PROGRAM_ID
 ) => {
-  const ata = getAssociatedTokenAddressSync(mint, owner, true);
-
   if (mint.equals(ZERO_ADDRESS)) {
-    return ctx.banksClient.getBalance(owner).then((v) => BigInt(v));
+    return connection.getBalance(owner).then((v) => BigInt(v));
   } else {
-    const balance = await getAccount(connection, ata)
+    const ata = getAssociatedTokenAddressSync(mint, owner, true, programId);
+    const balance = await getAccount(connection, ata, undefined, programId)
       .then((v) => v.amount)
       .catch((err) => {
         if (err instanceof TokenAccountNotFoundError) {
