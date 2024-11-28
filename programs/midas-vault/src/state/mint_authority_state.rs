@@ -4,6 +4,7 @@ use anchor_lang::prelude::*;
 #[derive(InitSpace)]
 pub struct MintAuthorityState {
     pub authority: Pubkey,
+    pub base_seed: [u8; 32],
 }
 
 impl MintAuthorityState {

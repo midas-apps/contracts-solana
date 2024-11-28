@@ -14,6 +14,12 @@ import { VAULTS_PROGRAM_ID, VAULTS_SEEDS } from "../constants/vaults.constants";
 import { BN } from "@coral-xyz/anchor";
 import keccak256 from "keccak256";
 
+export type PaymentMint = {
+  mint: PublicKey;
+  feed: Keypair;
+  decimals: number;
+};
+
 export const generateAcAcccount = () => {
   return Keypair.generate();
 };
@@ -78,6 +84,13 @@ export const fetchMinterVaultState = (
   vault: PublicKey
 ) => {
   return program.account.minterVaultState.fetchNullable(vault);
+};
+
+export const fetchRedeemerVaultState = (
+  program: VaultsProgram,
+  vault: PublicKey
+) => {
+  return program.account.redeemerVaultState.fetchNullable(vault);
 };
 
 export const fetchMinterVaultRequestState = async (
@@ -148,14 +161,17 @@ export const getMintAuthorityPda = (seed: string | Buffer) => {
   return pda;
 };
 
-export const getReservePda = (vault: PublicKey) => {
-  const [pda] = findPDA([VAULTS_SEEDS.RESERVE, vault], VAULTS_PROGRAM_ID);
-  return pda;
-};
-
 export const getMinterVaultPda = (commonVault: PublicKey) => {
   const [pda] = findPDA(
     [VAULTS_SEEDS.MINTER_VAULT, commonVault],
+    VAULTS_PROGRAM_ID
+  );
+  return pda;
+};
+
+export const getRedeemerVaultPda = (commonVault: PublicKey) => {
+  const [pda] = findPDA(
+    [VAULTS_SEEDS.REDEEMER_VAULT, commonVault],
     VAULTS_PROGRAM_ID
   );
   return pda;

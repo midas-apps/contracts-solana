@@ -18,10 +18,14 @@ pub mod midas_vaults {
 
     pub fn new_mint_authority(
         ctx: Context<NewMintAuthority>,
-        mint_authority_pda_seed: [u8; 32],
+        base_seed: [u8; 32],
         authority: Pubkey,
     ) -> Result<()> {
-        mint_authority::new_mint_authority::handle(ctx, mint_authority_pda_seed, authority)
+        mint_authority::new_mint_authority::handle(ctx, base_seed, authority)
+    }
+
+    pub fn mint(ctx: Context<Mint>, amount: u64) -> Result<()> {
+        mint_authority::mint::handle(ctx, amount)
     }
 
     /** Minter Vault Instructions */
@@ -29,13 +33,8 @@ pub mod midas_vaults {
     pub fn new_minter_vault(
         ctx: Context<NewMinterVault>,
         first_deposit_min_m_tokens: u64,
-        mint_authority_pda_seed: [u8; 32],
     ) -> Result<()> {
-        minter_vault::new_minter_vault::handle(
-            ctx,
-            first_deposit_min_m_tokens,
-            mint_authority_pda_seed,
-        )
+        minter_vault::new_minter_vault::handle(ctx, first_deposit_min_m_tokens)
     }
 
     pub fn update_minter_vault(
@@ -73,6 +72,48 @@ pub mod midas_vaults {
 
     pub fn reject_mint_request(context: Context<RejectMintRequest>, request_id: u64) -> Result<()> {
         minter_vault::reject_mint_request::handle(context, request_id)
+    }
+
+    /** Redeemer Vault Instructions */
+
+    pub fn new_redeemer_vault(
+        ctx: Context<NewRedeemerVault>,
+        min_fiat_redeem_amount: u64,
+        fiat_additional_fee: u64,
+        fiat_flat_fee: u64,
+        request_redeemer: Pubkey,
+    ) -> Result<()> {
+        redeemer_vault::new_redeemer_vault::handle(
+            ctx,
+            min_fiat_redeem_amount,
+            fiat_additional_fee,
+            fiat_flat_fee,
+            request_redeemer,
+        )
+    }
+
+    pub fn update_redeemer_vault(
+        ctx: Context<UpdateRedeemerVault>,
+        min_fiat_redeem_amount: Option<u64>,
+        fiat_additional_fee: Option<u64>,
+        fiat_flat_fee: Option<u64>,
+        request_redeemer: Option<Pubkey>,
+    ) -> Result<()> {
+        redeemer_vault::update_redeemer_vault::handle(
+            ctx,
+            min_fiat_redeem_amount,
+            fiat_additional_fee,
+            fiat_flat_fee,
+            request_redeemer,
+        )
+    }
+
+    pub fn redeem_instant(
+        ctx: Context<RedeemInstant>,
+        amount_m_token: u64,
+        min_receive_amount: u64,
+    ) -> Result<()> {
+        redeemer_vault::redeem_instant::handle(ctx, amount_m_token, min_receive_amount)
     }
 
     /** Common Vault Instructions */

@@ -17,14 +17,12 @@ import {
 } from "../helpers/data-feed.helpers";
 import { DataFeed } from "@/target/types/data_feed";
 import { MidasVaults } from "@/target/types/midas_vaults";
-import { Transaction } from "@solana/web3.js";
+import { PublicKey, Transaction } from "@solana/web3.js";
 import { dataFeedFixture } from "./dafa-feed.fixture";
 import {
   generateAcAcccount,
   generateCommonVaultAccount,
-  generateMinterVaultAccount,
   getMintAuthorityPda,
-  getReservePda,
   mintAuthoritySeedToBuffer,
 } from "../helpers/vaults.helpers";
 import { createMTokenMint } from "../../common/create-mtoken-mint";
@@ -39,6 +37,7 @@ import {
 } from "@solana/spl-token";
 import { MAX_U128 } from "../constants/common.constants";
 import { newMintAuthority } from "../testers/vaults.testers";
+import { VaultActionIds } from "../constants/vaults.constants";
 
 export const vaultsFixture = async () => {
   const dfFixture = await dataFeedFixture();
@@ -56,7 +55,8 @@ export const vaultsFixture = async () => {
     regularAccounts: allRegularAccounts,
   } = dfFixture;
 
-  const [feeReceiver, tokensReceiver, ...regularAccounts] = allRegularAccounts;
+  const [feeReceiver, tokensReceiver, requestRedeemer, ...regularAccounts] =
+    allRegularAccounts;
   const vaultsProgram = new Program<MidasVaults>(
     MIDAS_VAULTS_IDL as any,
     provider
@@ -64,6 +64,7 @@ export const vaultsFixture = async () => {
 
   const ac = generateAcAcccount();
   const minterCommonVault = generateCommonVaultAccount();
+  const redeemerCommonVault = generateCommonVaultAccount();
 
   const mTBillMint = await createMTokenMint({
     payer: authority,
@@ -96,80 +97,120 @@ export const vaultsFixture = async () => {
     8
   );
 
-  await getOrCreateAta(
-    context,
-    provider.connection,
-    usdcMint,
-    authority.publicKey,
-    authority
-  );
+  const toCreateAtas = [
+    {
+      mint: usdcMint,
+      owner: authority.publicKey,
+    },
+    {
+      mint: usdtMint,
+      owner: authority.publicKey,
+    },
+    {
+      mint: mTBillMint.publicKey,
+      owner: authority.publicKey,
+      program: TOKEN_2022_PROGRAM_ID,
+    },
+    {
+      mint: usdcMint,
+      owner: tokensReceiver.publicKey,
+    },
+    {
+      mint: usdtMint,
+      owner: tokensReceiver.publicKey,
+    },
+    {
+      mint: usdcMint,
+      owner: feeReceiver.publicKey,
+    },
+    {
+      mint: usdtMint,
+      owner: feeReceiver.publicKey,
+    },
+    {
+      mint: mTBillMint.publicKey,
+      owner: feeReceiver.publicKey,
+      program: TOKEN_2022_PROGRAM_ID,
+    },
+  ];
 
-  await getOrCreateAta(
-    context,
-    provider.connection,
-    usdtMint,
-    authority.publicKey,
-    authority
-  );
+  for (let createAta of toCreateAtas) {
+    await getOrCreateAta(
+      context,
+      provider.connection,
+      createAta.mint,
+      createAta.owner,
+      authority,
+      createAta.program
+    );
+  }
 
-  await getOrCreateAta(
-    context,
-    provider.connection,
-    mTBillMint.publicKey,
-    authority.publicKey,
-    authority,
-    TOKEN_2022_PROGRAM_ID
-  );
+  // await getOrCreateAta(
+  //   context,
+  //   provider.connection,
+  //   usdtMint,
+  //   authority.publicKey,
+  //   authority
+  // );
 
-  await getOrCreateAta(
-    context,
-    provider.connection,
-    usdcMint,
-    tokensReceiver.publicKey,
-    tokensReceiver
-  );
+  // await getOrCreateAta(
+  //   context,
+  //   provider.connection,
+  //   mTBillMint.publicKey,
+  //   authority.publicKey,
+  //   authority,
+  //   TOKEN_2022_PROGRAM_ID
+  // );
 
-  await getOrCreateAta(
-    context,
-    provider.connection,
-    usdtMint,
-    tokensReceiver.publicKey,
-    tokensReceiver
-  );
+  // await getOrCreateAta(
+  //   context,
+  //   provider.connection,
+  //   usdcMint,
+  //   tokensReceiver.publicKey,
+  //   tokensReceiver
+  // );
 
-  await getOrCreateAta(
-    context,
-    provider.connection,
-    mTBillMint.publicKey,
-    tokensReceiver.publicKey,
-    tokensReceiver,
-    TOKEN_2022_PROGRAM_ID
-  );
+  // await getOrCreateAta(
+  //   context,
+  //   provider.connection,
+  //   usdtMint,
+  //   tokensReceiver.publicKey,
+  //   tokensReceiver
+  // );
 
-  await getOrCreateAta(
-    context,
-    provider.connection,
-    usdcMint,
-    feeReceiver.publicKey,
-    feeReceiver
-  );
+  // await getOrCreateAta(
+  //   context,
+  //   provider.connection,
+  //   mTBillMint.publicKey,
+  //   tokensReceiver.publicKey,
+  //   tokensReceiver,
+  //   TOKEN_2022_PROGRAM_ID
+  // );
 
-  await getOrCreateAta(
-    context,
-    provider.connection,
-    usdtMint,
-    feeReceiver.publicKey,
-    feeReceiver
-  );
+  // await getOrCreateAta(
+  //   context,
+  //   provider.connection,
+  //   usdcMint,
+  //   feeReceiver.publicKey,
+  //   feeReceiver
+  // );
 
-  await getOrCreateAta(
-    context,
-    provider.connection,
-    mTBillMint.publicKey,
-    feeReceiver.publicKey,
-    feeReceiver,
-    TOKEN_2022_PROGRAM_ID
-  );
+  // await getOrCreateAta(
+  //   context,
+  //   provider.connection,
+  //   usdtMint,
+  //   feeReceiver.publicKey,
+  //   feeReceiver
+  // );
+
+  // await getOrCreateAta(
+  //   context,
+  //   provider.connection,
+  //   mTBillMint.publicKey,
+  //   feeReceiver.publicKey,
+  //   feeReceiver,
+  //   TOKEN_2022_PROGRAM_ID
+  // );
 
   await processTransaction(
     context,
@@ -225,19 +266,22 @@ export const vaultsFixture = async () => {
       })
       .instruction(),
     await vaultsProgram.methods
-      .newMinterVault(
-        toBN(0),
-        Array.from(
-          Uint8Array.from(mintAuthoritySeedToBuffer(mTBillMinterAuthoritySeed))
-        )
-      )
+      .newMinterVault(toBN(0))
       .accountsPartial({
         vaultCommon: minterCommonVault.publicKey,
+        authority: authority.publicKey,
+        mintAuthority: getMintAuthorityPda(mTBillMinterAuthoritySeed),
+      })
+      .instruction(),
+    await vaultsProgram.methods
+      .newPauseInx(VaultActionIds.MINT_INSTANT)
+      .accountsPartial({
+        vaultCommonState: minterCommonVault.publicKey,
         authority: authority.publicKey,
       })
       .instruction(),
     await vaultsProgram.methods
-      .newPauseInx(0)
+      .newPauseInx(VaultActionIds.MINT_REQUEST)
       .accountsPartial({
         vaultCommonState: minterCommonVault.publicKey,
         authority: authority.publicKey,
@@ -261,6 +305,53 @@ export const vaultsFixture = async () => {
     ac,
   ]);
 
+  const createRedeemerVaultTx = new Transaction().add(
+    await vaultsProgram.methods
+      .newCommonVault(
+        ac.publicKey,
+        mTBillMint.publicKey,
+        dataFeedMTBill.publicKey,
+        authority.publicKey,
+        tokensReceiver.publicKey,
+        feeReceiver.publicKey,
+        toBN(0),
+        toBN(MAX_U128),
+        toBN(parseUnits("10", 2)),
+        toBN(0)
+      )
+      .accountsPartial({
+        vaultCommon: redeemerCommonVault.publicKey,
+        signer: authority.publicKey,
+      })
+      .instruction(),
+    await vaultsProgram.methods
+      .newRedeemerVault(toBN(0), toBN(0), toBN(0), requestRedeemer.publicKey)
+      .accountsPartial({
+        vaultCommon: redeemerCommonVault.publicKey,
+        authority: authority.publicKey,
+      })
+      .instruction(),
+    await vaultsProgram.methods
+      .newPauseInx(VaultActionIds.REDEEM_INSTANT)
+      .accountsPartial({
+        vaultCommonState: redeemerCommonVault.publicKey,
+        authority: authority.publicKey,
+      })
+      .instruction(),
+    await vaultsProgram.methods
+      .newPauseInx(VaultActionIds.REDEEM_REQUEST)
+      .accountsPartial({
+        vaultCommonState: redeemerCommonVault.publicKey,
+        authority: authority.publicKey,
+      })
+      .instruction()
+  );
+
+  await processTransaction(context, createRedeemerVaultTx, [
+    authority,
+    redeemerCommonVault,
+  ]);
+
   return {
     ...dfFixture,
     connection: provider.connection,
@@ -269,8 +360,11 @@ export const vaultsFixture = async () => {
     tokensReceiver,
     regularAccounts,
     minterCommonVault,
+    redeemerCommonVault,
+    mTBillMinterAuthoritySeed,
     ac,
     mTBillMint,
+    requestRedeemer,
     paymentMints: {
       usdc: { mint: usdcMint, feed: dataFeedPaymentToken, decimals: 6 },
       usdt: { mint: usdtMint, feed: dataFeedPaymentToken, decimals: 8 },

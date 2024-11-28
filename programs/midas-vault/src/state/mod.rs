@@ -24,3 +24,6 @@ pub use minter_vault_state::*;
 
 pub mod mint_authority_state;
 pub use mint_authority_state::*;
+
+pub mod redeemer_vault_state;
+pub use redeemer_vault_state::*;

@@ -4,17 +4,17 @@ use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion}
 
 use crate::{
     constants::seeds, errors::MidasVaultsError, state::{
-        AccessControlState, AccountAccessControlState, MintAuthorityState, MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState, VaultCommonState
-    }, utils::{mint_token, minter::{self}, require_and_update_limit, transfer_token}
+        AccessControlState, AccountAccessControlState, MintAuthorityState, MinterVaultState, PauseInxState, PaymentMintState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState
+    }, utils::{burn_mtoken, mint_token, minter::{self}, redeemer, require_and_update_allowance, require_and_update_limit, transfer_token, truncate}
 };
 
 #[derive(Accounts)]
-pub struct MintInstant<'info> {
+pub struct RedeemInstant<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
 
     #[account(
-        constraint = minter_vault.common_vault.eq(&vault_common.key())
+        address = redeemer_vault.common_vault
     )]
     pub vault_common: Account<'info, VaultCommonState>,
 
@@ -27,19 +27,13 @@ pub struct MintInstant<'info> {
 
     #[account(
         mut,
-        address = minter_vault.mint_authority_pda
-    )]
-    pub mint_authority: Box<Account<'info, MintAuthorityState>>,
-
-    #[account(
-        mut,
-        seeds = [MinterVaultState::SEED, vault_common.key().as_ref()],
+        seeds = [RedeemerVaultState::SEED, vault_common.key().as_ref()],
         bump
     )]
-    pub minter_vault: Account<'info, MinterVaultState>,
+    pub redeemer_vault: Account<'info, RedeemerVaultState>,
 
     #[account(
-        constraint = vault_common.ac.eq(&ac.key())
+        address = vault_common.ac
     )]
     pub ac: Account<'info, AccessControlState>,
 
@@ -57,19 +51,19 @@ pub struct MintInstant<'info> {
 
     #[account(
         mut,
-        associated_token::token_program = payment_mint_token_program,
-        associated_token::mint = payment_mint,
-        associated_token::authority = vault_common.tokens_receiver,
+        associated_token::token_program = m_mint_token_program,
+        associated_token::mint = m_mint,
+        associated_token::authority = vault_common.fee_receiver,
     )]
-    pub payment_mint_tokens_receiver_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub m_mint_fee_receiver_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         mut,
         associated_token::token_program = payment_mint_token_program,
         associated_token::mint = payment_mint,
-        associated_token::authority = vault_common.fee_receiver,
+        associated_token::authority = redeemer_vault,
     )]
-    pub payment_mint_fee_receiver_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub payment_mint_vault_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         mut,
@@ -78,7 +72,6 @@ pub struct MintInstant<'info> {
         associated_token::authority = signer,
     )]
     pub payment_mint_signer_ata: Box<InterfaceAccount<'info, TokenAccount>>,
-
 
     #[account(
         mut,
@@ -125,7 +118,8 @@ pub struct MintInstant<'info> {
     pub payment_mint_feed: AccountInfo<'info>,
 
     #[account(
-        seeds = [PauseInxState::SEED, vault_common.key().as_ref(), 0u8.to_le_bytes().as_ref()],
+        // FIXME: move to enum
+        seeds = [PauseInxState::SEED, vault_common.key().as_ref(), 3u8.to_le_bytes().as_ref()],
         bump
     )]
     pub pause_inx_state: Account<'info, PauseInxState>,
@@ -137,72 +131,69 @@ pub struct MintInstant<'info> {
 }
 
 pub fn handle(
-    ctx: Context<MintInstant>,
-    amount_token: u64,
-    min_receive_amount: u64,
-    referrer_id: [u8; 32],
+    ctx: Context<RedeemInstant>,
+    amount_m_token: u64,
+    min_receive_amount: u64
 ) -> Result<()> {
     // TODO: use separate mint authority to manage burn and mints
 
-    let amount_token_base9 = decimals_conversion::convert_to_base_9(amount_token.into(), ctx.accounts.payment_mint.decimals).unwrap();
-
-    let params= minter::calc_and_validate_deposit(
-        &ctx.accounts.payment_mint,
-        &ctx.accounts.payment_mint_data_feed,
-        &ctx.accounts.payment_mint_feed,
-        &ctx.accounts.m_mint_data_feed,
-        &ctx.accounts.m_mint_feed,
+    let params= redeemer::calc_and_validate_redeem(
         &mut ctx.accounts.payment_mint_state,
         &ctx.accounts.vault_common,
         &mut ctx.accounts.vault_common_signer,
-        &mut ctx.accounts.minter_vault,
-        amount_token_base9,
-        true
+        &mut ctx.accounts.redeemer_vault,
+        amount_m_token.into(),
+        true,
+        false
     )?;
+
+
+    require_and_update_limit(&mut ctx.accounts.vault_common, amount_m_token.into())?;
+
+    let decimals = ctx.accounts.payment_mint.decimals;
+
+
+    let (amount_m_token_in_usd, m_token_rate) = redeemer::convert_m_token_to_usd(&ctx.accounts.m_mint_data_feed, &ctx.accounts.m_mint_feed, amount_m_token.into())?;
+
+    let (amount_payment_token,payment_token_rate) = redeemer::convert_usd_to_payment_mint(&ctx.accounts.payment_mint_state, &ctx.accounts.payment_mint_data_feed, &ctx.accounts.payment_mint_feed, amount_m_token_in_usd)?;
+
+    let amount_payment_token_wo_fee = truncate(
+        params.m_token_amount_wo_fee.checked_mul(m_token_rate).unwrap().checked_div(payment_token_rate).unwrap()
+        , decimals)?;
 
     // FIXME: error
     require_gte!(
-        params.m_token_amount, min_receive_amount as u128,
+        amount_payment_token_wo_fee, min_receive_amount as u128,
         MidasVaultsError::Test
     );
 
-    require_and_update_limit(&mut ctx.accounts.vault_common, params.m_token_amount)?;
+    require_and_update_allowance(&mut ctx.accounts.payment_mint_state, amount_payment_token)?;
 
-    transfer_token(
-        &ctx.accounts.vault_common.key(), 
-        MinterVaultState::SEED,
-        &ctx.accounts.payment_mint_token_program,
-        &ctx.accounts.payment_mint, 
-        &ctx.accounts.signer.to_account_info(), 
-        &ctx.accounts.payment_mint_signer_ata, 
-        &ctx.accounts.payment_mint_tokens_receiver_ata, 
-        params.amount_token_wo_fee
-    )?;
+    burn_mtoken(&ctx.accounts.vault_common.key(), &ctx.accounts.m_mint_token_program, &ctx.accounts.m_mint, &ctx.accounts.signer, &ctx.accounts.m_mint_signer_ata, params.m_token_amount_wo_fee)?;
 
-    msg!("TRANSFERRED1");
-
-    if params.fee_token_amount > 0 { 
+    if params.fee_amount > 0 {
         transfer_token(
             &ctx.accounts.vault_common.key(), 
-            MinterVaultState::SEED,
-            &ctx.accounts.payment_mint_token_program,
-            &ctx.accounts.payment_mint, 
+            RedeemerVaultState::SEED,
+            &ctx.accounts.m_mint_token_program,
+            &ctx.accounts.m_mint, 
             &ctx.accounts.signer.to_account_info(), 
-            &ctx.accounts.payment_mint_signer_ata, 
-            &ctx.accounts.payment_mint_fee_receiver_ata, 
-            params.fee_token_amount
+            &ctx.accounts.m_mint_signer_ata, 
+            &ctx.accounts.m_mint_fee_receiver_ata, 
+            params.fee_amount
         )?;
-    msg!("TRANSFERRED2");
-        
+        msg!("TRANSFERRED1");
     }
     
-    mint_token(
-        &ctx.accounts.mint_authority.base_seed.as_ref(), 
-        &ctx.accounts.m_mint_token_program,
-        &ctx.accounts.m_mint, 
-        &ctx.accounts.mint_authority.to_account_info(), 
-        &ctx.accounts.m_mint_signer_ata, 
-        params.m_token_amount.try_into().unwrap()
+    transfer_token(
+        &ctx.accounts.vault_common.key(), 
+        RedeemerVaultState::SEED,
+        &ctx.accounts.payment_mint_token_program,
+        &ctx.accounts.payment_mint, 
+        &ctx.accounts.redeemer_vault.to_account_info(), 
+        &ctx.accounts.payment_mint_vault_ata, 
+        &ctx.accounts.payment_mint_signer_ata, 
+        amount_payment_token_wo_fee
     )?;
 
     msg!("TRANSFERRED3");

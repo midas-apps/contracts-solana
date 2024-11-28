@@ -1,23 +1,20 @@
 use anchor_lang::{prelude::*, solana_program::clock::SECONDS_PER_DAY};
 
 use anchor_spl::{
-    token::{transfer_checked, TransferChecked},
-    token_2022::{mint_to, MintTo},
+    token_2022::{burn, mint_to, transfer_checked, Burn, MintTo, TransferChecked},
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
 use data_feed::{
-    program::DataFeed,
     state::FeedState,
     utils::{decimals_conversion, get_price_in_base_9},
 };
 
 use crate::{
-    constants::{seeds, MAX_UINT128, ONE_HUNDRED_PERCENT, STABLECOIN_RATE},
+    constants::{MAX_UINT128, ONE_HUNDRED_PERCENT, STABLECOIN_RATE},
     errors::MidasVaultsError,
-    midas_vaults,
     program::MidasVaults,
     state::{
-        payment_mint_state, MintAuthorityState, MinterVaultState, PaymentMintState,
+        MintAuthorityState, MinterVaultState, PaymentMintState, RedeemerVaultState,
         VaultCommonAccountState, VaultCommonState,
     },
 };
@@ -172,6 +169,7 @@ pub fn validate_fee(fee: u64, check_min: bool) -> Result<()> {
 
 pub fn transfer_token<'info>(
     vault_common: &Pubkey,
+    vault_seed: &[u8],
     token_program: &Interface<'info, TokenInterface>,
     mint: &Box<InterfaceAccount<'info, Mint>>,
     authority: &AccountInfo<'info>,
@@ -179,10 +177,8 @@ pub fn transfer_token<'info>(
     to: &Box<InterfaceAccount<'info, TokenAccount>>,
     amount_base9: u128,
 ) -> Result<()> {
-    let (_, vault_pda_bump_seed) = Pubkey::find_program_address(
-        &[MinterVaultState::SEED, vault_common.as_ref()],
-        &MidasVaults::id(),
-    );
+    let (_, vault_pda_bump_seed) =
+        Pubkey::find_program_address(&[vault_seed, vault_common.as_ref()], &MidasVaults::id());
 
     let amount: u64 =
         decimals_conversion::convert_from_base_9(amount_base9, mint.decimals)?.try_into()?;
@@ -198,11 +194,7 @@ pub fn transfer_token<'info>(
                 from: from.to_account_info(),
                 to: to.to_account_info(),
             },
-            &[&[
-                MinterVaultState::SEED,
-                vault_common.as_ref(),
-                &[vault_pda_bump_seed],
-            ]],
+            &[&[vault_seed, vault_common.as_ref(), &[vault_pda_bump_seed]]],
         ),
         amount,
         mint.decimals,
@@ -240,6 +232,41 @@ pub fn mint_token<'info>(
             ]],
         ),
         amount,
+    )?;
+
+    Ok(())
+}
+
+pub fn burn_mtoken<'info>(
+    vault_common: &Pubkey,
+    token_program: &Interface<'info, TokenInterface>,
+    mint: &Box<InterfaceAccount<'info, Mint>>,
+    authority: &AccountInfo<'info>,
+    from: &Box<InterfaceAccount<'info, TokenAccount>>,
+    amount: u128,
+) -> Result<()> {
+    let (_, vault_pda_bump_seed) = Pubkey::find_program_address(
+        &[RedeemerVaultState::SEED, vault_common.as_ref()],
+        &MidasVaults::id(),
+    );
+
+    msg!("TRANSFER AMOUNT {}", amount);
+
+    burn(
+        CpiContext::new_with_signer(
+            token_program.to_account_info(),
+            Burn {
+                authority: authority.to_account_info(),
+                mint: mint.to_account_info(),
+                from: from.to_account_info(),
+            },
+            &[&[
+                RedeemerVaultState::SEED,
+                vault_common.as_ref(),
+                &[vault_pda_bump_seed],
+            ]],
+        ),
+        amount.try_into().unwrap(),
     )?;
 
     Ok(())
@@ -372,6 +399,108 @@ pub mod minter {
                 .checked_mul(10u128.pow(9))
                 .unwrap()
                 .checked_div(rate)
+                .unwrap(),
+            rate,
+        ))
+    }
+}
+
+pub mod redeemer {
+    use crate::{constants::ONE, state::RedeemerVaultState};
+
+    use super::*;
+
+    pub struct CalcAndValidateRedeemReturn {
+        pub fee_amount: u128,
+        pub m_token_amount_wo_fee: u128,
+    }
+
+    pub fn calc_and_validate_redeem(
+        mint_config: &PaymentMintState,
+        common: &VaultCommonState,
+        common_account: &VaultCommonAccountState,
+        redeemer: &RedeemerVaultState,
+
+        m_token_amount: u128,
+        is_instant: bool,
+        is_fiat: bool,
+    ) -> Result<CalcAndValidateRedeemReturn> {
+        // FIXME
+        require_gt!(m_token_amount, 0, MidasVaultsError::Test);
+
+        if common_account.free_from_min_amount {
+            let min_redeem_amount: u128 = if is_fiat {
+                redeemer.min_fiat_redeem_amount.into()
+            } else {
+                common.min_amount.into()
+            };
+
+            require_gte!(m_token_amount, min_redeem_amount, MidasVaultsError::Test);
+        }
+
+        let mut fee_amount = get_fee_amount(
+            mint_config,
+            common,
+            common_account,
+            m_token_amount,
+            is_instant,
+            if is_fiat {
+                redeemer.fiat_additional_fee.into()
+            } else {
+                0
+            },
+        )?;
+
+        if is_fiat {
+            if common_account.waived_fee {
+                fee_amount += redeemer.fiat_flat_fee as u128;
+            }
+        }
+
+        require_gt!(m_token_amount, fee_amount, MidasVaultsError::Test);
+
+        Ok(CalcAndValidateRedeemReturn {
+            fee_amount,
+            m_token_amount_wo_fee: m_token_amount.checked_sub(fee_amount).unwrap(),
+        })
+    }
+
+    pub fn convert_usd_to_payment_mint(
+        payment_mint_state: &PaymentMintState,
+        data_feed: &FeedState,
+        feed: &AccountInfo<'_>,
+        amount: u128,
+    ) -> Result<(u128, u128)> {
+        require_gt!(amount, 0, MidasVaultsError::Test);
+
+        let rate = get_token_rate(data_feed, feed, payment_mint_state.stable)?;
+        require_gt!(rate, 0, MidasVaultsError::Test);
+
+        Ok((
+            amount
+                .checked_mul(ONE.into())
+                .unwrap()
+                .checked_div(rate)
+                .unwrap(),
+            rate,
+        ))
+    }
+
+    pub fn convert_m_token_to_usd(
+        data_feed: &FeedState,
+        feed: &AccountInfo<'_>,
+        amount: u128,
+    ) -> Result<(u128, u128)> {
+        require_gt!(amount, 0, MidasVaultsError::Test);
+
+        let rate = get_token_rate(data_feed, feed, false)?;
+        require_gt!(rate, 0, MidasVaultsError::Test);
+
+        Ok((
+            amount
+                .checked_mul(rate)
+                .unwrap()
+                .checked_div(ONE.into())
                 .unwrap(),
             rate,
         ))

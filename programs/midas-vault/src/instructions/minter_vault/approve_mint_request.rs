@@ -43,8 +43,7 @@ pub struct ApproveMintRequest<'info> {
 
     #[account(
         mut,
-        seeds = [MintAuthorityState::SEED, minter_vault.mint_authority_pda_seed.as_ref()],
-        bump
+        address = minter_vault.mint_authority_pda
     )]
     pub mint_authority: Box<Account<'info, MintAuthorityState>>,
 
@@ -102,7 +101,7 @@ pub fn handle(
     let amount_to_mint =(request.deposited_usd_wo_fees as u128).checked_mul(ONE.into()).unwrap().checked_div(new_out_rate.into()).unwrap();
 
     mint_token(
-        &ctx.accounts.minter_vault.mint_authority_pda_seed.as_ref(), 
+        &ctx.accounts.mint_authority.base_seed.as_ref(), 
         &ctx.accounts.m_mint_token_program,
         &ctx.accounts.m_mint, 
         &ctx.accounts.mint_authority.to_account_info(), 

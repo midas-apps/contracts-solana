@@ -30,7 +30,10 @@ import {
 } from "solana-bankrun";
 
 import { BankrunProvider } from "anchor-bankrun";
-import { parseUnits as parseUnitsViem } from "viem";
+import {
+  parseUnits as parseUnitsViem,
+  formatUnits as formatUnitsViem,
+} from "viem";
 import { ZERO_ADDRESS } from "../constants/common.constants";
 import { DataFeed } from "@/target/types/data_feed";
 import { MidasVaults } from "@/target/types/midas_vaults";
@@ -199,6 +202,10 @@ export const processTransaction = async (
 
 export const parseUnits = (n: string, decimals = 9) => {
   return parseUnitsViem(n, decimals);
+};
+
+export const formatUnits = (n: bigint, decimals = 9) => {
+  return +formatUnitsViem(n, decimals);
 };
 
 export const createMint = async (
