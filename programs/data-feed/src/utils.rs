@@ -1,7 +1,7 @@
 use crate::{errors::DataFeedError, state::FeedMode};
 use anchor_lang::{prelude::*, require_keys_eq, AccountDeserialize, Key, Result};
 
-use switchboard_on_demand::PullFeedAccountData;
+use switchboard_on_demand::{PullFeedAccountData, PRECISION};
 
 use crate::state::{FeedState, ManualFeedState};
 
@@ -12,10 +12,8 @@ pub fn get_price_in_base_9<'info>(
     require_keys_eq!(
         data_feed.underlying_feed,
         feed.key(),
-        DataFeedError::InvalidFeedProvided // FIXME: error
+        DataFeedError::InvalidUnderlyingFeedProvided
     );
-
-    let target_decimals = 9;
 
     let (raw_price, decimals, last_updated_at) = match data_feed.mode {
         FeedMode::MANUAL => {
@@ -23,7 +21,7 @@ pub fn get_price_in_base_9<'info>(
             let mut buf: &[u8] = &feed.try_borrow_mut_data()?[..];
             let feed_parsed = ManualFeedState::try_deserialize(&mut buf).unwrap();
             (
-                feed_parsed.price,
+                feed_parsed.price as u128,
                 feed_parsed.decimals,
                 feed_parsed.last_updated_at,
             )
@@ -32,11 +30,11 @@ pub fn get_price_in_base_9<'info>(
             // parse switchboard feed
             let feed_data = feed.data.borrow();
             let feed = PullFeedAccountData::parse(feed_data).unwrap();
-            let raw_price = feed.value();
+            let raw_price = feed.result.value;
 
             (
-                0, /* FIXME */
-                target_decimals,
+                raw_price as u128,
+                PRECISION.try_into().unwrap(),
                 feed.last_update_timestamp.try_into()?,
             )
         }
@@ -50,7 +48,7 @@ pub fn get_price_in_base_9<'info>(
         require_gte!(
             data_feed.max_staleness,
             update_diff,
-            DataFeedError::InvalidFeedProvided // FIXME: error
+            DataFeedError::PriceIsStale
         );
     }
 
