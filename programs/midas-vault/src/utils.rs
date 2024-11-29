@@ -55,23 +55,20 @@ pub fn validate_green_listed(
         return Ok(());
     }
 
-    // FIXME: error
-    require!(account_ac.green_listed, MidasVaultsError::Test);
+    require!(account_ac.green_listed, MidasVaultsError::NotGreenListed);
 
     Ok(())
 }
 
 pub fn validate_black_listed(account_ac: &AccountAccessControlState) -> Result<()> {
-    // FIXME: error
-    require!(!account_ac.black_listed, MidasVaultsError::Test);
+    require!(!account_ac.black_listed, MidasVaultsError::Blacklisted);
 
     Ok(())
 }
 
 pub fn validate_paused(common: &VaultCommonState, pause_inx: &PauseInxState) -> Result<()> {
-    // FIXME: error
-    require!(!common.paused, MidasVaultsError::Test);
-    require!(!pause_inx.paused, MidasVaultsError::Test);
+    require!(!common.paused, MidasVaultsError::VaultPaused);
+    require!(!pause_inx.paused, MidasVaultsError::VaultInxPaused);
 
     Ok(())
 }
@@ -98,18 +95,21 @@ pub fn require_and_update_min_amount(
         return Ok(());
     }
 
-    require_gte!(amount, common.min_amount as u128, MidasVaultsError::Test);
+    require_gte!(
+        amount,
+        common.min_amount as u128,
+        MidasVaultsError::LessThanMinAmount
+    );
 
     if let Some(minter) = minter {
-        if !common_account.free_from_min_first_deposit {
-            // FIXME: error
+        if !common_account.free_from_min_first_mint {
             require_gte!(
                 amount,
                 minter.first_deposit_min_m_tokens as u128,
-                MidasVaultsError::Test,
+                MidasVaultsError::LessThanMinAmountFirstMint,
             );
 
-            common_account.free_from_min_first_deposit = true;
+            common_account.free_from_min_first_mint = true;
         }
     }
 
@@ -124,8 +124,11 @@ pub fn require_and_update_allowance(
         return Ok(());
     }
 
-    // FIXME: error
-    require_gte!(mint_config.allowance, amount, MidasVaultsError::Test);
+    require_gte!(
+        mint_config.allowance,
+        amount,
+        MidasVaultsError::InsufficientAllowance
+    );
 
     mint_config.allowance -= amount;
 
@@ -143,11 +146,10 @@ pub fn require_and_update_limit(common: &mut VaultCommonState, amount: u128) -> 
         amount
     };
 
-    // FIXME: error
     require_gte!(
         common.instant_daily_limit,
         new_limit_used,
-        MidasVaultsError::Test
+        MidasVaultsError::DailyLimitExceeded
     );
 
     common.instant_daily_limit_used = new_limit_used;
@@ -177,7 +179,7 @@ pub fn require_variation_tolerance(
     require_gte!(
         common.variation_tolerance,
         price_diff_percent as u64,
-        MidasVaultsError::Test
+        MidasVaultsError::VariationToleranceExceeded
     );
 
     Ok(())
@@ -227,10 +229,10 @@ pub fn get_token_rate(data_feed: &FeedState, feed: &AccountInfo<'_>, stable: boo
 }
 
 pub fn validate_fee(fee: u64, check_min: bool) -> Result<()> {
-    require_gte!(ONE_HUNDRED_PERCENT, fee, MidasVaultsError::Test);
+    require_gte!(ONE_HUNDRED_PERCENT, fee, MidasVaultsError::InvalidFee);
 
     if check_min {
-        require_gt!(fee, 0, MidasVaultsError::Test);
+        require_gt!(fee, 0, MidasVaultsError::InvalidFee);
     }
 
     Ok(())
@@ -370,7 +372,7 @@ pub mod minter {
         payment_amount: u128,
         is_instant: bool,
     ) -> Result<CalcAndValidateDepositReturn> {
-        require_gt!(payment_amount, 0, MidasVaultsError::Test);
+        require_gt!(payment_amount, 0, MidasVaultsError::InvalidInAmount);
 
         let decimals = payment_mint.decimals;
 
@@ -419,7 +421,7 @@ pub mod minter {
 
         require_and_update_min_amount(common, common_account, Some(minter), m_token_amount)?;
 
-        require_gt!(m_token_amount, 0, MidasVaultsError::Test);
+        require_gt!(m_token_amount, 0, MidasVaultsError::InvalidOutAmount);
 
         Ok(CalcAndValidateDepositReturn {
             mint_amount_in_usd,
@@ -438,10 +440,10 @@ pub mod minter {
         feed: &AccountInfo<'_>,
         amount: u128,
     ) -> Result<(u128, u128)> {
-        require_gt!(amount, 0, MidasVaultsError::Test);
+        require_gt!(amount, 0, MidasVaultsError::InvalidConvertAmount);
 
         let rate = get_token_rate(data_feed, feed, payment_mint_state.stable)?;
-        require_gt!(rate, 0, MidasVaultsError::Test);
+        require_gt!(rate, 0, MidasVaultsError::InvalidRate);
 
         Ok((
             amount
@@ -458,10 +460,10 @@ pub mod minter {
         feed: &AccountInfo<'_>,
         amount: u128,
     ) -> Result<(u128, u128)> {
-        require_gt!(amount, 0, MidasVaultsError::Test);
+        require_gt!(amount, 0, MidasVaultsError::InvalidConvertAmount);
 
         let rate = get_token_rate(data_feed, feed, false)?;
-        require_gt!(rate, 0, MidasVaultsError::Test);
+        require_gt!(rate, 0, MidasVaultsError::InvalidRate);
 
         Ok((
             amount
@@ -568,7 +570,7 @@ pub mod redeemer {
         is_fiat: bool,
     ) -> Result<CalcAndValidateRedeemReturn> {
         // FIXME
-        require_gt!(m_token_amount, 0, MidasVaultsError::Test);
+        require_gt!(m_token_amount, 0, MidasVaultsError::InvalidInAmount);
 
         if common_account.free_from_min_amount {
             let min_redeem_amount: u128 = if is_fiat {
@@ -577,7 +579,11 @@ pub mod redeemer {
                 common.min_amount.into()
             };
 
-            require_gte!(m_token_amount, min_redeem_amount, MidasVaultsError::Test);
+            require_gte!(
+                m_token_amount,
+                min_redeem_amount,
+                MidasVaultsError::LessThanMinAmount
+            );
         }
 
         let mut fee_amount = get_fee_amount(
@@ -599,7 +605,11 @@ pub mod redeemer {
             }
         }
 
-        require_gt!(m_token_amount, fee_amount, MidasVaultsError::Test);
+        require_gt!(
+            m_token_amount,
+            fee_amount,
+            MidasVaultsError::InvalidOutAmount
+        );
 
         Ok(CalcAndValidateRedeemReturn {
             fee_amount,
@@ -613,10 +623,10 @@ pub mod redeemer {
         feed: &AccountInfo<'_>,
         amount: u128,
     ) -> Result<(u128, u128)> {
-        require_gt!(amount, 0, MidasVaultsError::Test);
+        require_gt!(amount, 0, MidasVaultsError::InvalidConvertAmount);
 
         let rate = get_token_rate(data_feed, feed, payment_mint_state.stable)?;
-        require_gt!(rate, 0, MidasVaultsError::Test);
+        require_gt!(rate, 0, MidasVaultsError::InvalidRate);
 
         Ok((
             amount
@@ -633,10 +643,10 @@ pub mod redeemer {
         feed: &AccountInfo<'_>,
         amount: u128,
     ) -> Result<(u128, u128)> {
-        require_gt!(amount, 0, MidasVaultsError::Test);
+        require_gt!(amount, 0, MidasVaultsError::InvalidConvertAmount);
 
         let rate = get_token_rate(data_feed, feed, false)?;
-        require_gt!(rate, 0, MidasVaultsError::Test);
+        require_gt!(rate, 0, MidasVaultsError::InvalidRate);
 
         Ok((
             amount

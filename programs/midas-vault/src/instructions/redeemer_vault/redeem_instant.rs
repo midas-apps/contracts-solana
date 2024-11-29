@@ -168,7 +168,7 @@ pub fn handle(
     // FIXME: error
     require_gte!(
         amount_payment_token_wo_fee, min_receive_amount as u128,
-        MidasVaultsError::Test
+        MidasVaultsError::LessThanMinReceiveAmount
     );
 
     require_and_update_allowance(&mut ctx.accounts.payment_mint_state, amount_payment_token)?;

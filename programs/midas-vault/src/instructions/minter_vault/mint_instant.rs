@@ -169,7 +169,7 @@ pub fn handle(
     // FIXME: error
     require_gte!(
         params.m_token_amount, min_receive_amount as u128,
-        MidasVaultsError::Test
+        MidasVaultsError::LessThanMinReceiveAmount
     );
 
     require_and_update_limit(&mut ctx.accounts.vault_common, params.m_token_amount)?;
