@@ -3,14 +3,14 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion};
 
 use crate::{
-    accounts, constants::{seeds, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, state::{
+    accounts, constants::{seeds, FIAT_MINT, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, state::{
         AccessControlState, AccountAccessControlState, MintAuthorityState, MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState, RedeemerVaultRequestState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState
     }, utils::{burn_mtoken, close_account, mint_token, minter::{self}, redeemer, require_and_update_allowance, require_and_update_limit, require_variation_tolerance, transfer_token, truncate, Closable}
 };
 
 #[derive(Accounts)]
 #[instruction(request_id: u64)]
-pub struct ApproveRedeemRequest<'info> {
+pub struct ApproveRedeemRequestFiat<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
@@ -37,11 +37,10 @@ pub struct ApproveRedeemRequest<'info> {
 
     #[account(
         mut,
-        seeds = [PaymentMintState::SEED, vault_common.key().as_ref(), payment_mint.key().as_ref()],
+        seeds = [PaymentMintState::SEED, vault_common.key().as_ref(), FIAT_MINT.as_ref()],
         bump
     )]
     pub payment_mint_state: Account<'info, PaymentMintState>,
-
 
     #[account(
         mut,
@@ -49,29 +48,6 @@ pub struct ApproveRedeemRequest<'info> {
         bump
     )]
     pub redeem_request: Account<'info, RedeemerVaultRequestState>,
-
-    #[account(
-        mut,
-        associated_token::token_program = payment_mint_token_program,
-        associated_token::mint = payment_mint,
-        associated_token::authority = user_account,
-    )]
-    pub payment_mint_user_ata: Box<InterfaceAccount<'info, TokenAccount>>,
-
-    #[account(
-        mut,
-        mint::token_program = payment_mint_token_program,
-        address = redeem_request.payment_mint
-    )]
-    pub payment_mint: Box<InterfaceAccount<'info, Mint>>,
-
-    #[account(
-        mut,
-        associated_token::token_program = payment_mint_token_program,
-        associated_token::mint = payment_mint,
-        associated_token::authority = redeemer_vault,
-    )]
-    pub payment_mint_vault_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         mut,
@@ -90,12 +66,10 @@ pub struct ApproveRedeemRequest<'info> {
 
     pub m_mint_token_program: Interface<'info, TokenInterface>,
 
-    pub payment_mint_token_program: Interface<'info, TokenInterface>,
-
     pub system_program: Program<'info, System>,
 }
 
-impl<'info> Closable for ApproveRedeemRequest<'info> {
+impl<'info> Closable for ApproveRedeemRequestFiat<'info> {
     fn close(&mut self) -> Result<()> {
         close_account(&mut self.redeem_request.to_account_info(), &mut self.user_account, &self.system_program)?;
 
@@ -104,7 +78,7 @@ impl<'info> Closable for ApproveRedeemRequest<'info> {
 }
 
 pub fn handle(
-    ctx: Context<ApproveRedeemRequest>,
+    ctx: Context<ApproveRedeemRequestFiat>,
     request_id: u64,
     new_m_token_rate: u64,
     is_safe: bool,
@@ -117,10 +91,10 @@ pub fn handle(
         &ctx.accounts.m_mint, 
         &ctx.accounts.m_mint_vault_ata, 
         &mut ctx.accounts.payment_mint_state, 
-        Some(&ctx.accounts.payment_mint),
-        Some (&ctx.accounts.payment_mint_token_program), 
-        Some(&ctx.accounts.payment_mint_vault_ata), 
-        Some(&ctx.accounts.payment_mint_user_ata), 
+        None,
+        None,
+        None,
+        None,
         request_id,
         new_m_token_rate.into(), 
         is_safe

@@ -3,13 +3,13 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion};
 
 use crate::{
-    constants::{seeds, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, state::{
+    constants::{seeds, FIAT_MINT, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, state::{
         AccessControlState, AccountAccessControlState, MintAuthorityState, MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState, RedeemerVaultRequestState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState
     }, utils::{get_token_rate, mint_token, minter::{self}, redeemer, require_and_update_limit, transfer_token, validate_common, Validate, VaultActionId}
 };
 
 #[derive(Accounts)]
-pub struct RedeemRequest<'info> {
+pub struct RedeemRequestFiat<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
 
@@ -53,11 +53,6 @@ pub struct RedeemRequest<'info> {
     pub account_ac: Account<'info, AccountAccessControlState>,
 
     #[account(
-        mint::token_program = payment_mint_token_program
-    )]
-    pub payment_mint: Box<InterfaceAccount<'info, Mint>>,
-
-    #[account(
         mut,
         associated_token::token_program = m_mint_token_program,
         associated_token::mint = m_mint,
@@ -90,7 +85,7 @@ pub struct RedeemRequest<'info> {
 
     #[account(
         mut,
-        seeds = [PaymentMintState::SEED, vault_common.key().as_ref(), payment_mint.key().as_ref()],
+        seeds = [PaymentMintState::SEED, vault_common.key().as_ref(), FIAT_MINT.as_ref()],
         bump
     )]
     pub payment_mint_state: Account<'info, PaymentMintState>,
@@ -118,25 +113,24 @@ pub struct RedeemRequest<'info> {
     pub payment_mint_feed: AccountInfo<'info>,
 
     #[account(
-        seeds = [PauseInxState::SEED, vault_common.key().as_ref(), (VaultActionId::RedeemRequest as u8).to_le_bytes().as_ref()],
+        seeds = [PauseInxState::SEED, vault_common.key().as_ref(), (VaultActionId::RedeemRequestFiat as u8).to_le_bytes().as_ref()],
         bump
     )]
     pub pause_inx_state: Account<'info, PauseInxState>,
 
     pub m_mint_token_program: Interface<'info, TokenInterface>,
-    pub payment_mint_token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
 }
 
-impl<'info> Validate<'info> for RedeemRequest<'info> {
+impl<'info> Validate<'info> for RedeemRequestFiat<'info> {
     fn validate(&self) -> Result<()> {
-        validate_common(&self.vault_common, &self.account_ac, &self.pause_inx_state, false)?;
+        validate_common(&self.vault_common, &self.account_ac, &self.pause_inx_state, true)?;
         Ok(())
     }
 }
 
 pub fn handle(
-    ctx: Context<RedeemRequest>,
+    ctx: Context<RedeemRequestFiat>,
     amount_m_token: u64,
 ) -> Result<()> {
 
@@ -146,9 +140,9 @@ pub fn handle(
         &mut ctx.accounts.vault_common_signer,
         &mut ctx.accounts.redeemer_vault,
         &mut ctx.accounts.payment_mint_state,
-        &ctx.accounts.payment_mint.key(),
-        Some(& ctx.accounts.payment_mint_data_feed),
-        Some(&ctx.accounts.payment_mint_feed),
+        &FIAT_MINT,
+        None,
+        None,
         &ctx.accounts.m_mint,
         &ctx.accounts.m_mint_token_program,
         &ctx.accounts.m_mint_data_feed,

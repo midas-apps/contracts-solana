@@ -19,6 +19,14 @@ use crate::{
     },
 };
 
+pub enum VaultActionId {
+    MintInstant = 0,
+    MintRequest,
+    RedeemInstant,
+    RedeemRequest,
+    RedeemRequestFiat,
+}
+
 pub trait Closable {
     fn close(&mut self) -> Result<()>;
 }
@@ -50,6 +58,7 @@ pub fn close_account(
 pub fn validate_green_listed(
     common: &VaultCommonState,
     account_ac: &AccountAccessControlState,
+    require_green_list: bool,
 ) -> Result<()> {
     if !common.greenlist_enforced {
         return Ok(());
@@ -77,8 +86,9 @@ pub fn validate_common(
     common: &VaultCommonState,
     account_ac: &AccountAccessControlState,
     pause_inx: &PauseInxState,
+    require_green_list: bool,
 ) -> Result<()> {
-    validate_green_listed(common, account_ac)?;
+    validate_green_listed(common, account_ac, require_green_list)?;
     validate_black_listed(account_ac)?;
     validate_paused(common, pause_inx)?;
 
@@ -175,7 +185,6 @@ pub fn require_variation_tolerance(
         .checked_div(price)
         .unwrap();
 
-    // FIXME: error
     require_gte!(
         common.variation_tolerance,
         price_diff_percent as u64,
@@ -478,7 +487,7 @@ pub mod minter {
 
 pub mod redeemer {
     use crate::{
-        constants::ONE,
+        constants::{FIAT_MINT, ONE},
         state::{RedeemerVaultRequestState, RedeemerVaultState},
     };
 
@@ -489,9 +498,86 @@ pub mod redeemer {
         pub m_token_amount_wo_fee: u128,
     }
 
+    pub fn create_redeem_request<'info>(
+        signer: &Signer<'info>,
+        vault_common: &mut Account<'info, VaultCommonState>,
+        vault_common_signer: &mut Account<'info, VaultCommonAccountState>,
+        redeemer_vault: &mut Account<'info, RedeemerVaultState>,
+        payment_mint_state: &mut Account<'info, PaymentMintState>,
+        payment_mint: &Pubkey,
+        payment_mint_data_feed: Option<&Account<'info, FeedState>>,
+        payment_mint_feed: Option<&AccountInfo<'info>>,
+        m_mint: &Box<InterfaceAccount<'info, Mint>>,
+        m_mint_token_program: &Interface<'info, TokenInterface>,
+        m_mint_data_feed: &Account<'info, FeedState>,
+        m_mint_feed: &AccountInfo<'info>,
+        m_mint_signer_ata: &Box<InterfaceAccount<'info, TokenAccount>>,
+        m_mint_vault_ata: &Box<InterfaceAccount<'info, TokenAccount>>,
+        m_mint_fee_receiver_ata: &Box<InterfaceAccount<'info, TokenAccount>>,
+        redeem_request: &mut Account<'info, RedeemerVaultRequestState>,
+
+        amount_m_token: u128,
+    ) -> Result<()> {
+        let is_fiat = false;
+
+        let params = redeemer::calc_and_validate_redeem(
+            payment_mint_state,
+            vault_common,
+            vault_common_signer,
+            redeemer_vault,
+            amount_m_token.into(),
+            false,
+            false,
+        )?;
+
+        let payment_mint_rate = if !is_fiat {
+            get_token_rate(
+                &payment_mint_data_feed.unwrap(),
+                &payment_mint_feed.unwrap(),
+                payment_mint_state.stable,
+            )?
+        } else {
+            ONE as u128
+        };
+
+        let m_token_rate = get_token_rate(&m_mint_data_feed, &m_mint_feed, false)?;
+
+        transfer_token(
+            &vault_common.key(),
+            RedeemerVaultState::SEED,
+            &m_mint_token_program,
+            &m_mint,
+            &signer.to_account_info(),
+            &m_mint_signer_ata,
+            &m_mint_vault_ata,
+            params.m_token_amount_wo_fee,
+        )?;
+
+        if params.fee_amount > 0 {
+            transfer_token(
+                &vault_common.key(),
+                RedeemerVaultState::SEED,
+                &m_mint_token_program,
+                &m_mint,
+                &signer.to_account_info(),
+                &m_mint_signer_ata,
+                &m_mint_fee_receiver_ata,
+                params.fee_amount,
+            )?;
+            msg!("TRANSFERRED1");
+        }
+
+        redeem_request.user = signer.key();
+        redeem_request.payment_mint = payment_mint.key();
+        redeem_request.m_token_amount = params.m_token_amount_wo_fee.try_into().unwrap();
+        redeem_request.m_token_rate = m_token_rate.try_into().unwrap();
+        redeem_request.payment_mint_rate = payment_mint_rate.try_into().unwrap();
+
+        Ok(())
+    }
+
     pub fn approve_redeem_request<'info>(
         request: &RedeemerVaultRequestState,
-        // accounts: &mut TAccounts,
         vault_common: &Account<'info, VaultCommonState>,
         redeemer_vault: &Account<'info, RedeemerVaultState>,
         m_mint_token_program: &Interface<'info, TokenInterface>,
@@ -504,10 +590,23 @@ pub mod redeemer {
         payment_mint_vault_ata: Option<&Box<InterfaceAccount<'info, TokenAccount>>>,
         payment_mint_user_ata: Option<&Box<InterfaceAccount<'info, TokenAccount>>>,
 
+        request_id: u64,
         new_m_token_rate: u128,
         is_safe: bool,
     ) -> Result<()> {
         // TODO: move to separate helper fn
+
+        let (expected_mint_key, is_fiat) = if let Some(payment_mint) = payment_mint {
+            (payment_mint.key().clone(), false)
+        } else {
+            (FIAT_MINT, true)
+        };
+
+        require_keys_eq!(
+            expected_mint_key,
+            request.payment_mint,
+            MidasVaultsError::InvalidPaymentMint
+        );
 
         if is_safe {
             require_variation_tolerance(
@@ -543,7 +642,7 @@ pub mod redeemer {
 
         require_and_update_allowance(payment_mint_state, amount_token_wo_fee)?;
 
-        if payment_mint.is_some() {
+        if is_fiat {
             transfer_token(
                 &vault_common.key(),
                 RedeemerVaultState::SEED,
@@ -569,7 +668,6 @@ pub mod redeemer {
         is_instant: bool,
         is_fiat: bool,
     ) -> Result<CalcAndValidateRedeemReturn> {
-        // FIXME
         require_gt!(m_token_amount, 0, MidasVaultsError::InvalidInAmount);
 
         if common_account.free_from_min_amount {

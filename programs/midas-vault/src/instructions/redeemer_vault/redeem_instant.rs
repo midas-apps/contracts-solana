@@ -5,7 +5,7 @@ use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion}
 use crate::{
     constants::seeds, errors::MidasVaultsError, state::{
         AccessControlState, AccountAccessControlState, MintAuthorityState, MinterVaultState, PauseInxState, PaymentMintState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState
-    }, utils::{burn_mtoken, mint_token, minter::{self}, redeemer, require_and_update_allowance, require_and_update_limit, transfer_token, truncate, validate_common, Validate}
+    }, utils::{burn_mtoken, mint_token, minter::{self}, redeemer, require_and_update_allowance, require_and_update_limit, transfer_token, truncate, validate_common, Validate, VaultActionId}
 };
 
 #[derive(Accounts)]
@@ -118,7 +118,7 @@ pub struct RedeemInstant<'info> {
 
     #[account(
         // FIXME: move to enum
-        seeds = [PauseInxState::SEED, vault_common.key().as_ref(), 2u8.to_le_bytes().as_ref()],
+        seeds = [PauseInxState::SEED, vault_common.key().as_ref(), (VaultActionId::RedeemInstant as u8).to_le_bytes().as_ref()],
         bump
     )]
     pub pause_inx_state: Account<'info, PauseInxState>,
@@ -131,7 +131,7 @@ pub struct RedeemInstant<'info> {
 
 impl<'info> Validate<'info> for RedeemInstant<'info> {
     fn validate(&self) -> Result<()> {
-        validate_common(&self.vault_common, &self.account_ac, &self.pause_inx_state)?;
+        validate_common(&self.vault_common, &self.account_ac, &self.pause_inx_state, false)?;
         Ok(())
     }
 }
@@ -165,7 +165,6 @@ pub fn handle(
         params.m_token_amount_wo_fee.checked_mul(m_token_rate).unwrap().checked_div(payment_token_rate).unwrap()
         , decimals)?;
 
-    // FIXME: error
     require_gte!(
         amount_payment_token_wo_fee, min_receive_amount as u128,
         MidasVaultsError::LessThanMinReceiveAmount

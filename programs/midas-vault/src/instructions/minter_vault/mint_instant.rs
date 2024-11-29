@@ -5,7 +5,7 @@ use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion}
 use crate::{
     constants::seeds, errors::MidasVaultsError, state::{
         AccessControlState, AccountAccessControlState, MintAuthorityState, MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState, VaultCommonState
-    }, utils::{mint_token, minter::{self}, require_and_update_limit, transfer_token, validate_common, Validate}
+    }, utils::{mint_token, minter::{self}, require_and_update_limit, transfer_token, validate_common, Validate, VaultActionId}
 };
 
 #[derive(Accounts)]
@@ -124,7 +124,7 @@ pub struct MintInstant<'info> {
     pub payment_mint_feed: AccountInfo<'info>,
 
     #[account(
-        seeds = [PauseInxState::SEED, vault_common.key().as_ref(), 0u8.to_le_bytes().as_ref()],
+        seeds = [PauseInxState::SEED, vault_common.key().as_ref(), (VaultActionId::MintInstant as u8).to_le_bytes().as_ref()],
         bump
     )]
     pub pause_inx_state: Account<'info, PauseInxState>,
@@ -137,7 +137,7 @@ pub struct MintInstant<'info> {
 
 impl<'info> Validate<'info> for MintInstant<'info> {
     fn validate(&self) -> Result<()> {
-        validate_common(&self.vault_common, &self.account_ac, &self.pause_inx_state)?;
+        validate_common(&self.vault_common, &self.account_ac, &self.pause_inx_state, false)?;
         Ok(())
     }
 }

@@ -125,6 +125,11 @@ pub mod midas_vaults {
         redeemer_vault::redeem_request::handle(ctx, amount_m_token)
     }
 
+    #[access_control(ctx.accounts.validate())]
+    pub fn redeem_request_fiat(ctx: Context<RedeemRequestFiat>, amount_m_token: u64) -> Result<()> {
+        redeemer_vault::redeem_request_fiat::handle(ctx, amount_m_token)
+    }
+
     pub fn approve_redeem_request(
         ctx: Context<ApproveRedeemRequest>,
         request_id: u64,
@@ -132,6 +137,20 @@ pub mod midas_vaults {
         is_safe: bool,
     ) -> Result<()> {
         redeemer_vault::approve_redeem_request::handle(ctx, request_id, new_m_token_rate, is_safe)
+    }
+
+    pub fn approve_redeem_request_fiat(
+        ctx: Context<ApproveRedeemRequestFiat>,
+        request_id: u64,
+        new_m_token_rate: u64,
+        is_safe: bool,
+    ) -> Result<()> {
+        redeemer_vault::approve_redeem_request_fiat::handle(
+            ctx,
+            request_id,
+            new_m_token_rate,
+            is_safe,
+        )
     }
 
     pub fn reject_redeem_request(ctx: Context<RejectRedeemRequest>, request_id: u64) -> Result<()> {

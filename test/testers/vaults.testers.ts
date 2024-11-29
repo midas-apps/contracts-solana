@@ -1122,7 +1122,7 @@ export const newVaultCommonAccount = async (
 
   expect(stateAfter).not.toEqual(null);
   expect(stateAfter.vaultCommonAccount.freeFromMinAmount).toBe(false);
-  expect(stateAfter.vaultCommonAccount.freeFromMinFirstDeposit).toBe(false);
+  expect(stateAfter.vaultCommonAccount.freeFromMinFirstMint).toBe(false);
   expect(stateAfter.vaultCommonAccount.waivedFee).toBe(false);
 };
 

@@ -1,4 +1,6 @@
-pub const MANUAL_FULLFILMENT_TOKEN: i32 = 0; // FIXME
+use anchor_lang::prelude::Pubkey;
+
+pub const FIAT_MINT: Pubkey = Pubkey::new_from_array([0; 32]);
 pub const ONE: u64 = 10u64.pow(9);
 pub const STABLECOIN_RATE: u64 = ONE;
 pub const ONE_HUNDRED_PERCENT: u64 = 100 * 100;

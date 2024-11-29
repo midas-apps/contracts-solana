@@ -9,6 +9,7 @@ export enum VaultActionIds {
   MINT_REQUEST,
   REDEEM_INSTANT,
   REDEEM_REQUEST,
+  REDEEM_REQUEST_FIAT,
 }
 
 export const VAULTS_SEEDS = {
@@ -22,3 +23,22 @@ export const VAULTS_SEEDS = {
   MINTER_VAULT: "minter_vault",
   REDEEMER_VAULT: "redeemer_vault",
 };
+
+export enum VaultErrors {
+  NotAuthority = "Not an authority",
+  NotGreenListed = "Account is not green listed",
+  Blacklisted = "Account is black listed",
+  VaultPaused = "Vault is paused",
+  VaultInxPaused = "Vault instruction is paused",
+  LessThanMinAmount = "Amount is less than min.",
+  LessThanMinAmountFirstMint = "Amount is less than min. for the first mint",
+  InsufficientAllowance = "Insufficient allowance for the payment mint",
+  DailyLimitExceeded = "Daily limit is exceeded",
+  VariationToleranceExceeded = "Variation tolerance exceeded",
+  InvalidFee = "Invalid fee value",
+  InvalidInAmount = "Invalid input amount value",
+  InvalidOutAmount = "Invalid output amount value",
+  InvalidConvertAmount = "Invalid convert amount value",
+  InvalidRate = "Invalid rate",
+  LessThanMinReceiveAmount = "Output amount is less than min. to receive",
+}

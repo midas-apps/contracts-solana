@@ -10,3 +10,9 @@ export const DATA_FEED_SEEDS = {
 };
 
 export const SWITCHBOARD_FEEDS = {};
+
+export enum DataFeedErrors {
+  InvalidUnderlyingFeedProvided = "Invalid underlying feed provided",
+  NotAuthority = "Not an authority",
+  PriceIsStale = "Data feed price is stale",
+}

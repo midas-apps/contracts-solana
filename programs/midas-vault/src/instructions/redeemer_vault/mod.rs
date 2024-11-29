@@ -15,3 +15,9 @@ pub use reject_redeem_request::*;
 
 pub mod approve_redeem_request;
 pub use approve_redeem_request::*;
+
+pub mod approve_redeem_request_fiat;
+pub use approve_redeem_request_fiat::*;
+
+pub mod redeem_request_fiat;
+pub use redeem_request_fiat::*;
