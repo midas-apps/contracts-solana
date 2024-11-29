@@ -11,6 +11,7 @@ import { Program } from "@coral-xyz/anchor";
 import * as DATA_FEED_IDL from "../../target/idl/data_feed.json";
 import * as MIDAS_VAULTS_IDL from "../../target/idl/midas_vaults.json";
 import {
+  DataFeedMode,
   generateFeedAcccount,
   getManualFeedStatePda,
 } from "../helpers/data-feed.helpers";
@@ -55,23 +56,16 @@ export const dataFeedFixture = async () => {
         })
         .instruction(),
       await dataFeedProgram.methods
-        .newManualFeed(9)
+        .newManualFeed(toBN(parseUnits("1")), 9)
         .accountsPartial({
           baseFeed: feed.publicKey,
           authority: authority.publicKey,
         })
         .instruction(),
       await dataFeedProgram.methods
-        .setFeedMode({ manual: {} })
+        .updateFeed(null, null, DataFeedMode.manual, null, null, null)
         .accountsPartial({
-          baseFeed: feed.publicKey,
-          authority: authority.publicKey,
-        })
-        .instruction(),
-      await dataFeedProgram.methods
-        .setManualPrice(toBN(parseUnits("1")))
-        .accountsPartial({
-          baseFeed: feed.publicKey,
+          feed: feed.publicKey,
           authority: authority.publicKey,
         })
         .instruction()

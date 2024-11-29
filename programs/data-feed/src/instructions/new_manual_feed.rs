@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     errors::DataFeedError,
-    events::NewManualFeedCreatedEvent,
+    events::ManualFeedCreatedEvent,
     state::{FeedState, ManualFeedState},
 };
 
@@ -28,14 +28,17 @@ pub struct NewManualFeed<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handle(ctx: Context<NewManualFeed>, decimals: u8) -> Result<()> {
+pub fn handle(ctx: Context<NewManualFeed>, initial_price: u64, decimals: u8) -> Result<()> {
     let state = &mut ctx.accounts.manual_feed;
 
     state.decimals = decimals;
+    state.price = initial_price;
 
-    emit!(NewManualFeedCreatedEvent {
-        feed: ctx.accounts.manual_feed.key(),
-        decimals
+    emit!(ManualFeedCreatedEvent {
+        manual_feed: ctx.accounts.manual_feed.key(),
+        base_feed: ctx.accounts.base_feed.key(),
+        decimals,
+        initial_price
     });
 
     Ok(())

@@ -2,12 +2,12 @@ use anchor_lang::prelude::*;
 
 use crate::{
     errors::DataFeedError,
-    events::SetManualFeedPriceEvent,
+    events::ManualFeedUpdatedEvent,
     state::{FeedState, ManualFeedState},
 };
 
 #[derive(Accounts)]
-pub struct SetManualPrice<'info> {
+pub struct UpdateManualFeed<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
@@ -24,14 +24,26 @@ pub struct SetManualPrice<'info> {
     pub base_feed: Account<'info, FeedState>,
 }
 
-pub fn handle(ctx: Context<SetManualPrice>, new_price: u64) -> Result<()> {
+pub fn handle(
+    ctx: Context<UpdateManualFeed>,
+    price: Option<u64>,
+    decimals: Option<u8>,
+) -> Result<()> {
     let state = &mut ctx.accounts.manual_feed;
 
-    state.price = new_price;
+    if let Some(price) = price {
+        state.price = price;
+    }
 
-    emit!(SetManualFeedPriceEvent {
-        feed: ctx.accounts.base_feed.key(),
-        new_price
+    if let Some(decimals) = decimals {
+        state.decimals = decimals;
+    }
+
+    emit!(ManualFeedUpdatedEvent {
+        manual_feed: ctx.accounts.manual_feed.key(),
+        base_feed: ctx.accounts.base_feed.key(),
+        decimals,
+        price
     });
 
     Ok(())

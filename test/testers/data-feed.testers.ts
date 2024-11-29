@@ -83,9 +83,11 @@ export const createNewManualFeed = async (
   {
     baseFeed,
     decimals,
+    initPrice,
   }: {
     baseFeed?: PublicKey;
     decimals?: number;
+    initPrice?: bigint;
   },
   opt?: OptionalCommonParams
 ) => {
@@ -98,13 +100,14 @@ export const createNewManualFeed = async (
 
   baseFeed ??= dataFeedMTBill.publicKey;
   decimals ??= 9;
+  initPrice ??= parseUnits("1", decimals);
 
   const feedPda = getManualFeedStatePda(baseFeed);
 
   const from = opt?.from ?? owner;
 
   const tx = await dataFeedProgram.methods
-    .newManualFeed(decimals)
+    .newManualFeed(toBN(initPrice), decimals)
     .accountsStrict({
       baseFeed: baseFeed,
       authority: from.publicKey,

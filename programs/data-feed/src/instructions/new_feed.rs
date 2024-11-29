@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{events::NewFeedCreatedEvent, state::FeedState};
+use crate::{events::FeedCreatedEvent, state::FeedState};
 
 #[derive(Accounts)]
 pub struct NewFeed<'info> {
@@ -34,7 +34,7 @@ pub fn handle(
     state.max_price = max_price;
     state.max_staleness = max_staleness;
 
-    emit!(NewFeedCreatedEvent {
+    emit!(FeedCreatedEvent {
         feed: ctx.accounts.feed.key(),
         authority,
         underlying_feed,
