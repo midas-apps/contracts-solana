@@ -219,6 +219,14 @@ pub mod midas_vaults {
         vault_common::add_payment_token::handle(ctx, fee, allowance, stable)
     }
 
+    pub fn add_payment_token_fiat(
+        ctx: Context<AddPaymentTokenFiat>,
+        fee: u64,
+        allowance: u128,
+    ) -> Result<()> {
+        vault_common::add_payment_token_fiat::handle(ctx, fee, allowance)
+    }
+
     pub fn remove_payment_token(ctx: Context<RemovePaymentToken>) -> Result<()> {
         vault_common::remove_payment_token::handle(ctx)
     }

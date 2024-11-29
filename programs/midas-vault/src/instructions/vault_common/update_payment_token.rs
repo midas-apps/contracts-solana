@@ -4,9 +4,8 @@ use data_feed::{program::DataFeed, state::FeedState};
 use crate::{
     errors::MidasVaultsError,
     state::{PaymentMintState, VaultCommonState},
+    utils::common_vault,
 };
-
-use anchor_spl::token_interface::{Mint, TokenInterface};
 
 #[derive(Accounts)]
 pub struct UpdatePaymentToken<'info> {
@@ -20,15 +19,10 @@ pub struct UpdatePaymentToken<'info> {
 
     #[account(
         mut,
-        seeds = [PaymentMintState::SEED, vault_common_state.key().as_ref(), payment_mint.key().as_ref()],
+        seeds = [PaymentMintState::SEED, vault_common_state.key().as_ref(), payment_mint_state.mint.key().as_ref()],
         bump
     )]
     pub payment_mint_state: Account<'info, PaymentMintState>,
-
-    #[account(
-        mint::token_program = token_program
-    )]
-    pub payment_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
         owner = data_feed_program.key()
@@ -36,7 +30,6 @@ pub struct UpdatePaymentToken<'info> {
     pub new_data_feed: Option<Account<'info, FeedState>>,
 
     pub data_feed_program: Program<'info, DataFeed>,
-    pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
 }
 
@@ -46,23 +39,22 @@ pub fn handle(
     allowance: Option<u128>,
     stable: Option<bool>,
 ) -> Result<()> {
-    let state = &mut ctx.accounts.payment_mint_state;
+    let data_feed = if let Some(new_data_feed) = &ctx.accounts.new_data_feed {
+        Some(new_data_feed.key())
+    } else {
+        None
+    };
 
-    if let Some(new_feed) = &mut ctx.accounts.new_data_feed {
-        state.data_feed = new_feed.key();
-    }
+    let mint = &ctx.accounts.payment_mint_state.mint.clone();
 
-    if let Some(new_fee) = fee {
-        state.fee = new_fee;
-    }
-
-    if let Some(new_allowance) = allowance {
-        state.allowance = new_allowance;
-    }
-
-    if let Some(new_stable) = stable {
-        state.stable = new_stable;
-    }
+    common_vault::update_payment_token(
+        &mut ctx.accounts.payment_mint_state,
+        mint,
+        &data_feed,
+        fee,
+        allowance,
+        stable,
+    )?;
 
     // TODO: add event
     Ok(())

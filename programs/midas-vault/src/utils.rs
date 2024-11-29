@@ -485,6 +485,40 @@ pub mod minter {
     }
 }
 
+pub mod common_vault {
+    use super::*;
+
+    pub fn update_payment_token(
+        payment_mint_state: &mut PaymentMintState,
+        mint: &Pubkey,
+        data_feed: &Option<Pubkey>,
+        fee: Option<u64>,
+        allowance: Option<u128>,
+        stable: Option<bool>,
+    ) -> Result<()> {
+        payment_mint_state.mint = mint.key();
+
+        if let Some(data_feed) = data_feed {
+            payment_mint_state.data_feed = data_feed.key();
+        }
+
+        if let Some(fee) = fee {
+            validate_fee(fee, false)?;
+            payment_mint_state.fee = fee;
+        }
+
+        if let Some(allowance) = allowance {
+            payment_mint_state.allowance = allowance;
+        }
+
+        if let Some(stable) = stable {
+            payment_mint_state.stable = stable;
+        }
+
+        Ok(())
+    }
+}
+
 pub mod redeemer {
     use crate::{
         constants::{FIAT_MINT, ONE},

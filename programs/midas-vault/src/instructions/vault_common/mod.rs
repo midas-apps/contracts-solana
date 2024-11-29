@@ -1,6 +1,9 @@
 pub mod add_payment_token;
 pub use add_payment_token::*;
 
+pub mod add_payment_token_fiat;
+pub use add_payment_token_fiat::*;
+
 pub mod remove_payment_token;
 pub use remove_payment_token::*;
 

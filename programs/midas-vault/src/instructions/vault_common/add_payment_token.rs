@@ -4,6 +4,7 @@ use data_feed::{program::DataFeed, state::FeedState};
 use crate::{
     errors::MidasVaultsError,
     state::{PaymentMintState, VaultCommonState},
+    utils::common_vault,
 };
 
 use anchor_spl::token_interface::{Mint, TokenInterface};
@@ -48,15 +49,14 @@ pub fn handle(
     allowance: u128,
     stable: bool,
 ) -> Result<()> {
-    let state = &mut ctx.accounts.payment_mint_state;
-
-    // TODO: add fee validation
-    // TODO: add allowance validation
-
-    state.data_feed = ctx.accounts.data_feed.key();
-    state.fee = fee;
-    state.allowance = allowance;
-    state.stable = stable;
+    common_vault::update_payment_token(
+        &mut ctx.accounts.payment_mint_state,
+        &ctx.accounts.payment_mint.key(),
+        &Some(ctx.accounts.data_feed.key()),
+        Some(fee),
+        Some(allowance),
+        Some(stable),
+    )?;
 
     // TODO: add event
     Ok(())
