@@ -19,6 +19,10 @@ use crate::{
     },
 };
 
+pub trait Closable {
+    fn close(&self) -> Result<()>;
+}
+
 pub fn require_and_update_min_amount(
     common: &VaultCommonState,
     common_account: &mut VaultCommonAccountState,
@@ -406,7 +410,10 @@ pub mod minter {
 }
 
 pub mod redeemer {
-    use crate::{constants::ONE, state::RedeemerVaultState};
+    use crate::{
+        constants::ONE,
+        state::{RedeemerVaultRequestState, RedeemerVaultState},
+    };
 
     use super::*;
 
@@ -415,6 +422,76 @@ pub mod redeemer {
         pub m_token_amount_wo_fee: u128,
     }
 
+    pub fn approve_redeem_request<'info>(
+        request: &RedeemerVaultRequestState,
+        // accounts: &mut TAccounts,
+        vault_common: &Account<'info, VaultCommonState>,
+        redeemer_vault: &Account<'info, RedeemerVaultState>,
+        m_mint_token_program: &Interface<'info, TokenInterface>,
+        m_mint: &Box<InterfaceAccount<'info, Mint>>,
+        m_mint_vault_ata: &Box<InterfaceAccount<'info, TokenAccount>>,
+        payment_mint_state: &mut PaymentMintState,
+
+        payment_mint: Option<&Box<InterfaceAccount<'info, Mint>>>,
+        payment_mint_token_program: Option<&Interface<'info, TokenInterface>>,
+        payment_mint_vault_ata: Option<&Box<InterfaceAccount<'info, TokenAccount>>>,
+        payment_mint_user_ata: Option<&Box<InterfaceAccount<'info, TokenAccount>>>,
+
+        new_m_token_rate: u128,
+        is_safe: bool,
+    ) -> Result<()> {
+        // TODO: move to separate helper fn
+
+        if is_safe {
+            require_variation_tolerance(
+                &vault_common,
+                request.m_token_rate.into(),
+                new_m_token_rate.into(),
+            )?;
+        }
+
+        burn_mtoken(
+            &vault_common.key(),
+            m_mint_token_program,
+            m_mint,
+            &redeemer_vault.to_account_info(),
+            m_mint_vault_ata,
+            request.m_token_amount.try_into().unwrap(),
+        )?;
+
+        let decimals = if let Some(payment_mint) = payment_mint {
+            payment_mint.decimals
+        } else {
+            9
+        };
+
+        let amount_token_wo_fee = truncate(
+            (request.m_token_amount as u128)
+                .checked_mul(new_m_token_rate.into())
+                .unwrap()
+                .checked_div(request.payment_mint_rate.into())
+                .unwrap(),
+            decimals,
+        )?;
+
+        require_and_update_allowance(payment_mint_state, amount_token_wo_fee)?;
+
+        if payment_mint.is_some() {
+            transfer_token(
+                &vault_common.key(),
+                RedeemerVaultState::SEED,
+                payment_mint_token_program.unwrap(),
+                payment_mint.unwrap(),
+                &redeemer_vault.to_account_info(),
+                payment_mint_vault_ata.unwrap(),
+                payment_mint_user_ata.unwrap(),
+                amount_token_wo_fee,
+            )?;
+        }
+
+        // TODO: add event
+        Ok(())
+    }
     pub fn calc_and_validate_redeem(
         mint_config: &PaymentMintState,
         common: &VaultCommonState,

@@ -1,0 +1,193 @@
+use anchor_lang::prelude::*;
+use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion};
+
+use crate::{
+    constants::{seeds, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, state::{
+        AccessControlState, AccountAccessControlState, MintAuthorityState, MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState, RedeemerVaultRequestState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState
+    }, utils::{get_token_rate, mint_token, minter::{self}, redeemer, require_and_update_limit, transfer_token}
+};
+
+#[derive(Accounts)]
+pub struct RedeemRequest<'info> {
+    #[account(mut)]
+    pub signer: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [RedeemerVaultState::SEED, vault_common.key().as_ref()],
+        bump
+    )]
+    pub redeemer_vault: Account<'info, RedeemerVaultState>,
+
+    #[account(
+        address = redeemer_vault.common_vault
+    )]
+    pub vault_common: Account<'info, VaultCommonState>,
+
+    #[account(
+        mut,
+        seeds = [VaultCommonAccountState::SEED, vault_common.key().as_ref(), signer.key().as_ref()],
+        bump
+    )]
+    pub vault_common_signer: Account<'info, VaultCommonAccountState>,
+
+    #[account(
+        init,
+        payer = signer,
+        space = 8 + RedeemerVaultRequestState::INIT_SPACE,
+        seeds = [RedeemerVaultRequestState::SEED, redeemer_vault.key().as_ref(), &vault_common.requests_count.to_le_bytes()],
+        bump
+    )]
+    pub redeem_request: Account<'info, RedeemerVaultRequestState>,
+
+    #[account(
+        constraint = vault_common.ac.eq(&ac.key())
+    )]
+    pub ac: Account<'info, AccessControlState>,
+
+    #[account(
+        constraint = !account_ac.black_listed, // FIXME: error
+        seeds = [AccountAccessControlState::SEED, ac.key().as_ref(), signer.key().as_ref()],
+        bump
+    )]
+    pub account_ac: Account<'info, AccountAccessControlState>,
+
+    #[account(
+        mint::token_program = payment_mint_token_program
+    )]
+    pub payment_mint: Box<InterfaceAccount<'info, Mint>>,
+
+    #[account(
+        mut,
+        associated_token::token_program = m_mint_token_program,
+        associated_token::mint = m_mint,
+        associated_token::authority = redeemer_vault,
+    )]
+    pub m_mint_vault_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    #[account(
+        mut,
+        associated_token::token_program = m_mint_token_program,
+        associated_token::mint = m_mint,
+        associated_token::authority = vault_common.fee_receiver,
+    )]
+    pub m_mint_fee_receiver_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    #[account(
+        mut,
+        associated_token::token_program = m_mint_token_program,
+        associated_token::mint = m_mint,
+        associated_token::authority = signer,
+    )]
+    pub m_mint_signer_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    #[account(
+        mut,
+        mint::token_program = m_mint_token_program,
+        address = vault_common.m_mint
+    )]
+    pub m_mint: Box<InterfaceAccount<'info, Mint>>,
+
+    #[account(
+        mut,
+        seeds = [PaymentMintState::SEED, vault_common.key().as_ref(), payment_mint.key().as_ref()],
+        bump
+    )]
+    pub payment_mint_state: Account<'info, PaymentMintState>,
+
+    #[account(
+        address = vault_common.m_mint_feed
+    )]
+    pub m_mint_data_feed: Account<'info, FeedState>,
+
+    /// CHECK:
+    #[account(
+        address = m_mint_data_feed.underlying_feed 
+    )]
+    pub m_mint_feed: AccountInfo<'info>,
+
+    #[account(
+        address = payment_mint_state.data_feed
+    )]
+    pub payment_mint_data_feed: Account<'info, FeedState>,
+
+    /// CHECK:
+    #[account(
+        address = payment_mint_data_feed.underlying_feed 
+    )]
+    pub payment_mint_feed: AccountInfo<'info>,
+
+    #[account(
+        seeds = [PauseInxState::SEED, vault_common.key().as_ref(), 3u8.to_le_bytes().as_ref()],
+        bump
+    )]
+    pub pause_inx_state: Account<'info, PauseInxState>,
+
+    pub m_mint_token_program: Interface<'info, TokenInterface>,
+    pub payment_mint_token_program: Interface<'info, TokenInterface>,
+    pub system_program: Program<'info, System>,
+}
+
+pub fn handle(
+    ctx: Context<RedeemRequest>,
+    amount_m_token: u64,
+) -> Result<()> {
+    // TODO: use separate mint authority to manage burn and mints
+
+    let is_fiat = false;
+
+    let params= redeemer::calc_and_validate_redeem(
+        &mut ctx.accounts.payment_mint_state,
+        &ctx.accounts.vault_common,
+        &mut ctx.accounts.vault_common_signer,
+        &mut ctx.accounts.redeemer_vault,
+        amount_m_token.into(),
+        false,
+        false
+    )?;
+
+    let payment_mint_rate = if is_fiat {
+        get_token_rate(&ctx.accounts.payment_mint_data_feed, &ctx.accounts.payment_mint_feed, ctx.accounts.payment_mint_state.stable)?
+    } else {
+        ONE as u128
+    };
+
+    let m_token_rate = get_token_rate(&ctx.accounts.m_mint_data_feed, &ctx.accounts.m_mint_feed, false)?;
+
+    transfer_token(
+        &ctx.accounts.vault_common.key(), 
+        RedeemerVaultState::SEED,
+        &ctx.accounts.m_mint_token_program,
+        &ctx.accounts.m_mint, 
+        &ctx.accounts.signer.to_account_info(), 
+        &ctx.accounts.m_mint_signer_ata, 
+        &ctx.accounts.m_mint_vault_ata, 
+        params.m_token_amount_wo_fee
+    )?;
+
+    if params.fee_amount > 0 {
+        transfer_token(
+            &ctx.accounts.vault_common.key(), 
+            RedeemerVaultState::SEED,
+            &ctx.accounts.m_mint_token_program,
+            &ctx.accounts.m_mint, 
+            &ctx.accounts.signer.to_account_info(), 
+            &ctx.accounts.m_mint_signer_ata, 
+            &ctx.accounts.m_mint_fee_receiver_ata, 
+            params.fee_amount
+        )?;
+        msg!("TRANSFERRED1");
+    }
+
+    let redeem_request = &mut ctx.accounts.redeem_request;
+
+    redeem_request.user = ctx.accounts.signer.key();
+    redeem_request.payment_mint = ctx.accounts.payment_mint.key();
+    redeem_request.m_token_amount = params.m_token_amount_wo_fee.try_into().unwrap();
+    redeem_request.m_token_rate = m_token_rate.try_into().unwrap();
+    redeem_request.payment_mint_rate = payment_mint_rate.try_into().unwrap();
+
+    // TODO: add event
+    Ok(())
+}

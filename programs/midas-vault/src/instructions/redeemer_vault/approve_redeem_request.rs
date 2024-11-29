@@ -1,0 +1,140 @@
+use anchor_lang::{prelude::*, solana_program::address_lookup_table::instruction};
+use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion};
+
+use crate::{
+    accounts, constants::{seeds, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, state::{
+        AccessControlState, AccountAccessControlState, MintAuthorityState, MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState, RedeemerVaultRequestState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState
+    }, utils::{burn_mtoken, mint_token, minter::{self}, redeemer, require_and_update_allowance, require_and_update_limit, require_variation_tolerance, transfer_token, truncate, Closable}
+};
+
+#[derive(Accounts)]
+#[instruction(request_id: u64)]
+pub struct ApproveRedeemRequest<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    /// CHECK:
+    #[account(
+        mut, 
+        address = redeem_request.user
+    )]
+    pub user_account: AccountInfo<'info>,
+
+    #[account(
+        mut,
+        address = redeemer_vault.common_vault,
+        has_one = authority
+    )]
+    pub vault_common: Account<'info, VaultCommonState>,
+
+    #[account(
+        mut,
+        seeds = [RedeemerVaultState::SEED, vault_common.key().as_ref()],
+        bump
+    )]
+    pub redeemer_vault: Account<'info, RedeemerVaultState>,
+
+    #[account(
+        mut,
+        seeds = [PaymentMintState::SEED, vault_common.key().as_ref(), payment_mint.key().as_ref()],
+        bump
+    )]
+    pub payment_mint_state: Account<'info, PaymentMintState>,
+
+
+    #[account(
+        mut,
+        seeds = [RedeemerVaultRequestState::SEED, redeemer_vault.key().as_ref(), &request_id.to_le_bytes()],
+        bump
+    )]
+    pub redeem_request: Account<'info, RedeemerVaultRequestState>,
+
+    #[account(
+        mut,
+        associated_token::token_program = payment_mint_token_program,
+        associated_token::mint = payment_mint,
+        associated_token::authority = user_account,
+    )]
+    pub payment_mint_user_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    #[account(
+        mut,
+        mint::token_program = payment_mint_token_program,
+        address = redeem_request.payment_mint
+    )]
+    pub payment_mint: Box<InterfaceAccount<'info, Mint>>,
+
+    #[account(
+        mut,
+        associated_token::token_program = payment_mint_token_program,
+        associated_token::mint = payment_mint,
+        associated_token::authority = redeemer_vault,
+    )]
+    pub payment_mint_vault_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    #[account(
+        mut,
+        associated_token::token_program = m_mint_token_program,
+        associated_token::mint = m_mint,
+        associated_token::authority = redeemer_vault,
+    )]
+    pub m_mint_vault_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    #[account(
+        mut,
+        mint::token_program = m_mint_token_program,
+        address = vault_common.m_mint
+    )]
+    pub m_mint: Box<InterfaceAccount<'info, Mint>>,
+
+    pub m_mint_token_program: Interface<'info, TokenInterface>,
+
+    pub payment_mint_token_program: Interface<'info, TokenInterface>,
+
+    pub system_program: Program<'info, System>,
+}
+
+impl<'info> Closable for ApproveRedeemRequest<'info> {
+    fn close(&self) -> Result<()> {
+        let dest_starting_lamports = self.user_account.lamports();
+
+        let account = self.redeem_request.to_account_info();
+        **self.user_account.lamports.borrow_mut() = dest_starting_lamports
+            .checked_add(account.lamports())
+            .unwrap();
+        **account.lamports.borrow_mut() = 0;
+
+        account.assign(&self.system_program.key());
+        account.realloc(0, false)?;
+
+        Ok(())
+    }
+}
+
+pub fn handle(
+    ctx: Context<ApproveRedeemRequest>,
+    request_id: u64,
+    new_m_token_rate: u64,
+    is_safe: bool,
+) -> Result<()> {
+    redeemer::approve_redeem_request(
+        &ctx.accounts.redeem_request, 
+        &ctx.accounts.vault_common, 
+        &ctx.accounts.redeemer_vault, 
+        &ctx.accounts.m_mint_token_program, 
+        &ctx.accounts.m_mint, 
+        &ctx.accounts.m_mint_vault_ata, 
+        &mut ctx.accounts.payment_mint_state, 
+        Some(&ctx.accounts.payment_mint),
+        Some (&ctx.accounts.payment_mint_token_program), 
+        Some(&ctx.accounts.payment_mint_vault_ata), 
+        Some(&ctx.accounts.payment_mint_user_ata), 
+        new_m_token_rate.into(), 
+        is_safe
+    )?;
+
+    ctx.accounts.close()?;
+
+    Ok(())
+}

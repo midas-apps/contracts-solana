@@ -23,6 +23,7 @@ import {
   generateAcAcccount,
   generateCommonVaultAccount,
   getMintAuthorityPda,
+  getRedeemerVaultPda,
   mintAuthoritySeedToBuffer,
 } from "../helpers/vaults.helpers";
 import { createMTokenMint } from "../../common/create-mtoken-mint";
@@ -130,6 +131,11 @@ export const vaultsFixture = async () => {
     {
       mint: mTBillMint.publicKey,
       owner: feeReceiver.publicKey,
+      program: TOKEN_2022_PROGRAM_ID,
+    },
+    {
+      mint: mTBillMint.publicKey,
+      owner: getRedeemerVaultPda(redeemerCommonVault.publicKey),
       program: TOKEN_2022_PROGRAM_ID,
     },
   ];

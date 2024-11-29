@@ -119,7 +119,7 @@ pub struct RedeemInstant<'info> {
 
     #[account(
         // FIXME: move to enum
-        seeds = [PauseInxState::SEED, vault_common.key().as_ref(), 3u8.to_le_bytes().as_ref()],
+        seeds = [PauseInxState::SEED, vault_common.key().as_ref(), 2u8.to_le_bytes().as_ref()],
         bump
     )]
     pub pause_inx_state: Account<'info, PauseInxState>,
@@ -135,8 +135,6 @@ pub fn handle(
     amount_m_token: u64,
     min_receive_amount: u64
 ) -> Result<()> {
-    // TODO: use separate mint authority to manage burn and mints
-
     let params= redeemer::calc_and_validate_redeem(
         &mut ctx.accounts.payment_mint_state,
         &ctx.accounts.vault_common,
@@ -197,7 +195,6 @@ pub fn handle(
     )?;
 
     msg!("TRANSFERRED3");
-
 
     // TODO: add event
     Ok(())

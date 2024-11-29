@@ -108,6 +108,23 @@ export const fetchMinterVaultRequestState = async (
   }
 };
 
+export const fetchRedeemerVaultRequestState = async (
+  program: VaultsProgram,
+  request: PublicKey,
+  allowNull = false
+) => {
+  try {
+    return await program.account.redeemerVaultRequestState.fetchNullable(
+      request
+    );
+  } catch (err) {
+    if (!allowNull) {
+      throw err;
+    }
+    return null;
+  }
+};
+
 export const fetchPaymentMintState = async (
   program: VaultsProgram,
   mintState: PublicKey,
@@ -184,6 +201,21 @@ export const getMinterVaultRequestPda = (
   const [pda] = findPDA(
     [
       VAULTS_SEEDS.MINTER_VAULT_REQUEST,
+      vault,
+      new BN(request_id.toString()).toArrayLike(Buffer, "le", 8),
+    ],
+    VAULTS_PROGRAM_ID
+  );
+  return pda;
+};
+
+export const getRedeemerVaultRequestPda = (
+  vault: PublicKey,
+  request_id: bigint
+) => {
+  const [pda] = findPDA(
+    [
+      VAULTS_SEEDS.REDEEMER_VAULT_REQUEST,
       vault,
       new BN(request_id.toString()).toArrayLike(Buffer, "le", 8),
     ],

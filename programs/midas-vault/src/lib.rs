@@ -116,6 +116,23 @@ pub mod midas_vaults {
         redeemer_vault::redeem_instant::handle(ctx, amount_m_token, min_receive_amount)
     }
 
+    pub fn redeem_request(ctx: Context<RedeemRequest>, amount_m_token: u64) -> Result<()> {
+        redeemer_vault::redeem_request::handle(ctx, amount_m_token)
+    }
+
+    pub fn approve_redeem_request(
+        ctx: Context<ApproveRedeemRequest>,
+        request_id: u64,
+        new_m_token_rate: u64,
+        is_safe: bool,
+    ) -> Result<()> {
+        redeemer_vault::approve_redeem_request::handle(ctx, request_id, new_m_token_rate, is_safe)
+    }
+
+    pub fn reject_redeem_request(ctx: Context<RejectRedeemRequest>, request_id: u64) -> Result<()> {
+        redeemer_vault::reject_redeem_request::handle(ctx, request_id)
+    }
+
     /** Common Vault Instructions */
 
     pub fn new_common_vault(

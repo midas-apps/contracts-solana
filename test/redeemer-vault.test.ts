@@ -11,6 +11,7 @@ import { VAULTS_PROGRAM_ID } from "./constants/vaults.constants";
 import {
   addPaymentToken,
   approveMintRequest,
+  approveRedeemRequest,
   mintInstant,
   mintMToken,
   mintPaymentToken,
@@ -20,7 +21,9 @@ import {
   newVaultCommonAccount,
   prepareCommonRedeemTest,
   redeemInstant,
+  redeemRequest,
   rejectMintRequest,
+  rejectRedeemRequest,
 } from "./testers/vaults.testers";
 import { approveMint } from "./helpers/common.helpers";
 import { getRedeemerVaultPda } from "./helpers/vaults.helpers";
@@ -43,6 +46,47 @@ describe.only("redeemer-vault", () => {
         to: getRedeemerVaultPda(fixture.redeemerCommonVault.publicKey),
       });
       await redeemInstant(fixture, {}, {});
+    });
+  });
+
+  describe("redeem_request", () => {
+    it("should redeem request", async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture);
+      await mintMToken(fixture, {});
+      await mintPaymentToken(fixture, {
+        to: getRedeemerVaultPda(fixture.redeemerCommonVault.publicKey),
+      });
+      await redeemRequest(fixture, {}, {});
+    });
+  });
+
+  describe.only("approve_redeem_request", () => {
+    it("should approve redeem request", async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture);
+      await mintMToken(fixture, {});
+      await mintPaymentToken(fixture, {
+        to: getRedeemerVaultPda(fixture.redeemerCommonVault.publicKey),
+      });
+      await redeemRequest(fixture, {}, {});
+      await approveRedeemRequest(fixture, {}, {});
+    });
+  });
+
+  describe.only("reject_redeem_request", () => {
+    it("should reject redeem request", async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture);
+      await mintMToken(fixture, {});
+      await mintPaymentToken(fixture, {
+        to: getRedeemerVaultPda(fixture.redeemerCommonVault.publicKey),
+      });
+      await redeemRequest(fixture, {}, {});
+      await rejectRedeemRequest(fixture, {}, {});
     });
   });
 });
