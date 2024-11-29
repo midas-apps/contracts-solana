@@ -5,7 +5,7 @@ use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion}
 use crate::{
     accounts, constants::{seeds, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, state::{
         AccessControlState, AccountAccessControlState, MintAuthorityState, MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState, RedeemerVaultRequestState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState
-    }, utils::{burn_mtoken, mint_token, minter::{self}, redeemer, require_and_update_allowance, require_and_update_limit, require_variation_tolerance, transfer_token, truncate, Closable}
+    }, utils::{burn_mtoken, close_account, mint_token, minter::{self}, redeemer, require_and_update_allowance, require_and_update_limit, require_variation_tolerance, transfer_token, truncate, Closable}
 };
 
 #[derive(Accounts)]
@@ -96,17 +96,8 @@ pub struct ApproveRedeemRequest<'info> {
 }
 
 impl<'info> Closable for ApproveRedeemRequest<'info> {
-    fn close(&self) -> Result<()> {
-        let dest_starting_lamports = self.user_account.lamports();
-
-        let account = self.redeem_request.to_account_info();
-        **self.user_account.lamports.borrow_mut() = dest_starting_lamports
-            .checked_add(account.lamports())
-            .unwrap();
-        **account.lamports.borrow_mut() = 0;
-
-        account.assign(&self.system_program.key());
-        account.realloc(0, false)?;
+    fn close(&mut self) -> Result<()> {
+        close_account(&mut self.redeem_request.to_account_info(), &mut self.user_account, &self.system_program)?;
 
         Ok(())
     }

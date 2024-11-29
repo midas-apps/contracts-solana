@@ -14,13 +14,78 @@ use crate::{
     errors::MidasVaultsError,
     program::MidasVaults,
     state::{
-        MintAuthorityState, MinterVaultState, PaymentMintState, RedeemerVaultState,
-        VaultCommonAccountState, VaultCommonState,
+        AccountAccessControlState, MintAuthorityState, MinterVaultState, PauseInxState,
+        PaymentMintState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState,
     },
 };
 
 pub trait Closable {
-    fn close(&self) -> Result<()>;
+    fn close(&mut self) -> Result<()>;
+}
+
+pub trait Validate<'info> {
+    /// Validates the account struct.
+    fn validate(&self) -> Result<()>;
+}
+
+pub fn close_account(
+    acc_to_close: &mut AccountInfo<'_>,
+    receiver: &mut AccountInfo<'_>,
+    system_program: &Program<System>,
+) -> Result<()> {
+    let dest_starting_lamports = receiver.lamports();
+
+    let account = acc_to_close.to_account_info();
+    **receiver.lamports.borrow_mut() = dest_starting_lamports
+        .checked_add(account.lamports())
+        .unwrap();
+    **account.lamports.borrow_mut() = 0;
+
+    account.assign(&system_program.key());
+    account.realloc(0, false)?;
+
+    Ok(())
+}
+
+pub fn validate_green_listed(
+    common: &VaultCommonState,
+    account_ac: &AccountAccessControlState,
+) -> Result<()> {
+    if !common.greenlist_enforced {
+        return Ok(());
+    }
+
+    // FIXME: error
+    require!(account_ac.green_listed, MidasVaultsError::Test);
+
+    Ok(())
+}
+
+pub fn validate_black_listed(account_ac: &AccountAccessControlState) -> Result<()> {
+    // FIXME: error
+    require!(!account_ac.black_listed, MidasVaultsError::Test);
+
+    Ok(())
+}
+
+pub fn validate_paused(common: &VaultCommonState, pause_inx: &PauseInxState) -> Result<()> {
+    // FIXME: error
+    require!(!common.paused, MidasVaultsError::Test);
+    require!(!pause_inx.paused, MidasVaultsError::Test);
+
+    Ok(())
+}
+
+pub fn validate_common(
+    common: &VaultCommonState,
+    account_ac: &AccountAccessControlState,
+    pause_inx: &PauseInxState,
+) -> Result<()> {
+    validate_green_listed(common, account_ac)?;
+    validate_black_listed(account_ac)?;
+    validate_paused(common, pause_inx)?;
+
+    Ok(())
 }
 
 pub fn require_and_update_min_amount(

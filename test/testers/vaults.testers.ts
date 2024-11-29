@@ -157,9 +157,6 @@ export const mintInstant = async (
 
   const stateBefore = await fetchState();
 
-  console.log({
-    balance: await getBalance(fixture.connection, from.publicKey, paymentMint),
-  });
   const tx = await vaultsProgram.methods
     .mintInstant(toBN(amountToken), toBN(minReceiveAmount), referrerId)
     .accountsPartial({
@@ -305,9 +302,6 @@ export const mintRequest = async (
 
   const stateBefore = await fetchState();
 
-  console.log({
-    balance: await getBalance(fixture.connection, from.publicKey, paymentMint),
-  });
   const tx = await vaultsProgram.methods
     .mintRequest(toBN(amountToken), referrerId)
     .accountsPartial({
@@ -623,9 +617,6 @@ export const redeemInstant = async (
 
   const stateBefore = await fetchState();
 
-  console.log({
-    balance: await getBalance(fixture.connection, from.publicKey, paymentMint),
-  });
   const tx = await vaultsProgram.methods
     .redeemInstant(toBN(amountMToken), toBN(minReceiveAmount))
     .accountsPartial({
@@ -767,9 +758,6 @@ export const redeemRequest = async (
 
   const stateBefore = await fetchState();
 
-  console.log({
-    balance: await getBalance(fixture.connection, from.publicKey, paymentMint),
-  });
   const tx = await vaultsProgram.methods
     .redeemRequest(toBN(amountMToken))
     .accountsPartial({

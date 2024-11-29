@@ -5,7 +5,7 @@ use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion}
 use crate::{
     constants::{seeds, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, state::{
         AccessControlState, AccountAccessControlState, MintAuthorityState, MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState, RedeemerVaultRequestState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState
-    }, utils::{get_token_rate, mint_token, minter::{self}, redeemer, require_and_update_limit, transfer_token}
+    }, utils::{get_token_rate, mint_token, minter::{self}, redeemer, require_and_update_limit, transfer_token, validate_common, Validate}
 };
 
 #[derive(Accounts)]
@@ -47,7 +47,6 @@ pub struct RedeemRequest<'info> {
     pub ac: Account<'info, AccessControlState>,
 
     #[account(
-        constraint = !account_ac.black_listed, // FIXME: error
         seeds = [AccountAccessControlState::SEED, ac.key().as_ref(), signer.key().as_ref()],
         bump
     )]
@@ -127,6 +126,13 @@ pub struct RedeemRequest<'info> {
     pub m_mint_token_program: Interface<'info, TokenInterface>,
     pub payment_mint_token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
+}
+
+impl<'info> Validate<'info> for RedeemRequest<'info> {
+    fn validate(&self) -> Result<()> {
+        validate_common(&self.vault_common, &self.account_ac, &self.pause_inx_state)?;
+        Ok(())
+    }
 }
 
 pub fn handle(

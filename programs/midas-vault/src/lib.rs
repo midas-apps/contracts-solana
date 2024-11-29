@@ -6,6 +6,7 @@ pub mod events;
 pub mod instructions;
 pub mod state;
 pub mod utils;
+use crate::utils::Validate;
 use instructions::*;
 
 declare_id!("6eFgYZCZZFTe61T4YxWsiHHAunCLTh9V7TAjj8DxuZwm");
@@ -44,6 +45,7 @@ pub mod midas_vaults {
         minter_vault::update_minter_vault::handle(ctx, new_first_deposit_min_m_tokens)
     }
 
+    #[access_control(ctx.accounts.validate())]
     pub fn mint_instant(
         ctx: Context<MintInstant>,
         amount_token: u64,
@@ -53,6 +55,7 @@ pub mod midas_vaults {
         minter_vault::mint_instant::handle(ctx, amount_token, min_receive_amount, referrer_id)
     }
 
+    #[access_control(ctx.accounts.validate())]
     pub fn mint_request(
         ctx: Context<MintRequest>,
         amount_token: u64,
@@ -108,6 +111,7 @@ pub mod midas_vaults {
         )
     }
 
+    #[access_control(ctx.accounts.validate())]
     pub fn redeem_instant(
         ctx: Context<RedeemInstant>,
         amount_m_token: u64,
@@ -116,6 +120,7 @@ pub mod midas_vaults {
         redeemer_vault::redeem_instant::handle(ctx, amount_m_token, min_receive_amount)
     }
 
+    #[access_control(ctx.accounts.validate())]
     pub fn redeem_request(ctx: Context<RedeemRequest>, amount_m_token: u64) -> Result<()> {
         redeemer_vault::redeem_request::handle(ctx, amount_m_token)
     }

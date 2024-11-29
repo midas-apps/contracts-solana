@@ -5,7 +5,7 @@ use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion}
 use crate::{
     constants::{seeds, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, state::{
         AccessControlState, AccountAccessControlState, MintAuthorityState, MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState, VaultCommonState
-    }, utils::{mint_token, minter::{self}, require_and_update_limit, require_variation_tolerance, transfer_token}
+    }, utils::{close_account, mint_token, minter::{self}, require_and_update_limit, require_variation_tolerance, transfer_token, Closable}
 };
 
 #[derive(Accounts)]
@@ -67,18 +67,10 @@ pub struct ApproveMintRequest<'info> {
     pub system_program: Program<'info, System>,
 }
 
-impl<'info> ApproveMintRequest<'info> {
-    pub fn close(&self) -> Result<()> {
-        let dest_starting_lamports = self.user_account.lamports();
+impl<'info> Closable for ApproveMintRequest<'info> {
+    fn close(&mut self) -> Result<()> {
 
-        let account = self.mint_request.to_account_info();
-        **self.user_account.lamports.borrow_mut() = dest_starting_lamports
-            .checked_add(account.lamports())
-            .unwrap();
-        **account.lamports.borrow_mut() = 0;
-
-        account.assign(&self.system_program.key());
-        account.realloc(0, false)?;
+        close_account(&mut self.mint_request.to_account_info(), &mut self.user_account, &self.system_program)?;
 
         Ok(())
     }

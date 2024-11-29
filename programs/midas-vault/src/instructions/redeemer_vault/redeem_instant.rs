@@ -5,7 +5,7 @@ use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion}
 use crate::{
     constants::seeds, errors::MidasVaultsError, state::{
         AccessControlState, AccountAccessControlState, MintAuthorityState, MinterVaultState, PauseInxState, PaymentMintState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState
-    }, utils::{burn_mtoken, mint_token, minter::{self}, redeemer, require_and_update_allowance, require_and_update_limit, transfer_token, truncate}
+    }, utils::{burn_mtoken, mint_token, minter::{self}, redeemer, require_and_update_allowance, require_and_update_limit, transfer_token, truncate, validate_common, Validate}
 };
 
 #[derive(Accounts)]
@@ -38,7 +38,6 @@ pub struct RedeemInstant<'info> {
     pub ac: Account<'info, AccessControlState>,
 
     #[account(
-        constraint = !account_ac.black_listed, // FIXME: error
         seeds = [AccountAccessControlState::SEED, ac.key().as_ref(), signer.key().as_ref()],
         bump
     )]
@@ -128,6 +127,13 @@ pub struct RedeemInstant<'info> {
     pub m_mint_token_program: Interface<'info, TokenInterface>,
 
     pub system_program: Program<'info, System>,
+}
+
+impl<'info> Validate<'info> for RedeemInstant<'info> {
+    fn validate(&self) -> Result<()> {
+        validate_common(&self.vault_common, &self.account_ac, &self.pause_inx_state)?;
+        Ok(())
+    }
 }
 
 pub fn handle(
