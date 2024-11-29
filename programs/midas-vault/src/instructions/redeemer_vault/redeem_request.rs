@@ -42,7 +42,7 @@ pub struct RedeemRequest<'info> {
     pub redeem_request: Account<'info, RedeemerVaultRequestState>,
 
     #[account(
-        constraint = vault_common.ac.eq(&ac.key())
+        address = vault_common.ac
     )]
     pub ac: Account<'info, AccessControlState>,
 

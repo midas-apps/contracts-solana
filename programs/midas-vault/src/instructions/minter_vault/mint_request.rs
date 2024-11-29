@@ -14,7 +14,7 @@ pub struct MintRequest<'info> {
     pub signer: Signer<'info>,
 
     #[account(
-        constraint = minter_vault.common_vault.eq(&vault_common.key())
+        address = minter_vault.common_vault
     )]
     pub vault_common: Account<'info, VaultCommonState>,
 
@@ -42,7 +42,7 @@ pub struct MintRequest<'info> {
     pub mint_request: Account<'info, MintVaultRequestState>,
 
     #[account(
-        constraint = vault_common.ac.eq(&ac.key())
+        address = vault_common.ac
     )]
     pub ac: Account<'info, AccessControlState>,
 
