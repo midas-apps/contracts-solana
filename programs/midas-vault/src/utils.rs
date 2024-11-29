@@ -1,5 +1,15 @@
 use anchor_lang::{prelude::*, solana_program::clock::SECONDS_PER_DAY};
 
+use crate::{
+    constants::{FIAT_MINT, MAX_UINT128, ONE, ONE_HUNDRED_PERCENT, STABLECOIN_RATE},
+    errors::MidasVaultsError,
+    program::MidasVaults,
+    state::{
+        AccountAccessControlState, MintAuthorityState, MinterVaultState, PauseInxState,
+        PaymentMintState, RedeemerVaultRequestState, RedeemerVaultState, VaultCommonAccountState,
+        VaultCommonState,
+    },
+};
 use anchor_spl::{
     token_2022::{burn, mint_to, transfer_checked, Burn, MintTo, TransferChecked},
     token_interface::{Mint, TokenAccount, TokenInterface},
@@ -7,16 +17,6 @@ use anchor_spl::{
 use data_feed::{
     state::FeedState,
     utils::{decimals_conversion, get_price_in_base_9},
-};
-
-use crate::{
-    constants::{MAX_UINT128, ONE_HUNDRED_PERCENT, STABLECOIN_RATE},
-    errors::MidasVaultsError,
-    program::MidasVaults,
-    state::{
-        AccountAccessControlState, MintAuthorityState, MinterVaultState, PauseInxState,
-        PaymentMintState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState,
-    },
 };
 
 pub enum VaultActionId {
@@ -520,10 +520,6 @@ pub mod common_vault {
 }
 
 pub mod redeemer {
-    use crate::{
-        constants::{FIAT_MINT, ONE},
-        state::{RedeemerVaultRequestState, RedeemerVaultState},
-    };
 
     use super::*;
 
@@ -619,9 +615,10 @@ pub mod redeemer {
         m_mint_vault_ata: &Box<InterfaceAccount<'info, TokenAccount>>,
         payment_mint_state: &mut PaymentMintState,
 
+        request_redeemer: Option<&AccountInfo<'info>>,
         payment_mint: Option<&Box<InterfaceAccount<'info, Mint>>>,
         payment_mint_token_program: Option<&Interface<'info, TokenInterface>>,
-        payment_mint_vault_ata: Option<&Box<InterfaceAccount<'info, TokenAccount>>>,
+        payment_mint_redeemer_ata: Option<&Box<InterfaceAccount<'info, TokenAccount>>>,
         payment_mint_user_ata: Option<&Box<InterfaceAccount<'info, TokenAccount>>>,
 
         request_id: u64,
@@ -682,8 +679,8 @@ pub mod redeemer {
                 RedeemerVaultState::SEED,
                 payment_mint_token_program.unwrap(),
                 payment_mint.unwrap(),
-                &redeemer_vault.to_account_info(),
-                payment_mint_vault_ata.unwrap(),
+                request_redeemer.unwrap(),
+                payment_mint_redeemer_ata.unwrap(),
                 payment_mint_user_ata.unwrap(),
                 amount_token_wo_fee,
             )?;

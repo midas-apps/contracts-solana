@@ -39,6 +39,7 @@ import {
 import { MAX_U128 } from "../constants/common.constants";
 import { newMintAuthority } from "../testers/vaults.testers";
 import { VaultActionIds } from "../constants/vaults.constants";
+import { program } from "@coral-xyz/anchor/dist/cjs/native/system";
 
 export const vaultsFixture = async () => {
   const dfFixture = await dataFeedFixture();
@@ -99,45 +100,37 @@ export const vaultsFixture = async () => {
   );
 
   const toCreateAtas = [
-    {
+    ...[
+      authority.publicKey,
+      tokensReceiver.publicKey,
+      feeReceiver.publicKey,
+      requestRedeemer.publicKey,
+    ].map((a) => ({
       mint: usdcMint,
-      owner: authority.publicKey,
-    },
-    {
+      owner: a,
+      program: undefined,
+    })),
+
+    ...[
+      authority.publicKey,
+      tokensReceiver.publicKey,
+      feeReceiver.publicKey,
+      requestRedeemer.publicKey,
+    ].map((a) => ({
       mint: usdtMint,
-      owner: authority.publicKey,
-    },
-    {
+      owner: a,
+      program: undefined,
+    })),
+
+    ...[
+      authority.publicKey,
+      getRedeemerVaultPda(redeemerCommonVault.publicKey),
+      feeReceiver.publicKey,
+    ].map((a) => ({
       mint: mTBillMint.publicKey,
-      owner: authority.publicKey,
+      owner: a,
       program: TOKEN_2022_PROGRAM_ID,
-    },
-    {
-      mint: usdcMint,
-      owner: tokensReceiver.publicKey,
-    },
-    {
-      mint: usdtMint,
-      owner: tokensReceiver.publicKey,
-    },
-    {
-      mint: usdcMint,
-      owner: feeReceiver.publicKey,
-    },
-    {
-      mint: usdtMint,
-      owner: feeReceiver.publicKey,
-    },
-    {
-      mint: mTBillMint.publicKey,
-      owner: feeReceiver.publicKey,
-      program: TOKEN_2022_PROGRAM_ID,
-    },
-    {
-      mint: mTBillMint.publicKey,
-      owner: getRedeemerVaultPda(redeemerCommonVault.publicKey),
-      program: TOKEN_2022_PROGRAM_ID,
-    },
+    })),
   ];
 
   for (let createAta of toCreateAtas) {

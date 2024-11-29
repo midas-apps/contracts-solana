@@ -882,6 +882,7 @@ export const approveRedeemRequest = async (
       mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
       paymentMint: stateBefore.requestState.paymentMint,
       paymentMintTokenProgram: TOKEN_PROGRAM_ID,
+      requestRedeemer: stateBefore.redeemerVaultState.requestRedeemer,
     })
     .transaction();
 
@@ -1324,19 +1325,54 @@ export const mintPaymentToken = async (
   );
 };
 
+export const mintPaymentTokenAndApprove = async (
+  fixture: CommonVaultsParams,
+  {
+    mint,
+    to,
+    amountBase9,
+    approveTo,
+  }: {
+    mint?: PaymentMint;
+    approveTo?: PublicKey;
+    to?: PublicKey;
+    amountBase9?: bigint;
+  }
+) => {
+  mint ??= fixture.paymentMints.usdc;
+  to ??= fixture.authority.publicKey;
+  amountBase9 ??= parseUnits("10");
+  approveTo ??= getRedeemerVaultPda(fixture.redeemerCommonVault.publicKey);
+
+  const amount = parseUnits(formatUnits(amountBase9).toString(), mint.decimals);
+
+  // TODO: pass optional from
+  const from = fixture.authority;
+
+  const { ata } = await getOrCreateAta(
+    fixture.context,
+    fixture.provider.connection,
+    mint.mint,
+    to,
+    from
+  );
+
+  await processTransaction(
+    fixture.context,
+
+    new Transaction().add(
+      createMintToInstruction(mint.mint, ata, from.publicKey, amount),
+      approveMintInstruction(mint.mint, from, approveTo, amount)
+    ),
+    [from]
+  );
+};
+
 export const prepareCommonRedeemTest = async (fixture: CommonVaultsParams) => {
   await addPaymentToken(
     fixture,
     {},
     { commonVault: fixture.redeemerCommonVault.publicKey }
-  );
-
-  await getOrCreateAta(
-    fixture.context,
-    fixture.provider.connection,
-    fixture.paymentMints.usdc.mint,
-    getRedeemerVaultPda(fixture.redeemerCommonVault.publicKey),
-    fixture.authority
   );
 
   await newVaultCommonAccount(

@@ -21,6 +21,13 @@ pub struct ApproveRedeemRequest<'info> {
     )]
     pub user_account: AccountInfo<'info>,
 
+    /// CHECK:
+    #[account(
+        mut, 
+        address = redeemer_vault.request_redeemer
+    )]
+    pub request_redeemer: AccountInfo<'info>,
+
     #[account(
         mut,
         address = redeemer_vault.common_vault,
@@ -69,9 +76,9 @@ pub struct ApproveRedeemRequest<'info> {
         mut,
         associated_token::token_program = payment_mint_token_program,
         associated_token::mint = payment_mint,
-        associated_token::authority = redeemer_vault,
+        associated_token::authority = request_redeemer,
     )]
-    pub payment_mint_vault_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub payment_mint_redeemer_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         mut,
@@ -117,9 +124,10 @@ pub fn handle(
         &ctx.accounts.m_mint, 
         &ctx.accounts.m_mint_vault_ata, 
         &mut ctx.accounts.payment_mint_state, 
+        Some(&ctx.accounts.request_redeemer),
         Some(&ctx.accounts.payment_mint),
         Some (&ctx.accounts.payment_mint_token_program), 
-        Some(&ctx.accounts.payment_mint_vault_ata), 
+        Some(&ctx.accounts.payment_mint_redeemer_ata), 
         Some(&ctx.accounts.payment_mint_user_ata), 
         request_id,
         new_m_token_rate.into(), 

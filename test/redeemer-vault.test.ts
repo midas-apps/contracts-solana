@@ -15,6 +15,7 @@ import {
   mintInstant,
   mintMToken,
   mintPaymentToken,
+  mintPaymentTokenAndApprove,
   mintRequest,
   newAcAccount,
   newMintAuthority,
@@ -82,8 +83,8 @@ describe.only("redeemer-vault", () => {
 
       await prepareCommonRedeemTest(fixture);
       await mintMToken(fixture, {});
-      await mintPaymentToken(fixture, {
-        to: getRedeemerVaultPda(fixture.redeemerCommonVault.publicKey),
+      await mintPaymentTokenAndApprove(fixture, {
+        to: fixture.requestRedeemer.publicKey,
       });
       await redeemRequest(fixture, {}, {});
       await rejectRedeemRequest(fixture, {}, {});
