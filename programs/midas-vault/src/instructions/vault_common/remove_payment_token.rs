@@ -1,6 +1,9 @@
 use anchor_lang::prelude::*;
 
-use crate::state::{PaymentMintState, VaultCommonState};
+use crate::{
+    errors::MidasVaultsError,
+    state::{PaymentMintState, VaultCommonState},
+};
 
 use anchor_spl::token_interface::{Mint, TokenInterface};
 
@@ -10,7 +13,7 @@ pub struct RemovePaymentToken<'info> {
     pub authority: Signer<'info>,
 
     #[account(
-        has_one = authority
+        has_one = authority @ MidasVaultsError::NotAuthority
     )]
     pub vault_common_state: Account<'info, VaultCommonState>,
 

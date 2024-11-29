@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 
 use crate::{
+    errors::DataFeedError,
     events::SetManualFeedPriceEvent,
     state::{FeedState, ManualFeedState},
 };
@@ -18,7 +19,7 @@ pub struct SetManualPrice<'info> {
     pub manual_feed: Account<'info, ManualFeedState>,
 
     #[account(
-        has_one = authority
+        has_one = authority @ DataFeedError::NotAuthority
     )]
     pub base_feed: Account<'info, FeedState>,
 }

@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::state::VaultCommonState;
+use crate::{errors::MidasVaultsError, state::VaultCommonState};
 
 #[derive(Accounts)]
 pub struct UpdateVaultCommon<'info> {
@@ -8,7 +8,7 @@ pub struct UpdateVaultCommon<'info> {
     pub authority: Signer<'info>,
 
     #[account(
-        has_one = authority
+        has_one = authority @ MidasVaultsError::NotAuthority
     )]
     pub vault_common: Account<'info, VaultCommonState>,
 

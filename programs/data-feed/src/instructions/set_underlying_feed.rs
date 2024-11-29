@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{events::SetUnderlyingFeedEvent, state::FeedState};
+use crate::{errors::DataFeedError, events::SetUnderlyingFeedEvent, state::FeedState};
 
 #[derive(Accounts)]
 pub struct SetUnderlyingFeed<'info> {
@@ -8,7 +8,7 @@ pub struct SetUnderlyingFeed<'info> {
     pub authority: Signer<'info>,
 
     #[account(
-        has_one = authority
+        has_one = authority @ DataFeedError::NotAuthority
     )]
     pub feed: Account<'info, FeedState>,
 }

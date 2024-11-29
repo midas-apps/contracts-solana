@@ -1,7 +1,10 @@
 use anchor_lang::prelude::*;
 use data_feed::{program::DataFeed, state::FeedState};
 
-use crate::state::{PaymentMintState, VaultCommonState};
+use crate::{
+    errors::MidasVaultsError,
+    state::{PaymentMintState, VaultCommonState},
+};
 
 use anchor_spl::token_interface::{Mint, TokenInterface};
 
@@ -11,7 +14,7 @@ pub struct UpdatePaymentToken<'info> {
     pub authority: Signer<'info>,
 
     #[account(
-        has_one = authority
+        has_one = authority @ MidasVaultsError::NotAuthority
     )]
     pub vault_common_state: Account<'info, VaultCommonState>,
 

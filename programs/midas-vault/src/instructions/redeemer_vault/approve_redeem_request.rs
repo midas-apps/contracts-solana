@@ -24,7 +24,7 @@ pub struct ApproveRedeemRequest<'info> {
     #[account(
         mut,
         address = redeemer_vault.common_vault,
-        has_one = authority
+        has_one = authority @ MidasVaultsError::NotAuthority
     )]
     pub vault_common: Account<'info, VaultCommonState>,
 

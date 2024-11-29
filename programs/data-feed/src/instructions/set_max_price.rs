@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{events::SetMaxPriceEvent, state::FeedState};
+use crate::{errors::DataFeedError, events::SetMaxPriceEvent, state::FeedState};
 
 #[derive(Accounts)]
 pub struct SetMaxPrice<'info> {
@@ -8,7 +8,7 @@ pub struct SetMaxPrice<'info> {
     pub authority: Signer<'info>,
 
     #[account(
-        has_one = authority
+        has_one = authority @ DataFeedError::NotAuthority
     )]
     pub feed: Account<'info, FeedState>,
 }

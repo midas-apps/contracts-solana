@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{events::SetMinPriceEvent, state::FeedState};
+use crate::{errors::DataFeedError, events::SetMinPriceEvent, state::FeedState};
 
 #[derive(Accounts)]
 pub struct SetMinPrice<'info> {
@@ -8,7 +8,7 @@ pub struct SetMinPrice<'info> {
     pub authority: Signer<'info>,
 
     #[account(
-        has_one = authority
+        has_one = authority @ DataFeedError::NotAuthority
     )]
     pub feed: Account<'info, FeedState>,
 }

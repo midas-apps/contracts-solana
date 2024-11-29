@@ -21,8 +21,8 @@ pub struct RejectMintRequest<'info> {
     pub user_account: AccountInfo<'info>,
 
     #[account(
-        constraint = minter_vault.common_vault.eq(&vault_common.key()),
-        has_one = authority
+        address = minter_vault.common_vault,
+        has_one = authority @ MidasVaultsError::NotAuthority
     )]
     pub vault_common: Account<'info, VaultCommonState>,
 

@@ -1,6 +1,9 @@
 use anchor_lang::prelude::*;
 
-use crate::state::{AccessControlState, AccountAccessControlState};
+use crate::{
+    errors::MidasVaultsError,
+    state::{AccessControlState, AccountAccessControlState},
+};
 
 #[derive(Accounts)]
 pub struct UpdateAccountAccessControl<'info> {
@@ -12,7 +15,7 @@ pub struct UpdateAccountAccessControl<'info> {
     pub account: AccountInfo<'info>,
 
     #[account(
-        has_one = authority
+        has_one = authority @ MidasVaultsError::NotAuthority
     )]
     pub ac: Account<'info, AccessControlState>,
 

@@ -1,6 +1,9 @@
 use anchor_lang::prelude::*;
 
-use crate::state::{PauseInxState, VaultCommonState};
+use crate::{
+    errors::MidasVaultsError,
+    state::{PauseInxState, VaultCommonState},
+};
 
 #[derive(Accounts)]
 #[instruction(fn_id: u8)]
@@ -9,7 +12,7 @@ pub struct NewPauseInx<'info> {
     pub authority: Signer<'info>,
 
     #[account(
-        has_one = authority
+        has_one = authority @ MidasVaultsError::NotAuthority
     )]
     pub vault_common_state: Account<'info, VaultCommonState>,
 

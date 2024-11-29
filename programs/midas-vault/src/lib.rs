@@ -243,13 +243,6 @@ pub mod midas_vaults {
         ac::update_account_ac::handle(ctx, green_listed, black_listed)
     }
 
-    pub fn set_greenlist_enforced(
-        ctx: Context<SetGreenListEnforced>,
-        new_value: bool,
-    ) -> Result<()> {
-        ac::set_greenlist_enforced::handle(ctx, new_value)
-    }
-
     /** Pause Instructions */
 
     pub fn new_pause_inx(ctx: Context<NewPauseInx>, fn_id: u8) -> Result<()> {

@@ -4,5 +4,4 @@ use anchor_lang::prelude::*;
 #[derive(InitSpace)]
 pub struct AccessControlState {
     pub authority: Pubkey,
-    pub enforced: bool,
 }

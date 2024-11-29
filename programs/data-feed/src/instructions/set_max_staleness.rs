@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{events::SetMaxStalenessEvent, state::FeedState};
+use crate::{errors::DataFeedError, events::SetMaxStalenessEvent, state::FeedState};
 
 #[derive(Accounts)]
 pub struct SetMaxStaleness<'info> {
@@ -8,7 +8,7 @@ pub struct SetMaxStaleness<'info> {
     pub authority: Signer<'info>,
 
     #[account(
-        has_one = authority
+        has_one = authority @ DataFeedError::NotAuthority
     )]
     pub feed: Account<'info, FeedState>,
 }

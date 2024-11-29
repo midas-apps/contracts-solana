@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     constants::seeds,
+    errors::MidasVaultsError,
     state::{MintAuthorityState, MinterVaultState, VaultCommonState},
 };
 
@@ -11,7 +12,7 @@ pub struct NewMinterVault<'info> {
     pub authority: Signer<'info>,
 
     #[account(
-        has_one = authority
+        has_one = authority @ MidasVaultsError::NotAuthority
     )]
     pub vault_common: Account<'info, VaultCommonState>,
 
@@ -27,7 +28,7 @@ pub struct NewMinterVault<'info> {
     #[account(
         seeds = [MintAuthorityState::SEED, mint_authority.base_seed.as_ref()],
         bump,
-        has_one = authority
+        has_one = authority @ MidasVaultsError::NotAuthority
     )]
     pub mint_authority: Account<'info, MintAuthorityState>,
 

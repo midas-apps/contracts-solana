@@ -1,6 +1,9 @@
 use anchor_lang::prelude::*;
 
-use crate::state::{RedeemerVaultState, VaultCommonState};
+use crate::{
+    errors::MidasVaultsError,
+    state::{RedeemerVaultState, VaultCommonState},
+};
 
 #[derive(Accounts)]
 pub struct NewRedeemerVault<'info> {
@@ -8,7 +11,7 @@ pub struct NewRedeemerVault<'info> {
     pub authority: Signer<'info>,
 
     #[account(
-        has_one = authority
+        has_one = authority @ MidasVaultsError::NotAuthority
     )]
     pub vault_common: Account<'info, VaultCommonState>,
 

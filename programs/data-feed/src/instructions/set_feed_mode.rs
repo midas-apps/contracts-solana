@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 
 use crate::{
+    errors::DataFeedError,
     events::SetFeedModeEvent,
     state::{FeedMode, FeedState},
 };
@@ -11,7 +12,7 @@ pub struct SetFeedMode<'info> {
     pub authority: Signer<'info>,
 
     #[account(
-        has_one = authority
+        has_one = authority @ DataFeedError::NotAuthority
     )]
     pub base_feed: Account<'info, FeedState>,
 }

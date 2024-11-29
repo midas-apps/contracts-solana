@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint as MintState, TokenAccount, TokenInterface};
 
-use crate::{state::MintAuthorityState, utils::mint_token};
+use crate::{errors::MidasVaultsError, state::MintAuthorityState, utils::mint_token};
 
 #[derive(Accounts)]
 pub struct Mint<'info> {
@@ -15,7 +15,7 @@ pub struct Mint<'info> {
     #[account(
         seeds = [MintAuthorityState::SEED, mint_authority.base_seed.as_ref()],
         bump,
-        has_one = authority
+        has_one = authority @ MidasVaultsError::NotAuthority
     )]
     pub mint_authority: Account<'info, MintAuthorityState>,
 

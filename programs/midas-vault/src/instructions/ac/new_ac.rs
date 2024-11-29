@@ -21,7 +21,6 @@ pub fn handle(ctx: Context<NewAccessControl>, authority: Pubkey) -> Result<()> {
     let ac = &mut ctx.accounts.ac;
 
     ac.authority = authority;
-    ac.enforced = false;
 
     // TODO: emit event
     Ok(())
