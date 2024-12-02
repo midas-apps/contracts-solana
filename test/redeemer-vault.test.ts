@@ -63,7 +63,7 @@ describe.only("redeemer-vault", () => {
     });
   });
 
-  describe.only("approve_redeem_request", () => {
+  describe("approve_redeem_request", () => {
     it("should approve redeem request", async () => {
       const fixture = await vaultsFixture();
 
@@ -77,7 +77,7 @@ describe.only("redeemer-vault", () => {
     });
   });
 
-  describe.only("reject_redeem_request", () => {
+  describe("reject_redeem_request", () => {
     it("should reject redeem request", async () => {
       const fixture = await vaultsFixture();
 

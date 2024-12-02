@@ -5,14 +5,19 @@ export const DATA_FEED_PROGRAM_ID = new PublicKey(
 );
 
 export const DATA_FEED_SEEDS = {
-  FEED_STATE_SEED: "feed_state",
   MANUAL_FEED_STATE_SEED: "manual_feed_state",
 };
 
 export const SWITCHBOARD_FEEDS = {};
 
-export enum DataFeedErrors {
-  InvalidUnderlyingFeedProvided = "Invalid underlying feed provided",
-  NotAuthority = "Not an authority",
-  PriceIsStale = "Data feed price is stale",
+export enum DataFeedMode {}
+
+export enum DataFeedError {
+  InvalidUnderlyingFeedProvided = 6000,
+  NotAuthority,
+  PriceIsStale,
+  InvalidStaleness,
+  InvalidMinPrice,
+  InvalidMaxPrice,
+  InvalidUnderlyingFeed,
 }

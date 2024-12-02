@@ -46,6 +46,7 @@ export const dataFeedFixture = async () => {
         .newFeed(
           authority.publicKey,
           getManualFeedStatePda(feed.publicKey),
+          DataFeedMode.manual,
           toBN(parseUnits("0.1")),
           toBN(parseUnits("10")),
           3600
@@ -59,13 +60,6 @@ export const dataFeedFixture = async () => {
         .newManualFeed(toBN(parseUnits("1")), 9)
         .accountsPartial({
           baseFeed: feed.publicKey,
-          authority: authority.publicKey,
-        })
-        .instruction(),
-      await dataFeedProgram.methods
-        .updateFeed(null, null, DataFeedMode.manual, null, null, null)
-        .accountsPartial({
-          feed: feed.publicKey,
           authority: authority.publicKey,
         })
         .instruction()

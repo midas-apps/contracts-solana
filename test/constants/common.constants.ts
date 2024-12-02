@@ -9,4 +9,4 @@ export enum ANCHOR_ERRORS {
 export const DAY = 86400;
 
 export const MAX_U128 = 340_282_366_920_938_463_463_374_607_431_768_211_455n;
-export const ZERO_ADDRESS = new PublicKey(0);
+export const DEFAULT_PUBKEY = new PublicKey(0);

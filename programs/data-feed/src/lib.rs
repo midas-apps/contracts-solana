@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 
+pub mod constants;
 pub mod errors;
 pub mod events;
 pub mod instructions;
@@ -20,6 +21,7 @@ pub mod data_feed {
         ctx: Context<NewFeed>,
         authority: Pubkey,
         underlying_feed: Pubkey,
+        mode: state::FeedMode,
         min_price: u64,
         max_price: u64,
         max_staleness: u32,
@@ -28,6 +30,7 @@ pub mod data_feed {
             ctx,
             authority,
             underlying_feed,
+            mode,
             min_price,
             max_price,
             max_staleness,

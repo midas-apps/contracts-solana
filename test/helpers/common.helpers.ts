@@ -24,6 +24,7 @@ import {
 } from "@solana/spl-token";
 import {
   AddedAccount,
+  BanksTransactionMeta,
   Clock,
   ProgramTestContext,
   startAnchor,
@@ -34,16 +35,14 @@ import {
   parseUnits as parseUnitsViem,
   formatUnits as formatUnitsViem,
 } from "viem";
-import { ZERO_ADDRESS } from "../constants/common.constants";
+import { DEFAULT_PUBKEY } from "../constants/common.constants";
 import { DataFeed } from "@/target/types/data_feed";
 import { MidasVaults } from "@/target/types/midas_vaults";
 // import { ZERO_ADDRESS } from "test/constants/common.constants";
 
 export type OptionalCommonParams = {
   from?: Keypair;
-  revertedWith?: {
-    message?: string;
-  };
+  revertedWith?: string | number;
 };
 
 export type DataFeedProgram = Program<DataFeed>;
@@ -111,27 +110,6 @@ export const findPDA = <TProgram extends Idl | unknown>(
   );
 };
 
-export const expectReverted = async (
-  promise: Promise<unknown>,
-  opt?: OptionalCommonParams
-) => {
-  try {
-    await promise;
-    throw new Error("Expected to be reverted but not reverted");
-  } catch (err) {
-    if (
-      opt?.revertedWith?.message &&
-      !err.toString().includes(opt.revertedWith.message)
-    ) {
-      throw new Error(
-        `Expected tx to revert with message ${
-          opt.revertedWith.message
-        }. Err: ${err.toString()}`
-      );
-    }
-  }
-};
-
 export const expectTxReverted = async (
   ctx: ProgramTestContext,
   transaction: Transaction,
@@ -142,14 +120,14 @@ export const expectTxReverted = async (
     await processTransaction(ctx, transaction, signers);
     throw new Error("Expected to be reverted but not reverted");
   } catch (err) {
-    if (
-      opt?.revertedWith?.message &&
-      !err.toString().includes(opt.revertedWith.message)
-    ) {
+    const revertMessage =
+      opt?.revertedWith && typeof opt.revertedWith === "number"
+        ? numToHex(opt.revertedWith as number)
+        : opt.revertedWith?.toString();
+
+    if (revertMessage && !err.toString().includes(revertMessage)) {
       throw new Error(
-        `Expected tx to revert with message ${
-          opt.revertedWith.message
-        }. Err: ${err.toString()}`
+        `Expected tx to revert with message ${revertMessage}. Err: ${err.toString()}`
       );
     }
   }
@@ -166,13 +144,68 @@ export const expectNotReverted = async (promise: Promise<unknown>) => {
   }
 };
 
+export const expectEvents = async <TProgram extends Idl>(
+  txResult: BanksTransactionMeta | string[],
+  program: Program<TProgram>,
+  expectedEvents: { name: string; data: Object }[]
+) => {
+  const parser = new anchor.EventParser(
+    program.programId,
+    new anchor.BorshCoder(program.idl)
+  );
+
+  const logs = Array.isArray(txResult) ? txResult : txResult.logMessages;
+
+  const events = parser.parseLogs(logs);
+
+  const format = (obj: Object) => {
+    const formattedData = Object.entries(obj).map(([key, value]) => {
+      if (value instanceof PublicKey) {
+        return [key, value.toBase58()];
+      }
+
+      if (value instanceof BN) {
+        return [key, BigInt(value.toString())];
+      }
+
+      if (typeof value === "object") {
+        return [key, format(value)];
+      }
+
+      return [key, value];
+    });
+
+    return Object.fromEntries(formattedData);
+  };
+
+  for (let expectedEv of expectedEvents) {
+    const event = Array.from(events).find((v) => v.name === expectedEv.name);
+
+    if (!event)
+      throw new Error(`Expected to emit event ${expectedEv.name} but it wasnt`);
+
+    const expectedEvDataObj = format(expectedEv.data);
+    const evDataObj = format(event.data);
+
+    Object.entries(expectedEvDataObj).forEach(([key, value]) => {
+      expect(evDataObj).toHaveProperty(key);
+
+      if (typeof value === "object") {
+        expect(evDataObj[key]).toMatchObject(value);
+      } else {
+        expect(evDataObj[key]).toBe(value);
+      }
+    });
+  }
+};
+
 export const expectTxNotReverted = async (
   ctx: ProgramTestContext,
   transaction: Transaction,
   signers: (Keypair | Signer)[]
 ) => {
   try {
-    await processTransaction(ctx, transaction, signers);
+    return await processTransaction(ctx, transaction, signers);
   } catch (err) {
     expect(
       true,
@@ -197,7 +230,7 @@ export const processTransaction = async (
   transaction.recentBlockhash = blockHash;
   transaction.sign(...signers);
 
-  await client.processTransaction(transaction);
+  return await client.processTransaction(transaction);
 };
 
 export const parseUnits = (n: string, decimals = 9) => {
@@ -366,10 +399,10 @@ export const getTime = async (ctx: ProgramTestContext) => {
 export const getBalance = async (
   connection: Connection,
   owner: PublicKey,
-  mint: PublicKey = ZERO_ADDRESS,
+  mint: PublicKey = DEFAULT_PUBKEY,
   programId = TOKEN_PROGRAM_ID
 ) => {
-  if (mint.equals(ZERO_ADDRESS)) {
+  if (mint.equals(DEFAULT_PUBKEY)) {
     return connection.getBalance(owner).then((v) => BigInt(v));
   } else {
     const ata = getAssociatedTokenAddressSync(mint, owner, true, programId);

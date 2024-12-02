@@ -4,6 +4,7 @@ use crate::{
     errors::DataFeedError,
     events::ManualFeedCreatedEvent,
     state::{FeedState, ManualFeedState},
+    utils::update_manual_feed,
 };
 
 #[derive(Accounts)]
@@ -31,8 +32,7 @@ pub struct NewManualFeed<'info> {
 pub fn handle(ctx: Context<NewManualFeed>, initial_price: u64, decimals: u8) -> Result<()> {
     let state = &mut ctx.accounts.manual_feed;
 
-    state.decimals = decimals;
-    state.price = initial_price;
+    update_manual_feed(state, Some(initial_price), Some(decimals))?;
 
     emit!(ManualFeedCreatedEvent {
         manual_feed: ctx.accounts.manual_feed.key(),

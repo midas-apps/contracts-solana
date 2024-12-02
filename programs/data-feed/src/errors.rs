@@ -8,4 +8,12 @@ pub enum DataFeedError {
     NotAuthority,
     #[msg("Data feed price is stale")]
     PriceIsStale,
+    #[msg("Invalid staleness value")]
+    InvalidStaleness,
+    #[msg("Invalid min price value")]
+    InvalidMinPrice,
+    #[msg("Invalid max price value")]
+    InvalidMaxPrice,
+    #[msg("Invalid underlying feed")]
+    InvalidUnderlyingFeed,
 }

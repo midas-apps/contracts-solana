@@ -8,13 +8,16 @@ import {
   getManualFeedStatePda,
 } from "../helpers/data-feed.helpers";
 import {
+  expectEvents,
   expectTxNotReverted,
   expectTxReverted,
+  fromBN,
   OptionalCommonParams,
   parseUnits,
   toBN,
 } from "../helpers/common.helpers";
 import { SYSTEM_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/native/system";
+import { BN } from "bn.js";
 
 type CommonDataFeedParams = DataFeedFixtureReturnType;
 
@@ -25,6 +28,7 @@ export const createNewFeed = async (
   {
     feed,
     underlyingFeed,
+    mode,
     authority,
     maxPrice,
     maxStaleness,
@@ -32,6 +36,7 @@ export const createNewFeed = async (
   }: {
     authority?: PublicKey;
     feed?: Keypair;
+    mode?: keyof typeof DataFeedMode;
     underlyingFeed?: PublicKey;
     minPrice?: bigint;
     maxPrice?: bigint;
@@ -46,6 +51,8 @@ export const createNewFeed = async (
   minPrice ??= parseUnits("0.1");
   maxPrice ??= parseUnits("10");
   maxStaleness ??= 3600;
+  mode ??= "manual";
+  underlyingFeed ??= getManualFeedStatePda(feed.publicKey);
 
   const from = opt?.from ?? owner;
 
@@ -53,6 +60,7 @@ export const createNewFeed = async (
     .newFeed(
       authority,
       underlyingFeed,
+      DataFeedMode[mode],
       toBN(minPrice),
       toBN(maxPrice),
       maxStaleness
@@ -68,12 +76,33 @@ export const createNewFeed = async (
     return;
   }
 
-  await expectTxNotReverted(context, tx, [from, feed]);
+  await expectEvents(
+    await expectTxNotReverted(context, tx, [from, feed]),
+    dataFeedProgram,
+    [
+      {
+        name: "feedCreatedEvent",
+        data: {
+          feed: feed.publicKey,
+          authority: authority,
+          underlyingFeed: underlyingFeed,
+          mode: DataFeedMode[mode],
+          minPrice: minPrice,
+          maxPrice: maxPrice,
+          maxStaleness: maxStaleness,
+        },
+      },
+    ]
+  );
 
   const feedFetched = await fetchDataFeedState(dataFeedProgram, feed.publicKey);
 
   expect(feedFetched.authority.equals(authority)).toBe(true);
-  expect(feedFetched.mode).toMatchObject(DataFeedMode.manual);
+  expect(feedFetched.underlyingFeed.equals(underlyingFeed)).toBe(true);
+  expect(fromBN(feedFetched.minPrice)).toBe(minPrice);
+  expect(fromBN(feedFetched.maxPrice)).toBe(maxPrice);
+  expect(feedFetched.maxStaleness).toBe(maxStaleness);
+  expect(feedFetched.mode).toMatchObject(DataFeedMode[mode]);
 
   return feed;
 };
@@ -83,11 +112,11 @@ export const createNewManualFeed = async (
   {
     baseFeed,
     decimals,
-    initPrice,
+    initialPrice,
   }: {
     baseFeed?: PublicKey;
     decimals?: number;
-    initPrice?: bigint;
+    initialPrice?: bigint;
   },
   opt?: OptionalCommonParams
 ) => {
@@ -100,14 +129,14 @@ export const createNewManualFeed = async (
 
   baseFeed ??= dataFeedMTBill.publicKey;
   decimals ??= 9;
-  initPrice ??= parseUnits("1", decimals);
+  initialPrice ??= parseUnits("1", decimals);
 
   const feedPda = getManualFeedStatePda(baseFeed);
 
   const from = opt?.from ?? owner;
 
   const tx = await dataFeedProgram.methods
-    .newManualFeed(toBN(initPrice), decimals)
+    .newManualFeed(toBN(initialPrice), decimals)
     .accountsStrict({
       baseFeed: baseFeed,
       authority: from.publicKey,
@@ -121,9 +150,24 @@ export const createNewManualFeed = async (
     return;
   }
 
-  await expectTxNotReverted(context, tx, [from]);
+  await expectEvents(
+    await expectTxNotReverted(context, tx, [from]),
+    dataFeedProgram,
+    [
+      {
+        name: "manualFeedCreatedEvent",
+        data: {
+          baseFeed: baseFeed,
+          manualFeed: getManualFeedStatePda(baseFeed),
+          decimals,
+          initialPrice,
+        },
+      },
+    ]
+  );
 
   const feedFetched = await fetchManualFeedState(dataFeedProgram, feedPda);
 
   expect(feedFetched.decimals).toBe(decimals);
+  expect(fromBN(feedFetched.price)).toBe(initialPrice);
 };

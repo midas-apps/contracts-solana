@@ -18,6 +18,7 @@ wallet = "~/.config/solana/id.json"
 [scripts]
 test = "RUST_LOG= yarn jest --maxWorkers=1 --testTimeout=1000000"
 test-minter = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/minter-vault.test.ts"
+test-feed = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/data-feed.test.ts"
 test-redeemer = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/redeemer-vault.test.ts"
 
 deploy-mtbill = "yarn run ts-node ./scripts/deploy-mtbill-token.ts"

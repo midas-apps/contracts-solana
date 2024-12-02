@@ -1,4 +1,4 @@
-use crate::{errors::DataFeedError, state::FeedMode};
+use crate::{constants::DEFAULT_PUBKEY, errors::DataFeedError, program::DataFeed, state::FeedMode};
 use anchor_lang::{prelude::*, require_keys_eq, AccountDeserialize, Key, Result};
 
 use switchboard_on_demand::{PullFeedAccountData, PRECISION};
@@ -63,6 +63,68 @@ pub fn get_current_ts() -> Result<u32> {
     Ok(Clock::get().unwrap().unix_timestamp as u32)
 }
 
+pub fn update_feed(
+    state: &mut FeedState,
+    authority: Option<Pubkey>,
+    underlying_feed: Option<Pubkey>,
+    mode: Option<FeedMode>,
+    min_price: Option<u64>,
+    max_price: Option<u64>,
+    max_staleness: Option<u32>,
+) -> Result<()> {
+    if let Some(authority) = authority {
+        state.authority = authority;
+    }
+
+    if let Some(underlying_feed) = underlying_feed {
+        require!(
+            !underlying_feed.eq(&DEFAULT_PUBKEY),
+            DataFeedError::InvalidUnderlyingFeed
+        );
+        state.underlying_feed = underlying_feed;
+    }
+
+    if let Some(mode) = mode.clone() {
+        state.mode = mode;
+    }
+
+    if let Some(max_price) = max_price {
+        require_gt!(max_price, 0, DataFeedError::InvalidMaxPrice);
+        require_gt!(max_price, state.min_price, DataFeedError::InvalidMaxPrice);
+        state.max_price = max_price;
+    }
+
+    if let Some(min_price) = min_price {
+        require_gt!(min_price, 0, DataFeedError::InvalidMinPrice);
+        require_gt!(state.max_price, min_price, DataFeedError::InvalidMinPrice);
+        state.min_price = min_price;
+    }
+
+    if let Some(max_staleness) = max_staleness {
+        require_gt!(max_staleness, 0, DataFeedError::InvalidStaleness);
+        state.max_staleness = max_staleness;
+    }
+
+    Ok(())
+}
+
+pub fn update_manual_feed(
+    state: &mut ManualFeedState,
+    price: Option<u64>,
+    decimals: Option<u8>,
+) -> Result<()> {
+    if let Some(price) = price {
+        state.price = price;
+    }
+
+    if let Some(decimals) = decimals {
+        state.decimals = decimals;
+    }
+
+    Ok(())
+}
+
+// TODO: cover with tests
 pub mod decimals_conversion {
     use anchor_lang::Result;
 

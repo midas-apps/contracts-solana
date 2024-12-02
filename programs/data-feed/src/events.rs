@@ -7,6 +7,7 @@ pub struct FeedCreatedEvent {
     pub feed: Pubkey,
     pub authority: Pubkey,
     pub underlying_feed: Pubkey,
+    pub mode: FeedMode,
     pub min_price: u64,
     pub max_price: u64,
     pub max_staleness: u32,
