@@ -9,18 +9,19 @@ import {
 import { vaultsFixture } from "./fixture/vaults.fixture";
 import { VAULTS_PROGRAM_ID } from "./constants/vaults.constants";
 import {
-  addPaymentToken,
   approveMintRequest,
   mintInstant,
   mintRequest,
   newAcAccount,
   newMintAuthority,
-  newVaultCommonAccount,
   rejectMintRequest,
 } from "./testers/vaults.testers";
-import { approveMint } from "./helpers/common.helpers";
+import {
+  addPaymentToken,
+  newVaultCommonAccount,
+} from "./testers/common-vaults.testers";
 
-describe.only("minter-vault", () => {
+describe("minter-vault", () => {
   describe("initializing", () => {
     it("Should deploy program", async () => {
       const { vaultsProgram } = await vaultsFixture();
@@ -50,7 +51,7 @@ describe.only("minter-vault", () => {
     });
   });
 
-  describe.only("approve_request", () => {
+  describe("approve_request", () => {
     it("should approve mint request", async () => {
       const fixture = await vaultsFixture();
 
@@ -63,7 +64,7 @@ describe.only("minter-vault", () => {
     });
   });
 
-  describe.only("reject_request", () => {
+  describe("reject_request", () => {
     it("should reject mint request", async () => {
       const fixture = await vaultsFixture();
 

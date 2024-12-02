@@ -1,6 +1,9 @@
 use anchor_lang::prelude::*;
 
-use crate::{errors::MidasVaultsError, state::VaultCommonState};
+use crate::{
+    errors::MidasVaultsError, events::CommonVaultUpdatedEvent, state::VaultCommonState,
+    utils::common_vault::update_common_vault,
+};
 
 #[derive(Accounts)]
 pub struct UpdateVaultCommon<'info> {
@@ -8,6 +11,7 @@ pub struct UpdateVaultCommon<'info> {
     pub authority: Signer<'info>,
 
     #[account(
+        mut,
         has_one = authority @ MidasVaultsError::NotAuthority
     )]
     pub vault_common: Account<'info, VaultCommonState>,
@@ -27,34 +31,27 @@ pub fn handle(
 ) -> Result<()> {
     let state = &mut ctx.accounts.vault_common;
 
-    if let Some(authority) = authority {
-        state.authority = authority;
-    }
+    update_common_vault(
+        state,
+        authority,
+        tokens_receiver,
+        fee_receiver,
+        instant_fee,
+        instant_daily_limit,
+        variation_tolerance,
+        min_amount,
+    )?;
 
-    if let Some(tokens_receiver) = tokens_receiver {
-        state.tokens_receiver = tokens_receiver;
-    }
+    emit!(CommonVaultUpdatedEvent {
+        vault_common: ctx.accounts.vault_common.key(),
+        authority,
+        tokens_receiver,
+        fee_receiver,
+        instant_fee,
+        instant_daily_limit,
+        variation_tolerance,
+        min_amount,
+    });
 
-    if let Some(fee_receiver) = fee_receiver {
-        state.fee_receiver = fee_receiver;
-    }
-
-    if let Some(instant_fee) = instant_fee {
-        state.instant_fee = instant_fee;
-    }
-
-    if let Some(instant_daily_limit) = instant_daily_limit {
-        state.instant_daily_limit = instant_daily_limit;
-    }
-
-    if let Some(variation_tolerance) = variation_tolerance {
-        state.variation_tolerance = variation_tolerance;
-    }
-
-    if let Some(min_amount) = min_amount {
-        state.min_amount = min_amount;
-    }
-
-    // TODO: add event
     Ok(())
 }

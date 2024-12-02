@@ -586,6 +586,49 @@ pub mod common_vault {
 
         Ok(())
     }
+
+    pub fn update_common_vault(
+        state: &mut VaultCommonState,
+        authority: Option<Pubkey>,
+        tokens_receiver: Option<Pubkey>,
+        fee_receiver: Option<Pubkey>,
+        instant_fee: Option<u64>,
+        instant_daily_limit: Option<u128>,
+        variation_tolerance: Option<u64>,
+        min_amount: Option<u64>,
+    ) -> Result<()> {
+        if let Some(authority) = authority {
+            state.authority = authority;
+        }
+
+        if let Some(tokens_receiver) = tokens_receiver {
+            state.tokens_receiver = tokens_receiver;
+        }
+
+        if let Some(fee_receiver) = fee_receiver {
+            state.fee_receiver = fee_receiver;
+        }
+
+        if let Some(instant_fee) = instant_fee {
+            validate_fee(instant_fee, false)?;
+            state.instant_fee = instant_fee;
+        }
+
+        if let Some(instant_daily_limit) = instant_daily_limit {
+            state.instant_daily_limit = instant_daily_limit;
+        }
+
+        if let Some(variation_tolerance) = variation_tolerance {
+            validate_fee(variation_tolerance, true)?;
+            state.variation_tolerance = variation_tolerance;
+        }
+
+        if let Some(min_amount) = min_amount {
+            state.min_amount = min_amount;
+        }
+
+        Ok(())
+    }
 }
 
 pub mod redeemer {

@@ -126,7 +126,7 @@ export const expectTxReverted = async (
   } catch (err) {
     const revertMessage =
       opt?.revertedWith && typeof opt.revertedWith === "number"
-        ? numToHex(opt.revertedWith as number)
+        ? numToHex(opt.revertedWith as number).toLowerCase()
         : opt.revertedWith?.toString();
 
     if (revertMessage && !err.toString().includes(revertMessage)) {
@@ -425,4 +425,8 @@ export const getBalance = async (
 
     return balance;
   }
+};
+
+export const parsePercent = (val: number) => {
+  return parseUnits(val.toString(), 2);
 };

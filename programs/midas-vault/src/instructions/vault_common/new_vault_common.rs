@@ -1,6 +1,9 @@
 use anchor_lang::prelude::*;
 
-use crate::state::VaultCommonState;
+use crate::{
+    events::CommonVaultCreatedEvent, state::VaultCommonState,
+    utils::common_vault::update_common_vault,
+};
 
 #[derive(Accounts)]
 pub struct NewVaultCommon<'info> {
@@ -37,14 +40,30 @@ pub fn handle(
     state.m_mint = m_mint;
     state.m_mint_feed = m_mint_feed;
 
-    state.authority = authority;
-    state.tokens_receiver = tokens_receiver;
-    state.fee_receiver = fee_receiver;
-    state.instant_fee = instant_fee;
-    state.instant_daily_limit = instant_daily_limit;
-    state.variation_tolerance = variation_tolerance;
-    state.min_amount = min_amount;
+    update_common_vault(
+        state,
+        Some(authority),
+        Some(tokens_receiver),
+        Some(fee_receiver),
+        Some(instant_fee),
+        Some(instant_daily_limit),
+        Some(variation_tolerance),
+        Some(min_amount),
+    )?;
+
+    emit!(CommonVaultCreatedEvent {
+        vault_common: ctx.accounts.vault_common.key(),
+        ac,
+        m_mint,
+        m_mint_feed,
+        authority,
+        tokens_receiver,
+        fee_receiver,
+        instant_fee,
+        instant_daily_limit,
+        variation_tolerance,
+        min_amount,
+    });
 
     Ok(())
-    // TODO: add event
 }

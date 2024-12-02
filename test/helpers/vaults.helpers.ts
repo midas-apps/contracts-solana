@@ -36,11 +36,19 @@ export const fetchAcState = (program: VaultsProgram, ac: PublicKey) => {
   return program.account.accessControlState.fetchNullable(ac);
 };
 
-export const fetchVaultCommonState = (
+export const fetchVaultCommonState = async (
   program: VaultsProgram,
-  vault: PublicKey
+  vault: PublicKey,
+  allowNull = false
 ) => {
-  return program.account.vaultCommonState.fetchNullable(vault);
+  try {
+    return await program.account.vaultCommonState.fetchNullable(vault);
+  } catch (err) {
+    if (!allowNull) {
+      throw new Error("Payment mint state is null");
+    }
+    return null;
+  }
 };
 
 export const fetchVaultCommonAccountState = async (
