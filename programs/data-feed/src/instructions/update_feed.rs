@@ -13,6 +13,7 @@ pub struct UpdateFeed<'info> {
     pub authority: Signer<'info>,
 
     #[account(
+        mut,
         has_one = authority @ DataFeedError::NotAuthority
     )]
     pub feed: Account<'info, FeedState>,

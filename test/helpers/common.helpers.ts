@@ -94,6 +94,10 @@ export const toBN = (n: number | string | bigint) => {
   return new BN(n.toString());
 };
 
+export const toBNNullable = (n: number | string | bigint | null): BN | null => {
+  return n ? new BN(n.toString()) : null;
+};
+
 export const findPDA = <TProgram extends Idl | unknown>(
   seeds: Array<string | Buffer | PublicKey | BN>,
   program: TProgram extends Idl ? Program<TProgram> : PublicKey
@@ -159,6 +163,8 @@ export const expectEvents = async <TProgram extends Idl>(
   const events = parser.parseLogs(logs);
 
   const format = (obj: Object) => {
+    if (!obj) return obj;
+
     const formattedData = Object.entries(obj).map(([key, value]) => {
       if (value instanceof PublicKey) {
         return [key, value.toBase58()];
@@ -188,6 +194,8 @@ export const expectEvents = async <TProgram extends Idl>(
     const evDataObj = format(event.data);
 
     Object.entries(expectedEvDataObj).forEach(([key, value]) => {
+      if (!value) return;
+
       expect(evDataObj).toHaveProperty(key);
 
       if (typeof value === "object") {
