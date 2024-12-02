@@ -227,6 +227,11 @@ pub mod decimals_conversion {
             }
 
             #[test]
+            fn when_original_decimals_4_and_amount_truncated() {
+                convert_from_base_9_test(1.123456f64, 4, 11234)
+            }
+
+            #[test]
             fn when_original_decimals_12() {
                 convert_from_base_9_test(14.4f64, 12, 14400000000000)
             }
