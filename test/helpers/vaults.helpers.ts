@@ -194,6 +194,16 @@ export const getRedeemerVaultPda = (commonVault: PublicKey) => {
   return pda;
 };
 
+export const getRedeemerVaultRedeemerPda = (commonVault: PublicKey) => {
+  const redeemer = getRedeemerVaultPda(commonVault);
+
+  const [pda] = findPDA(
+    [VAULTS_SEEDS.REQUEST_REDEEMER, redeemer],
+    VAULTS_PROGRAM_ID
+  );
+  return pda;
+};
+
 export const getMinterVaultRequestPda = (
   vault: PublicKey,
   request_id: bigint

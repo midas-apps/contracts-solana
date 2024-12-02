@@ -257,7 +257,7 @@ export const vaultsFixture = async () => {
       })
       .instruction(),
     await vaultsProgram.methods
-      .newRedeemerVault(toBN(0), toBN(0), toBN(0), requestRedeemer.publicKey)
+      .newRedeemerVault(toBN(0), toBN(0), toBN(0))
       .accountsPartial({
         vaultCommon: redeemerCommonVault.publicKey,
         authority: authority.publicKey,

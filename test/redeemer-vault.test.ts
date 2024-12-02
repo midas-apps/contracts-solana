@@ -27,7 +27,10 @@ import {
   rejectRedeemRequest,
 } from "./testers/vaults.testers";
 import { approveMint } from "./helpers/common.helpers";
-import { getRedeemerVaultPda } from "./helpers/vaults.helpers";
+import {
+  getRedeemerVaultPda,
+  getRedeemerVaultRedeemerPda,
+} from "./helpers/vaults.helpers";
 
 describe.only("redeemer-vault", () => {
   describe("initializing", () => {
@@ -43,7 +46,7 @@ describe.only("redeemer-vault", () => {
 
       await prepareCommonRedeemTest(fixture);
       await mintMToken(fixture, {});
-      await mintPaymentToken(fixture, {
+      await mintPaymentTokenAndApprove(fixture, {
         to: getRedeemerVaultPda(fixture.redeemerCommonVault.publicKey),
       });
       await redeemInstant(fixture, {}, {});
@@ -56,9 +59,6 @@ describe.only("redeemer-vault", () => {
 
       await prepareCommonRedeemTest(fixture);
       await mintMToken(fixture, {});
-      await mintPaymentToken(fixture, {
-        to: getRedeemerVaultPda(fixture.redeemerCommonVault.publicKey),
-      });
       await redeemRequest(fixture, {}, {});
     });
   });
@@ -70,7 +70,7 @@ describe.only("redeemer-vault", () => {
       await prepareCommonRedeemTest(fixture);
       await mintMToken(fixture, {});
       await mintPaymentToken(fixture, {
-        to: getRedeemerVaultPda(fixture.redeemerCommonVault.publicKey),
+        to: getRedeemerVaultRedeemerPda(fixture.redeemerCommonVault.publicKey),
       });
       await redeemRequest(fixture, {}, {});
       await approveRedeemRequest(fixture, {}, {});
@@ -83,9 +83,6 @@ describe.only("redeemer-vault", () => {
 
       await prepareCommonRedeemTest(fixture);
       await mintMToken(fixture, {});
-      await mintPaymentTokenAndApprove(fixture, {
-        to: fixture.requestRedeemer.publicKey,
-      });
       await redeemRequest(fixture, {}, {});
       await rejectRedeemRequest(fixture, {}, {});
     });

@@ -1,7 +1,7 @@
 use anchor_lang::{prelude::*, solana_program::clock::SECONDS_PER_DAY};
 
 use crate::{
-    constants::{FIAT_MINT, MAX_UINT128, ONE, ONE_HUNDRED_PERCENT, STABLECOIN_RATE},
+    constants::{seeds, FIAT_MINT, MAX_UINT128, ONE, ONE_HUNDRED_PERCENT, STABLECOIN_RATE},
     errors::MidasVaultsError,
     program::MidasVaults,
     state::{
@@ -265,6 +265,14 @@ pub fn transfer_token<'info>(
 
     msg!("TRANSFER AMOUNT {}", amount);
 
+    msg!(
+        "Accounts {} {} {} {}",
+        from.key(),
+        to.key(),
+        authority.key(),
+        mint.key()
+    );
+
     transfer_checked(
         CpiContext::new_with_signer(
             token_program.to_account_info(),
@@ -275,6 +283,67 @@ pub fn transfer_token<'info>(
                 to: to.to_account_info(),
             },
             &[&[vault_seed, vault_common.as_ref(), &[vault_pda_bump_seed]]],
+        ),
+        amount,
+        mint.decimals,
+    )?;
+
+    Ok(())
+}
+
+pub fn transfer_token_from_redeemer<'info>(
+    vault_common: &Pubkey,
+    token_program: &Interface<'info, TokenInterface>,
+    mint: &Box<InterfaceAccount<'info, Mint>>,
+    authority: &AccountInfo<'info>,
+    from: &Box<InterfaceAccount<'info, TokenAccount>>,
+    to: &Box<InterfaceAccount<'info, TokenAccount>>,
+    amount_base9: u128,
+) -> Result<()> {
+    let (redeemer, vault_pda_bump_seed) = Pubkey::find_program_address(
+        &[RedeemerVaultState::SEED, vault_common.as_ref()],
+        &MidasVaults::id(),
+    );
+
+    let (_, redeemer_pda_bump_seed) = Pubkey::find_program_address(
+        &[seeds::REQUEST_REDEEMER, redeemer.as_ref()],
+        &MidasVaults::id(),
+    );
+
+    let amount: u64 =
+        decimals_conversion::convert_from_base_9(amount_base9, mint.decimals)?.try_into()?;
+
+    msg!("TRANSFER AMOUNT {}", amount);
+
+    msg!(
+        "Accounts {} {} {} {}",
+        from.key(),
+        to.key(),
+        authority.key(),
+        mint.key()
+    );
+
+    transfer_checked(
+        CpiContext::new_with_signer(
+            token_program.to_account_info(),
+            TransferChecked {
+                authority: authority.to_account_info(),
+                mint: mint.to_account_info(),
+                from: from.to_account_info(),
+                to: to.to_account_info(),
+            },
+            &[
+                // &[
+                //     RedeemerVaultState::SEED,
+                //     vault_common.as_ref(),
+                //     &[vault_pda_bump_seed],
+                // ],
+                &[
+                    seeds::REQUEST_REDEEMER,
+                    redeemer.as_ref(),
+                    &[redeemer_pda_bump_seed],
+                ],
+            ],
         ),
         amount,
         mint.decimals,
@@ -673,10 +742,9 @@ pub mod redeemer {
 
         require_and_update_allowance(payment_mint_state, amount_token_wo_fee)?;
 
-        if is_fiat {
-            transfer_token(
+        if !is_fiat {
+            transfer_token_from_redeemer(
                 &vault_common.key(),
-                RedeemerVaultState::SEED,
                 payment_mint_token_program.unwrap(),
                 payment_mint.unwrap(),
                 request_redeemer.unwrap(),

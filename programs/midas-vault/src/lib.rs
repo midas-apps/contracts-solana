@@ -84,14 +84,12 @@ pub mod midas_vaults {
         min_fiat_redeem_amount: u64,
         fiat_additional_fee: u64,
         fiat_flat_fee: u64,
-        request_redeemer: Pubkey,
     ) -> Result<()> {
         redeemer_vault::new_redeemer_vault::handle(
             ctx,
             min_fiat_redeem_amount,
             fiat_additional_fee,
             fiat_flat_fee,
-            request_redeemer,
         )
     }
 
@@ -100,14 +98,12 @@ pub mod midas_vaults {
         min_fiat_redeem_amount: Option<u64>,
         fiat_additional_fee: Option<u64>,
         fiat_flat_fee: Option<u64>,
-        request_redeemer: Option<Pubkey>,
     ) -> Result<()> {
         redeemer_vault::update_redeemer_vault::handle(
             ctx,
             min_fiat_redeem_amount,
             fiat_additional_fee,
             fiat_flat_fee,
-            request_redeemer,
         )
     }
 

@@ -29,7 +29,6 @@ pub fn handle(
     min_fiat_redeem_amount: Option<u64>,
     fiat_additional_fee: Option<u64>,
     fiat_flat_fee: Option<u64>,
-    request_redeemer: Option<Pubkey>,
 ) -> Result<()> {
     // TODO: add event
     let vault = &mut ctx.accounts.redeemer_vault;
@@ -44,10 +43,6 @@ pub fn handle(
 
     if let Some(fiat_flat_fee) = fiat_flat_fee {
         vault.fiat_flat_fee = fiat_flat_fee;
-    }
-
-    if let Some(request_redeemer) = request_redeemer {
-        vault.request_redeemer = request_redeemer;
     }
 
     Ok(())

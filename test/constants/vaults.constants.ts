@@ -22,6 +22,7 @@ export const VAULTS_SEEDS = {
   MINT_AUTHORITY: "mint_authority",
   MINTER_VAULT: "minter_vault",
   REDEEMER_VAULT: "redeemer_vault",
+  REQUEST_REDEEMER: "request_redeemer",
 };
 
 export enum VaultErrors {

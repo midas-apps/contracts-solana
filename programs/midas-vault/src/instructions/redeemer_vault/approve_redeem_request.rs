@@ -24,7 +24,8 @@ pub struct ApproveRedeemRequest<'info> {
     /// CHECK:
     #[account(
         mut, 
-        address = redeemer_vault.request_redeemer
+        seeds = [seeds::REQUEST_REDEEMER, redeemer_vault.key().as_ref()],
+        bump
     )]
     pub request_redeemer: AccountInfo<'info>,
 
@@ -44,9 +45,7 @@ pub struct ApproveRedeemRequest<'info> {
 
     #[account(
         mut,
-        seeds = [PaymentMintState::SEED, vault_common.key().as_ref(), payment_mint.key().as_ref()],
-        bump
-    )]
+        seeds = [PaymentMintState::SEED, vault_common.key().as_ref(), payment_mint.key().as_ref()], bump )]
     pub payment_mint_state: Account<'info, PaymentMintState>,
 
 

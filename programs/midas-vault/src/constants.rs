@@ -8,4 +8,5 @@ pub const MAX_UINT128: u128 = u128::max_value(); // 18446744073709551615
 
 pub mod seeds {
     pub const VAULT: &[u8; 5] = b"vault";
+    pub const REQUEST_REDEEMER: &[u8; 16] = b"request_redeemer";
 }

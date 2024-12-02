@@ -41,6 +41,7 @@ import {
   getMinterVaultRequestPda,
   getPaymentMintStatePda,
   getRedeemerVaultPda,
+  getRedeemerVaultRedeemerPda,
   getRedeemerVaultRequestPda,
   mintAuthoritySeedToBuffer,
   PaymentMint,
@@ -758,6 +759,21 @@ export const redeemRequest = async (
 
   const stateBefore = await fetchState();
 
+  // console.log({
+  //   from: findATA(
+  //     stateBefore.commonVaultState.mMint,
+  //     from.publicKey,
+  //     TOKEN_2022_PROGRAM_ID
+  //   ).toBase58(),
+  //   to: findATA(
+  //     stateBefore.commonVaultState.mMint,
+  //     getRedeemerVaultPda(fixture.redeemerCommonVault.publicKey),
+  //     TOKEN_2022_PROGRAM_ID
+  //   ).toBase58(),
+  //   authority: from.publicKey.toBase58(),
+  //   mint: stateBefore.commonVaultState.mMint.toBase58(),
+  // });
+
   const tx = await vaultsProgram.methods
     .redeemRequest(toBN(amountMToken))
     .accountsPartial({
@@ -868,6 +884,19 @@ export const approveRedeemRequest = async (
 
   const user = stateBefore.requestState.user;
 
+  // console.log({
+  //   from: findATA(
+  //     stateBefore.requestState.paymentMint,
+  //     getRedeemerVaultRedeemerPda(baseAccounts.vaultCommon)
+  //   ).toBase58(),
+  //   to: findATA(
+  //     stateBefore.requestState.paymentMint,
+  //     fixture.authority.publicKey
+  //   ).toBase58(),
+  //   authority: getRedeemerVaultRedeemerPda(baseAccounts.vaultCommon).toBase58(),
+  //   mint: stateBefore.requestState.paymentMint.toBase58(),
+  // });
+
   const tx = await vaultsProgram.methods
     .approveRedeemRequest(toBN(requestId), toBN(newRate), isSafe)
     .accountsPartial({
@@ -882,7 +911,8 @@ export const approveRedeemRequest = async (
       mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
       paymentMint: stateBefore.requestState.paymentMint,
       paymentMintTokenProgram: TOKEN_PROGRAM_ID,
-      requestRedeemer: stateBefore.redeemerVaultState.requestRedeemer,
+      requestRedeemer: getRedeemerVaultRedeemerPda(baseAccounts.vaultCommon),
+      // requestRedeemer: stateBefore.redeemerVaultState.requestRedeemer,
     })
     .transaction();
 
@@ -1332,17 +1362,20 @@ export const mintPaymentTokenAndApprove = async (
     to,
     amountBase9,
     approveTo,
+    approveFrom,
   }: {
     mint?: PaymentMint;
     approveTo?: PublicKey;
     to?: PublicKey;
     amountBase9?: bigint;
+    approveFrom?: Keypair;
   }
 ) => {
   mint ??= fixture.paymentMints.usdc;
   to ??= fixture.authority.publicKey;
   amountBase9 ??= parseUnits("10");
   approveTo ??= getRedeemerVaultPda(fixture.redeemerCommonVault.publicKey);
+  approveFrom ??= fixture.requestRedeemer;
 
   const amount = parseUnits(formatUnits(amountBase9).toString(), mint.decimals);
 
@@ -1362,9 +1395,9 @@ export const mintPaymentTokenAndApprove = async (
 
     new Transaction().add(
       createMintToInstruction(mint.mint, ata, from.publicKey, amount),
-      approveMintInstruction(mint.mint, from, approveTo, amount)
+      approveMintInstruction(mint.mint, approveFrom, approveTo, amount)
     ),
-    [from]
+    [from, approveFrom]
   );
 };
 

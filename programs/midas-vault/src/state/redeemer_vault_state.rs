@@ -6,7 +6,6 @@ pub struct RedeemerVaultState {
     pub min_fiat_redeem_amount: u64,
     pub fiat_additional_fee: u64,
     pub fiat_flat_fee: u64,
-    pub request_redeemer: Pubkey,
     pub common_vault: Pubkey,
 }
 
