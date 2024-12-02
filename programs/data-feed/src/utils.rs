@@ -137,7 +137,7 @@ pub mod decimals_conversion {
             return Ok(value);
         }
 
-        let adjusted_amount = if (value_decimals > target_decimals) {
+        let adjusted_amount = if value_decimals > target_decimals {
             value / (10 as u128).pow((value_decimals - target_decimals).into())
         } else {
             value * (10 as u128).pow((target_decimals - value_decimals).into())
@@ -145,11 +145,101 @@ pub mod decimals_conversion {
 
         Ok(adjusted_amount)
     }
+
     pub fn convert_to_base_9(value: u128, value_decimals: u8) -> Result<u128> {
         convert(value, value_decimals, 9)
     }
 
     pub fn convert_from_base_9(value: u128, target_decimals: u8) -> Result<u128> {
         convert(value, 9, target_decimals)
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use std::ops::Mul;
+
+        fn parse_units(v: f64, decimals: u8) -> u128 {
+            v.mul(10u64.pow(decimals.into()) as f64).trunc() as u128
+        }
+
+        mod convert_to_base_9 {
+            use crate::utils::decimals_conversion::{self, tests::parse_units};
+
+            fn convert_to_base_9_test(amount: f64, orig_decimals: u8, expected_amount: u128) {
+                assert_eq!(
+                    decimals_conversion::convert_to_base_9(
+                        parse_units(amount, orig_decimals),
+                        orig_decimals
+                    )
+                    .unwrap(),
+                    expected_amount
+                );
+            }
+
+            #[test]
+            fn when_original_decimals_6() {
+                convert_to_base_9_test(15f64, 6, 15000000000)
+            }
+
+            #[test]
+            fn when_original_decimals_6_and_amount_has_6_decimals() {
+                convert_to_base_9_test(1.123456f64, 6, 1123456000)
+            }
+
+            #[test]
+            fn when_original_decimals_12() {
+                convert_to_base_9_test(14.4f64, 12, 14400000000)
+            }
+
+            #[test]
+            fn when_original_decimals_0() {
+                convert_to_base_9_test(114f64, 0, 114000000000)
+            }
+
+            #[test]
+            fn when_original_decimals_9() {
+                convert_to_base_9_test(114f64, 9, 114000000000)
+            }
+        }
+
+        mod convert_from_base_9 {
+            use crate::utils::decimals_conversion::{self, tests::parse_units};
+
+            fn convert_from_base_9_test(amount: f64, target_decimals: u8, expected_amount: u128) {
+                assert_eq!(
+                    decimals_conversion::convert_from_base_9(
+                        parse_units(amount, 9),
+                        target_decimals
+                    )
+                    .unwrap(),
+                    expected_amount
+                );
+            }
+
+            #[test]
+            fn when_original_decimals_6() {
+                convert_from_base_9_test(15f64, 6, 15000000)
+            }
+
+            #[test]
+            fn when_original_decimals_6_and_amount_has_6_decimals() {
+                convert_from_base_9_test(1.123456f64, 6, 1123456)
+            }
+
+            #[test]
+            fn when_original_decimals_12() {
+                convert_from_base_9_test(14.4f64, 12, 14400000000000)
+            }
+
+            #[test]
+            fn when_original_decimals_0() {
+                convert_from_base_9_test(114f64, 0, 114)
+            }
+
+            #[test]
+            fn when_original_decimals_9() {
+                convert_from_base_9_test(114f64, 9, 114000000000)
+            }
+        }
     }
 }

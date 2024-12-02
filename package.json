@@ -1,7 +1,8 @@
 {
   "scripts": {
     "build": "anchor build",
-    "test": "anchor run test"
+    "test": "anchor run test",
+    "test:rust": "cargo test-sbf"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",

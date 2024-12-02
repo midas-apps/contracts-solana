@@ -236,5 +236,20 @@ describe("data-feed", () => {
         }
       );
     });
+
+    it("should fail: update underlying feed to default pubkey", async () => {
+      const fixture = await dataFeedFixture();
+
+      const feed = await createDefaultDataFeed(fixture);
+
+      await updateFeed(
+        fixture,
+        {
+          feed,
+          underlyingFeed: DEFAULT_PUBKEY,
+        },
+        { revertedWith: DataFeedError.InvalidUnderlyingFeed }
+      );
+    });
   });
 });
