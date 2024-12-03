@@ -13,4 +13,5 @@ export const DEFAULT_PUBKEY = new PublicKey(0);
 
 export enum CommonError {
   AccountIsNotInitialized = 3012,
+  AccountIsAlreadyInitialized = 0,
 }

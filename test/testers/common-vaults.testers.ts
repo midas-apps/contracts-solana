@@ -134,7 +134,7 @@ export const newVaultCommon = async (
     })
     .transaction();
 
-  if (opt?.revertedWith) {
+  if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from, vaultCommon], opt);
     return;
   }
@@ -234,7 +234,7 @@ export const updateVaultCommon = async (
     })
     .transaction();
 
-  if (opt?.revertedWith) {
+  if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);
     return;
   }
@@ -325,7 +325,7 @@ export const newVaultCommonAccount = async (
     })
     .transaction();
 
-  if (opt?.revertedWith) {
+  if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);
     return;
   }
@@ -408,7 +408,7 @@ export const addPaymentToken = async (
     })
     .transaction();
 
-  if (opt?.revertedWith) {
+  if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);
     return;
   }

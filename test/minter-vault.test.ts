@@ -1,25 +1,16 @@
-import * as anchor from "@coral-xyz/anchor";
-import { dataFeedFixture } from "./fixture/dafa-feed.fixture";
-import { DATA_FEED_PROGRAM_ID } from "./constants/data-feed.constants";
-import { DataFeedMode, fetchDataFeedState } from "./helpers/data-feed.helpers";
-import {
-  createNewFeed,
-  createNewManualFeed,
-} from "./testers/data-feed.testers";
 import { vaultsFixture } from "./fixture/vaults.fixture";
 import { VAULTS_PROGRAM_ID } from "./constants/vaults.constants";
 import {
   approveMintRequest,
   mintInstant,
   mintRequest,
-  newAcAccount,
-  newMintAuthority,
   rejectMintRequest,
 } from "./testers/vaults.testers";
 import {
   addPaymentToken,
   newVaultCommonAccount,
 } from "./testers/common-vaults.testers";
+import { newAccountAc } from "./testers/ac.testers";
 
 describe("minter-vault", () => {
   describe("initializing", () => {
@@ -35,7 +26,7 @@ describe("minter-vault", () => {
 
       await addPaymentToken(fixture, {});
       await newVaultCommonAccount(fixture, {});
-      await newAcAccount(fixture, {});
+      await newAccountAc(fixture, {});
       await mintInstant(fixture, {}, {});
     });
   });
@@ -46,7 +37,7 @@ describe("minter-vault", () => {
 
       await addPaymentToken(fixture, {});
       await newVaultCommonAccount(fixture, {});
-      await newAcAccount(fixture, {});
+      await newAccountAc(fixture, {});
       await mintRequest(fixture, {}, {});
     });
   });
@@ -57,7 +48,7 @@ describe("minter-vault", () => {
 
       await addPaymentToken(fixture, {});
       await newVaultCommonAccount(fixture, {});
-      await newAcAccount(fixture, {});
+      await newAccountAc(fixture, {});
       await mintRequest(fixture, {}, {});
 
       await approveMintRequest(fixture, {});
@@ -70,7 +61,7 @@ describe("minter-vault", () => {
 
       await addPaymentToken(fixture, {});
       await newVaultCommonAccount(fixture, {});
-      await newAcAccount(fixture, {});
+      await newAccountAc(fixture, {});
       await mintRequest(fixture, {}, {});
 
       await rejectMintRequest(fixture, {});

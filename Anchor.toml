@@ -23,3 +23,4 @@ test-common = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/common-vault.
 test-feed = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/data-feed.test.ts"
 test-minter = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/minter-vault.test.ts"
 test-redeemer = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/redeemer-vault.test.ts"
+test-ac = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/ac.test.ts"

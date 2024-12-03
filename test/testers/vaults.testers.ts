@@ -59,6 +59,7 @@ import {
   fetchAccountAcState,
   getAccountAcStatePda,
 } from "../helpers/ac.helpers";
+import { newAccountAc } from "./ac.testers";
 
 type CommonVaultsParams = VaultsFixtureReturnType;
 
@@ -191,7 +192,7 @@ export const mintInstant = async (
     ])
     .transaction();
 
-  if (opt?.revertedWith) {
+  if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);
     return;
   }
@@ -339,7 +340,7 @@ export const mintRequest = async (
     ])
     .transaction();
 
-  if (opt?.revertedWith) {
+  if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);
     return;
   }
@@ -434,7 +435,7 @@ export const approveMintRequest = async (
     })
     .transaction();
 
-  if (opt?.revertedWith) {
+  if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);
     return;
   }
@@ -520,7 +521,7 @@ export const rejectMintRequest = async (
     })
     .transaction();
 
-  if (opt?.revertedWith) {
+  if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);
     return;
   }
@@ -653,7 +654,7 @@ export const redeemInstant = async (
     ])
     .transaction();
 
-  if (opt?.revertedWith) {
+  if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);
     return;
   }
@@ -800,7 +801,7 @@ export const redeemRequest = async (
     ])
     .transaction();
 
-  if (opt?.revertedWith) {
+  if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);
     return;
   }
@@ -899,7 +900,7 @@ export const approveRedeemRequest = async (
     })
     .transaction();
 
-  if (opt?.revertedWith) {
+  if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);
     return;
   }
@@ -985,7 +986,7 @@ export const rejectRedeemRequest = async (
     })
     .transaction();
 
-  if (opt?.revertedWith) {
+  if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);
     return;
   }
@@ -1039,7 +1040,7 @@ export const newMintAuthority = async (
     })
     .transaction();
 
-  if (opt?.revertedWith) {
+  if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);
     return;
   }
@@ -1050,72 +1051,6 @@ export const newMintAuthority = async (
 
   expect(stateAfter).not.toEqual(null);
   expect(stateAfter.mintAuthority.authority.equals(authority)).toBe(true);
-};
-
-export const newAcAccount = async (
-  fixture: CommonVaultsParams,
-  {
-    account,
-  }: {
-    account?: PublicKey;
-  },
-  accounts?: {
-    ac?: PublicKey;
-  },
-  opt?: OptionalCommonParams
-) => {
-  const {
-    dataFeedProgram,
-    vaultsProgram,
-    acProgram,
-    authority: owner,
-    context,
-  } = fixture;
-  const from = opt?.from ?? owner;
-
-  account ??= from.publicKey;
-
-  const baseAccounts = {
-    ac: accounts?.ac ?? fixture.ac.publicKey,
-  };
-
-  const fetchState = async () => {
-    const accountAcState = await fetchAccountAcState(
-      acProgram,
-      getAccountAcStatePda(baseAccounts.ac, account),
-      true
-    );
-
-    return {
-      accountAcState,
-    };
-  };
-
-  const stateBefore = await fetchState();
-
-  const tx = await acProgram.methods
-    .newAccountAc()
-    .accountsPartial({
-      ...baseAccounts,
-      account,
-      signer: from.publicKey,
-      accountAc: getAccountAcStatePda(baseAccounts.ac, account),
-    })
-    .transaction();
-
-  if (opt?.revertedWith) {
-    await expectTxReverted(context, tx, [from], opt);
-    return;
-  }
-
-  await expectTxNotReverted(context, tx, [from]);
-
-  const stateAfter = await fetchState();
-
-  expect(stateBefore.accountAcState).toEqual(null);
-  expect(stateAfter.accountAcState).not.toEqual(null);
-  expect(stateAfter.accountAcState.greenListed).toBe(false);
-  expect(stateAfter.accountAcState.blackListed).toBe(false);
 };
 
 export const mintMToken = async (
@@ -1261,5 +1196,5 @@ export const prepareCommonRedeemTest = async (fixture: CommonVaultsParams) => {
     {},
     { commonVault: fixture.redeemerCommonVault.publicKey }
   );
-  await newAcAccount(fixture, {});
+  await newAccountAc(fixture, {});
 };

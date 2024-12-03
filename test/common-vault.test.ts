@@ -12,7 +12,6 @@ import {
   approveMintRequest,
   mintInstant,
   mintRequest,
-  newAcAccount,
   newMintAuthority,
   rejectMintRequest,
 } from "./testers/vaults.testers";

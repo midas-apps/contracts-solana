@@ -24,8 +24,6 @@ import { DATA_FEED_AC_ROLES } from "../constants/data-feed.constants";
 
 type CommonDataFeedParams = DataFeedFixtureReturnType;
 
-export const createNewFeedTester = async ({}: CommonDataFeedParams) => {};
-
 export const createNewFeed = async (
   fixture: CommonDataFeedParams,
   {
@@ -74,7 +72,7 @@ export const createNewFeed = async (
     })
     .transaction();
 
-  if (opt?.revertedWith) {
+  if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from, feed], opt);
     return;
   }
@@ -166,7 +164,7 @@ export const updateFeed = async (
     })
     .transaction();
 
-  if (opt?.revertedWith) {
+  if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);
     return;
   }
@@ -263,7 +261,7 @@ export const createNewManualFeed = async (
     })
     .transaction();
 
-  if (opt?.revertedWith) {
+  if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);
     return;
   }
@@ -337,7 +335,7 @@ export const updateManualFeed = async (
     })
     .transaction();
 
-  if (opt?.revertedWith) {
+  if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);
     return;
   }

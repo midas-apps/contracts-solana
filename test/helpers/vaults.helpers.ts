@@ -20,7 +20,7 @@ export type PaymentMint = {
   decimals: number;
 };
 
-export const generateAcAcccount = () => {
+export const generateAcAccount = () => {
   return Keypair.generate();
 };
 
@@ -30,10 +30,6 @@ export const generateCommonVaultAccount = () => {
 
 export const generateMinterVaultAccount = () => {
   return Keypair.generate();
-};
-
-export const fetchAcState = (program: VaultsProgram, ac: PublicKey) => {
-  return program.account.accessControlState.fetchNullable(ac);
 };
 
 export const fetchVaultCommonState = async (

@@ -6,8 +6,8 @@ import * as ACCESS_CONTROL_IDL from "../../target/idl/access_control.json";
 
 import { AccessControl } from "@/target/types/access_control";
 import { Transaction } from "@solana/web3.js";
-import { acRoleToBuffer, generateAcRoleAcccount } from "../helpers/ac.helpers";
-import { generateAcAcccount } from "../helpers/vaults.helpers";
+import { acRoleToBuffer, generateAcRoleAccount } from "../helpers/ac.helpers";
+import { generateAcAccount } from "../helpers/vaults.helpers";
 import { AC_ROLES } from "../constants/ac.constants";
 
 export const acFixture = async () => {
@@ -19,10 +19,10 @@ export const acFixture = async () => {
     provider
   );
 
-  const ac = generateAcAcccount();
+  const ac = generateAcAccount();
 
-  const acRoleGlobal = generateAcRoleAcccount();
-  const acRoleMTbill = generateAcRoleAcccount();
+  const acRoleGlobal = generateAcRoleAccount();
+  const acRoleMTbill = generateAcRoleAccount();
 
   const createFeedTx = new Transaction().add(
     await acProgram.methods

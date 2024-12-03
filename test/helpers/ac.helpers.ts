@@ -7,12 +7,28 @@ export const DataFeedMode = {
   manual: { manual: {} },
   switchboard: { switchboard: {} },
 };
-export const generateAcAcccount = () => {
+export const generateAcAccount = () => {
   return Keypair.generate();
 };
 
-export const generateAcRoleAcccount = () => {
+export const generateAcRoleAccount = () => {
   return Keypair.generate();
+};
+
+export const fetchAcState = async (
+  program: AccessControlProgram,
+  ac: PublicKey,
+  allowNull = false
+) => {
+  // TODO: refactor
+  try {
+    return await program.account.accessControlState.fetchNullable(ac);
+  } catch (err) {
+    if (!allowNull) {
+      throw new Error("Payment mint state is null");
+    }
+    return null;
+  }
 };
 
 export const fetchAccountAcState = async (
@@ -23,6 +39,42 @@ export const fetchAccountAcState = async (
   // TODO: refactor
   try {
     return await program.account.accountAccessControlState.fetchNullable(
+      accountAc
+    );
+  } catch (err) {
+    if (!allowNull) {
+      throw new Error("Payment mint state is null");
+    }
+    return null;
+  }
+};
+
+export const fetchAcRoleState = async (
+  program: AccessControlProgram,
+  accountAc: PublicKey,
+  allowNull = false
+) => {
+  // TODO: refactor
+  try {
+    return await program.account.accessControlRoleState.fetchNullable(
+      accountAc
+    );
+  } catch (err) {
+    if (!allowNull) {
+      throw new Error("Payment mint state is null");
+    }
+    return null;
+  }
+};
+
+export const fetchAccountAcRoleState = async (
+  program: AccessControlProgram,
+  accountAc: PublicKey,
+  allowNull = false
+) => {
+  // TODO: refactor
+  try {
+    return await program.account.accountAccessControlRoleState.fetchNullable(
       accountAc
     );
   } catch (err) {
@@ -50,6 +102,10 @@ export const getAccountAcRoleStatePda = (
 };
 
 export const getAccountAcStatePda = (ac: PublicKey, account: PublicKey) => {
+  console.log({
+    ac,
+    account,
+  });
   const [pda] = findPDA([AC_SEEDS.ACCOUNT_AC, ac, account], AC_PROGRAM_ID);
   return pda;
 };

@@ -20,7 +20,7 @@ import { MidasVaults } from "@/target/types/midas_vaults";
 import { PublicKey, Transaction } from "@solana/web3.js";
 import { dataFeedFixture } from "./dafa-feed.fixture";
 import {
-  generateAcAcccount,
+  generateAcAccount,
   generateCommonVaultAccount,
   getMintAuthorityPda,
   getRedeemerVaultPda,
