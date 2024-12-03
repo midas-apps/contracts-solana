@@ -26,7 +26,7 @@ pub fn handle(
     m_mint: Pubkey,
     m_mint_feed: Pubkey,
 
-    authority: Pubkey,
+    ac_role: Pubkey,
     tokens_receiver: Pubkey,
     fee_receiver: Pubkey,
     instant_fee: u64,
@@ -42,7 +42,7 @@ pub fn handle(
 
     update_common_vault(
         state,
-        Some(authority),
+        Some(ac_role),
         Some(tokens_receiver),
         Some(fee_receiver),
         Some(instant_fee),
@@ -56,7 +56,7 @@ pub fn handle(
         ac,
         m_mint,
         m_mint_feed,
-        authority,
+        ac_role,
         tokens_receiver,
         fee_receiver,
         instant_fee,

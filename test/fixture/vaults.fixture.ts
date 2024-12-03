@@ -38,8 +38,13 @@ import {
 } from "@solana/spl-token";
 import { MAX_U128 } from "../constants/common.constants";
 import { newMintAuthority } from "../testers/vaults.testers";
-import { VaultActionIds } from "../constants/vaults.constants";
+import { VAULT_AC_ROLES, VaultActionIds } from "../constants/vaults.constants";
 import { program } from "@coral-xyz/anchor/dist/cjs/native/system";
+import {
+  acRoleToBuffer,
+  getAccountAcRoleStatePda,
+} from "../helpers/ac.helpers";
+import { AC_ROLES } from "../constants/ac.constants";
 
 export const vaultsFixture = async () => {
   const dfFixture = await dataFeedFixture();
@@ -175,12 +180,48 @@ export const vaultsFixture = async () => {
   );
 
   const createMinterVaultTx = new Transaction().add(
+    await acProgram.methods
+      .grantRole(acRoleToBuffer(VAULT_AC_ROLES.VAULT_ADMIN))
+      .accountsPartial({
+        account: authority.publicKey,
+        acRole: acRoleMTbill.publicKey,
+        authority: authority.publicKey,
+        authorityAcAdminRole: getAccountAcRoleStatePda(
+          acRoleMTbill.publicKey,
+          authority.publicKey,
+          AC_ROLES.ADMIN
+        ),
+        accountAcRole: getAccountAcRoleStatePda(
+          acRoleMTbill.publicKey,
+          authority.publicKey,
+          VAULT_AC_ROLES.VAULT_ADMIN
+        ),
+      })
+      .instruction(),
+    await acProgram.methods
+      .grantRole(acRoleToBuffer(VAULT_AC_ROLES.VAULT_PAUSER))
+      .accountsPartial({
+        account: authority.publicKey,
+        acRole: acRoleMTbill.publicKey,
+        authority: authority.publicKey,
+        authorityAcAdminRole: getAccountAcRoleStatePda(
+          acRoleMTbill.publicKey,
+          authority.publicKey,
+          AC_ROLES.ADMIN
+        ),
+        accountAcRole: getAccountAcRoleStatePda(
+          acRoleMTbill.publicKey,
+          authority.publicKey,
+          VAULT_AC_ROLES.VAULT_PAUSER
+        ),
+      })
+      .instruction(),
     await vaultsProgram.methods
       .newCommonVault(
         ac.publicKey,
         mTBillMint.publicKey,
         dataFeedMTBill.publicKey,
-        authority.publicKey,
+        acRoleMTbill.publicKey,
         tokensReceiver.publicKey,
         feeReceiver.publicKey,
         toBN(0),
@@ -199,20 +240,35 @@ export const vaultsFixture = async () => {
         vaultCommon: minterCommonVault.publicKey,
         authority: authority.publicKey,
         mintAuthority: getMintAuthorityPda(mTBillMinterAuthoritySeed),
+        authorityAcRole: getAccountAcRoleStatePda(
+          acRoleMTbill.publicKey,
+          authority.publicKey,
+          VAULT_AC_ROLES.VAULT_ADMIN
+        ),
       })
       .instruction(),
     await vaultsProgram.methods
       .newPauseInx(VaultActionIds.MINT_INSTANT)
       .accountsPartial({
-        vaultCommonState: minterCommonVault.publicKey,
+        vaultCommon: minterCommonVault.publicKey,
         authority: authority.publicKey,
+        authorityAcRole: getAccountAcRoleStatePda(
+          acRoleMTbill.publicKey,
+          authority.publicKey,
+          VAULT_AC_ROLES.VAULT_PAUSER
+        ),
       })
       .instruction(),
     await vaultsProgram.methods
       .newPauseInx(VaultActionIds.MINT_REQUEST)
       .accountsPartial({
-        vaultCommonState: minterCommonVault.publicKey,
+        vaultCommon: minterCommonVault.publicKey,
         authority: authority.publicKey,
+        authorityAcRole: getAccountAcRoleStatePda(
+          acRoleMTbill.publicKey,
+          authority.publicKey,
+          VAULT_AC_ROLES.VAULT_PAUSER
+        ),
       })
       .instruction(),
     // Transfer mint authority to program`s pda
@@ -237,7 +293,7 @@ export const vaultsFixture = async () => {
         ac.publicKey,
         mTBillMint.publicKey,
         dataFeedMTBill.publicKey,
-        authority.publicKey,
+        acRoleMTbill.publicKey,
         tokensReceiver.publicKey,
         feeReceiver.publicKey,
         toBN(0),
@@ -255,20 +311,35 @@ export const vaultsFixture = async () => {
       .accountsPartial({
         vaultCommon: redeemerCommonVault.publicKey,
         authority: authority.publicKey,
+        authorityAcRole: getAccountAcRoleStatePda(
+          acRoleMTbill.publicKey,
+          authority.publicKey,
+          VAULT_AC_ROLES.VAULT_ADMIN
+        ),
       })
       .instruction(),
     await vaultsProgram.methods
       .newPauseInx(VaultActionIds.REDEEM_INSTANT)
       .accountsPartial({
-        vaultCommonState: redeemerCommonVault.publicKey,
+        vaultCommon: redeemerCommonVault.publicKey,
         authority: authority.publicKey,
+        authorityAcRole: getAccountAcRoleStatePda(
+          acRoleMTbill.publicKey,
+          authority.publicKey,
+          VAULT_AC_ROLES.VAULT_PAUSER
+        ),
       })
       .instruction(),
     await vaultsProgram.methods
       .newPauseInx(VaultActionIds.REDEEM_REQUEST)
       .accountsPartial({
-        vaultCommonState: redeemerCommonVault.publicKey,
+        vaultCommon: redeemerCommonVault.publicKey,
         authority: authority.publicKey,
+        authorityAcRole: getAccountAcRoleStatePda(
+          acRoleMTbill.publicKey,
+          authority.publicKey,
+          VAULT_AC_ROLES.VAULT_PAUSER
+        ),
       })
       .instruction()
   );

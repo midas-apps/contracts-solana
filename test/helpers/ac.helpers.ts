@@ -102,10 +102,6 @@ export const getAccountAcRoleStatePda = (
 };
 
 export const getAccountAcStatePda = (ac: PublicKey, account: PublicKey) => {
-  console.log({
-    ac,
-    account,
-  });
   const [pda] = findPDA([AC_SEEDS.ACCOUNT_AC, ac, account], AC_PROGRAM_ID);
   return pda;
 };

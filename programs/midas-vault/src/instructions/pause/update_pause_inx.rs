@@ -1,6 +1,8 @@
+use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
 use anchor_lang::prelude::*;
 
 use crate::{
+    constants::ac_roles,
     errors::MidasVaultsError,
     state::{PauseInxState, VaultCommonState},
 };
@@ -11,14 +13,19 @@ pub struct UpdatePauseInx<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
+    #[account()]
+    pub vault_common: Account<'info, VaultCommonState>,
+
     #[account(
-        has_one = authority @ MidasVaultsError::NotAuthority
+        seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::VAULT_PAUSER],
+        seeds::program = AccessControl::id(),
+        bump,
     )]
-    pub vault_common_state: Account<'info, VaultCommonState>,
+    pub authority_ac_role: Account<'info, AccountAccessControlRoleState>,
 
     #[account(
         mut,
-        seeds = [PauseInxState::SEED, vault_common_state.key().as_ref(), fn_id.to_le_bytes().as_ref()],
+        seeds = [PauseInxState::SEED, vault_common.key().as_ref(), fn_id.to_le_bytes().as_ref()],
         bump
     )]
     pub pause_inx_state: Account<'info, PauseInxState>,

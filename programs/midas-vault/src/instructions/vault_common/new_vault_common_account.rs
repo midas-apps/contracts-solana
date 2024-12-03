@@ -12,13 +12,13 @@ pub struct NewVaultCommonAccount<'info> {
     pub account: AccountInfo<'info>,
 
     #[account()]
-    pub vault_common_state: Account<'info, VaultCommonState>,
+    pub vault_common: Account<'info, VaultCommonState>,
 
     #[account(
         init,
         payer = signer,
         space = 8 + VaultCommonAccountState::INIT_SPACE,
-        seeds = [VaultCommonAccountState::SEED, vault_common_state.key().as_ref(), account.key().as_ref()],
+        seeds = [VaultCommonAccountState::SEED, vault_common.key().as_ref(), account.key().as_ref()],
         bump
     )]
     pub vault_common_account: Account<'info, VaultCommonAccountState>,

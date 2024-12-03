@@ -1,7 +1,8 @@
+use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
 use anchor_lang::prelude::*;
 
 use crate::{
-    constants::FIAT_MINT,
+    constants::{ac_roles, FIAT_MINT},
     errors::MidasVaultsError,
     state::{PaymentMintState, VaultCommonState},
     utils::common_vault,
@@ -12,16 +13,21 @@ pub struct AddPaymentTokenFiat<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
+    #[account()]
+    pub vault_common: Account<'info, VaultCommonState>,
+
     #[account(
-        has_one = authority @ MidasVaultsError::NotAuthority
+        seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::VAULT_ADMIN],
+        seeds::program = AccessControl::id(),
+        bump,
     )]
-    pub vault_common_state: Account<'info, VaultCommonState>,
+    pub authority_ac_role: Account<'info, AccountAccessControlRoleState>,
 
     #[account(
         init,
         payer = authority,
         space = 8 + PaymentMintState::INIT_SPACE,
-        seeds = [PaymentMintState::SEED, vault_common_state.key().as_ref(), FIAT_MINT.key().as_ref()],
+        seeds = [PaymentMintState::SEED, vault_common.key().as_ref(), FIAT_MINT.key().as_ref()],
         bump
     )]
     pub payment_mint_state: Account<'info, PaymentMintState>,

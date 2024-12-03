@@ -57,9 +57,11 @@ import {
 } from "./common-vaults.testers";
 import {
   fetchAccountAcState,
+  getAccountAcRoleStatePda,
   getAccountAcStatePda,
 } from "../helpers/ac.helpers";
 import { newAccountAc } from "./ac.testers";
+import { VAULT_AC_ROLES } from "../constants/vaults.constants";
 
 type CommonVaultsParams = VaultsFixtureReturnType;
 
@@ -432,6 +434,11 @@ export const approveMintRequest = async (
       userAccount: user,
       mMint: stateBefore.commonVaultState.mMint,
       mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
+      authorityAcRole: getAccountAcRoleStatePda(
+        stateBefore.commonVaultState.acRole,
+        from.publicKey,
+        VAULT_AC_ROLES.VAULT_ADMIN
+      ),
     })
     .transaction();
 
@@ -518,6 +525,11 @@ export const rejectMintRequest = async (
         requestId
       ),
       userAccount: user,
+      authorityAcRole: getAccountAcRoleStatePda(
+        stateBefore.commonVaultState.acRole,
+        from.publicKey,
+        VAULT_AC_ROLES.VAULT_ADMIN
+      ),
     })
     .transaction();
 
@@ -896,6 +908,11 @@ export const approveRedeemRequest = async (
       paymentMint: stateBefore.requestState.paymentMint,
       paymentMintTokenProgram: TOKEN_PROGRAM_ID,
       requestRedeemer: getRedeemerVaultRedeemerPda(baseAccounts.vaultCommon),
+      authorityAcRole: getAccountAcRoleStatePda(
+        stateBefore.commonVaultState.acRole,
+        from.publicKey,
+        VAULT_AC_ROLES.VAULT_ADMIN
+      ),
       // requestRedeemer: stateBefore.redeemerVaultState.requestRedeemer,
     })
     .transaction();
@@ -983,6 +1000,11 @@ export const rejectRedeemRequest = async (
         requestId
       ),
       userAccount: user,
+      authorityAcRole: getAccountAcRoleStatePda(
+        stateBefore.commonVaultState.acRole,
+        from.publicKey,
+        VAULT_AC_ROLES.VAULT_ADMIN
+      ),
     })
     .transaction();
 

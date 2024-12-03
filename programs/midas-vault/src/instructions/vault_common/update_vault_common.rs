@@ -1,8 +1,9 @@
+use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
 use anchor_lang::prelude::*;
 
 use crate::{
-    errors::MidasVaultsError, events::CommonVaultUpdatedEvent, state::VaultCommonState,
-    utils::common_vault::update_common_vault,
+    constants::ac_roles, errors::MidasVaultsError, events::CommonVaultUpdatedEvent,
+    state::VaultCommonState, utils::common_vault::update_common_vault,
 };
 
 #[derive(Accounts)]
@@ -10,18 +11,22 @@ pub struct UpdateVaultCommon<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    #[account(
-        mut,
-        has_one = authority @ MidasVaultsError::NotAuthority
-    )]
+    #[account(mut)]
     pub vault_common: Account<'info, VaultCommonState>,
+
+    #[account(
+        seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::VAULT_ADMIN],
+        seeds::program = AccessControl::id(),
+        bump,
+    )]
+    pub authority_ac_role: Account<'info, AccountAccessControlRoleState>,
 
     pub system_program: Program<'info, System>,
 }
 
 pub fn handle(
     ctx: Context<UpdateVaultCommon>,
-    authority: Option<Pubkey>,
+    ac_role: Option<Pubkey>,
     tokens_receiver: Option<Pubkey>,
     fee_receiver: Option<Pubkey>,
     instant_fee: Option<u64>,
@@ -33,7 +38,7 @@ pub fn handle(
 
     update_common_vault(
         state,
-        authority,
+        ac_role,
         tokens_receiver,
         fee_receiver,
         instant_fee,
@@ -44,7 +49,7 @@ pub fn handle(
 
     emit!(CommonVaultUpdatedEvent {
         vault_common: ctx.accounts.vault_common.key(),
-        authority,
+        ac_role,
         tokens_receiver,
         fee_receiver,
         instant_fee,

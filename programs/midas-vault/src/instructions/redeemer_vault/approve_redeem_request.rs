@@ -1,9 +1,10 @@
+use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
 use anchor_lang::{prelude::*, solana_program::address_lookup_table::instruction};
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion};
 
 use crate::{
-    accounts, constants::{seeds, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, state::{
+    accounts, constants::{ac_roles, seeds, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, state::{
         MintAuthorityState, MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState, RedeemerVaultRequestState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState
     }, utils::{burn_mtoken, close_account, mint_token, minter::{self}, redeemer, require_and_update_allowance, require_and_update_limit, require_variation_tolerance, transfer_token, truncate, Closable}
 };
@@ -31,10 +32,16 @@ pub struct ApproveRedeemRequest<'info> {
 
     #[account(
         mut,
-        address = redeemer_vault.common_vault,
-        has_one = authority @ MidasVaultsError::NotAuthority
+        address = redeemer_vault.common_vault
     )]
     pub vault_common: Account<'info, VaultCommonState>,
+
+    #[account(
+        seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::VAULT_ADMIN],
+        seeds::program = AccessControl::id(),
+        bump,
+    )]
+    pub authority_ac_role: Account<'info, AccountAccessControlRoleState>,
 
     #[account(
         mut,

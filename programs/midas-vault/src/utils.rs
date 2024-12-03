@@ -589,7 +589,7 @@ pub mod common_vault {
 
     pub fn update_common_vault(
         state: &mut VaultCommonState,
-        authority: Option<Pubkey>,
+        ac_role: Option<Pubkey>,
         tokens_receiver: Option<Pubkey>,
         fee_receiver: Option<Pubkey>,
         instant_fee: Option<u64>,
@@ -597,8 +597,8 @@ pub mod common_vault {
         variation_tolerance: Option<u64>,
         min_amount: Option<u64>,
     ) -> Result<()> {
-        if let Some(authority) = authority {
-            state.authority = authority;
+        if let Some(ac_role) = ac_role {
+            state.ac_role = ac_role;
         }
 
         if let Some(tokens_receiver) = tokens_receiver {

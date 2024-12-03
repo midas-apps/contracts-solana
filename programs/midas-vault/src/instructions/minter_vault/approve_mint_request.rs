@@ -1,9 +1,10 @@
+use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
 use anchor_lang::{prelude::*, solana_program::address_lookup_table::instruction};
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion};
 
 use crate::{
-    constants::{seeds, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, state::{
+    constants::{ac_roles, seeds, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, state::{
         MintAuthorityState, MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState, VaultCommonState
     }, utils::{close_account, mint_token, minter::{self}, require_and_update_limit, require_variation_tolerance, transfer_token, Closable}
 };
@@ -23,9 +24,15 @@ pub struct ApproveMintRequest<'info> {
 
     #[account(
         address = minter_vault.common_vault,
-        has_one = authority @ MidasVaultsError::NotAuthority
     )]
     pub vault_common: Account<'info, VaultCommonState>,
+
+    #[account(
+        seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::VAULT_ADMIN],
+        seeds::program = AccessControl::id(),
+        bump,
+    )]
+    pub authority_ac_role: Account<'info, AccountAccessControlRoleState>,
 
     #[account(
         mut,

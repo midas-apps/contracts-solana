@@ -54,6 +54,8 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { MAX_U128 } from "../constants/common.constants";
+import { getAccountAcRoleStatePda } from "../helpers/ac.helpers";
+import { VAULT_AC_ROLES } from "../constants/vaults.constants";
 
 type CommonVaultsParams = VaultsFixtureReturnType;
 
@@ -61,7 +63,7 @@ export const newVaultCommon = async (
   fixture: CommonVaultsParams,
   {
     ac,
-    authority,
+    acRole,
     feeReceiver,
     instantDailyLimit,
     instantFee,
@@ -76,7 +78,7 @@ export const newVaultCommon = async (
     vaultCommon?: Keypair;
     mMint?: PublicKey;
     mDataFeed?: PublicKey;
-    authority?: PublicKey;
+    acRole?: PublicKey;
     tokensReceiver?: PublicKey;
     feeReceiver?: PublicKey;
     instantFee?: bigint;
@@ -94,7 +96,7 @@ export const newVaultCommon = async (
   mMint ??= fixture.mTBillMint.publicKey;
   mDataFeed ??= fixture.dataFeedMTBill.publicKey;
 
-  authority ??= fixture.authority.publicKey;
+  acRole ??= fixture.acRoleMTbill.publicKey;
   tokensReceiver ??= fixture.tokensReceiver.publicKey;
   feeReceiver ??= fixture.feeReceiver.publicKey;
   instantFee ??= 0n;
@@ -104,14 +106,14 @@ export const newVaultCommon = async (
   vaultCommon ??= generateCommonVaultAccount();
 
   const fetchState = async () => {
-    const vaultCommonState = await fetchVaultCommonState(
+    const common = await fetchVaultCommonState(
       vaultsProgram,
       vaultCommon.publicKey,
       true
     );
 
     return {
-      vaultCommonState,
+      common,
     };
   };
 
@@ -120,7 +122,7 @@ export const newVaultCommon = async (
       ac,
       mMint,
       mDataFeed,
-      authority,
+      acRole,
       tokensReceiver,
       feeReceiver,
       toBN(instantFee),
@@ -145,28 +147,20 @@ export const newVaultCommon = async (
 
   const stateAfter = await fetchState();
 
-  expect(stateBefore.vaultCommonState).toEqual(null);
-  expect(stateAfter.vaultCommonState).not.toEqual(null);
+  expect(stateBefore.common).toEqual(null);
+  expect(stateAfter.common).not.toEqual(null);
 
-  expect(stateAfter.vaultCommonState.ac.equals(ac)).toBe(true);
-  expect(stateAfter.vaultCommonState.mMint.equals(mMint)).toBe(true);
-  expect(stateAfter.vaultCommonState.mMintFeed.equals(mDataFeed)).toBe(true);
+  expect(stateAfter.common.ac.equals(ac)).toBe(true);
+  expect(stateAfter.common.mMint.equals(mMint)).toBe(true);
+  expect(stateAfter.common.mMintFeed.equals(mDataFeed)).toBe(true);
 
-  expect(stateAfter.vaultCommonState.authority.equals(authority)).toBe(true);
-  expect(
-    stateAfter.vaultCommonState.tokensReceiver.equals(tokensReceiver)
-  ).toBe(true);
-  expect(stateAfter.vaultCommonState.feeReceiver.equals(feeReceiver)).toBe(
-    true
-  );
-  expect(fromBN(stateAfter.vaultCommonState.instantFee)).toBe(instantFee);
-  expect(fromBN(stateAfter.vaultCommonState.instantDailyLimit)).toBe(
-    instantDailyLimit
-  );
-  expect(fromBN(stateAfter.vaultCommonState.variationTolerance)).toBe(
-    variationTolerance
-  );
-  expect(fromBN(stateAfter.vaultCommonState.minAmount)).toBe(minAmount);
+  expect(stateAfter.common.acRole.equals(acRole)).toBe(true);
+  expect(stateAfter.common.tokensReceiver.equals(tokensReceiver)).toBe(true);
+  expect(stateAfter.common.feeReceiver.equals(feeReceiver)).toBe(true);
+  expect(fromBN(stateAfter.common.instantFee)).toBe(instantFee);
+  expect(fromBN(stateAfter.common.instantDailyLimit)).toBe(instantDailyLimit);
+  expect(fromBN(stateAfter.common.variationTolerance)).toBe(variationTolerance);
+  expect(fromBN(stateAfter.common.minAmount)).toBe(minAmount);
 
   return vaultCommon.publicKey;
 };
@@ -174,7 +168,7 @@ export const newVaultCommon = async (
 export const updateVaultCommon = async (
   fixture: CommonVaultsParams,
   {
-    authority,
+    acRole,
     feeReceiver,
     instantDailyLimit,
     instantFee,
@@ -184,7 +178,7 @@ export const updateVaultCommon = async (
     vaultCommon,
   }: {
     vaultCommon?: PublicKey;
-    authority?: PublicKey;
+    acRole?: PublicKey;
     tokensReceiver?: PublicKey;
     feeReceiver?: PublicKey;
     instantFee?: bigint;
@@ -198,7 +192,7 @@ export const updateVaultCommon = async (
   const { dataFeedProgram, vaultsProgram, authority: owner, context } = fixture;
   const from = opt?.from ?? owner;
 
-  authority ??= null;
+  acRole ??= null;
   tokensReceiver ??= null;
   feeReceiver ??= null;
   instantFee ??= null;
@@ -208,19 +202,18 @@ export const updateVaultCommon = async (
   vaultCommon ??= fixture.minterCommonVault.publicKey;
 
   const fetchState = async () => {
-    const vaultCommonState = await fetchVaultCommonState(
-      vaultsProgram,
-      vaultCommon
-    );
+    const common = await fetchVaultCommonState(vaultsProgram, vaultCommon);
 
     return {
-      vaultCommonState,
+      common,
     };
   };
 
+  const stateBefore = await fetchState();
+
   const tx = await vaultsProgram.methods
     .updateCommonVault(
-      authority,
+      acRole,
       tokensReceiver,
       feeReceiver,
       toBNNullable(instantFee),
@@ -231,6 +224,11 @@ export const updateVaultCommon = async (
     .accountsPartial({
       authority: from.publicKey,
       vaultCommon: vaultCommon,
+      authorityAcRole: getAccountAcRoleStatePda(
+        stateBefore.common.acRole,
+        from.publicKey,
+        VAULT_AC_ROLES.VAULT_ADMIN
+      ),
     })
     .transaction();
 
@@ -243,40 +241,34 @@ export const updateVaultCommon = async (
 
   const stateAfter = await fetchState();
 
-  if (authority) {
-    expect(stateAfter.vaultCommonState.authority.equals(authority)).toBe(true);
+  if (acRole) {
+    expect(stateAfter.common.acRole.equals(acRole)).toBe(true);
   }
 
   if (tokensReceiver) {
-    expect(
-      stateAfter.vaultCommonState.tokensReceiver.equals(tokensReceiver)
-    ).toBe(true);
+    expect(stateAfter.common.tokensReceiver.equals(tokensReceiver)).toBe(true);
   }
 
   if (feeReceiver) {
-    expect(stateAfter.vaultCommonState.feeReceiver.equals(feeReceiver)).toBe(
-      true
-    );
+    expect(stateAfter.common.feeReceiver.equals(feeReceiver)).toBe(true);
   }
 
   if (instantFee !== null) {
-    expect(fromBN(stateAfter.vaultCommonState.instantFee)).toBe(instantFee);
+    expect(fromBN(stateAfter.common.instantFee)).toBe(instantFee);
   }
 
   if (instantDailyLimit !== null) {
-    expect(fromBN(stateAfter.vaultCommonState.instantDailyLimit)).toBe(
-      instantDailyLimit
-    );
+    expect(fromBN(stateAfter.common.instantDailyLimit)).toBe(instantDailyLimit);
   }
 
   if (variationTolerance !== null) {
-    expect(fromBN(stateAfter.vaultCommonState.variationTolerance)).toBe(
+    expect(fromBN(stateAfter.common.variationTolerance)).toBe(
       variationTolerance
     );
   }
 
   if (minAmount !== null) {
-    expect(fromBN(stateAfter.vaultCommonState.minAmount)).toBe(minAmount);
+    expect(fromBN(stateAfter.common.minAmount)).toBe(minAmount);
   }
 };
 
@@ -298,14 +290,13 @@ export const newVaultCommonAccount = async (
   account ??= from.publicKey;
 
   const baseAccounts = {
-    vaultCommonState:
-      accounts?.commonVault ?? fixture.minterCommonVault.publicKey,
+    vaultCommon: accounts?.commonVault ?? fixture.minterCommonVault.publicKey,
   };
 
   const fetchState = async () => {
     const vaultCommonAccount = await fetchVaultCommonAccountState(
       vaultsProgram,
-      getCommonVaultAccountStatePda(baseAccounts.vaultCommonState, account),
+      getCommonVaultAccountStatePda(baseAccounts.vaultCommon, account),
       true
     );
 
@@ -378,19 +369,24 @@ export const addPaymentToken = async (
 
   const baseAccounts = {
     tokenProgram: accounts?.tokenProgram ?? TOKEN_PROGRAM_ID,
-    vaultCommonState:
-      accounts?.commonVault ?? fixture.minterCommonVault.publicKey,
+    vaultCommon: accounts?.commonVault ?? fixture.minterCommonVault.publicKey,
   };
 
   const fetchState = async () => {
     const paymentTokenState = await fetchPaymentMintState(
       vaultsProgram,
-      getPaymentMintStatePda(baseAccounts.vaultCommonState, mint),
+      getPaymentMintStatePda(baseAccounts.vaultCommon, mint),
       true
+    );
+
+    const commonState = await fetchVaultCommonState(
+      vaultsProgram,
+      baseAccounts.vaultCommon
     );
 
     return {
       paymentTokenState,
+      commonState,
     };
   };
 
@@ -405,6 +401,11 @@ export const addPaymentToken = async (
       authority: from.publicKey,
       dataFeed: dataFeed,
       paymentMint: mint,
+      authorityAcRole: getAccountAcRoleStatePda(
+        stateBefore.commonState.acRole,
+        from.publicKey,
+        VAULT_AC_ROLES.VAULT_ADMIN
+      ),
     })
     .transaction();
 

@@ -13,7 +13,7 @@ pub struct VaultCommonState {
     pub m_mint_feed: Pubkey,
 
     // fields that can be modified by update_vault_common inx
-    pub authority: Pubkey,
+    pub ac_role: Pubkey,
     pub tokens_receiver: Pubkey,
     pub fee_receiver: Pubkey,
     pub instant_fee: u64,

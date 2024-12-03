@@ -25,6 +25,11 @@ export const VAULTS_SEEDS = {
   REQUEST_REDEEMER: "request_redeemer",
 };
 
+export const VAULT_AC_ROLES = {
+  VAULT_ADMIN: "vault_admin_role",
+  VAULT_PAUSER: "vault_pauser_role",
+};
+
 export enum VaultError {
   NotAuthority = 6000,
   NotGreenListed,

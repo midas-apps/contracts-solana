@@ -4,9 +4,9 @@ use anchor_lang::prelude::*;
 pub struct CommonVaultCreatedEvent {
     pub vault_common: Pubkey,
     pub ac: Pubkey,
+    pub ac_role: Pubkey,
     pub m_mint: Pubkey,
     pub m_mint_feed: Pubkey,
-    pub authority: Pubkey,
     pub tokens_receiver: Pubkey,
     pub fee_receiver: Pubkey,
     pub instant_fee: u64,
@@ -18,7 +18,7 @@ pub struct CommonVaultCreatedEvent {
 #[event]
 pub struct CommonVaultUpdatedEvent {
     pub vault_common: Pubkey,
-    pub authority: Option<Pubkey>,
+    pub ac_role: Option<Pubkey>,
     pub tokens_receiver: Option<Pubkey>,
     pub fee_receiver: Option<Pubkey>,
     pub instant_fee: Option<u64>,

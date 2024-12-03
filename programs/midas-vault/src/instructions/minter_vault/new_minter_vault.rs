@@ -1,7 +1,8 @@
+use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
 use anchor_lang::prelude::*;
 
 use crate::{
-    constants::seeds,
+    constants::{ac_roles, seeds},
     errors::MidasVaultsError,
     state::{MintAuthorityState, MinterVaultState, VaultCommonState},
 };
@@ -11,10 +12,15 @@ pub struct NewMinterVault<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    #[account(
-        has_one = authority @ MidasVaultsError::NotAuthority
-    )]
+    #[account()]
     pub vault_common: Account<'info, VaultCommonState>,
+
+    #[account(
+        seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::VAULT_ADMIN],
+        seeds::program = AccessControl::id(),
+        bump,
+    )]
+    pub authority_ac_role: Account<'info, AccountAccessControlRoleState>,
 
     #[account(
         init,
