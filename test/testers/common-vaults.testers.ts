@@ -22,6 +22,7 @@ import {
   parseUnits,
   processTransaction,
   toBN,
+  toBNNullable,
 } from "../helpers/common.helpers";
 import { SYSTEM_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/native/system";
 import { VaultsFixtureReturnType } from "../fixture/vaults.fixture";
@@ -168,6 +169,117 @@ export const newVaultCommon = async (
     variationTolerance
   );
   expect(fromBN(stateAfter.vaultCommonState.minAmount)).toBe(minAmount);
+
+  return vaultCommon.publicKey;
+};
+
+export const updateVaultCommon = async (
+  fixture: CommonVaultsParams,
+  {
+    authority,
+    feeReceiver,
+    instantDailyLimit,
+    instantFee,
+    minAmount,
+    tokensReceiver,
+    variationTolerance,
+    vaultCommon,
+  }: {
+    vaultCommon?: PublicKey;
+    authority?: PublicKey;
+    tokensReceiver?: PublicKey;
+    feeReceiver?: PublicKey;
+    instantFee?: bigint;
+    instantDailyLimit?: bigint;
+    variationTolerance?: bigint;
+    minAmount?: bigint;
+  },
+
+  opt?: OptionalCommonParams
+) => {
+  const { dataFeedProgram, vaultsProgram, authority: owner, context } = fixture;
+  const from = opt?.from ?? owner;
+
+  authority ??= null;
+  tokensReceiver ??= null;
+  feeReceiver ??= null;
+  instantFee ??= null;
+  instantDailyLimit ??= null;
+  variationTolerance ??= null;
+  minAmount ??= null;
+  vaultCommon ??= fixture.minterCommonVault.publicKey;
+
+  const fetchState = async () => {
+    const vaultCommonState = await fetchVaultCommonState(
+      vaultsProgram,
+      vaultCommon
+    );
+
+    return {
+      vaultCommonState,
+    };
+  };
+
+  const tx = await vaultsProgram.methods
+    .updateCommonVault(
+      authority,
+      tokensReceiver,
+      feeReceiver,
+      toBNNullable(instantFee),
+      toBNNullable(instantDailyLimit),
+      toBNNullable(variationTolerance),
+      toBNNullable(minAmount)
+    )
+    .accountsPartial({
+      authority: from.publicKey,
+      vaultCommon: vaultCommon,
+    })
+    .transaction();
+
+  if (opt?.revertedWith) {
+    await expectTxReverted(context, tx, [from], opt);
+    return;
+  }
+
+  await expectTxNotReverted(context, tx, [from]);
+
+  const stateAfter = await fetchState();
+
+  if (authority) {
+    expect(stateAfter.vaultCommonState.authority.equals(authority)).toBe(true);
+  }
+
+  if (tokensReceiver) {
+    expect(
+      stateAfter.vaultCommonState.tokensReceiver.equals(tokensReceiver)
+    ).toBe(true);
+  }
+
+  if (feeReceiver) {
+    expect(stateAfter.vaultCommonState.feeReceiver.equals(feeReceiver)).toBe(
+      true
+    );
+  }
+
+  if (instantFee !== null) {
+    expect(fromBN(stateAfter.vaultCommonState.instantFee)).toBe(instantFee);
+  }
+
+  if (instantDailyLimit !== null) {
+    expect(fromBN(stateAfter.vaultCommonState.instantDailyLimit)).toBe(
+      instantDailyLimit
+    );
+  }
+
+  if (variationTolerance !== null) {
+    expect(fromBN(stateAfter.vaultCommonState.variationTolerance)).toBe(
+      variationTolerance
+    );
+  }
+
+  if (minAmount !== null) {
+    expect(fromBN(stateAfter.vaultCommonState.minAmount)).toBe(minAmount);
+  }
 };
 
 export const newVaultCommonAccount = async (

@@ -21,6 +21,7 @@ import {
   addPaymentToken,
   newVaultCommon,
   newVaultCommonAccount,
+  updateVaultCommon,
 } from "./testers/common-vaults.testers";
 
 describe("common-vault", () => {
@@ -57,6 +58,15 @@ describe("common-vault", () => {
           revertedWith: VaultError.InvalidFee,
         }
       );
+    });
+  });
+
+  describe("update_common_vault", () => {
+    it("call with default params", async () => {
+      const fixture = await vaultsFixture();
+
+      const vaultCommon = await newVaultCommon(fixture, {});
+      await updateVaultCommon(fixture, { vaultCommon });
     });
   });
 });
