@@ -17,17 +17,30 @@ import {
 } from "../helpers/data-feed.helpers";
 import { DataFeed } from "@/target/types/data_feed";
 import { MidasVaults } from "@/target/types/midas_vaults";
-import { Keypair, Transaction } from "@solana/web3.js";
+import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
+import { acFixture } from "./ac.fixture";
+import {
+  acRoleToBuffer,
+  getAccountAcRoleStatePda,
+} from "../helpers/ac.helpers";
+import { DATA_FEED_AC_ROLES } from "../constants/data-feed.constants";
+import { AC_ROLES } from "../constants/ac.constants";
 
 export const dataFeedFixture = async () => {
-  const { provider, context, accounts } = await initBankrun();
-  const [authority, ...regularAccounts] = accounts;
+  const acF = await acFixture();
+
+  const {
+    provider,
+    context,
+    accounts,
+    authority,
+    regularAccounts,
+    acProgram,
+    acRoleGlobal,
+    acRoleMTbill,
+  } = acF;
 
   const dataFeedProgram = new Program<DataFeed>(DATA_FEED_IDL as any, provider);
-  const vaultsProgram = new Program<MidasVaults>(
-    MIDAS_VAULTS_IDL as any,
-    provider
-  );
 
   const dataFeedPaymentToken = generateFeedAcccount();
   const dataFeedMTBill = generateFeedAcccount();
@@ -40,11 +53,29 @@ export const dataFeedFixture = async () => {
   );
 
   // TODO: move to helpers
-  const createManualFeed = async (feed: Keypair) => {
+  const createManualFeed = async (feed: Keypair, acRole: PublicKey) => {
     const createFeedTx = new Transaction().add(
+      await acProgram.methods
+        .grantRole(acRoleToBuffer(DATA_FEED_AC_ROLES.FEED_ADMIN))
+        .accountsPartial({
+          account: authority.publicKey,
+          acRole: acRole,
+          authority: authority.publicKey,
+          authorityAcAdminRole: getAccountAcRoleStatePda(
+            acRole,
+            authority.publicKey,
+            AC_ROLES.ADMIN
+          ),
+          accountAcRole: getAccountAcRoleStatePda(
+            acRole,
+            authority.publicKey,
+            DATA_FEED_AC_ROLES.FEED_ADMIN
+          ),
+        })
+        .instruction(),
       await dataFeedProgram.methods
         .newFeed(
-          authority.publicKey,
+          acRole,
           getManualFeedStatePda(feed.publicKey),
           DataFeedMode.manual,
           toBN(parseUnits("0.1")),
@@ -61,6 +92,12 @@ export const dataFeedFixture = async () => {
         .accountsPartial({
           baseFeed: feed.publicKey,
           authority: authority.publicKey,
+          acRole: acRole,
+          authorityAcRole: getAccountAcRoleStatePda(
+            acRole,
+            authority.publicKey,
+            DATA_FEED_AC_ROLES.FEED_ADMIN
+          ),
         })
         .instruction()
     );
@@ -68,10 +105,11 @@ export const dataFeedFixture = async () => {
     await processTransaction(context, createFeedTx, [authority, feed]);
   };
 
-  await createManualFeed(dataFeedMTBill);
-  await createManualFeed(dataFeedPaymentToken);
+  await createManualFeed(dataFeedMTBill, acRoleMTbill.publicKey);
+  await createManualFeed(dataFeedPaymentToken, acRoleGlobal.publicKey);
 
   return {
+    ...acF,
     provider,
     accounts,
     dataFeedProgram,

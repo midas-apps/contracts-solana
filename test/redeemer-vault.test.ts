@@ -9,7 +9,6 @@ import {
 import { vaultsFixture } from "./fixture/vaults.fixture";
 import { VAULTS_PROGRAM_ID } from "./constants/vaults.constants";
 import {
-  addPaymentToken,
   approveMintRequest,
   approveRedeemRequest,
   mintInstant,
@@ -19,7 +18,6 @@ import {
   mintRequest,
   newAcAccount,
   newMintAuthority,
-  newVaultCommonAccount,
   prepareCommonRedeemTest,
   redeemInstant,
   redeemRequest,

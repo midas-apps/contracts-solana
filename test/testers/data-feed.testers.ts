@@ -19,6 +19,8 @@ import {
 } from "../helpers/common.helpers";
 import { SYSTEM_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/native/system";
 import { BN, max } from "bn.js";
+import { getAccountAcRoleStatePda } from "../helpers/ac.helpers";
+import { DATA_FEED_AC_ROLES } from "../constants/data-feed.constants";
 
 type CommonDataFeedParams = DataFeedFixtureReturnType;
 
@@ -30,12 +32,12 @@ export const createNewFeed = async (
     feed,
     underlyingFeed,
     mode,
-    authority,
+    acRole,
     maxPrice,
     maxStaleness,
     minPrice,
   }: {
-    authority?: PublicKey;
+    acRole?: PublicKey;
     feed?: Keypair;
     mode?: keyof typeof DataFeedMode;
     underlyingFeed?: PublicKey;
@@ -45,9 +47,9 @@ export const createNewFeed = async (
   },
   opt?: OptionalCommonParams
 ) => {
-  const { dataFeedProgram, authority: owner, context } = fixture;
+  const { dataFeedProgram, acRoleGlobal, authority: owner, context } = fixture;
 
-  authority ??= owner.publicKey;
+  acRole ??= acRoleGlobal.publicKey;
   feed ??= generateFeedAcccount();
   minPrice ??= parseUnits("0.1");
   maxPrice ??= parseUnits("10");
@@ -59,7 +61,7 @@ export const createNewFeed = async (
 
   const tx = await dataFeedProgram.methods
     .newFeed(
-      authority,
+      acRole,
       underlyingFeed,
       DataFeedMode[mode],
       toBN(minPrice),
@@ -85,7 +87,7 @@ export const createNewFeed = async (
         name: "feedCreatedEvent",
         data: {
           feed: feed.publicKey,
-          authority: authority,
+          acRole: acRole,
           underlyingFeed: underlyingFeed,
           mode: DataFeedMode[mode],
           minPrice: minPrice,
@@ -98,7 +100,7 @@ export const createNewFeed = async (
 
   const feedFetched = await fetchDataFeedState(dataFeedProgram, feed.publicKey);
 
-  expect(feedFetched.authority.equals(authority)).toBe(true);
+  expect(feedFetched.acRole.equals(acRole)).toBe(true);
   expect(feedFetched.underlyingFeed.equals(underlyingFeed)).toBe(true);
   expect(fromBN(feedFetched.minPrice)).toBe(minPrice);
   expect(fromBN(feedFetched.maxPrice)).toBe(maxPrice);
@@ -114,12 +116,12 @@ export const updateFeed = async (
     feed,
     underlyingFeed,
     mode,
-    authority,
+    acRole,
     maxPrice,
     maxStaleness,
     minPrice,
   }: {
-    authority?: PublicKey | null;
+    acRole?: PublicKey | null;
     feed?: PublicKey | null;
     mode?: keyof typeof DataFeedMode;
     underlyingFeed?: PublicKey | null;
@@ -131,7 +133,7 @@ export const updateFeed = async (
 ) => {
   const { dataFeedProgram, authority: owner, context } = fixture;
 
-  authority ??= null;
+  acRole ??= null;
   feed ??= null;
   minPrice ??= null;
   maxPrice ??= null;
@@ -141,10 +143,11 @@ export const updateFeed = async (
 
   const from = opt?.from ?? owner;
 
-  console.log({ maxStaleness });
+  const baseFeedStateBefore = await fetchDataFeedState(dataFeedProgram, feed);
+
   const tx = await dataFeedProgram.methods
     .updateFeed(
-      authority,
+      acRole,
       underlyingFeed,
       mode ? DataFeedMode[mode] : null,
       toBNNullable(minPrice),
@@ -154,6 +157,12 @@ export const updateFeed = async (
     .accountsPartial({
       feed: feed,
       authority: from.publicKey,
+      acRole: baseFeedStateBefore.acRole,
+      authorityAcRole: getAccountAcRoleStatePda(
+        baseFeedStateBefore.acRole,
+        from.publicKey,
+        DATA_FEED_AC_ROLES.FEED_ADMIN
+      ),
     })
     .transaction();
 
@@ -170,7 +179,7 @@ export const updateFeed = async (
         name: "feedUpdatedEvent",
         data: {
           feed: feed,
-          authority: authority,
+          acRole: acRole,
           underlyingFeed: underlyingFeed,
           mode: DataFeedMode[mode],
           minPrice: minPrice,
@@ -183,8 +192,8 @@ export const updateFeed = async (
 
   const feedFetched = await fetchDataFeedState(dataFeedProgram, feed);
 
-  if (authority) {
-    expect(feedFetched.authority.equals(authority)).toBe(true);
+  if (acRole) {
+    expect(feedFetched.acRole.equals(acRole)).toBe(true);
   }
 
   if (underlyingFeed) {
@@ -237,14 +246,20 @@ export const createNewManualFeed = async (
   const feedPda = getManualFeedStatePda(baseFeed);
 
   const from = opt?.from ?? owner;
+  const baseFeedState = await fetchDataFeedState(dataFeedProgram, baseFeed);
 
   const tx = await dataFeedProgram.methods
     .newManualFeed(toBN(initialPrice), decimals)
-    .accountsStrict({
+    .accountsPartial({
       baseFeed: baseFeed,
       authority: from.publicKey,
       manualFeed: feedPda,
-      systemProgram: SYSTEM_PROGRAM_ID,
+      acRole: baseFeedState.acRole,
+      authorityAcRole: getAccountAcRoleStatePda(
+        baseFeedState.acRole,
+        from.publicKey,
+        DATA_FEED_AC_ROLES.FEED_ADMIN
+      ),
     })
     .transaction();
 
@@ -302,6 +317,10 @@ export const updateManualFeed = async (
   const feedPda = getManualFeedStatePda(baseFeed);
 
   const from = opt?.from ?? owner;
+  const baseFeedStateBefore = await fetchDataFeedState(
+    dataFeedProgram,
+    baseFeed
+  );
 
   const tx = await dataFeedProgram.methods
     .updateManualFeed(price ? toBN(price) : null, decimals)
@@ -309,6 +328,12 @@ export const updateManualFeed = async (
       baseFeed: baseFeed,
       authority: from.publicKey,
       manualFeed: feedPda,
+      acRole: baseFeedStateBefore.acRole,
+      authorityAcRole: getAccountAcRoleStatePda(
+        baseFeedStateBefore.acRole,
+        from.publicKey,
+        DATA_FEED_AC_ROLES.FEED_ADMIN
+      ),
     })
     .transaction();
 

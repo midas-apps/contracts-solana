@@ -5,7 +5,7 @@ use crate::state::FeedMode;
 #[event]
 pub struct FeedCreatedEvent {
     pub feed: Pubkey,
-    pub authority: Pubkey,
+    pub ac_role: Pubkey,
     pub underlying_feed: Pubkey,
     pub mode: FeedMode,
     pub min_price: u64,
@@ -16,7 +16,7 @@ pub struct FeedCreatedEvent {
 #[event]
 pub struct FeedUpdatedEvent {
     pub feed: Pubkey,
-    pub authority: Option<Pubkey>,
+    pub ac_role: Option<Pubkey>,
     pub underlying_feed: Option<Pubkey>,
     pub mode: Option<FeedMode>,
     pub min_price: Option<u64>,

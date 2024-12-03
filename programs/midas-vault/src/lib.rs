@@ -248,24 +248,6 @@ pub mod midas_vaults {
         vault_common::update_vault_common_account::handle(ctx, free_from_min_amount, waived_fee)
     }
 
-    /** Access Control Instructions */
-
-    pub fn new_ac(ctx: Context<NewAccessControl>, authority: Pubkey) -> Result<()> {
-        ac::new_ac::handle(ctx, authority)
-    }
-
-    pub fn new_account_ac(ctx: Context<NewAccountAccessControl>) -> Result<()> {
-        ac::new_account_ac::handle(ctx)
-    }
-
-    pub fn update_account_ac(
-        ctx: Context<UpdateAccountAccessControl>,
-        green_listed: Option<bool>,
-        black_listed: Option<bool>,
-    ) -> Result<()> {
-        ac::update_account_ac::handle(ctx, green_listed, black_listed)
-    }
-
     /** Pause Instructions */
 
     pub fn new_pause_inx(ctx: Context<NewPauseInx>, fn_id: u8) -> Result<()> {

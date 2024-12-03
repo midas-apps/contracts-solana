@@ -55,6 +55,10 @@ export const vaultsFixture = async () => {
     manualUnderlyingFeedPaymentToken,
     provider,
     regularAccounts: allRegularAccounts,
+    acProgram,
+    ac,
+    acRoleGlobal,
+    acRoleMTbill,
   } = dfFixture;
 
   const [feeReceiver, tokensReceiver, requestRedeemer, ...regularAccounts] =
@@ -64,7 +68,6 @@ export const vaultsFixture = async () => {
     provider
   );
 
-  const ac = generateAcAcccount();
   const minterCommonVault = generateCommonVaultAccount();
   const redeemerCommonVault = generateCommonVaultAccount();
 
@@ -173,13 +176,6 @@ export const vaultsFixture = async () => {
 
   const createMinterVaultTx = new Transaction().add(
     await vaultsProgram.methods
-      .newAc(authority.publicKey)
-      .accountsPartial({
-        ac: ac.publicKey,
-        payer: authority.publicKey,
-      })
-      .instruction(),
-    await vaultsProgram.methods
       .newCommonVault(
         ac.publicKey,
         mTBillMint.publicKey,
@@ -232,9 +228,7 @@ export const vaultsFixture = async () => {
 
   await processTransaction(context, createMinterVaultTx, [
     authority,
-
     minterCommonVault,
-    ac,
   ]);
 
   const createRedeemerVaultTx = new Transaction().add(
@@ -294,7 +288,6 @@ export const vaultsFixture = async () => {
     minterCommonVault,
     redeemerCommonVault,
     mTBillMinterAuthoritySeed,
-    ac,
     mTBillMint,
     requestRedeemer,
     paymentMints: {

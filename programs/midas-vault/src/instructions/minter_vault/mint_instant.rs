@@ -1,10 +1,11 @@
+use access_control::{program::AccessControl, state::{AccessControlState, AccountAccessControlState}};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion};
 
 use crate::{
     constants::seeds, errors::MidasVaultsError, state::{
-        AccessControlState, AccountAccessControlState, MintAuthorityState, MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState, VaultCommonState
+        MintAuthorityState, MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState, VaultCommonState
     }, utils::{mint_token, minter::{self}, require_and_update_limit, transfer_token, validate_common, Validate, VaultActionId}
 };
 
@@ -39,13 +40,15 @@ pub struct MintInstant<'info> {
     pub minter_vault: Account<'info, MinterVaultState>,
 
     #[account(
-        address = vault_common.ac
+        address = vault_common.ac,
+        owner = AccessControl::id()
     )]
     pub ac: Account<'info, AccessControlState>,
 
     #[account(
         seeds = [AccountAccessControlState::SEED, ac.key().as_ref(), signer.key().as_ref()],
-        bump
+        seeds::program = AccessControl::id(),
+        bump,
     )]
     pub account_ac: Account<'info, AccountAccessControlState>,
 

@@ -9,7 +9,7 @@ pub enum FeedMode {
 #[account]
 #[derive(InitSpace)]
 pub struct FeedState {
-    pub authority: Pubkey,
+    pub ac_role: Pubkey,
     pub underlying_feed: Pubkey,
     pub mode: FeedMode,
     pub min_price: u64,

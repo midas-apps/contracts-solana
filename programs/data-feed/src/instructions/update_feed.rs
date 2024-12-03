@@ -1,7 +1,11 @@
+use access_control::{
+    program::AccessControl,
+    state::{AccessControlRoleState, AccountAccessControlRoleState},
+};
 use anchor_lang::prelude::*;
 
 use crate::{
-    errors::DataFeedError,
+    constants::ac_roles,
     events::FeedUpdatedEvent,
     state::{FeedMode, FeedState},
     utils::update_feed,
@@ -13,15 +17,24 @@ pub struct UpdateFeed<'info> {
     pub authority: Signer<'info>,
 
     #[account(
-        mut,
-        has_one = authority @ DataFeedError::NotAuthority
+        address = feed.ac_role
     )]
+    pub ac_role: Account<'info, AccessControlRoleState>,
+
+    #[account(
+        seeds = [AccountAccessControlRoleState::SEED, ac_role.key().as_ref(), authority.key().as_ref(), ac_roles::FEED_ADMIN],
+        seeds::program = AccessControl::id(),
+        bump,
+    )]
+    pub authority_ac_role: Account<'info, AccountAccessControlRoleState>,
+
+    #[account(mut)]
     pub feed: Account<'info, FeedState>,
 }
 
 pub fn handle(
     ctx: Context<UpdateFeed>,
-    authority: Option<Pubkey>,
+    ac_role: Option<Pubkey>,
     underlying_feed: Option<Pubkey>,
     mode: Option<FeedMode>,
     min_price: Option<u64>,
@@ -32,7 +45,7 @@ pub fn handle(
 
     update_feed(
         state,
-        authority,
+        ac_role,
         underlying_feed,
         mode.clone(),
         min_price,
@@ -42,7 +55,7 @@ pub fn handle(
 
     emit!(FeedUpdatedEvent {
         feed: ctx.accounts.feed.key(),
-        authority,
+        ac_role,
         underlying_feed,
         mode: mode.clone(),
         min_price,

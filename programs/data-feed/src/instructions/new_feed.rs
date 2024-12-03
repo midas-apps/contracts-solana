@@ -23,7 +23,7 @@ pub struct NewFeed<'info> {
 
 pub fn handle(
     ctx: Context<NewFeed>,
-    authority: Pubkey,
+    ac_role: Pubkey,
     underlying_feed: Pubkey,
     mode: FeedMode,
     min_price: u64,
@@ -34,7 +34,7 @@ pub fn handle(
 
     update_feed(
         state,
-        Some(authority),
+        Some(ac_role),
         Some(underlying_feed),
         Some(mode.clone()),
         Some(min_price),
@@ -44,7 +44,7 @@ pub fn handle(
 
     emit!(FeedCreatedEvent {
         feed: ctx.accounts.feed.key(),
-        authority,
+        ac_role,
         underlying_feed,
         mode,
         min_price,

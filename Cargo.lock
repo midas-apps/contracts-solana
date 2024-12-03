@@ -1080,6 +1080,7 @@ dependencies = [
 name = "data-feed"
 version = "0.1.0"
 dependencies = [
+ "access-control",
  "anchor-lang",
  "switchboard-on-demand",
 ]
@@ -2033,6 +2034,7 @@ dependencies = [
 name = "midas-vaults"
 version = "0.1.0"
 dependencies = [
+ "access-control",
  "anchor-lang",
  "anchor-spl",
  "data-feed",

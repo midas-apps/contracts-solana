@@ -27,7 +27,6 @@ import {
 import { SYSTEM_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/native/system";
 import { VaultsFixtureReturnType } from "../fixture/vaults.fixture";
 import {
-  fetchAccountAcState,
   fetchMintAuthorityState,
   fetchMinterVaultRequestState,
   fetchMinterVaultState,
@@ -37,7 +36,6 @@ import {
   fetchVaultCommonAccountState,
   fetchVaultCommonState,
   generateCommonVaultAccount,
-  getAccountAcStatePda,
   getCommonVaultAccountStatePda,
   getMintAuthorityPda,
   getMinterVaultPda,
@@ -336,7 +334,7 @@ export const newVaultCommonAccount = async (
 
   const stateAfter = await fetchState();
 
-  expect(stateBefore.vaultCommonAccount).not.toEqual(null);
+  expect(stateBefore.vaultCommonAccount).toEqual(null);
   expect(stateAfter.vaultCommonAccount).not.toEqual(null);
   expect(stateAfter.vaultCommonAccount.freeFromMinAmount).toBe(false);
   expect(stateAfter.vaultCommonAccount.freeFromMinFirstMint).toBe(false);

@@ -156,24 +156,6 @@ export const fetchPauseInxState = (
   return program.account.pauseInxState.fetchNullable(pauseInxState);
 };
 
-export const fetchAccountAcState = async (
-  program: VaultsProgram,
-  accountAc: PublicKey,
-  allowNull = false
-) => {
-  // TODO: refactor
-  try {
-    return await program.account.accountAccessControlState.fetchNullable(
-      accountAc
-    );
-  } catch (err) {
-    if (!allowNull) {
-      throw new Error("Payment mint state is null");
-    }
-    return null;
-  }
-};
-
 export const mintAuthoritySeedToBuffer = (seed: string) => {
   return keccak256(Buffer.from(seed));
 };
@@ -237,14 +219,6 @@ export const getRedeemerVaultRequestPda = (
       vault,
       new BN(request_id.toString()).toArrayLike(Buffer, "le", 8),
     ],
-    VAULTS_PROGRAM_ID
-  );
-  return pda;
-};
-
-export const getAccountAcStatePda = (ac: PublicKey, account: PublicKey) => {
-  const [pda] = findPDA(
-    [VAULTS_SEEDS.ACCOUNT_AC, ac, account],
     VAULTS_PROGRAM_ID
   );
   return pda;

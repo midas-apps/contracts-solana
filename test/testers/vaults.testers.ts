@@ -25,7 +25,6 @@ import {
 import { SYSTEM_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/native/system";
 import { VaultsFixtureReturnType } from "../fixture/vaults.fixture";
 import {
-  fetchAccountAcState,
   fetchMintAuthorityState,
   fetchMinterVaultRequestState,
   fetchMinterVaultState,
@@ -34,7 +33,6 @@ import {
   fetchRedeemerVaultState,
   fetchVaultCommonAccountState,
   fetchVaultCommonState,
-  getAccountAcStatePda,
   getCommonVaultAccountStatePda,
   getMintAuthorityPda,
   getMinterVaultPda,
@@ -57,6 +55,10 @@ import {
   addPaymentToken,
   newVaultCommonAccount,
 } from "./common-vaults.testers";
+import {
+  fetchAccountAcState,
+  getAccountAcStatePda,
+} from "../helpers/ac.helpers";
 
 type CommonVaultsParams = VaultsFixtureReturnType;
 
@@ -177,6 +179,7 @@ export const mintInstant = async (
       paymentMintFeed: stateBefore.paymentTokenFeed.underlyingFeed,
       paymentMintTokenProgram: TOKEN_PROGRAM_ID,
       mintAuthority: stateBefore.minterVaultState.mintAuthorityPda,
+      accountAc: getAccountAcStatePda(baseAccounts.ac, from.publicKey),
     })
     .preInstructions([
       approveMintInstruction(
@@ -218,6 +221,7 @@ export const mintRequest = async (
 ) => {
   const {
     dataFeedProgram,
+    acProgram,
     vaultsProgram,
     authority: owner,
     context,
@@ -323,6 +327,7 @@ export const mintRequest = async (
         getMinterVaultPda(baseAccounts.vaultCommon),
         fromBN(stateBefore.commonVaultState.requestsCount)
       ),
+      accountAc: getAccountAcStatePda(baseAccounts.ac, from.publicKey),
     })
     .preInstructions([
       approveMintInstruction(
@@ -635,6 +640,7 @@ export const redeemInstant = async (
       paymentMintDataFeed: stateBefore.paymentTokenState.dataFeed,
       paymentMintFeed: stateBefore.paymentTokenFeed.underlyingFeed,
       paymentMintTokenProgram: TOKEN_PROGRAM_ID,
+      accountAc: getAccountAcStatePda(baseAccounts.ac, from.publicKey),
     })
     .preInstructions([
       approveMintInstruction(
@@ -763,21 +769,6 @@ export const redeemRequest = async (
 
   const stateBefore = await fetchState();
 
-  // console.log({
-  //   from: findATA(
-  //     stateBefore.commonVaultState.mMint,
-  //     from.publicKey,
-  //     TOKEN_2022_PROGRAM_ID
-  //   ).toBase58(),
-  //   to: findATA(
-  //     stateBefore.commonVaultState.mMint,
-  //     getRedeemerVaultPda(fixture.redeemerCommonVault.publicKey),
-  //     TOKEN_2022_PROGRAM_ID
-  //   ).toBase58(),
-  //   authority: from.publicKey.toBase58(),
-  //   mint: stateBefore.commonVaultState.mMint.toBase58(),
-  // });
-
   const tx = await vaultsProgram.methods
     .redeemRequest(toBN(amountMToken))
     .accountsPartial({
@@ -796,6 +787,7 @@ export const redeemRequest = async (
       ),
       mMint: stateBefore.commonVaultState.mMint,
       mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
+      accountAc: getAccountAcStatePda(baseAccounts.ac, from.publicKey),
     })
     .preInstructions([
       approveMintInstruction(
@@ -887,19 +879,6 @@ export const approveRedeemRequest = async (
   expect(stateBefore.requestState).not.toEqual(null);
 
   const user = stateBefore.requestState.user;
-
-  // console.log({
-  //   from: findATA(
-  //     stateBefore.requestState.paymentMint,
-  //     getRedeemerVaultRedeemerPda(baseAccounts.vaultCommon)
-  //   ).toBase58(),
-  //   to: findATA(
-  //     stateBefore.requestState.paymentMint,
-  //     fixture.authority.publicKey
-  //   ).toBase58(),
-  //   authority: getRedeemerVaultRedeemerPda(baseAccounts.vaultCommon).toBase58(),
-  //   mint: stateBefore.requestState.paymentMint.toBase58(),
-  // });
 
   const tx = await vaultsProgram.methods
     .approveRedeemRequest(toBN(requestId), toBN(newRate), isSafe)
@@ -1085,7 +1064,13 @@ export const newAcAccount = async (
   },
   opt?: OptionalCommonParams
 ) => {
-  const { dataFeedProgram, vaultsProgram, authority: owner, context } = fixture;
+  const {
+    dataFeedProgram,
+    vaultsProgram,
+    acProgram,
+    authority: owner,
+    context,
+  } = fixture;
   const from = opt?.from ?? owner;
 
   account ??= from.publicKey;
@@ -1096,7 +1081,7 @@ export const newAcAccount = async (
 
   const fetchState = async () => {
     const accountAcState = await fetchAccountAcState(
-      vaultsProgram,
+      acProgram,
       getAccountAcStatePda(baseAccounts.ac, account),
       true
     );
@@ -1108,12 +1093,13 @@ export const newAcAccount = async (
 
   const stateBefore = await fetchState();
 
-  const tx = await vaultsProgram.methods
+  const tx = await acProgram.methods
     .newAccountAc()
-    .accounts({
+    .accountsPartial({
       ...baseAccounts,
       account,
       signer: from.publicKey,
+      accountAc: getAccountAcStatePda(baseAccounts.ac, account),
     })
     .transaction();
 
@@ -1126,7 +1112,8 @@ export const newAcAccount = async (
 
   const stateAfter = await fetchState();
 
-  expect(stateAfter).not.toEqual(null);
+  expect(stateBefore.accountAcState).toEqual(null);
+  expect(stateAfter.accountAcState).not.toEqual(null);
   expect(stateAfter.accountAcState.greenListed).toBe(false);
   expect(stateAfter.accountAcState.blackListed).toBe(false);
 };

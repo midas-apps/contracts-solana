@@ -65,15 +65,15 @@ pub fn get_current_ts() -> Result<u32> {
 
 pub fn update_feed(
     state: &mut FeedState,
-    authority: Option<Pubkey>,
+    ac_role: Option<Pubkey>,
     underlying_feed: Option<Pubkey>,
     mode: Option<FeedMode>,
     min_price: Option<u64>,
     max_price: Option<u64>,
     max_staleness: Option<u32>,
 ) -> Result<()> {
-    if let Some(authority) = authority {
-        state.authority = authority;
+    if let Some(ac_role) = ac_role {
+        state.ac_role = ac_role;
     }
 
     if let Some(underlying_feed) = underlying_feed {

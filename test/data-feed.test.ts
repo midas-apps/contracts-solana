@@ -11,7 +11,7 @@ import {
   createNewManualFeed,
   updateFeed,
 } from "./testers/data-feed.testers";
-import { DEFAULT_PUBKEY } from "./constants/common.constants";
+import { CommonError, DEFAULT_PUBKEY } from "./constants/common.constants";
 import { parseUnits } from "./helpers/common.helpers";
 
 describe("data-feed", () => {
@@ -124,7 +124,7 @@ describe("data-feed", () => {
         },
         {
           from: fixture.regularAccounts[0],
-          revertedWith: DataFeedError.NotAuthority,
+          revertedWith: CommonError.AccountIsNotInitialized,
         }
       );
     });
@@ -164,14 +164,14 @@ describe("data-feed", () => {
       });
     });
 
-    it("update authority", async () => {
+    it("update ac_role", async () => {
       const fixture = await dataFeedFixture();
 
       const feed = await createDefaultDataFeed(fixture);
 
       await updateFeed(fixture, {
         feed,
-        authority: fixture.regularAccounts[0].publicKey,
+        acRole: fixture.acRoleMTbill.publicKey,
       });
     });
 
@@ -182,19 +182,13 @@ describe("data-feed", () => {
 
       await updateFeed(fixture, {
         feed,
-        authority: fixture.regularAccounts[0].publicKey,
+        acRole: fixture.acRoleMTbill.publicKey,
       });
 
-      await updateFeed(
-        fixture,
-        {
-          feed,
-          mode: "switchboard",
-        },
-        {
-          from: fixture.regularAccounts[0],
-        }
-      );
+      await updateFeed(fixture, {
+        feed,
+        mode: "switchboard",
+      });
     });
 
     it("update underlying feed", async () => {
@@ -232,7 +226,7 @@ describe("data-feed", () => {
         },
         {
           from: fixture.regularAccounts[0],
-          revertedWith: DataFeedError.NotAuthority,
+          revertedWith: CommonError.AccountIsNotInitialized,
         }
       );
     });

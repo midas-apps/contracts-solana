@@ -1,10 +1,11 @@
+use access_control::{program::AccessControl, state::{AccessControlState, AccountAccessControlState}};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion};
 
 use crate::{
     constants::{seeds, FIAT_MINT, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, state::{
-        AccessControlState, AccountAccessControlState, MintAuthorityState, MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState, RedeemerVaultRequestState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState
+        MintAuthorityState, MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState, RedeemerVaultRequestState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState
     }, utils::{get_token_rate, mint_token, minter::{self}, redeemer, require_and_update_limit, transfer_token, validate_common, Validate, VaultActionId}
 };
 
@@ -42,12 +43,14 @@ pub struct RedeemRequestFiat<'info> {
     pub redeem_request: Account<'info, RedeemerVaultRequestState>,
 
     #[account(
-        address = vault_common.ac
+        address = vault_common.ac,
+        owner = AccessControl::id(),
     )]
     pub ac: Account<'info, AccessControlState>,
 
     #[account(
         seeds = [AccountAccessControlState::SEED, ac.key().as_ref(), signer.key().as_ref()],
+        seeds::program = AccessControl::id(),
         bump
     )]
     pub account_ac: Account<'info, AccountAccessControlState>,

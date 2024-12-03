@@ -1,7 +1,11 @@
+use access_control::{
+    program::AccessControl,
+    state::{AccessControlRoleState, AccountAccessControlRoleState},
+};
 use anchor_lang::prelude::*;
 
 use crate::{
-    errors::DataFeedError,
+    constants::ac_roles,
     events::ManualFeedUpdatedEvent,
     state::{FeedState, ManualFeedState},
     utils::update_manual_feed,
@@ -20,8 +24,18 @@ pub struct UpdateManualFeed<'info> {
     pub manual_feed: Account<'info, ManualFeedState>,
 
     #[account(
-        has_one = authority @ DataFeedError::NotAuthority
+        address = base_feed.ac_role
     )]
+    pub ac_role: Account<'info, AccessControlRoleState>,
+
+    #[account(
+        seeds = [AccountAccessControlRoleState::SEED, ac_role.key().as_ref(), authority.key().as_ref(), ac_roles::FEED_ADMIN],
+        seeds::program = AccessControl::id(),
+        bump,
+    )]
+    pub authority_ac_role: Account<'info, AccountAccessControlRoleState>,
+
+    #[account()]
     pub base_feed: Account<'info, FeedState>,
 }
 
