@@ -161,7 +161,7 @@ pub mod midas_vaults {
         m_mint: Pubkey,
         m_mint_feed: Pubkey,
 
-        authority: Pubkey,
+        ac_role: Pubkey,
         tokens_receiver: Pubkey,
         fee_receiver: Pubkey,
         instant_fee: u64,
@@ -174,7 +174,7 @@ pub mod midas_vaults {
             ac,
             m_mint,
             m_mint_feed,
-            authority,
+            ac_role,
             tokens_receiver,
             fee_receiver,
             instant_fee,
@@ -186,7 +186,7 @@ pub mod midas_vaults {
 
     pub fn update_common_vault(
         ctx: Context<UpdateVaultCommon>,
-        authority: Option<Pubkey>,
+        ac_role: Option<Pubkey>,
         tokens_receiver: Option<Pubkey>,
         fee_receiver: Option<Pubkey>,
         instant_fee: Option<u64>,
@@ -196,7 +196,7 @@ pub mod midas_vaults {
     ) -> Result<()> {
         vault_common::update_vault_common::handle(
             ctx,
-            authority,
+            ac_role,
             tokens_receiver,
             fee_receiver,
             instant_fee,
