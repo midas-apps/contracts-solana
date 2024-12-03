@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 #[account]
 #[derive(InitSpace)]
 pub struct MintAuthorityState {
-    pub authority: Pubkey,
+    pub ac_role: Pubkey,
     pub base_seed: [u8; 32],
 }
 

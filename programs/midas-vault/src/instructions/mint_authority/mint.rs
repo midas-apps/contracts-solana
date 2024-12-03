@@ -1,7 +1,10 @@
+use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint as MintState, TokenAccount, TokenInterface};
 
-use crate::{errors::MidasVaultsError, state::MintAuthorityState, utils::mint_token};
+use crate::{
+    constants::ac_roles,state::MintAuthorityState, utils::mint_token,
+};
 
 #[derive(Accounts)]
 pub struct Mint<'info> {
@@ -14,10 +17,16 @@ pub struct Mint<'info> {
 
     #[account(
         seeds = [MintAuthorityState::SEED, mint_authority.base_seed.as_ref()],
-        bump,
-        has_one = authority @ MidasVaultsError::NotAuthority
+        bump    
     )]
     pub mint_authority: Account<'info, MintAuthorityState>,
+
+    #[account(
+        seeds = [AccountAccessControlRoleState::SEED, mint_authority.ac_role.as_ref(), authority.key().as_ref(), ac_roles::M_MINTER],
+        seeds::program = AccessControl::id(),
+        bump,
+    )]
+    pub vault_minter_role: Account<'info, AccountAccessControlRoleState>,
 
     #[account(
         mut,

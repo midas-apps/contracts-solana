@@ -23,6 +23,7 @@ import {
   generateAcAccount,
   generateCommonVaultAccount,
   getMintAuthorityPda,
+  getMinterVaultPda,
   getRedeemerVaultPda,
   mintAuthoritySeedToBuffer,
 } from "../helpers/vaults.helpers";
@@ -173,7 +174,7 @@ export const vaultsFixture = async () => {
 
   const mTBillMinterAuthoritySeed = "mtbill-mint-authority";
   await newMintAuthority(
-    { vaultsProgram, authority, context },
+    { vaultsProgram, authority, context, acRoleMTbill },
     {
       seed: mTBillMinterAuthoritySeed,
     }
@@ -213,6 +214,42 @@ export const vaultsFixture = async () => {
           acRoleMTbill.publicKey,
           authority.publicKey,
           VAULT_AC_ROLES.VAULT_PAUSER
+        ),
+      })
+      .instruction(),
+    await acProgram.methods
+      .grantRole(acRoleToBuffer(VAULT_AC_ROLES.M_MINTER))
+      .accountsPartial({
+        account: authority.publicKey,
+        acRole: acRoleMTbill.publicKey,
+        authority: authority.publicKey,
+        authorityAcAdminRole: getAccountAcRoleStatePda(
+          acRoleMTbill.publicKey,
+          authority.publicKey,
+          AC_ROLES.ADMIN
+        ),
+        accountAcRole: getAccountAcRoleStatePda(
+          acRoleMTbill.publicKey,
+          authority.publicKey,
+          VAULT_AC_ROLES.M_MINTER
+        ),
+      })
+      .instruction(),
+    await acProgram.methods
+      .grantRole(acRoleToBuffer(VAULT_AC_ROLES.M_MINTER))
+      .accountsPartial({
+        account: getMinterVaultPda(minterCommonVault.publicKey),
+        acRole: acRoleMTbill.publicKey,
+        authority: authority.publicKey,
+        authorityAcAdminRole: getAccountAcRoleStatePda(
+          acRoleMTbill.publicKey,
+          authority.publicKey,
+          AC_ROLES.ADMIN
+        ),
+        accountAcRole: getAccountAcRoleStatePda(
+          acRoleMTbill.publicKey,
+          getMinterVaultPda(minterCommonVault.publicKey),
+          VAULT_AC_ROLES.M_MINTER
         ),
       })
       .instruction(),

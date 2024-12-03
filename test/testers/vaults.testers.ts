@@ -111,6 +111,11 @@ export const mintInstant = async (
       getMinterVaultPda(baseAccounts.vaultCommon)
     );
 
+    const mintAuthorityState = await fetchMintAuthorityState(
+      vaultsProgram,
+      minterVaultState.mintAuthorityPda
+    );
+
     const commonVaultState = await fetchVaultCommonState(
       vaultsProgram,
       baseAccounts.vaultCommon
@@ -160,6 +165,7 @@ export const mintInstant = async (
       minterVaultState,
       commonVaultState,
       mMintFeed,
+      mintAuthorityState,
       paymentTokenState,
       paymentTokenFeed,
     };
@@ -183,6 +189,11 @@ export const mintInstant = async (
       paymentMintTokenProgram: TOKEN_PROGRAM_ID,
       mintAuthority: stateBefore.minterVaultState.mintAuthorityPda,
       accountAc: getAccountAcStatePda(baseAccounts.ac, from.publicKey),
+      vaultMinterRole: getAccountAcRoleStatePda(
+        stateBefore.mintAuthorityState.acRole,
+        getMinterVaultPda(baseAccounts.vaultCommon),
+        VAULT_AC_ROLES.M_MINTER
+      ),
     })
     .preInstructions([
       approveMintInstruction(
@@ -387,6 +398,10 @@ export const approveMintRequest = async (
       vaultsProgram,
       getMinterVaultPda(baseAccounts.vaultCommon)
     );
+    const mintAuthorityState = await fetchMintAuthorityState(
+      vaultsProgram,
+      minterVaultState.mintAuthorityPda
+    );
 
     const commonVaultState = await fetchVaultCommonState(
       vaultsProgram,
@@ -414,6 +429,7 @@ export const approveMintRequest = async (
       commonVaultState,
       requestState,
       balanceFromMToken,
+      mintAuthorityState,
     };
   };
 
@@ -438,6 +454,11 @@ export const approveMintRequest = async (
         stateBefore.commonVaultState.acRole,
         from.publicKey,
         VAULT_AC_ROLES.VAULT_ADMIN
+      ),
+      vaultMinterRole: getAccountAcRoleStatePda(
+        stateBefore.mintAuthorityState.acRole,
+        getMinterVaultPda(baseAccounts.vaultCommon),
+        VAULT_AC_ROLES.M_MINTER
       ),
     })
     .transaction();
@@ -1021,21 +1042,24 @@ export const rejectRedeemRequest = async (
 };
 
 export const newMintAuthority = async (
-  fixture: Pick<CommonVaultsParams, "vaultsProgram" | "authority" | "context">,
+  fixture: Pick<
+    CommonVaultsParams,
+    "vaultsProgram" | "authority" | "context" | "acRoleMTbill"
+  >,
   {
     seed,
-    authority,
+    acRole,
   }: {
     seed?: string;
-    authority?: PublicKey;
+    acRole?: PublicKey;
   },
   opt?: OptionalCommonParams
 ) => {
-  const { vaultsProgram, authority: owner, context } = fixture;
+  const { vaultsProgram, authority: owner, context, acRoleMTbill } = fixture;
   const from = opt?.from ?? owner;
 
   seed ??= "mtbill-mint-authority";
-  authority ??= owner.publicKey;
+  acRole ??= acRoleMTbill.publicKey;
 
   const fetchState = async () => {
     const mintAuthority = await fetchMintAuthorityState(
@@ -1054,7 +1078,7 @@ export const newMintAuthority = async (
   const tx = await vaultsProgram.methods
     .newMintAuthority(
       Array.from(Uint8Array.from(mintAuthoritySeedToBuffer(seed))),
-      authority
+      acRole
     )
     .accountsPartial({
       signer: from.publicKey,
@@ -1072,7 +1096,7 @@ export const newMintAuthority = async (
   const stateAfter = await fetchState();
 
   expect(stateAfter).not.toEqual(null);
-  expect(stateAfter.mintAuthority.authority.equals(authority)).toBe(true);
+  expect(stateAfter.mintAuthority.acRole.equals(acRole)).toBe(true);
 };
 
 export const mintMToken = async (
@@ -1103,6 +1127,11 @@ export const mintMToken = async (
     TOKEN_2022_PROGRAM_ID
   );
 
+  const minterState = await fetchMintAuthorityState(
+    fixture.vaultsProgram,
+    getMintAuthorityPda(fixture.mTBillMinterAuthoritySeed)
+  );
+
   await processTransaction(
     fixture.context,
 
@@ -1114,6 +1143,11 @@ export const mintMToken = async (
         mintAuthority: getMintAuthorityPda(fixture.mTBillMinterAuthoritySeed),
         receiver: to,
         receiverAta: ata,
+        vaultMinterRole: getAccountAcRoleStatePda(
+          minterState.acRole,
+          fixture.authority.publicKey,
+          VAULT_AC_ROLES.M_MINTER
+        ),
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .transaction(),

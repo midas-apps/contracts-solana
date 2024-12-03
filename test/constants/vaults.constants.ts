@@ -28,6 +28,7 @@ export const VAULTS_SEEDS = {
 export const VAULT_AC_ROLES = {
   VAULT_ADMIN: "vault_admin_role",
   VAULT_PAUSER: "vault_pauser_role",
+  M_MINTER: "m_minter_role",
 };
 
 export enum VaultError {

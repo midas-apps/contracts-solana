@@ -55,6 +55,13 @@ pub struct ApproveMintRequest<'info> {
     pub mint_authority: Box<Account<'info, MintAuthorityState>>,
 
     #[account(
+        seeds = [AccountAccessControlRoleState::SEED, mint_authority.ac_role.as_ref(), minter_vault.key().as_ref(), ac_roles::M_MINTER],
+        seeds::program = AccessControl::id(),
+        bump,
+    )]
+    pub vault_minter_role: Account<'info, AccountAccessControlRoleState>,
+
+    #[account(
         mut,
         associated_token::token_program = m_mint_token_program,
         associated_token::mint = m_mint,

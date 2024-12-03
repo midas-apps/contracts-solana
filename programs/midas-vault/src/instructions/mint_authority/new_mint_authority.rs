@@ -21,12 +21,8 @@ pub struct NewMintAuthority<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handle(
-    ctx: Context<NewMintAuthority>,
-    base_seed: [u8; 32],
-    authority: Pubkey,
-) -> Result<()> {
-    ctx.accounts.mint_authority.authority = authority;
+pub fn handle(ctx: Context<NewMintAuthority>, base_seed: [u8; 32], ac_role: Pubkey) -> Result<()> {
+    ctx.accounts.mint_authority.ac_role = ac_role;
     ctx.accounts.mint_authority.base_seed = base_seed;
 
     // TODO: add event

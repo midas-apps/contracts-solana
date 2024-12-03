@@ -1,10 +1,10 @@
-use access_control::{program::AccessControl, state::{AccessControlState, AccountAccessControlState}};
+use access_control::{program::AccessControl, state::{AccessControlState, AccountAccessControlRoleState, AccountAccessControlState}};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion};
 
 use crate::{
-    constants::seeds, errors::MidasVaultsError, state::{
+    constants::{ac_roles, seeds}, errors::MidasVaultsError, state::{
         MintAuthorityState, MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState, VaultCommonState
     }, utils::{mint_token, minter::{self}, require_and_update_limit, transfer_token, validate_common, Validate, VaultActionId}
 };
@@ -31,6 +31,13 @@ pub struct MintInstant<'info> {
         address = minter_vault.mint_authority_pda
     )]
     pub mint_authority: Box<Account<'info, MintAuthorityState>>,
+
+    #[account(
+        seeds = [AccountAccessControlRoleState::SEED, mint_authority.ac_role.as_ref(), minter_vault.key().as_ref(), ac_roles::M_MINTER],
+        seeds::program = AccessControl::id(),
+        bump,
+    )]
+    pub vault_minter_role: Account<'info, AccountAccessControlRoleState>,
 
     #[account(
         mut,

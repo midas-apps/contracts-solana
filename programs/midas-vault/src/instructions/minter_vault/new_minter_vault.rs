@@ -34,7 +34,6 @@ pub struct NewMinterVault<'info> {
     #[account(
         seeds = [MintAuthorityState::SEED, mint_authority.base_seed.as_ref()],
         bump,
-        has_one = authority @ MidasVaultsError::NotAuthority
     )]
     pub mint_authority: Account<'info, MintAuthorityState>,
 

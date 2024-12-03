@@ -20,9 +20,9 @@ pub mod midas_vaults {
     pub fn new_mint_authority(
         ctx: Context<NewMintAuthority>,
         base_seed: [u8; 32],
-        authority: Pubkey,
+        ac_role: Pubkey,
     ) -> Result<()> {
-        mint_authority::new_mint_authority::handle(ctx, base_seed, authority)
+        mint_authority::new_mint_authority::handle(ctx, base_seed, ac_role)
     }
 
     pub fn mint(ctx: Context<Mint>, amount: u64) -> Result<()> {

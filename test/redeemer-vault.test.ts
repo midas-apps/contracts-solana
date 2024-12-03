@@ -27,7 +27,7 @@ import {
   getRedeemerVaultRedeemerPda,
 } from "./helpers/vaults.helpers";
 
-describe.only("redeemer-vault", () => {
+describe("redeemer-vault", () => {
   describe("initializing", () => {
     it("Should deploy program", async () => {
       const { vaultsProgram } = await vaultsFixture();
