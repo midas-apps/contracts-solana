@@ -38,6 +38,7 @@ import {
 import { DEFAULT_PUBKEY } from "../constants/common.constants";
 import { DataFeed } from "@/target/types/data_feed";
 import { MidasVaults } from "@/target/types/midas_vaults";
+import { TokenAuthority } from "@/target/types/token_authority";
 import { AccessControl } from "@/target/types/access_control";
 // import { ZERO_ADDRESS } from "test/constants/common.constants";
 
@@ -48,6 +49,7 @@ export type OptionalCommonParams = {
 
 export type DataFeedProgram = Program<DataFeed>;
 export type VaultsProgram = Program<MidasVaults>;
+export type TokenAuthorityProgram = Program<TokenAuthority>;
 export type AccessControlProgram = Program<AccessControl>;
 
 export function numToHex(decimalCode: number): string {

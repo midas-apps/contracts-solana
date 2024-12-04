@@ -12,7 +12,6 @@ import {
   approveMintRequest,
   approveRedeemRequest,
   mintInstant,
-  mintMToken,
   mintPaymentToken,
   mintPaymentTokenAndApprove,
   prepareCommonRedeemTest,
@@ -26,6 +25,7 @@ import {
   getRedeemerVaultPda,
   getRedeemerVaultRedeemerPda,
 } from "./helpers/vaults.helpers";
+import { mintMToken } from "./testers/token-authority.testers";
 
 describe("redeemer-vault", () => {
   describe("initializing", () => {

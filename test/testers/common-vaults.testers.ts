@@ -27,7 +27,6 @@ import {
 import { SYSTEM_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/native/system";
 import { VaultsFixtureReturnType } from "../fixture/vaults.fixture";
 import {
-  fetchMintAuthorityState,
   fetchMinterVaultRequestState,
   fetchMinterVaultState,
   fetchPauseInxState,
@@ -38,7 +37,6 @@ import {
   fetchVaultCommonState,
   generateCommonVaultAccount,
   getCommonVaultAccountStatePda,
-  getMintAuthorityPda,
   getMinterVaultPda,
   getMinterVaultRequestPda,
   getPauseInxStatePda,
@@ -46,7 +44,6 @@ import {
   getRedeemerVaultPda,
   getRedeemerVaultRedeemerPda,
   getRedeemerVaultRequestPda,
-  mintAuthoritySeedToBuffer,
   PaymentMint,
 } from "../helpers/vaults.helpers";
 import {

@@ -14,5 +14,4 @@ pub mod seeds {
 pub mod ac_roles {
     pub const VAULT_ADMIN: &[u8; 16] = b"vault_admin_role";
     pub const VAULT_PAUSER: &[u8; 17] = b"vault_pauser_role";
-    pub const M_MINTER: &[u8; 13] = b"m_minter_role";
 }

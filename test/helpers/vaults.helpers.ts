@@ -4,6 +4,7 @@ import {
   DataFeedProgram,
   findPDA,
   toBN,
+  TokenAuthorityProgram,
   VaultsProgram,
 } from "./common.helpers";
 import {
@@ -56,24 +57,6 @@ export const fetchVaultCommonAccountState = async (
   try {
     return await program.account.vaultCommonAccountState.fetchNullable(
       commonAccount
-    );
-  } catch (err) {
-    if (!allowNull) {
-      throw new Error("Payment mint state is null");
-    }
-    return null;
-  }
-};
-
-export const fetchMintAuthorityState = async (
-  program: VaultsProgram,
-  mintAuthority: PublicKey,
-  allowNull = false
-) => {
-  // TODO: refactor
-  try {
-    return await program.account.mintAuthorityState.fetchNullable(
-      mintAuthority
     );
   } catch (err) {
     if (!allowNull) {
@@ -158,18 +141,6 @@ export const fetchPauseInxState = async (
     }
     return null;
   }
-};
-
-export const mintAuthoritySeedToBuffer = (seed: string) => {
-  return keccak256(Buffer.from(seed));
-};
-
-export const getMintAuthorityPda = (seed: string | Buffer) => {
-  const buff =
-    seed instanceof Buffer ? seed : mintAuthoritySeedToBuffer(seed as string);
-
-  const [pda] = findPDA([VAULTS_SEEDS.MINT_AUTHORITY, buff], VAULTS_PROGRAM_ID);
-  return pda;
 };
 
 export const getMinterVaultPda = (commonVault: PublicKey) => {

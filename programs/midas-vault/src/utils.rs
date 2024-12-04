@@ -1,13 +1,15 @@
+use ::token_authority::cpi::accounts::Mint as AuthorityMint;
 use access_control::state::AccountAccessControlState;
 use anchor_lang::{prelude::*, solana_program::clock::SECONDS_PER_DAY};
+use token_authority::token_authority;
 
 use crate::{
     constants::{seeds, FIAT_MINT, MAX_UINT128, ONE, ONE_HUNDRED_PERCENT, STABLECOIN_RATE},
     errors::MidasVaultsError,
     program::MidasVaults,
     state::{
-        MintAuthorityState, MinterVaultState, PauseInxState, PaymentMintState,
-        RedeemerVaultRequestState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState,
+        MinterVaultState, PauseInxState, PaymentMintState, RedeemerVaultRequestState,
+        RedeemerVaultState, VaultCommonAccountState, VaultCommonState,
     },
 };
 use anchor_spl::{
@@ -353,35 +355,70 @@ pub fn transfer_token_from_redeemer<'info>(
 }
 
 pub fn mint_token<'info>(
-    mint_authority_pda_seed: &[u8],
-    token_program: &Interface<'info, TokenInterface>,
-    mint: &Box<InterfaceAccount<'info, Mint>>,
+    common_vault: &Pubkey,
     authority: &AccountInfo<'info>,
-    to: &Box<InterfaceAccount<'info, TokenAccount>>,
+    receiver: &AccountInfo<'info>,
+    mint_authority: &AccountInfo<'info>,
+    authority_minter_role: &AccountInfo<'info>,
+    mint: &AccountInfo<'info>,
+    receiver_ata: &AccountInfo<'info>,
+    token_program: &AccountInfo<'info>,
+    system_program: &AccountInfo<'info>,
+    token_authority_program: &AccountInfo<'info>,
     amount: u64,
 ) -> Result<()> {
     // TODO: replace with minter
-    let (_, vault_pda_bump_seed) = Pubkey::find_program_address(
-        &[MintAuthorityState::SEED, mint_authority_pda_seed],
+    let (minter_vault, vault_pda_bump_seed) = Pubkey::find_program_address(
+        &[MinterVaultState::SEED, common_vault.as_ref()],
         &MidasVaults::id(),
     );
 
-    mint_to(
+    let accounts = AuthorityMint {
+        authority: authority.clone(),
+        receiver: receiver.clone(),
+        mint_authority: mint_authority.clone(),
+        authority_minter_role: authority_minter_role.clone(),
+        mint: mint.clone(),
+        receiver_ata: receiver_ata.clone(),
+        token_program: token_program.clone(),
+        system_program: system_program.clone(),
+    };
+
+    // let seeds: &[&[&[u8]]] = &[&[
+    //     MinterVaultState::SEED,
+    //     common_vault.as_ref(),
+    //     &[vault_pda_bump_seed],
+    // ]];
+
+    ::token_authority::cpi::mint(
         CpiContext::new_with_signer(
-            token_program.to_account_info(),
-            MintTo {
-                authority: authority.to_account_info(),
-                mint: mint.to_account_info(),
-                to: to.to_account_info(),
-            },
+            token_authority_program.clone(),
+            accounts,
             &[&[
-                MintAuthorityState::SEED,
-                mint_authority_pda_seed,
+                MinterVaultState::SEED,
+                common_vault.as_ref(),
                 &[vault_pda_bump_seed],
             ]],
         ),
         amount,
     )?;
+
+    // mint_to(
+    //     CpiContext::new_with_signer(
+    //         token_program.to_account_info(),
+    //         MintTo {
+    //             authority: authority.to_account_info(),
+    //             mint: mint.to_account_info(),
+    //             to: to.to_account_info(),
+    //         },
+    //         &[&[
+    //             MintAuthorityState::SEED,
+    //             mint_authority_pda_seed,
+    //             &[vault_pda_bump_seed],
+    //         ]],
+    //     ),
+    //     amount,
+    // )?;
 
     Ok(())
 }

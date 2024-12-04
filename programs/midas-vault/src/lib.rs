@@ -15,20 +15,6 @@ declare_id!("6eFgYZCZZFTe61T4YxWsiHHAunCLTh9V7TAjj8DxuZwm");
 pub mod midas_vaults {
     use super::*;
 
-    /** Mint Authority Instructions */
-
-    pub fn new_mint_authority(
-        ctx: Context<NewMintAuthority>,
-        base_seed: [u8; 32],
-        ac_role: Pubkey,
-    ) -> Result<()> {
-        mint_authority::new_mint_authority::handle(ctx, base_seed, ac_role)
-    }
-
-    pub fn mint(ctx: Context<Mint>, amount: u64) -> Result<()> {
-        mint_authority::mint::handle(ctx, amount)
-    }
-
     /** Minter Vault Instructions */
 
     pub fn new_minter_vault(

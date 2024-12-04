@@ -2,10 +2,11 @@ use access_control::{program::AccessControl, state::AccountAccessControlRoleStat
 use anchor_lang::{prelude::*, solana_program::address_lookup_table::instruction};
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion};
+use token_authority::{constants::ac_roles as ac_roles_token_authority, program::TokenAuthority, state::MintAuthorityState};
 
 use crate::{
     constants::{ac_roles, seeds, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, state::{
-        MintAuthorityState, MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState, VaultCommonState
+        MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState, VaultCommonState
     }, utils::{close_account, mint_token, minter::{self}, require_and_update_limit, require_variation_tolerance, transfer_token, Closable}
 };
 
@@ -35,6 +36,13 @@ pub struct ApproveMintRequest<'info> {
     pub authority_ac_role: Account<'info, AccountAccessControlRoleState>,
 
     #[account(
+        seeds = [AccountAccessControlRoleState::SEED, mint_authority.ac_role.as_ref(), minter_vault.key().as_ref(), ac_roles_token_authority::M_MINTER],
+        seeds::program = AccessControl::id(),
+        bump,
+    )]
+    pub vault_minter_role: Account<'info, AccountAccessControlRoleState>,
+    
+    #[account(
         mut,
         seeds = [MinterVaultState::SEED, vault_common.key().as_ref()],
         bump
@@ -50,16 +58,10 @@ pub struct ApproveMintRequest<'info> {
 
     #[account(
         mut,
-        address = minter_vault.mint_authority_pda
+        address = minter_vault.mint_authority_pda,
+        owner = TokenAuthority::id()
     )]
-    pub mint_authority: Box<Account<'info, MintAuthorityState>>,
-
-    #[account(
-        seeds = [AccountAccessControlRoleState::SEED, mint_authority.ac_role.as_ref(), minter_vault.key().as_ref(), ac_roles::M_MINTER],
-        seeds::program = AccessControl::id(),
-        bump,
-    )]
-    pub vault_minter_role: Account<'info, AccountAccessControlRoleState>,
+    pub mint_authority: Account<'info, MintAuthorityState>,
 
     #[account(
         mut,
@@ -77,6 +79,7 @@ pub struct ApproveMintRequest<'info> {
     pub m_mint: Box<InterfaceAccount<'info, Mint>>,
 
     pub m_mint_token_program: Interface<'info, TokenInterface>,
+    pub token_authority_program: Program<'info, TokenAuthority>,
 
     pub system_program: Program<'info, System>,
 }
@@ -107,11 +110,16 @@ pub fn handle(
     let amount_to_mint =(request.deposited_usd_wo_fees as u128).checked_mul(ONE.into()).unwrap().checked_div(new_out_rate.into()).unwrap();
 
     mint_token(
-        &ctx.accounts.mint_authority.base_seed.as_ref(), 
-        &ctx.accounts.m_mint_token_program,
-        &ctx.accounts.m_mint, 
-        &ctx.accounts.mint_authority.to_account_info(), 
-        &ctx.accounts.m_mint_user_ata, 
+        &ctx.accounts.vault_common.key(),
+        &ctx.accounts.minter_vault.to_account_info(),
+        &ctx.accounts.user_account.to_account_info(),
+        &ctx.accounts.mint_authority.to_account_info(),
+        &ctx.accounts.vault_minter_role.to_account_info(),
+        &ctx.accounts.m_mint.to_account_info(),
+        &ctx.accounts.m_mint_user_ata.to_account_info(),
+        &ctx.accounts.m_mint_token_program.to_account_info(),
+        &ctx.accounts.system_program.to_account_info(),
+        &ctx.accounts.token_authority_program.to_account_info(),
         amount_to_mint.try_into().unwrap()
     )?;
 

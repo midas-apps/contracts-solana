@@ -1,9 +1,9 @@
 use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{Mint as MintState, TokenAccount, TokenInterface};
+use anchor_spl::{token_2022::{mint_to, MintTo}, token_interface::{Mint as SplMint, TokenAccount, TokenInterface}};
 
 use crate::{
-    constants::ac_roles,state::MintAuthorityState, utils::mint_token,
+    constants::ac_roles, program::TokenAuthority, state::MintAuthorityState
 };
 
 #[derive(Accounts)]
@@ -12,8 +12,8 @@ pub struct Mint<'info> {
     pub authority: Signer<'info>,
 
     /// CHECK:
-    #[account(mut)]
-    pub receiver: UncheckedAccount<'info>,
+    #[account()]
+    pub receiver: AccountInfo<'info>,
 
     #[account(
         seeds = [MintAuthorityState::SEED, mint_authority.base_seed.as_ref()],
@@ -26,13 +26,13 @@ pub struct Mint<'info> {
         seeds::program = AccessControl::id(),
         bump,
     )]
-    pub vault_minter_role: Account<'info, AccountAccessControlRoleState>,
+    pub authority_minter_role: Account<'info, AccountAccessControlRoleState>,
 
     #[account(
         mut,
         mint::token_program = token_program
     )]
-    pub mint: Box<InterfaceAccount<'info, MintState>>,
+    pub mint: Box<InterfaceAccount<'info, SplMint>>,
 
     #[account(
         mut,
@@ -48,12 +48,25 @@ pub struct Mint<'info> {
 }
 
 pub fn handle(ctx: Context<Mint>, amount: u64) -> Result<()> {
-    mint_token(
-        &ctx.accounts.mint_authority.base_seed,
-        &ctx.accounts.token_program,
-        &ctx.accounts.mint,
-        &ctx.accounts.mint_authority.to_account_info(),
-        &ctx.accounts.receiver_ata,
+    let (_, vault_pda_bump_seed) = Pubkey::find_program_address(
+        &[MintAuthorityState::SEED, ctx.accounts.mint_authority.base_seed.as_ref()],
+        &TokenAuthority::id(),
+    );
+
+    mint_to(
+        CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            MintTo {
+                authority: ctx.accounts.mint_authority.to_account_info(),
+                mint: ctx.accounts.mint.to_account_info(),
+                to: ctx.accounts.receiver_ata.to_account_info(),
+            },
+            &[&[
+                MintAuthorityState::SEED,
+                ctx.accounts.mint_authority.base_seed.as_ref(),
+                &[vault_pda_bump_seed],
+            ]],
+        ),
         amount,
     )?;
 

@@ -8,6 +8,7 @@ skip-lint = false
 access_control = "GQp4fJwxmLF7vL7uJ4jpS3uRz96qrb7MfoLKMnJoeE3Z"
 data_feed = "3gzjMNSbos3eXopGnzHqQ137htQwCjG93N4f9T6avoim"
 midas_vaults = "6eFgYZCZZFTe61T4YxWsiHHAunCLTh9V7TAjj8DxuZwm"
+token_authority = "6XqSwGFEuadyqXC9vBLYGJhvQsEVjPdCrtvN6inAb4z3"
 
 [registry]
 url = "https://api.apr.dev"
@@ -19,8 +20,8 @@ wallet = "~/.config/solana/id.json"
 [scripts]
 deploy-mtbill = "yarn run ts-node ./scripts/deploy-mtbill-token.ts"
 test = "RUST_LOG= yarn jest --maxWorkers=1 --testTimeout=1000000"
+test-ac = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/ac.test.ts"
 test-common = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/common-vault.test.ts"
 test-feed = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/data-feed.test.ts"
 test-minter = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/minter-vault.test.ts"
 test-redeemer = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/redeemer-vault.test.ts"
-test-ac = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/ac.test.ts"

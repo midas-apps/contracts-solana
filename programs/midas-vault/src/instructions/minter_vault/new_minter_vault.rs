@@ -1,10 +1,11 @@
 use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
 use anchor_lang::prelude::*;
+use token_authority::{program::TokenAuthority, state::MintAuthorityState};
 
 use crate::{
     constants::{ac_roles, seeds},
     errors::MidasVaultsError,
-    state::{MintAuthorityState, MinterVaultState, VaultCommonState},
+    state::{MinterVaultState, VaultCommonState},
 };
 
 #[derive(Accounts)]
@@ -33,9 +34,13 @@ pub struct NewMinterVault<'info> {
 
     #[account(
         seeds = [MintAuthorityState::SEED, mint_authority.base_seed.as_ref()],
+        seeds::program = TokenAuthority::id(),
+        owner = TokenAuthority::id(),
         bump,
     )]
     pub mint_authority: Account<'info, MintAuthorityState>,
+
+    pub token_authority_program: Program<'info, TokenAuthority>,
 
     pub system_program: Program<'info, System>,
 }

@@ -22,10 +22,8 @@ import { dataFeedFixture } from "./dafa-feed.fixture";
 import {
   generateAcAccount,
   generateCommonVaultAccount,
-  getMintAuthorityPda,
   getMinterVaultPda,
   getRedeemerVaultPda,
-  mintAuthoritySeedToBuffer,
 } from "../helpers/vaults.helpers";
 import { createMTokenMint } from "../../common/create-mtoken-mint";
 import {
@@ -38,7 +36,6 @@ import {
   TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
 import { MAX_U128 } from "../constants/common.constants";
-import { newMintAuthority } from "../testers/vaults.testers";
 import { VAULT_AC_ROLES, VaultActionIds } from "../constants/vaults.constants";
 import { program } from "@coral-xyz/anchor/dist/cjs/native/system";
 import {
@@ -46,9 +43,13 @@ import {
   getAccountAcRoleStatePda,
 } from "../helpers/ac.helpers";
 import { AC_ROLES } from "../constants/ac.constants";
+import { tokenAuthorityFixture } from "./token-authority.fixture";
+import { TOKEN_AUTHORITY_ROLES } from "../constants/token-authority.constants";
+import { getMintAuthorityPda } from "../helpers/token-authority.helpers";
 
 export const vaultsFixture = async () => {
   const dfFixture = await dataFeedFixture();
+  const taFixture = await tokenAuthorityFixture(dfFixture);
 
   const {
     accounts,
@@ -66,6 +67,8 @@ export const vaultsFixture = async () => {
     acRoleGlobal,
     acRoleMTbill,
   } = dfFixture;
+
+  const { tokenAuthorityProgram, mTBillMinterAuthoritySeed } = taFixture;
 
   const [feeReceiver, tokensReceiver, requestRedeemer, ...regularAccounts] =
     allRegularAccounts;
@@ -172,14 +175,6 @@ export const vaultsFixture = async () => {
     [authority]
   );
 
-  const mTBillMinterAuthoritySeed = "mtbill-mint-authority";
-  await newMintAuthority(
-    { vaultsProgram, authority, context, acRoleMTbill },
-    {
-      seed: mTBillMinterAuthoritySeed,
-    }
-  );
-
   const createMinterVaultTx = new Transaction().add(
     await acProgram.methods
       .grantRole(acRoleToBuffer(VAULT_AC_ROLES.VAULT_ADMIN))
@@ -218,25 +213,7 @@ export const vaultsFixture = async () => {
       })
       .instruction(),
     await acProgram.methods
-      .grantRole(acRoleToBuffer(VAULT_AC_ROLES.M_MINTER))
-      .accountsPartial({
-        account: authority.publicKey,
-        acRole: acRoleMTbill.publicKey,
-        authority: authority.publicKey,
-        authorityAcAdminRole: getAccountAcRoleStatePda(
-          acRoleMTbill.publicKey,
-          authority.publicKey,
-          AC_ROLES.ADMIN
-        ),
-        accountAcRole: getAccountAcRoleStatePda(
-          acRoleMTbill.publicKey,
-          authority.publicKey,
-          VAULT_AC_ROLES.M_MINTER
-        ),
-      })
-      .instruction(),
-    await acProgram.methods
-      .grantRole(acRoleToBuffer(VAULT_AC_ROLES.M_MINTER))
+      .grantRole(acRoleToBuffer(TOKEN_AUTHORITY_ROLES.M_MINTER))
       .accountsPartial({
         account: getMinterVaultPda(minterCommonVault.publicKey),
         acRole: acRoleMTbill.publicKey,
@@ -249,7 +226,7 @@ export const vaultsFixture = async () => {
         accountAcRole: getAccountAcRoleStatePda(
           acRoleMTbill.publicKey,
           getMinterVaultPda(minterCommonVault.publicKey),
-          VAULT_AC_ROLES.M_MINTER
+          TOKEN_AUTHORITY_ROLES.M_MINTER
         ),
       })
       .instruction(),
@@ -388,6 +365,7 @@ export const vaultsFixture = async () => {
 
   return {
     ...dfFixture,
+    ...taFixture,
     connection: provider.connection,
     vaultsProgram,
     feeReceiver,

@@ -19,7 +19,6 @@ export const VAULTS_SEEDS = {
   PAUSE_INX: "pause_inx_state",
   PAYMENT_MINT: "payment_mint",
   VAULT_COMMON_ACCOUNT: "vault_account_state",
-  MINT_AUTHORITY: "mint_authority",
   MINTER_VAULT: "minter_vault",
   REDEEMER_VAULT: "redeemer_vault",
   REQUEST_REDEEMER: "request_redeemer",
@@ -28,7 +27,6 @@ export const VAULTS_SEEDS = {
 export const VAULT_AC_ROLES = {
   VAULT_ADMIN: "vault_admin_role",
   VAULT_PAUSER: "vault_pauser_role",
-  M_MINTER: "m_minter_role",
 };
 
 export enum VaultError {

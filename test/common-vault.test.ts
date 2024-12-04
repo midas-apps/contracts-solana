@@ -12,7 +12,6 @@ import {
   approveMintRequest,
   mintInstant,
   mintRequest,
-  newMintAuthority,
   rejectMintRequest,
 } from "./testers/vaults.testers";
 import { approveMint, parsePercent } from "./helpers/common.helpers";
