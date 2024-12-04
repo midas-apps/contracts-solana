@@ -12,7 +12,7 @@ import {
   approveMintRequest,
   approveRedeemRequest,
   mintInstant,
-  mintPaymentToken,
+  mintToken,
   mintPaymentTokenAndApprove,
   prepareCommonRedeemTest,
   redeemInstant,
@@ -64,7 +64,7 @@ describe("redeemer-vault", () => {
 
       await prepareCommonRedeemTest(fixture);
       await mintMToken(fixture, {});
-      await mintPaymentToken(fixture, {
+      await mintToken(fixture, {
         to: getRedeemerVaultRedeemerPda(fixture.redeemerCommonVault.publicKey),
       });
       await redeemRequest(fixture, {}, {});

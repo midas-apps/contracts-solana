@@ -1047,17 +1047,20 @@ export const rejectRedeemRequest = async (
   expect(stateAfter.requestState).toEqual(null);
 };
 
-export const mintPaymentToken = async (
+export const mintToken = async (
   fixture: CommonVaultsParams,
   {
     mint,
     to,
     amountBase9,
+    tokenProgram,
   }: {
     mint?: PaymentMint;
     to?: PublicKey;
     amountBase9?: bigint;
-  }
+    tokenProgram?: PublicKey;
+  },
+  opt?: OptionalCommonParams
 ) => {
   mint ??= fixture.paymentMints.usdc;
   to ??= fixture.authority.publicKey;
@@ -1066,21 +1069,29 @@ export const mintPaymentToken = async (
   const amount = parseUnits(formatUnits(amountBase9).toString(), mint.decimals);
 
   // TODO: pass optional from
-  const from = fixture.authority;
+  const from = opt?.from ?? fixture.authority;
 
   const { ata } = await getOrCreateAta(
     fixture.context,
     fixture.provider.connection,
     mint.mint,
     to,
-    from
+    from,
+    tokenProgram
   );
 
-  await processTransaction(
+  await expectTxNotReverted(
     fixture.context,
 
     new Transaction().add(
-      createMintToInstruction(mint.mint, ata, from.publicKey, amount)
+      createMintToInstruction(
+        mint.mint,
+        ata,
+        from.publicKey,
+        amount,
+        undefined,
+        tokenProgram
+      )
     ),
     [from]
   );

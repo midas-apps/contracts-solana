@@ -23,6 +23,14 @@ pub mod token_authority {
     pub fn mint(ctx: Context<Mint>, amount: u64) -> Result<()> {
         mint::handle(ctx, amount)
     }
+
+    pub fn set_authority(
+        ctx: Context<SetAuthority>,
+        authority_type: u8,
+        new_authority: Option<Pubkey>,
+    ) -> Result<()> {
+        set_authority::handle(ctx, authority_type, new_authority)
+    }
 }
 
 #[derive(Accounts)]

@@ -42,8 +42,10 @@ import {
   PaymentMint,
 } from "../helpers/vaults.helpers";
 import {
+  AuthorityType,
   createMintToInstruction,
   getAssociatedTokenAddressSync,
+  getMint,
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
@@ -66,6 +68,7 @@ import {
 } from "../helpers/token-authority.helpers";
 import { TokenAuthorityFixtureReturnType } from "../fixture/token-authority.fixture";
 import { TOKEN_AUTHORITY_ROLES } from "../constants/token-authority.constants";
+import { AC_ROLES } from "../constants/ac.constants";
 
 type CommonTokenAuthorityParams = TokenAuthorityFixtureReturnType;
 
@@ -134,14 +137,15 @@ export const mintMToken = async (
     mToken?: PublicKey;
     to?: PublicKey;
     amount?: bigint;
-  }
+  },
+  opt?: OptionalCommonParams
 ) => {
   mToken ??= fixture.mTBillMint.publicKey;
   to ??= fixture.authority.publicKey;
   amount ??= parseUnits("10");
 
   // TODO: pass optional from
-  const from = fixture.authority;
+  const from = opt?.from ?? fixture.authority;
 
   const { ata } = await getOrCreateAta(
     fixture.context,
@@ -152,30 +156,121 @@ export const mintMToken = async (
     TOKEN_2022_PROGRAM_ID
   );
 
-  const minterState = await fetchTokenAuthorityState(
-    fixture.tokenAuthorityProgram,
-    getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed)
+  const fetchState = async () => {
+    const minterState = await fetchTokenAuthorityState(
+      fixture.tokenAuthorityProgram,
+      getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed)
+    );
+
+    const balanceReceiver = await getBalance(
+      fixture.provider.connection,
+      to,
+      mToken,
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    const mintState = await getMint(
+      fixture.provider.connection,
+      mToken,
+      undefined,
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    return {
+      minterState,
+      mintState,
+      balanceReceiver,
+    };
+  };
+
+  const stateBefore = await fetchState();
+
+  const tx = await fixture.tokenAuthorityProgram.methods
+    .mint(toBN(amount))
+    .accountsPartial({
+      mint: mToken,
+      authority: from.publicKey,
+      tokenAuthority: getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed),
+      receiver: to,
+      receiverAta: ata,
+      authorityMinterRole: getAccountAcRoleStatePda(
+        stateBefore.minterState.acRole,
+        from.publicKey,
+        TOKEN_AUTHORITY_ROLES.M_MINTER
+      ),
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
+    })
+    .transaction();
+
+  if (opt?.revertedWith !== undefined) {
+    await expectTxReverted(fixture.context, tx, [from], opt);
+    return;
+  }
+
+  await expectTxNotReverted(fixture.context, tx, [from]);
+
+  const stateAfter = await fetchState();
+
+  expect(stateAfter.balanceReceiver).toEqual(
+    stateBefore.balanceReceiver + amount
   );
 
-  await processTransaction(
-    fixture.context,
-
-    await fixture.tokenAuthorityProgram.methods
-      .mint(toBN(amount))
-      .accountsPartial({
-        mint: mToken,
-        authority: fixture.authority.publicKey,
-        tokenAuthority: getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed),
-        receiver: to,
-        receiverAta: ata,
-        authorityMinterRole: getAccountAcRoleStatePda(
-          minterState.acRole,
-          fixture.authority.publicKey,
-          TOKEN_AUTHORITY_ROLES.M_MINTER
-        ),
-        tokenProgram: TOKEN_2022_PROGRAM_ID,
-      })
-      .transaction(),
-    [from]
+  expect(stateAfter.mintState.supply).toEqual(
+    stateBefore.mintState.supply + amount
   );
+};
+
+export const setAuthority = async (
+  fixture: CommonTokenAuthorityParams & { mTBillMint: Keypair },
+  {
+    accountOrMint,
+    authorityType,
+    newAuthority,
+  }: {
+    accountOrMint?: PublicKey;
+    newAuthority?: PublicKey;
+    authorityType?: AuthorityType;
+  },
+  opt?: OptionalCommonParams
+) => {
+  accountOrMint ??= fixture.mTBillMint.publicKey;
+  authorityType ??= AuthorityType.MintTokens;
+  newAuthority ??= fixture.regularAccounts[0]?.publicKey;
+
+  const from = opt?.from ?? fixture.authority;
+
+  const fetchState = async () => {
+    const minterState = await fetchTokenAuthorityState(
+      fixture.tokenAuthorityProgram,
+      getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed)
+    );
+
+    return {
+      minterState,
+    };
+  };
+
+  const stateBefore = await fetchState();
+
+  const tx = await fixture.tokenAuthorityProgram.methods
+    .setAuthority(authorityType, newAuthority)
+    .accountsPartial({
+      authority: from.publicKey,
+      tokenAuthority: getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed),
+      authorityAdminRole: getAccountAcRoleStatePda(
+        stateBefore.minterState.acRole,
+        from.publicKey,
+        AC_ROLES.ADMIN
+      ),
+      accountOrMint: accountOrMint,
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
+    })
+    .transaction();
+
+  if (opt?.revertedWith !== undefined) {
+    await expectTxReverted(fixture.context, tx, [from], opt);
+    return;
+  }
+
+  await expectTxNotReverted(fixture.context, tx, [from]);
 };
