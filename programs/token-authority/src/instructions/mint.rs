@@ -70,6 +70,5 @@ pub fn handle(ctx: Context<Mint>, amount: u64) -> Result<()> {
         amount,
     )?;
 
-    // TODO: add event
     Ok(())
 }

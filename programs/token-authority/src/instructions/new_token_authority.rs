@@ -25,6 +25,5 @@ pub fn handle(ctx: Context<NewTokenAuthority>, base_seed: [u8; 32], ac_role: Pub
     ctx.accounts.token_authority.ac_role = ac_role;
     ctx.accounts.token_authority.base_seed = base_seed;
 
-    // TODO: add event
     Ok(())
 }

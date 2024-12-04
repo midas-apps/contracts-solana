@@ -2,7 +2,6 @@ use anchor_lang::prelude::*;
 
 use crate::{
     constants::ac_roles,
-    errors::MidasVaultsError,
     events::AccountAcUpdatedEvent,
     state::{AccessControlState, AccountAccessControlRoleState, AccountAccessControlState},
 };

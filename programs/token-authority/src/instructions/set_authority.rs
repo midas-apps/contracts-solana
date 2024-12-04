@@ -79,7 +79,6 @@ pub fn handle(
         new_authority
     )?;
 
-    // TODO: add event
     Ok(())
 }
 
