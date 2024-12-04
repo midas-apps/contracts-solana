@@ -3,17 +3,6 @@ use anchor_lang::prelude::*;
 use crate::state::FeedMode;
 
 #[event]
-pub struct FeedCreatedEvent {
-    pub feed: Pubkey,
-    pub ac_role: Pubkey,
-    pub underlying_feed: Pubkey,
-    pub mode: FeedMode,
-    pub min_price: u64,
-    pub max_price: u64,
-    pub max_staleness: u32,
-}
-
-#[event]
 pub struct FeedUpdatedEvent {
     pub feed: Pubkey,
     pub ac_role: Option<Pubkey>,
@@ -22,14 +11,6 @@ pub struct FeedUpdatedEvent {
     pub min_price: Option<u64>,
     pub max_price: Option<u64>,
     pub max_staleness: Option<u32>,
-}
-
-#[event]
-pub struct ManualFeedCreatedEvent {
-    pub base_feed: Pubkey,
-    pub manual_feed: Pubkey,
-    pub decimals: u8,
-    pub initial_price: u64,
 }
 
 #[event]

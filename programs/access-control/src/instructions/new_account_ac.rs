@@ -1,6 +1,9 @@
 use anchor_lang::prelude::*;
 
-use crate::state::{AccessControlState, AccountAccessControlState};
+use crate::{
+    events::AccountAcUpdatedEvent,
+    state::{AccessControlState, AccountAccessControlState},
+};
 
 #[derive(Accounts)]
 pub struct NewAccountAccessControl<'info> {
@@ -27,6 +30,12 @@ pub struct NewAccountAccessControl<'info> {
 }
 
 pub fn handle(ctx: Context<NewAccountAccessControl>) -> Result<()> {
-    // TODO: add event
+    emit!(AccountAcUpdatedEvent {
+        ac: ctx.accounts.ac.key(),
+        account_ac: ctx.accounts.account_ac.key(),
+        black_listed: Some(false),
+        green_listed: Some(false)
+    });
+
     Ok(())
 }

@@ -4,6 +4,7 @@ use anchor_lang::prelude::*;
 use crate::{
     constants::ac_roles,
     errors::MidasVaultsError,
+    events::PauseInxUpdatedEvent,
     state::{PauseInxState, VaultCommonState},
 };
 
@@ -36,6 +37,11 @@ pub struct NewPauseInx<'info> {
 }
 
 pub fn handle(ctx: Context<NewPauseInx>, fn_id: u8) -> Result<()> {
-    // TODO: add event
+    emit!(PauseInxUpdatedEvent {
+        paused: false,
+        fn_id,
+        common_vault: ctx.accounts.vault_common.key()
+    });
+
     Ok(())
 }

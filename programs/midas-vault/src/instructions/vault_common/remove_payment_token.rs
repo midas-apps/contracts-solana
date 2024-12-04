@@ -1,13 +1,11 @@
 use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
-use anchor_lang::{prelude::*, solana_program::stake::instruction};
+use anchor_lang::prelude::*;
 
 use crate::{
     constants::ac_roles,
-    errors::MidasVaultsError,
+    events::PaymentTokenRemovedEvent,
     state::{PaymentMintState, VaultCommonState},
 };
-
-use anchor_spl::token_interface::{Mint, TokenInterface};
 
 #[derive(Accounts)]
 #[instruction(mint: Pubkey)]
@@ -37,6 +35,10 @@ pub struct RemovePaymentToken<'info> {
 }
 
 pub fn handle(ctx: Context<RemovePaymentToken>, mint: Pubkey) -> Result<()> {
-    // TODO: add event
+    emit!(PaymentTokenRemovedEvent {
+        common_vault: ctx.accounts.vault_common.key(),
+        mint
+    });
+
     Ok(())
 }

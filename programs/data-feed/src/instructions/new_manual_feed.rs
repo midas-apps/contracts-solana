@@ -7,7 +7,7 @@ use anchor_lang::prelude::*;
 use crate::{
     constants::ac_roles,
     errors::DataFeedError,
-    events::ManualFeedCreatedEvent,
+    events::ManualFeedUpdatedEvent,
     state::{FeedState, ManualFeedState},
     utils::update_manual_feed,
 };
@@ -49,11 +49,11 @@ pub fn handle(ctx: Context<NewManualFeed>, initial_price: u64, decimals: u8) -> 
 
     update_manual_feed(state, Some(initial_price), Some(decimals))?;
 
-    emit!(ManualFeedCreatedEvent {
+    emit!(ManualFeedUpdatedEvent {
         manual_feed: ctx.accounts.manual_feed.key(),
         base_feed: ctx.accounts.base_feed.key(),
-        decimals,
-        initial_price
+        decimals: Some(decimals),
+        price: Some(initial_price)
     });
 
     Ok(())

@@ -1,6 +1,9 @@
 use anchor_lang::prelude::*;
 
-use crate::state::{VaultCommonAccountState, VaultCommonState};
+use crate::{
+    events::CommonVaultAccountUpdatedEvent,
+    state::{VaultCommonAccountState, VaultCommonState},
+};
 
 #[derive(Accounts)]
 pub struct NewVaultCommonAccount<'info> {
@@ -27,6 +30,13 @@ pub struct NewVaultCommonAccount<'info> {
 }
 
 pub fn handle(ctx: Context<NewVaultCommonAccount>) -> Result<()> {
-    // TODO: add event
+    emit!(CommonVaultAccountUpdatedEvent {
+        common_vault: ctx.accounts.vault_common.key(),
+        account: ctx.accounts.account.key(),
+        free_from_min_amount: Some(false),
+        free_from_min_first_mint: Some(false),
+        waived_fee: Some(false),
+    });
+
     Ok(())
 }

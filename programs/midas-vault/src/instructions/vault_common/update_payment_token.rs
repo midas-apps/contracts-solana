@@ -55,6 +55,7 @@ pub fn handle(
     let mint = &ctx.accounts.payment_mint_state.mint.clone();
 
     common_vault::update_payment_token(
+        &ctx.accounts.vault_common.key(),
         &mut ctx.accounts.payment_mint_state,
         mint,
         &data_feed,
@@ -63,6 +64,5 @@ pub fn handle(
         stable,
     )?;
 
-    // TODO: add event
     Ok(())
 }

@@ -3,6 +3,7 @@ use anchor_lang::prelude::*;
 use crate::{
     constants::ac_roles,
     errors::MidasVaultsError,
+    events::AccountAcUpdatedEvent,
     state::{AccessControlState, AccountAccessControlRoleState, AccountAccessControlState},
 };
 
@@ -49,6 +50,12 @@ pub fn handle(
         state.black_listed = new_black_listed;
     }
 
-    // TODO: add event
+    emit!(AccountAcUpdatedEvent {
+        ac: ctx.accounts.ac.key(),
+        account_ac: ctx.accounts.account_ac.key(),
+        black_listed,
+        green_listed
+    });
+
     Ok(())
 }

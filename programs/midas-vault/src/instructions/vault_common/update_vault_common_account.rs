@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     constants::ac_roles,
-    errors::MidasVaultsError,
+    events::CommonVaultAccountUpdatedEvent,
     state::{VaultCommonAccountState, VaultCommonState},
 };
 
@@ -44,18 +44,25 @@ pub fn handle(
 ) -> Result<()> {
     let state = &mut ctx.accounts.vault_common_account;
 
-    if let Some(new_free_from_min_amount) = free_from_min_amount {
-        state.free_from_min_amount = new_free_from_min_amount;
+    if let Some(free_from_min_amount) = free_from_min_amount {
+        state.free_from_min_amount = free_from_min_amount;
     }
 
     if let Some(free_from_min_first_mint) = free_from_min_first_mint {
         state.free_from_min_first_mint = free_from_min_first_mint;
     }
 
-    if let Some(new_waived_fee) = waived_fee {
-        state.waived_fee = new_waived_fee;
+    if let Some(waived_fee) = waived_fee {
+        state.waived_fee = waived_fee;
     }
 
-    // TODO: add event
+    emit!(CommonVaultAccountUpdatedEvent {
+        account: ctx.accounts.account.key(),
+        common_vault: ctx.accounts.vault_common.key(),
+        free_from_min_first_mint,
+        free_from_min_amount,
+        waived_fee,
+    });
+
     Ok(())
 }

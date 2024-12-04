@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     constants::ac_roles,
+    events::AcRoleCreatedEvent,
     state::{AccessControlRoleState, AccountAccessControlRoleState},
 };
 
@@ -30,6 +31,9 @@ pub struct NewAccessControlRole<'info> {
 }
 
 pub fn handle(ctx: Context<NewAccessControlRole>) -> Result<()> {
-    // TODO: emit event
+    emit!(AcRoleCreatedEvent {
+        ac_role: ctx.accounts.ac_role.key()
+    });
+
     Ok(())
 }

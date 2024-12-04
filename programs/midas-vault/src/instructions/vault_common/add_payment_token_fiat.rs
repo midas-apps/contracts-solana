@@ -37,6 +37,7 @@ pub struct AddPaymentTokenFiat<'info> {
 
 pub fn handle(ctx: Context<AddPaymentTokenFiat>, fee: u64, allowance: u128) -> Result<()> {
     common_vault::update_payment_token(
+        &ctx.accounts.vault_common.key(),
         &mut ctx.accounts.payment_mint_state,
         &FIAT_MINT,
         &None,
@@ -45,6 +46,5 @@ pub fn handle(ctx: Context<AddPaymentTokenFiat>, fee: u64, allowance: u128) -> R
         None,
     )?;
 
-    // TODO: add event
     Ok(())
 }

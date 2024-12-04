@@ -592,9 +592,12 @@ pub mod minter {
 }
 
 pub mod common_vault {
+    use crate::events::PaymentTokenUpdatedEvent;
+
     use super::*;
 
     pub fn update_payment_token(
+        common_vault: &Pubkey,
         payment_mint_state: &mut PaymentMintState,
         mint: &Pubkey,
         data_feed: &Option<Pubkey>,
@@ -620,6 +623,15 @@ pub mod common_vault {
         if let Some(stable) = stable {
             payment_mint_state.stable = stable;
         }
+
+        emit!(PaymentTokenUpdatedEvent {
+            allowance,
+            stable,
+            data_feed: *data_feed,
+            fee,
+            common_vault: *common_vault,
+            mint: *mint
+        });
 
         Ok(())
     }

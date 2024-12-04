@@ -82,7 +82,7 @@ export const createNewFeed = async (
     dataFeedProgram,
     [
       {
-        name: "feedCreatedEvent",
+        name: "feedUpdatedEvent",
         data: {
           feed: feed.publicKey,
           acRole: acRole,
@@ -271,12 +271,12 @@ export const createNewManualFeed = async (
     dataFeedProgram,
     [
       {
-        name: "manualFeedCreatedEvent",
+        name: "manualFeedUpdatedEvent",
         data: {
           baseFeed: baseFeed,
           manualFeed: getManualFeedStatePda(baseFeed),
           decimals,
-          initialPrice,
+          price: initialPrice,
         },
       },
     ]

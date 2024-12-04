@@ -1,6 +1,9 @@
 use anchor_lang::prelude::*;
 
-use crate::state::{AccessControlRoleState, AccessControlState};
+use crate::{
+    events::AcCreatedEvent,
+    state::{AccessControlRoleState, AccessControlState},
+};
 
 #[derive(Accounts)]
 pub struct NewAccessControl<'info> {
@@ -25,6 +28,10 @@ pub fn handle(ctx: Context<NewAccessControl>) -> Result<()> {
 
     ac.ac_role = ctx.accounts.ac_role.key();
 
-    // TODO: emit event
+    emit!(AcCreatedEvent {
+        ac: ac.key(),
+        ac_role: ctx.accounts.ac_role.key()
+    });
+
     Ok(())
 }

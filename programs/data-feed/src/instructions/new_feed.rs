@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    events::FeedCreatedEvent,
+    events::FeedUpdatedEvent,
     state::{FeedMode, FeedState},
     utils::update_feed,
 };
@@ -42,14 +42,14 @@ pub fn handle(
         Some(max_staleness),
     )?;
 
-    emit!(FeedCreatedEvent {
+    emit!(FeedUpdatedEvent {
         feed: ctx.accounts.feed.key(),
-        ac_role,
-        underlying_feed,
-        mode,
-        min_price,
-        max_price,
-        max_staleness
+        ac_role: Some(ac_role),
+        underlying_feed: Some(underlying_feed),
+        mode: Some(mode),
+        min_price: Some(min_price),
+        max_price: Some(max_price),
+        max_staleness: Some(max_staleness)
     });
 
     Ok(())

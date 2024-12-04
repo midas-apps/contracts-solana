@@ -1,7 +1,10 @@
 use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
 use anchor_lang::prelude::*;
 
-use crate::{constants::ac_roles, errors::MidasVaultsError, state::VaultCommonState};
+use crate::{
+    constants::ac_roles, errors::MidasVaultsError, events::PauseUpdatedEvent,
+    state::VaultCommonState,
+};
 
 #[derive(Accounts)]
 pub struct UpdatePause<'info> {
@@ -23,6 +26,11 @@ pub struct UpdatePause<'info> {
 
 pub fn handle(ctx: Context<UpdatePause>, paused: bool) -> Result<()> {
     ctx.accounts.vault_common.paused = paused;
-    // TODO: add event
+
+    emit!(PauseUpdatedEvent {
+        paused: paused,
+        common_vault: ctx.accounts.vault_common.key()
+    });
+
     Ok(())
 }

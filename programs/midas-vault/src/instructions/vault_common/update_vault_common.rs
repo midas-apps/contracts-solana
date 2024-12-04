@@ -56,6 +56,9 @@ pub fn handle(
         instant_daily_limit,
         variation_tolerance,
         min_amount,
+        ac: None,
+        m_mint: None,
+        m_mint_feed: None
     });
 
     Ok(())

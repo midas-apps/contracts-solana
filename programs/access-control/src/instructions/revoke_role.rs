@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     constants::ac_roles,
+    events::AccountAcRoleUpdatedEvent,
     state::{AccessControlRoleState, AccountAccessControlRoleState},
 };
 
@@ -36,6 +37,12 @@ pub struct RevokeRole<'info> {
 }
 
 pub fn handle(ctx: Context<RevokeRole>, role: Vec<u8>) -> Result<()> {
-    // TODO: emit event
+    emit!(AccountAcRoleUpdatedEvent {
+        ac_role: ctx.accounts.ac_role.key(),
+        account: ctx.accounts.account.key(),
+        role,
+        has: false
+    });
+
     Ok(())
 }

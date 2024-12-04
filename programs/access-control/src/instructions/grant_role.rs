@@ -1,8 +1,7 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    constants::ac_roles,
-    state::{AccessControlRoleState, AccountAccessControlRoleState},
+    constants::ac_roles, events::AccountAcRoleUpdatedEvent, state::{AccessControlRoleState, AccountAccessControlRoleState}
 };
 
 #[derive(Accounts)]
@@ -36,7 +35,14 @@ pub struct GrantRole<'info> {
     pub system_program: Program<'info, System>,
 }
 
-// TODO: emit event
 pub fn handle(ctx: Context<GrantRole>, role: Vec<u8>) -> Result<()> {
+
+    emit!(AccountAcRoleUpdatedEvent {
+        ac_role: ctx.accounts.ac_role.key(),
+        account: ctx.accounts.account.key(),
+        role,
+        has: true
+    });
+
     Ok(())
 }

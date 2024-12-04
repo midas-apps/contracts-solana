@@ -57,6 +57,7 @@ pub fn handle(
     stable: bool,
 ) -> Result<()> {
     common_vault::update_payment_token(
+        &ctx.accounts.vault_common.key(),
         &mut ctx.accounts.payment_mint_state,
         &ctx.accounts.payment_mint.key(),
         &Some(ctx.accounts.data_feed.key()),
@@ -65,6 +66,5 @@ pub fn handle(
         Some(stable),
     )?;
 
-    // TODO: add event
     Ok(())
 }
