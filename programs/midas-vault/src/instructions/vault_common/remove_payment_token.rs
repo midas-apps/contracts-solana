@@ -1,5 +1,5 @@
 use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
-use anchor_lang::prelude::*;
+use anchor_lang::{prelude::*, solana_program::stake::instruction};
 
 use crate::{
     constants::ac_roles,
@@ -10,6 +10,7 @@ use crate::{
 use anchor_spl::token_interface::{Mint, TokenInterface};
 
 #[derive(Accounts)]
+#[instruction(mint: Pubkey)]
 pub struct RemovePaymentToken<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -27,20 +28,15 @@ pub struct RemovePaymentToken<'info> {
     #[account(
         mut,
         close = authority,
-        seeds = [PaymentMintState::SEED, vault_common.key().as_ref(), payment_mint.key().as_ref()],
+        seeds = [PaymentMintState::SEED, vault_common.key().as_ref(), mint.as_ref()],
         bump
     )]
     pub payment_mint_state: Account<'info, PaymentMintState>,
 
-    #[account(
-        mint::token_program = token_program
-    )]
-    pub payment_mint: Box<InterfaceAccount<'info, Mint>>,
-    pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
 }
 
-pub fn handle(ctx: Context<RemovePaymentToken>) -> Result<()> {
+pub fn handle(ctx: Context<RemovePaymentToken>, mint: Pubkey) -> Result<()> {
     // TODO: add event
     Ok(())
 }

@@ -1,4 +1,4 @@
-import { Idl, Program } from "@coral-xyz/anchor";
+import { Idl, Program, web3 } from "@coral-xyz/anchor";
 import * as anchor from "@coral-xyz/anchor";
 import BN from "bn.js";
 import {
@@ -118,7 +118,7 @@ export const findPDA = <TProgram extends Idl | unknown>(
 
 export const expectTxReverted = async (
   ctx: ProgramTestContext,
-  transaction: Transaction,
+  transaction: web3.Transaction,
   signers: (Keypair | Signer)[],
   opt?: OptionalCommonParams
 ) => {

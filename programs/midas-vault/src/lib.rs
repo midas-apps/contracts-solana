@@ -223,8 +223,8 @@ pub mod midas_vaults {
         vault_common::add_payment_token_fiat::handle(ctx, fee, allowance)
     }
 
-    pub fn remove_payment_token(ctx: Context<RemovePaymentToken>) -> Result<()> {
-        vault_common::remove_payment_token::handle(ctx)
+    pub fn remove_payment_token(ctx: Context<RemovePaymentToken>, mint: Pubkey) -> Result<()> {
+        vault_common::remove_payment_token::handle(ctx, mint)
     }
 
     pub fn update_payment_token(
@@ -243,9 +243,15 @@ pub mod midas_vaults {
     pub fn update_common_vault_account(
         ctx: Context<UpdateVaultCommonAccount>,
         free_from_min_amount: Option<bool>,
+        free_from_min_first_mint: Option<bool>,
         waived_fee: Option<bool>,
     ) -> Result<()> {
-        vault_common::update_vault_common_account::handle(ctx, free_from_min_amount, waived_fee)
+        vault_common::update_vault_common_account::handle(
+            ctx,
+            free_from_min_amount,
+            free_from_min_first_mint,
+            waived_fee,
+        )
     }
 
     /** Pause Instructions */

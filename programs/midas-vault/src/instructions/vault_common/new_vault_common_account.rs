@@ -8,7 +8,7 @@ pub struct NewVaultCommonAccount<'info> {
     pub signer: Signer<'info>,
 
     /// CHECK:
-    #[account(mut)]
+    #[account()]
     pub account: AccountInfo<'info>,
 
     #[account()]
