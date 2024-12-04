@@ -2,7 +2,7 @@ use access_control::{program::AccessControl, state::AccountAccessControlRoleStat
 use anchor_lang::{prelude::*, solana_program::address_lookup_table::instruction};
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion};
-use token_authority::{constants::ac_roles as ac_roles_token_authority, program::TokenAuthority, state::MintAuthorityState};
+use token_authority::{constants::ac_roles as ac_roles_token_authority, program::TokenAuthority, state::TokenAuthorityState};
 
 use crate::{
     constants::{ac_roles, seeds, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, state::{
@@ -36,7 +36,7 @@ pub struct ApproveMintRequest<'info> {
     pub authority_ac_role: Account<'info, AccountAccessControlRoleState>,
 
     #[account(
-        seeds = [AccountAccessControlRoleState::SEED, mint_authority.ac_role.as_ref(), minter_vault.key().as_ref(), ac_roles_token_authority::M_MINTER],
+        seeds = [AccountAccessControlRoleState::SEED, token_authority.ac_role.as_ref(), minter_vault.key().as_ref(), ac_roles_token_authority::M_MINTER],
         seeds::program = AccessControl::id(),
         bump,
     )]
@@ -61,7 +61,7 @@ pub struct ApproveMintRequest<'info> {
         address = minter_vault.mint_authority_pda,
         owner = TokenAuthority::id()
     )]
-    pub mint_authority: Account<'info, MintAuthorityState>,
+    pub token_authority: Account<'info, TokenAuthorityState>,
 
     #[account(
         mut,
@@ -113,7 +113,7 @@ pub fn handle(
         &ctx.accounts.vault_common.key(),
         &ctx.accounts.minter_vault.to_account_info(),
         &ctx.accounts.user_account.to_account_info(),
-        &ctx.accounts.mint_authority.to_account_info(),
+        &ctx.accounts.token_authority.to_account_info(),
         &ctx.accounts.vault_minter_role.to_account_info(),
         &ctx.accounts.m_mint.to_account_info(),
         &ctx.accounts.m_mint_user_ata.to_account_info(),

@@ -15,9 +15,9 @@ import { generateAcAccount } from "../helpers/vaults.helpers";
 import { AC_ROLES } from "../constants/ac.constants";
 import { TokenAuthority } from "@/target/types/token_authority";
 import { AccessControlFixtureReturnType } from "./ac.fixture";
-import { newMintAuthority } from "../testers/token-authority.testers";
+import { newTokenAuthority } from "../testers/token-authority.testers";
 import {
-  getMintAuthorityPda,
+  getTokenAuthorityPda,
   mintAuthoritySeedToBuffer,
 } from "../helpers/token-authority.helpers";
 import { TOKEN_AUTHORITY_ROLES } from "../constants/token-authority.constants";
@@ -37,7 +37,7 @@ export const tokenAuthorityFixture = async (
 
   const createFeedTx = new Transaction().add(
     await tokenAuthorityProgram.methods
-      .newMintAuthority(
+      .newTokenAuthority(
         Array.from(
           Uint8Array.from(mintAuthoritySeedToBuffer(mTBillMinterAuthoritySeed))
         ),
@@ -45,7 +45,7 @@ export const tokenAuthorityFixture = async (
       )
       .accountsPartial({
         signer: authority.publicKey,
-        mintAuthority: getMintAuthorityPda(mTBillMinterAuthoritySeed),
+        tokenAuthority: getTokenAuthorityPda(mTBillMinterAuthoritySeed),
       })
       .instruction(),
     await acFixture.acProgram.methods

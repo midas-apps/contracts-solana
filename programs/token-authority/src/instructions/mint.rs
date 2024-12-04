@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::{token_2022::{mint_to, MintTo}, token_interface::{Mint as SplMint, TokenAccount, TokenInterface}};
 
 use crate::{
-    constants::ac_roles, program::TokenAuthority, state::MintAuthorityState
+    constants::ac_roles, program::TokenAuthority, state::TokenAuthorityState
 };
 
 #[derive(Accounts)]
@@ -16,13 +16,13 @@ pub struct Mint<'info> {
     pub receiver: AccountInfo<'info>,
 
     #[account(
-        seeds = [MintAuthorityState::SEED, mint_authority.base_seed.as_ref()],
+        seeds = [TokenAuthorityState::SEED, token_authority.base_seed.as_ref()],
         bump    
     )]
-    pub mint_authority: Account<'info, MintAuthorityState>,
+    pub token_authority: Account<'info, TokenAuthorityState>,
 
     #[account(
-        seeds = [AccountAccessControlRoleState::SEED, mint_authority.ac_role.as_ref(), authority.key().as_ref(), ac_roles::M_MINTER],
+        seeds = [AccountAccessControlRoleState::SEED, token_authority.ac_role.as_ref(), authority.key().as_ref(), ac_roles::M_MINTER],
         seeds::program = AccessControl::id(),
         bump,
     )]
@@ -49,7 +49,7 @@ pub struct Mint<'info> {
 
 pub fn handle(ctx: Context<Mint>, amount: u64) -> Result<()> {
     let (_, vault_pda_bump_seed) = Pubkey::find_program_address(
-        &[MintAuthorityState::SEED, ctx.accounts.mint_authority.base_seed.as_ref()],
+        &[TokenAuthorityState::SEED, ctx.accounts.token_authority.base_seed.as_ref()],
         &TokenAuthority::id(),
     );
 
@@ -57,13 +57,13 @@ pub fn handle(ctx: Context<Mint>, amount: u64) -> Result<()> {
         CpiContext::new_with_signer(
             ctx.accounts.token_program.to_account_info(),
             MintTo {
-                authority: ctx.accounts.mint_authority.to_account_info(),
+                authority: ctx.accounts.token_authority.to_account_info(),
                 mint: ctx.accounts.mint.to_account_info(),
                 to: ctx.accounts.receiver_ata.to_account_info(),
             },
             &[&[
-                MintAuthorityState::SEED,
-                ctx.accounts.mint_authority.base_seed.as_ref(),
+                TokenAuthorityState::SEED,
+                ctx.accounts.token_authority.base_seed.as_ref(),
                 &[vault_pda_bump_seed],
             ]],
         ),

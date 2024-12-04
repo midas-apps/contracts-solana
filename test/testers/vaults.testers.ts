@@ -59,7 +59,7 @@ import {
 } from "../helpers/ac.helpers";
 import { newAccountAc } from "./ac.testers";
 import { VAULT_AC_ROLES } from "../constants/vaults.constants";
-import { fetchMintAuthorityState } from "../helpers/token-authority.helpers";
+import { fetchTokenAuthorityState } from "../helpers/token-authority.helpers";
 import { TOKEN_AUTHORITY_ROLES } from "../constants/token-authority.constants";
 
 type CommonVaultsParams = VaultsFixtureReturnType;
@@ -111,7 +111,7 @@ export const mintInstant = async (
       getMinterVaultPda(baseAccounts.vaultCommon)
     );
 
-    const mintAuthorityState = await fetchMintAuthorityState(
+    const mintAuthorityState = await fetchTokenAuthorityState(
       tokenAuthorityProgram,
       minterVaultState.mintAuthorityPda
     );
@@ -187,7 +187,7 @@ export const mintInstant = async (
       paymentMintDataFeed: stateBefore.paymentTokenState.dataFeed,
       paymentMintFeed: stateBefore.paymentTokenFeed.underlyingFeed,
       paymentMintTokenProgram: TOKEN_PROGRAM_ID,
-      mintAuthority: stateBefore.minterVaultState.mintAuthorityPda,
+      tokenAuthority: stateBefore.minterVaultState.mintAuthorityPda,
       accountAc: getAccountAcStatePda(baseAccounts.ac, from.publicKey),
       vaultMinterRole: getAccountAcRoleStatePda(
         stateBefore.mintAuthorityState.acRole,
@@ -404,7 +404,7 @@ export const approveMintRequest = async (
       vaultsProgram,
       getMinterVaultPda(baseAccounts.vaultCommon)
     );
-    const mintAuthorityState = await fetchMintAuthorityState(
+    const mintAuthorityState = await fetchTokenAuthorityState(
       tokenAuthorityProgram,
       minterVaultState.mintAuthorityPda
     );
@@ -452,7 +452,7 @@ export const approveMintRequest = async (
         getMinterVaultPda(baseAccounts.vaultCommon),
         requestId
       ),
-      mintAuthority: stateBefore.minterVaultState.mintAuthorityPda,
+      tokenAuthority: stateBefore.minterVaultState.mintAuthorityPda,
       userAccount: user,
       mMint: stateBefore.commonVaultState.mMint,
       mMintTokenProgram: TOKEN_2022_PROGRAM_ID,

@@ -358,7 +358,7 @@ pub fn mint_token<'info>(
     common_vault: &Pubkey,
     authority: &AccountInfo<'info>,
     receiver: &AccountInfo<'info>,
-    mint_authority: &AccountInfo<'info>,
+    token_authority: &AccountInfo<'info>,
     authority_minter_role: &AccountInfo<'info>,
     mint: &AccountInfo<'info>,
     receiver_ata: &AccountInfo<'info>,
@@ -376,7 +376,7 @@ pub fn mint_token<'info>(
     let accounts = AuthorityMint {
         authority: authority.clone(),
         receiver: receiver.clone(),
-        mint_authority: mint_authority.clone(),
+        token_authority: token_authority.clone(),
         authority_minter_role: authority_minter_role.clone(),
         mint: mint.clone(),
         receiver_ata: receiver_ata.clone(),
@@ -412,7 +412,7 @@ pub fn mint_token<'info>(
     //             to: to.to_account_info(),
     //         },
     //         &[&[
-    //             MintAuthorityState::SEED,
+    //             TokenAuthorityState::SEED,
     //             mint_authority_pda_seed,
     //             &[vault_pda_bump_seed],
     //         ]],

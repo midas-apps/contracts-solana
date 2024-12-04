@@ -25,15 +25,15 @@ export type PaymentMint = {
   decimals: number;
 };
 
-export const fetchMintAuthorityState = async (
+export const fetchTokenAuthorityState = async (
   program: TokenAuthorityProgram,
-  mintAuthority: PublicKey,
+  tokenAuthority: PublicKey,
   allowNull = false
 ) => {
   // TODO: refactor
   try {
-    return await program.account.mintAuthorityState.fetchNullable(
-      mintAuthority
+    return await program.account.tokenAuthorityState.fetchNullable(
+      tokenAuthority
     );
   } catch (err) {
     if (!allowNull) {
@@ -47,7 +47,7 @@ export const mintAuthoritySeedToBuffer = (seed: string) => {
   return keccak256(Buffer.from(seed));
 };
 
-export const getMintAuthorityPda = (seed: string | Buffer) => {
+export const getTokenAuthorityPda = (seed: string | Buffer) => {
   const buff =
     seed instanceof Buffer ? seed : mintAuthoritySeedToBuffer(seed as string);
 

@@ -1,2 +1,2 @@
-pub mod mint_authority_state;
-pub use mint_authority_state::*;
+pub mod token_authority_state;
+pub use token_authority_state::*;

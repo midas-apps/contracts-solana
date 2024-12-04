@@ -2,7 +2,7 @@ use access_control::{program::AccessControl, state::{AccessControlState, Account
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion};
-use token_authority::{constants::ac_roles as ac_roles_token_authority, program::TokenAuthority, state::MintAuthorityState};
+use token_authority::{constants::ac_roles as ac_roles_token_authority, program::TokenAuthority, state::TokenAuthorityState};
 
 use crate::{
     constants::{ac_roles, seeds}, errors::MidasVaultsError, state::{
@@ -32,10 +32,10 @@ pub struct MintInstant<'info> {
         address = minter_vault.mint_authority_pda,
         owner = TokenAuthority::id()
     )]
-    pub mint_authority: Account<'info, MintAuthorityState>,
+    pub token_authority: Account<'info, TokenAuthorityState>,
 
     #[account(
-        seeds = [AccountAccessControlRoleState::SEED, mint_authority.ac_role.as_ref(), minter_vault.key().as_ref(), ac_roles_token_authority::M_MINTER],
+        seeds = [AccountAccessControlRoleState::SEED, token_authority.ac_role.as_ref(), minter_vault.key().as_ref(), ac_roles_token_authority::M_MINTER],
         seeds::program = AccessControl::id(),
         bump,
     )]
@@ -220,7 +220,7 @@ pub fn handle(
         &ctx.accounts.vault_common.key(),
         &ctx.accounts.minter_vault.to_account_info(),
         &&ctx.accounts.signer.to_account_info(),
-        &ctx.accounts.mint_authority.to_account_info(),
+        &ctx.accounts.token_authority.to_account_info(),
         &ctx.accounts.vault_minter_role.to_account_info(),
         &ctx.accounts.m_mint.to_account_info(),
         &ctx.accounts.m_mint_signer_ata.to_account_info(),
@@ -229,15 +229,6 @@ pub fn handle(
         &ctx.accounts.token_authority_program.to_account_info(),
         params.m_token_amount.try_into().unwrap()
     )?;
-
-    // mint_token(
-    //     &ctx.accounts.mint_authority.base_seed.as_ref(), 
-    //     &ctx.accounts.m_mint_token_program,
-    //     &ctx.accounts.m_mint, 
-    //     &ctx.accounts.mint_authority.to_account_info(), 
-    //     &ctx.accounts.m_mint_signer_ata, 
-    //     params.m_token_amount.try_into().unwrap()
-    // )?;
 
     msg!("TRANSFERRED3");
 

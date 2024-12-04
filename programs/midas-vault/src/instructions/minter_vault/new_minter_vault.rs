@@ -1,6 +1,6 @@
 use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
 use anchor_lang::prelude::*;
-use token_authority::{program::TokenAuthority, state::MintAuthorityState};
+use token_authority::{program::TokenAuthority, state::TokenAuthorityState};
 
 use crate::{
     constants::{ac_roles, seeds},
@@ -33,12 +33,12 @@ pub struct NewMinterVault<'info> {
     pub minter_vault: Account<'info, MinterVaultState>,
 
     #[account(
-        seeds = [MintAuthorityState::SEED, mint_authority.base_seed.as_ref()],
+        seeds = [TokenAuthorityState::SEED, token_authority.base_seed.as_ref()],
         seeds::program = TokenAuthority::id(),
         owner = TokenAuthority::id(),
         bump,
     )]
-    pub mint_authority: Account<'info, MintAuthorityState>,
+    pub token_authority: Account<'info, TokenAuthorityState>,
 
     pub token_authority_program: Program<'info, TokenAuthority>,
 
@@ -50,7 +50,7 @@ pub fn handle(ctx: Context<NewMinterVault>, first_deposit_min_m_tokens: u64) -> 
 
     ctx.accounts.minter_vault.common_vault = ctx.accounts.vault_common.key();
     ctx.accounts.minter_vault.first_deposit_min_m_tokens = first_deposit_min_m_tokens;
-    ctx.accounts.minter_vault.mint_authority_pda = ctx.accounts.mint_authority.key();
+    ctx.accounts.minter_vault.mint_authority_pda = ctx.accounts.token_authority.key();
 
     Ok(())
 }

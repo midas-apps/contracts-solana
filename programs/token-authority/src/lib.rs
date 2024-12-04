@@ -12,12 +12,12 @@ declare_id!("6XqSwGFEuadyqXC9vBLYGJhvQsEVjPdCrtvN6inAb4z3");
 pub mod token_authority {
     use super::*;
 
-    pub fn new_mint_authority(
-        ctx: Context<NewMintAuthority>,
+    pub fn new_token_authority(
+        ctx: Context<NewTokenAuthority>,
         base_seed: [u8; 32],
         ac_role: Pubkey,
     ) -> Result<()> {
-        new_mint_authority::handle(ctx, base_seed, ac_role)
+        new_token_authority::handle(ctx, base_seed, ac_role)
     }
 
     pub fn mint(ctx: Context<Mint>, amount: u64) -> Result<()> {

@@ -60,8 +60,8 @@ import {
 import { newAccountAc } from "./ac.testers";
 import { VAULT_AC_ROLES } from "../constants/vaults.constants";
 import {
-  fetchMintAuthorityState,
-  getMintAuthorityPda,
+  fetchTokenAuthorityState,
+  getTokenAuthorityPda,
   mintAuthoritySeedToBuffer,
 } from "../helpers/token-authority.helpers";
 import { TokenAuthorityFixtureReturnType } from "../fixture/token-authority.fixture";
@@ -69,7 +69,7 @@ import { TOKEN_AUTHORITY_ROLES } from "../constants/token-authority.constants";
 
 type CommonTokenAuthorityParams = TokenAuthorityFixtureReturnType;
 
-export const newMintAuthority = async (
+export const newTokenAuthority = async (
   fixture: CommonTokenAuthorityParams,
   {
     seed,
@@ -87,27 +87,27 @@ export const newMintAuthority = async (
   acRole ??= acRoleMTbill.publicKey;
 
   const fetchState = async () => {
-    const mintAuthority = await fetchMintAuthorityState(
+    const tokenAuthority = await fetchTokenAuthorityState(
       tokenAuthorityProgram,
-      getMintAuthorityPda(seed),
+      getTokenAuthorityPda(seed),
       true
     );
 
     return {
-      mintAuthority,
+      tokenAuthority,
     };
   };
 
   const stateBefore = await fetchState();
 
   const tx = await tokenAuthorityProgram.methods
-    .newMintAuthority(
+    .newTokenAuthority(
       Array.from(Uint8Array.from(mintAuthoritySeedToBuffer(seed))),
       acRole
     )
     .accountsPartial({
       signer: from.publicKey,
-      mintAuthority: getMintAuthorityPda(seed),
+      tokenAuthority: getTokenAuthorityPda(seed),
     })
     .transaction();
 
@@ -121,7 +121,7 @@ export const newMintAuthority = async (
   const stateAfter = await fetchState();
 
   expect(stateAfter).not.toEqual(null);
-  expect(stateAfter.mintAuthority.acRole.equals(acRole)).toBe(true);
+  expect(stateAfter.tokenAuthority.acRole.equals(acRole)).toBe(true);
 };
 
 export const mintMToken = async (
@@ -152,9 +152,9 @@ export const mintMToken = async (
     TOKEN_2022_PROGRAM_ID
   );
 
-  const minterState = await fetchMintAuthorityState(
+  const minterState = await fetchTokenAuthorityState(
     fixture.tokenAuthorityProgram,
-    getMintAuthorityPda(fixture.mTBillMinterAuthoritySeed)
+    getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed)
   );
 
   await processTransaction(
@@ -165,7 +165,7 @@ export const mintMToken = async (
       .accountsPartial({
         mint: mToken,
         authority: fixture.authority.publicKey,
-        mintAuthority: getMintAuthorityPda(fixture.mTBillMinterAuthoritySeed),
+        tokenAuthority: getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed),
         receiver: to,
         receiverAta: ata,
         authorityMinterRole: getAccountAcRoleStatePda(

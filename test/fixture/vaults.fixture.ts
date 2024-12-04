@@ -45,7 +45,7 @@ import {
 import { AC_ROLES } from "../constants/ac.constants";
 import { tokenAuthorityFixture } from "./token-authority.fixture";
 import { TOKEN_AUTHORITY_ROLES } from "../constants/token-authority.constants";
-import { getMintAuthorityPda } from "../helpers/token-authority.helpers";
+import { getTokenAuthorityPda } from "../helpers/token-authority.helpers";
 
 export const vaultsFixture = async () => {
   const dfFixture = await dataFeedFixture();
@@ -253,7 +253,7 @@ export const vaultsFixture = async () => {
       .accountsPartial({
         vaultCommon: minterCommonVault.publicKey,
         authority: authority.publicKey,
-        mintAuthority: getMintAuthorityPda(mTBillMinterAuthoritySeed),
+        tokenAuthority: getTokenAuthorityPda(mTBillMinterAuthoritySeed),
         authorityAcRole: getAccountAcRoleStatePda(
           acRoleMTbill.publicKey,
           authority.publicKey,
@@ -290,7 +290,7 @@ export const vaultsFixture = async () => {
       mTBillMint.publicKey,
       authority.publicKey,
       AuthorityType.MintTokens,
-      getMintAuthorityPda(mTBillMinterAuthoritySeed),
+      getTokenAuthorityPda(mTBillMinterAuthoritySeed),
       undefined,
       TOKEN_2022_PROGRAM_ID
     )

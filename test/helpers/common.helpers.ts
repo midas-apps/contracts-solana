@@ -257,7 +257,7 @@ export const createMint = async (
   connection: Connection,
   ctx: ProgramTestContext,
   payer: Signer,
-  mintAuthority: PublicKey,
+  tokenAuthority: PublicKey,
   freezeAuthority: PublicKey | null,
   decimals: number,
   keypair = Keypair.generate(),
@@ -276,7 +276,7 @@ export const createMint = async (
     createInitializeMint2Instruction(
       keypair.publicKey,
       decimals,
-      mintAuthority,
+      tokenAuthority,
       freezeAuthority,
       programId
     )

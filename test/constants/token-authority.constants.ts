@@ -5,7 +5,7 @@ export const TOKEN_AUTHORITY_PROGRAM_ID = new PublicKey(
 );
 
 export const TOKEN_AUTHORITY_SEEDS = {
-  MINT_AUTHORITY: "mint_authority",
+  MINT_AUTHORITY: "token_authority",
 };
 
 export const TOKEN_AUTHORITY_ROLES = {
