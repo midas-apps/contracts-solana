@@ -351,7 +351,7 @@ describe("common-vault", () => {
     });
   });
 
-  describe.only("update_pause", () => {
+  describe("update_pause", () => {
     it("call with default params", async () => {
       const fixture = await vaultsFixture();
 
@@ -375,7 +375,7 @@ describe("common-vault", () => {
     });
   });
 
-  describe.only("new_pause_inx", () => {
+  describe("new_pause_inx", () => {
     it("call with default params", async () => {
       const fixture = await vaultsFixture();
 
@@ -399,7 +399,7 @@ describe("common-vault", () => {
     });
   });
 
-  describe.only("update_pause_inx", () => {
+  describe("update_pause_inx", () => {
     it("call with default params", async () => {
       const fixture = await vaultsFixture();
 
