@@ -30,6 +30,7 @@ import {
   fetchMintAuthorityState,
   fetchMinterVaultRequestState,
   fetchMinterVaultState,
+  fetchPauseInxState,
   fetchPaymentMintState,
   fetchRedeemerVaultRequestState,
   fetchRedeemerVaultState,
@@ -40,6 +41,7 @@ import {
   getMintAuthorityPda,
   getMinterVaultPda,
   getMinterVaultRequestPda,
+  getPauseInxStatePda,
   getPaymentMintStatePda,
   getRedeemerVaultPda,
   getRedeemerVaultRedeemerPda,
@@ -55,7 +57,7 @@ import {
 } from "@solana/spl-token";
 import { DEFAULT_PUBKEY, MAX_U128 } from "../constants/common.constants";
 import { getAccountAcRoleStatePda } from "../helpers/ac.helpers";
-import { VAULT_AC_ROLES } from "../constants/vaults.constants";
+import { VAULT_AC_ROLES, VaultActionIds } from "../constants/vaults.constants";
 
 type CommonVaultsParams = VaultsFixtureReturnType;
 
@@ -720,4 +722,203 @@ export const updatePaymentToken = async (
   if (stable !== null) {
     expect(stateAfter.paymentTokenState.stable).toBe(stable);
   }
+};
+
+export const newPauseInx = async (
+  fixture: CommonVaultsParams,
+  {
+    fnId,
+  }: {
+    fnId?: number;
+  },
+  accounts?: {
+    commonVault?: PublicKey;
+  },
+  opt?: OptionalCommonParams
+) => {
+  const { vaultsProgram, authority: owner, context } = fixture;
+
+  fnId ??= VaultActionIds.MINT_INSTANT;
+
+  const baseAccounts = {
+    vaultCommon: accounts?.commonVault ?? fixture.minterCommonVault.publicKey,
+  };
+
+  const fetchState = async () => {
+    const pauseInxState = await fetchPauseInxState(
+      vaultsProgram,
+      getPauseInxStatePda(baseAccounts.vaultCommon, fnId),
+      true
+    );
+
+    const commonState = await fetchVaultCommonState(
+      vaultsProgram,
+      baseAccounts.vaultCommon
+    );
+
+    return {
+      pauseInxState,
+      commonState,
+    };
+  };
+
+  const stateBefore = await fetchState();
+
+  const from = opt?.from ?? owner;
+
+  const tx = await vaultsProgram.methods
+    .newPauseInx(fnId)
+    .accountsPartial({
+      ...baseAccounts,
+      authority: from.publicKey,
+      authorityAcRole: getAccountAcRoleStatePda(
+        stateBefore.commonState.acRole,
+        from.publicKey,
+        VAULT_AC_ROLES.VAULT_PAUSER
+      ),
+      pauseInxState: getPauseInxStatePda(baseAccounts.vaultCommon, fnId),
+    })
+    .transaction();
+
+  if (opt?.revertedWith !== undefined) {
+    await expectTxReverted(context, tx, [from], opt);
+    return;
+  }
+
+  await expectTxNotReverted(context, tx, [from]);
+
+  const stateAfter = await fetchState();
+
+  expect(stateAfter.pauseInxState).not.toEqual(null);
+  expect(stateAfter.pauseInxState.paused).toBe(false);
+};
+
+export const updatePauseInx = async (
+  fixture: CommonVaultsParams,
+  {
+    fnId,
+    paused,
+  }: {
+    fnId?: number;
+    paused?: boolean;
+  },
+  accounts?: {
+    commonVault?: PublicKey;
+  },
+  opt?: OptionalCommonParams
+) => {
+  const { vaultsProgram, authority: owner, context } = fixture;
+
+  fnId ??= VaultActionIds.MINT_INSTANT;
+  paused ??= true;
+
+  const baseAccounts = {
+    vaultCommon: accounts?.commonVault ?? fixture.minterCommonVault.publicKey,
+  };
+
+  const fetchState = async () => {
+    const pauseInxState = await fetchPauseInxState(
+      vaultsProgram,
+      getPauseInxStatePda(baseAccounts.vaultCommon, fnId)
+    );
+
+    const commonState = await fetchVaultCommonState(
+      vaultsProgram,
+      baseAccounts.vaultCommon
+    );
+
+    return {
+      pauseInxState,
+      commonState,
+    };
+  };
+
+  const stateBefore = await fetchState();
+
+  const from = opt?.from ?? owner;
+
+  const tx = await vaultsProgram.methods
+    .updatePauseInx(fnId, paused)
+    .accountsPartial({
+      ...baseAccounts,
+      authority: from.publicKey,
+      authorityAcRole: getAccountAcRoleStatePda(
+        stateBefore.commonState.acRole,
+        from.publicKey,
+        VAULT_AC_ROLES.VAULT_PAUSER
+      ),
+      pauseInxState: getPauseInxStatePda(baseAccounts.vaultCommon, fnId),
+    })
+    .transaction();
+
+  if (opt?.revertedWith !== undefined) {
+    await expectTxReverted(context, tx, [from], opt);
+    return;
+  }
+
+  await expectTxNotReverted(context, tx, [from]);
+
+  const stateAfter = await fetchState();
+
+  expect(stateAfter.pauseInxState.paused).toBe(paused);
+};
+
+export const updatePause = async (
+  fixture: CommonVaultsParams,
+  {
+    paused,
+  }: {
+    paused?: boolean;
+  },
+  accounts?: {
+    commonVault?: PublicKey;
+  },
+  opt?: OptionalCommonParams
+) => {
+  const { vaultsProgram, authority: owner, context } = fixture;
+
+  paused ??= true;
+
+  const baseAccounts = {
+    vaultCommon: accounts?.commonVault ?? fixture.minterCommonVault.publicKey,
+  };
+
+  const fetchState = async () => {
+    const commonState = await fetchVaultCommonState(
+      vaultsProgram,
+      baseAccounts.vaultCommon
+    );
+
+    return {
+      commonState,
+    };
+  };
+
+  const stateBefore = await fetchState();
+
+  const from = opt?.from ?? owner;
+
+  const tx = await vaultsProgram.methods
+    .updatePause(paused)
+    .accountsPartial({
+      ...baseAccounts,
+      authority: from.publicKey,
+      authorityAcRole: getAccountAcRoleStatePda(
+        stateBefore.commonState.acRole,
+        from.publicKey,
+        VAULT_AC_ROLES.VAULT_PAUSER
+      ),
+    })
+    .transaction();
+
+  if (opt?.revertedWith !== undefined) {
+    await expectTxReverted(context, tx, [from], opt);
+    return;
+  }
+
+  await expectTxNotReverted(context, tx, [from]);
+
+  const stateAfter = await fetchState();
+
+  expect(stateAfter.commonState.paused).toBe(paused);
 };

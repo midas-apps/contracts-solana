@@ -8,7 +8,7 @@ pub struct UpdatePause<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    #[account()]
+    #[account(mut)]
     pub vault_common: Account<'info, VaultCommonState>,
 
     #[account(

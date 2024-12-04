@@ -145,11 +145,19 @@ export const fetchPaymentMintState = async (
   }
 };
 
-export const fetchPauseInxState = (
+export const fetchPauseInxState = async (
   program: VaultsProgram,
-  pauseInxState: PublicKey
+  pauseInxState: PublicKey,
+  allowNull = false
 ) => {
-  return program.account.pauseInxState.fetchNullable(pauseInxState);
+  try {
+    return await program.account.pauseInxState.fetchNullable(pauseInxState);
+  } catch (err) {
+    if (!allowNull) {
+      throw new Error("Payment mint state is null");
+    }
+    return null;
+  }
 };
 
 export const mintAuthoritySeedToBuffer = (seed: string) => {

@@ -18,9 +18,12 @@ import {
 import { approveMint, parsePercent } from "./helpers/common.helpers";
 import {
   addPaymentToken,
+  newPauseInx,
   newVaultCommon,
   newVaultCommonAccount,
   removePaymentToken,
+  updatePause,
+  updatePauseInx,
   updatePaymentToken,
   updateVaultCommon,
   updateVaultCommonAccount,
@@ -337,6 +340,80 @@ describe("common-vault", () => {
       const commonVault = await newVaultCommon(fixture, {});
       await addPaymentToken(fixture, {}, { commonVault });
       await removePaymentToken(
+        fixture,
+        {},
+        { commonVault },
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        }
+      );
+    });
+  });
+
+  describe.only("update_pause", () => {
+    it("call with default params", async () => {
+      const fixture = await vaultsFixture();
+
+      const commonVault = await newVaultCommon(fixture, {});
+      await updatePause(fixture, {}, { commonVault });
+    });
+
+    it("should fail: call from non-authority", async () => {
+      const fixture = await vaultsFixture();
+
+      const commonVault = await newVaultCommon(fixture, {});
+      await updatePause(
+        fixture,
+        {},
+        { commonVault },
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        }
+      );
+    });
+  });
+
+  describe.only("new_pause_inx", () => {
+    it("call with default params", async () => {
+      const fixture = await vaultsFixture();
+
+      const commonVault = await newVaultCommon(fixture, {});
+      await newPauseInx(fixture, {}, { commonVault });
+    });
+
+    it("should fail: call from non-authority", async () => {
+      const fixture = await vaultsFixture();
+
+      const commonVault = await newVaultCommon(fixture, {});
+      await newPauseInx(
+        fixture,
+        {},
+        { commonVault },
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        }
+      );
+    });
+  });
+
+  describe.only("update_pause_inx", () => {
+    it("call with default params", async () => {
+      const fixture = await vaultsFixture();
+
+      const commonVault = await newVaultCommon(fixture, {});
+      await newPauseInx(fixture, {}, { commonVault });
+      await updatePauseInx(fixture, {}, { commonVault });
+    });
+
+    it("should fail: call from non-authority", async () => {
+      const fixture = await vaultsFixture();
+
+      const commonVault = await newVaultCommon(fixture, {});
+      await newPauseInx(fixture, {}, { commonVault });
+      await updatePauseInx(
         fixture,
         {},
         { commonVault },
