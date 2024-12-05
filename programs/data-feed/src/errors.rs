@@ -16,4 +16,8 @@ pub enum DataFeedError {
     InvalidMaxPrice,
     #[msg("Invalid underlying feed")]
     InvalidUnderlyingFeed,
+    #[msg("Price is lower than min.")]
+    PriceIsLowerThanMin,
+    #[msg("Price is higher than max.")]
+    PriceIsHigherThanMax,
 }

@@ -321,7 +321,7 @@ export const updateManualFeed = async (
   );
 
   const tx = await dataFeedProgram.methods
-    .updateManualFeed(price ? toBN(price) : null, decimals)
+    .updateManualFeed(toBNNullable(price), decimals)
     .accountsPartial({
       baseFeed: baseFeed,
       authority: from.publicKey,
@@ -358,12 +358,13 @@ export const updateManualFeed = async (
 
   const feedFetched = await fetchManualFeedState(dataFeedProgram, feedPda);
 
-  if (decimals) {
+  if (decimals !== null) {
     expect(feedFetched.decimals).toBe(decimals);
   }
 
-  if (price) {
+  if (price !== null) {
     expect(fromBN(feedFetched.price)).toBe(price);
+    console.log("price", feedFetched.price);
   }
 };
 

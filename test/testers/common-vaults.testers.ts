@@ -72,10 +72,12 @@ export const newVaultCommon = async (
     tokensReceiver,
     variationTolerance,
     vaultCommon,
+    greenlistEnforced,
   }: {
     ac?: PublicKey;
     vaultCommon?: Keypair;
     mMint?: PublicKey;
+    greenlistEnforced?: boolean;
     mDataFeed?: PublicKey;
     acRole?: PublicKey;
     tokensReceiver?: PublicKey;
@@ -103,6 +105,7 @@ export const newVaultCommon = async (
   variationTolerance ??= parsePercent(1);
   minAmount ??= 0n;
   vaultCommon ??= generateCommonVaultAccount();
+  greenlistEnforced ??= false;
 
   const fetchState = async () => {
     const common = await fetchVaultCommonState(
@@ -121,6 +124,7 @@ export const newVaultCommon = async (
       ac,
       mMint,
       mDataFeed,
+      greenlistEnforced,
       acRole,
       tokensReceiver,
       feeReceiver,
@@ -172,12 +176,14 @@ export const updateVaultCommon = async (
     instantDailyLimit,
     instantFee,
     minAmount,
-    tokensReceiver,
+    greenlistEnforced,
     variationTolerance,
     vaultCommon,
+    tokensReceiver,
   }: {
     vaultCommon?: PublicKey;
     acRole?: PublicKey;
+    greenlistEnforced?: boolean;
     tokensReceiver?: PublicKey;
     feeReceiver?: PublicKey;
     instantFee?: bigint;
@@ -198,6 +204,7 @@ export const updateVaultCommon = async (
   instantDailyLimit ??= null;
   variationTolerance ??= null;
   minAmount ??= null;
+  greenlistEnforced ??= null;
   vaultCommon ??= fixture.minterCommonVault.publicKey;
 
   const fetchState = async () => {
@@ -212,6 +219,7 @@ export const updateVaultCommon = async (
 
   const tx = await vaultsProgram.methods
     .updateCommonVault(
+      greenlistEnforced,
       acRole,
       tokensReceiver,
       feeReceiver,
@@ -461,7 +469,7 @@ export const addPaymentToken = async (
   } = fixture;
 
   allowance ??= MAX_U128;
-  fee ??= parseUnits("10", 2);
+  fee ??= parseUnits("1", 2);
   stable ??= true;
   dataFeed ??= fixture.paymentMints.usdc.feed.publicKey;
   mint ??= fixture.paymentMints.usdc.mint;
@@ -796,7 +804,7 @@ export const updatePauseInx = async (
     fnId,
     paused,
   }: {
-    fnId?: number;
+    fnId?: VaultActionIds;
     paused?: boolean;
   },
   accounts?: {

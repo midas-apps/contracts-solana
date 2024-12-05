@@ -8,12 +8,7 @@ import {
 } from "./testers/data-feed.testers";
 import { vaultsFixture } from "./fixture/vaults.fixture";
 import { VaultError, VAULTS_PROGRAM_ID } from "./constants/vaults.constants";
-import {
-  approveMintRequest,
-  mintInstant,
-  mintRequest,
-  rejectMintRequest,
-} from "./testers/vaults.testers";
+
 import { approveMint, parsePercent } from "./helpers/common.helpers";
 import {
   addPaymentToken,

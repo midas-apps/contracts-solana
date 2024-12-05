@@ -99,7 +99,7 @@ export const toBN = (n: number | string | bigint) => {
 };
 
 export const toBNNullable = (n: number | string | bigint | null): BN | null => {
-  return n ? new BN(n.toString()) : null;
+  return n !== null ? new BN(n.toString()) : null;
 };
 
 export const findPDA = <TProgram extends Idl | unknown>(
@@ -388,7 +388,7 @@ export function createAtaInx(
 
 export const timeTravel = async (
   ctx: ProgramTestContext,
-  timestamp: bigint
+  timestampDelta: bigint
 ) => {
   const client = ctx.banksClient;
   const currentClock = await client.getClock();
@@ -398,7 +398,7 @@ export const timeTravel = async (
       currentClock.epochStartTimestamp,
       currentClock.epoch,
       currentClock.leaderScheduleEpoch,
-      timestamp
+      currentClock.unixTimestamp + timestampDelta
     )
   );
 };

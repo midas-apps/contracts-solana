@@ -27,8 +27,13 @@ pub mod midas_vaults {
     pub fn update_minter_vault(
         ctx: Context<UpdateMinterVault>,
         new_first_deposit_min_m_tokens: Option<u64>,
+        mint_authority_pda: Option<Pubkey>,
     ) -> Result<()> {
-        minter_vault::update_minter_vault::handle(ctx, new_first_deposit_min_m_tokens)
+        minter_vault::update_minter_vault::handle(
+            ctx,
+            new_first_deposit_min_m_tokens,
+            mint_authority_pda,
+        )
     }
 
     #[access_control(ctx.accounts.validate())]
@@ -146,7 +151,7 @@ pub mod midas_vaults {
         ac: Pubkey,
         m_mint: Pubkey,
         m_mint_feed: Pubkey,
-
+        greenlist_enforced: bool,
         ac_role: Pubkey,
         tokens_receiver: Pubkey,
         fee_receiver: Pubkey,
@@ -160,6 +165,7 @@ pub mod midas_vaults {
             ac,
             m_mint,
             m_mint_feed,
+            greenlist_enforced,
             ac_role,
             tokens_receiver,
             fee_receiver,
@@ -172,6 +178,7 @@ pub mod midas_vaults {
 
     pub fn update_common_vault(
         ctx: Context<UpdateVaultCommon>,
+        greenlist_enforced: Option<bool>,
         ac_role: Option<Pubkey>,
         tokens_receiver: Option<Pubkey>,
         fee_receiver: Option<Pubkey>,
@@ -182,6 +189,7 @@ pub mod midas_vaults {
     ) -> Result<()> {
         vault_common::update_vault_common::handle(
             ctx,
+            greenlist_enforced,
             ac_role,
             tokens_receiver,
             fee_receiver,

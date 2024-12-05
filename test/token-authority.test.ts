@@ -7,7 +7,7 @@ import {
 } from "./testers/token-authority.testers";
 import { tokenAuthorityFixture } from "./fixture/token-authority.fixture";
 import { vaultsFixture } from "./fixture/vaults.fixture";
-import { mintToken } from "./testers/vaults.testers";
+import { mintToken } from "./testers/redeem-vault.testers";
 import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import { Keypair } from "@solana/web3.js";
 

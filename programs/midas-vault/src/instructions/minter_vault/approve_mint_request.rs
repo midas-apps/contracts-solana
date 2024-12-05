@@ -23,9 +23,7 @@ pub struct ApproveMintRequest<'info> {
     )]
     pub user_account: AccountInfo<'info>,
 
-    #[account(
-        address = minter_vault.common_vault,
-    )]
+    #[account()]
     pub vault_common: Account<'info, VaultCommonState>,
 
     #[account(

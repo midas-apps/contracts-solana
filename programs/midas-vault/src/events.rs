@@ -7,6 +7,7 @@ pub struct CommonVaultUpdatedEvent {
     pub ac: Option<Pubkey>,
     pub m_mint: Option<Pubkey>,
     pub m_mint_feed: Option<Pubkey>,
+    pub greenlist_enforced: Option<bool>,
     pub ac_role: Option<Pubkey>,
     pub tokens_receiver: Option<Pubkey>,
     pub fee_receiver: Option<Pubkey>,

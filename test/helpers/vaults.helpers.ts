@@ -66,11 +66,19 @@ export const fetchVaultCommonAccountState = async (
   }
 };
 
-export const fetchMinterVaultState = (
+export const fetchMinterVaultState = async (
   program: VaultsProgram,
-  vault: PublicKey
+  vault: PublicKey,
+  allowNull = false
 ) => {
-  return program.account.minterVaultState.fetchNullable(vault);
+  try {
+    return await program.account.minterVaultState.fetchNullable(vault);
+  } catch (err) {
+    if (!allowNull) {
+      throw err;
+    }
+    return null;
+  }
 };
 
 export const fetchRedeemerVaultState = (

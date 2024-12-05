@@ -1,3 +1,5 @@
+use core::panic;
+
 use ::token_authority::cpi::accounts::Mint as AuthorityMint;
 use access_control::state::AccountAccessControlState;
 use anchor_lang::{prelude::*, solana_program::clock::SECONDS_PER_DAY};
@@ -17,6 +19,7 @@ use anchor_spl::{
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
 use data_feed::{
+    errors::DataFeedError,
     state::FeedState,
     utils::{decimals_conversion, get_price_in_base_9},
 };
@@ -62,7 +65,7 @@ pub fn validate_green_listed(
     account_ac: &AccountAccessControlState,
     require_green_list: bool,
 ) -> Result<()> {
-    if !common.greenlist_enforced {
+    if !require_green_list && !common.greenlist_enforced {
         return Ok(());
     }
 
@@ -153,7 +156,7 @@ pub fn require_and_update_limit(common: &mut VaultCommonState, amount: u128) -> 
         .unwrap();
 
     let new_limit_used = if common.instant_last_day == current_day {
-        common.instant_daily_limit_used + amount
+        common.instant_daily_limit_used.checked_add(amount).unwrap()
     } else {
         amount
     };
@@ -384,12 +387,6 @@ pub fn mint_token<'info>(
         system_program: system_program.clone(),
     };
 
-    // let seeds: &[&[&[u8]]] = &[&[
-    //     MinterVaultState::SEED,
-    //     common_vault.as_ref(),
-    //     &[vault_pda_bump_seed],
-    // ]];
-
     ::token_authority::cpi::mint(
         CpiContext::new_with_signer(
             token_authority_program.clone(),
@@ -402,23 +399,6 @@ pub fn mint_token<'info>(
         ),
         amount,
     )?;
-
-    // mint_to(
-    //     CpiContext::new_with_signer(
-    //         token_program.to_account_info(),
-    //         MintTo {
-    //             authority: authority.to_account_info(),
-    //             mint: mint.to_account_info(),
-    //             to: to.to_account_info(),
-    //         },
-    //         &[&[
-    //             TokenAuthorityState::SEED,
-    //             mint_authority_pda_seed,
-    //             &[vault_pda_bump_seed],
-    //         ]],
-    //     ),
-    //     amount,
-    // )?;
 
     Ok(())
 }
@@ -517,7 +497,7 @@ pub mod minter {
 
         let fee_in_usd = (fee_token_amount.checked_mul(mint_in_rate))
             .unwrap()
-            .checked_div(10u128.pow(9))
+            .checked_div(ONE.into())
             .unwrap();
 
         msg!(
@@ -564,7 +544,7 @@ pub mod minter {
             amount
                 .checked_mul(rate)
                 .unwrap()
-                .checked_div(10u128.pow(9))
+                .checked_div(ONE.into())
                 .unwrap(),
             rate,
         ))
@@ -582,7 +562,7 @@ pub mod minter {
 
         Ok((
             amount
-                .checked_mul(10u128.pow(9))
+                .checked_mul(ONE.into())
                 .unwrap()
                 .checked_div(rate)
                 .unwrap(),
@@ -638,6 +618,7 @@ pub mod common_vault {
 
     pub fn update_common_vault(
         state: &mut VaultCommonState,
+        greenlist_enforced: Option<bool>,
         ac_role: Option<Pubkey>,
         tokens_receiver: Option<Pubkey>,
         fee_receiver: Option<Pubkey>,
@@ -646,6 +627,10 @@ pub mod common_vault {
         variation_tolerance: Option<u64>,
         min_amount: Option<u64>,
     ) -> Result<()> {
+        if let Some(greenlist_enforced) = greenlist_enforced {
+            state.greenlist_enforced = greenlist_enforced;
+        }
+
         if let Some(ac_role) = ac_role {
             state.ac_role = ac_role;
         }

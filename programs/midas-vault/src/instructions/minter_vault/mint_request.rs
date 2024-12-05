@@ -15,6 +15,7 @@ pub struct MintRequest<'info> {
     pub signer: Signer<'info>,
 
     #[account(
+        mut,
         address = minter_vault.common_vault
     )]
     pub vault_common: Account<'info, VaultCommonState>,

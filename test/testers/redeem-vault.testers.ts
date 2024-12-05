@@ -43,6 +43,7 @@ import {
 } from "../helpers/vaults.helpers";
 import {
   createMintToInstruction,
+  createTransferCheckedInstruction,
   getAssociatedTokenAddressSync,
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
@@ -62,518 +63,10 @@ import { VAULT_AC_ROLES } from "../constants/vaults.constants";
 import { fetchTokenAuthorityState } from "../helpers/token-authority.helpers";
 import { TOKEN_AUTHORITY_ROLES } from "../constants/token-authority.constants";
 
-type CommonVaultsParams = VaultsFixtureReturnType;
-
-export const mintInstant = async (
-  fixture: CommonVaultsParams,
-  {
-    amountToken,
-    minReceiveAmount,
-    referrerId,
-    paymentMint,
-  }: {
-    paymentMint?: PublicKey;
-    amountToken?: bigint;
-    minReceiveAmount?: bigint;
-    referrerId?: number[];
-  },
-  accounts?: {
-    minterVault?: PublicKey;
-    ac?: PublicKey;
-    commonVault?: PublicKey;
-  },
-  opt?: OptionalCommonParams
-) => {
-  const {
-    dataFeedProgram,
-    vaultsProgram,
-    tokenAuthorityProgram,
-    authority: owner,
-    context,
-    connection,
-  } = fixture;
-
-  amountToken ??= parseUnits("10", fixture.paymentMints.usdc.decimals);
-  minReceiveAmount ??= parseUnits("9");
-  referrerId ??= new Array(32).fill(0);
-  paymentMint ??= fixture.paymentMints.usdc.mint;
-
-  const baseAccounts = {
-    vaultCommon: accounts?.commonVault ?? fixture.minterCommonVault.publicKey,
-    ac: accounts?.ac ?? fixture.ac.publicKey,
-  };
-
-  const from = opt?.from ?? owner;
-
-  const fetchState = async () => {
-    const minterVaultState = await fetchMinterVaultState(
-      vaultsProgram,
-      getMinterVaultPda(baseAccounts.vaultCommon)
-    );
-
-    const mintAuthorityState = await fetchTokenAuthorityState(
-      tokenAuthorityProgram,
-      minterVaultState.mintAuthorityPda
-    );
-
-    const commonVaultState = await fetchVaultCommonState(
-      vaultsProgram,
-      baseAccounts.vaultCommon
-    );
-
-    const mMintFeed = await fetchDataFeedState(
-      dataFeedProgram,
-      commonVaultState.mMintFeed
-    );
-
-    const paymentTokenState = await fetchPaymentMintState(
-      vaultsProgram,
-      getPaymentMintStatePda(baseAccounts.vaultCommon, paymentMint)
-    );
-
-    const paymentTokenFeed = await fetchDataFeedState(
-      dataFeedProgram,
-      paymentTokenState.dataFeed
-    );
-
-    const balanceFromPaymentMint = await getBalance(
-      connection,
-      from.publicKey,
-      paymentMint
-    );
-
-    const balanceTokensReceiverPaymentMint = await getBalance(
-      connection,
-      commonVaultState.tokensReceiver,
-      paymentMint
-    );
-
-    const balanceFeeReceiverPaymentMint = await getBalance(
-      connection,
-      commonVaultState.tokensReceiver,
-      paymentMint
-    );
-
-    const balanceFromMToken = await getBalance(
-      connection,
-      from.publicKey,
-      commonVaultState.mMint,
-      TOKEN_2022_PROGRAM_ID
-    );
-
-    return {
-      minterVaultState,
-      commonVaultState,
-      mMintFeed,
-      mintAuthorityState,
-      paymentTokenState,
-      paymentTokenFeed,
-    };
-  };
-
-  const stateBefore = await fetchState();
-
-  const tx = await vaultsProgram.methods
-    .mintInstant(toBN(amountToken), toBN(minReceiveAmount), referrerId)
-    .accountsPartial({
-      ...baseAccounts,
-
-      mMint: stateBefore.commonVaultState.mMint,
-      mMintFeed: stateBefore.mMintFeed.underlyingFeed,
-      mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
-      mMintDataFeed: stateBefore.commonVaultState.mMintFeed,
-      signer: from.publicKey,
-      paymentMint: paymentMint,
-      paymentMintDataFeed: stateBefore.paymentTokenState.dataFeed,
-      paymentMintFeed: stateBefore.paymentTokenFeed.underlyingFeed,
-      paymentMintTokenProgram: TOKEN_PROGRAM_ID,
-      tokenAuthority: stateBefore.minterVaultState.mintAuthorityPda,
-      accountAc: getAccountAcStatePda(baseAccounts.ac, from.publicKey),
-      vaultMinterRole: getAccountAcRoleStatePda(
-        stateBefore.mintAuthorityState.acRole,
-        getMinterVaultPda(baseAccounts.vaultCommon),
-        TOKEN_AUTHORITY_ROLES.M_MINTER
-      ),
-    })
-    .preInstructions([
-      approveMintInstruction(
-        paymentMint,
-        from,
-        getMinterVaultPda(baseAccounts.vaultCommon),
-        amountToken
-      ),
-    ])
-    .transaction();
-
-  if (opt?.revertedWith !== undefined) {
-    await expectTxReverted(context, tx, [from], opt);
-    return;
-  }
-
-  await expectTxNotReverted(context, tx, [from]);
-
-  const stateAfter = await fetchState();
-};
-
-export const mintRequest = async (
-  fixture: CommonVaultsParams,
-  {
-    amountToken,
-    referrerId,
-    paymentMint,
-  }: {
-    paymentMint?: PublicKey;
-    amountToken?: bigint;
-    referrerId?: number[];
-  },
-  accounts?: {
-    minterVault?: PublicKey;
-    ac?: PublicKey;
-    commonVault?: PublicKey;
-  },
-  opt?: OptionalCommonParams
-) => {
-  const {
-    dataFeedProgram,
-    acProgram,
-    vaultsProgram,
-    authority: owner,
-    context,
-    connection,
-  } = fixture;
-
-  amountToken ??= parseUnits("10", fixture.paymentMints.usdc.decimals);
-  referrerId ??= new Array(32).fill(0);
-  paymentMint ??= fixture.paymentMints.usdc.mint;
-
-  const baseAccounts = {
-    vaultCommon: accounts?.commonVault ?? fixture.minterCommonVault.publicKey,
-    ac: accounts?.ac ?? fixture.ac.publicKey,
-  };
-
-  const from = opt?.from ?? owner;
-
-  const fetchState = async () => {
-    const minterVaultState = await fetchMinterVaultState(
-      vaultsProgram,
-      getMinterVaultPda(baseAccounts.vaultCommon)
-    );
-
-    const commonVaultState = await fetchVaultCommonState(
-      vaultsProgram,
-      baseAccounts.vaultCommon
-    );
-
-    const commonVaultRequestState = await fetchMinterVaultRequestState(
-      vaultsProgram,
-      getMinterVaultRequestPda(
-        getMinterVaultPda(baseAccounts.vaultCommon),
-        fromBN(commonVaultState.requestsCount)
-      ),
-      true
-    );
-
-    const mMintFeed = await fetchDataFeedState(
-      dataFeedProgram,
-      commonVaultState.mMintFeed
-    );
-
-    const paymentTokenState = await fetchPaymentMintState(
-      vaultsProgram,
-      getPaymentMintStatePda(baseAccounts.vaultCommon, paymentMint)
-    );
-
-    const paymentTokenFeed = await fetchDataFeedState(
-      dataFeedProgram,
-      paymentTokenState.dataFeed
-    );
-
-    const balanceFromPaymentMint = await getBalance(
-      connection,
-      from.publicKey,
-      paymentMint
-    );
-
-    const balanceTokensReceiverPaymentMint = await getBalance(
-      connection,
-      commonVaultState.tokensReceiver,
-      paymentMint
-    );
-
-    const balanceFeeReceiverPaymentMint = await getBalance(
-      connection,
-      commonVaultState.tokensReceiver,
-      paymentMint
-    );
-
-    const balanceFromMToken = await getBalance(
-      connection,
-      from.publicKey,
-      commonVaultState.mMint,
-      TOKEN_2022_PROGRAM_ID
-    );
-
-    return {
-      minterVaultState,
-      commonVaultState,
-      mMintFeed,
-      paymentTokenState,
-      paymentTokenFeed,
-      commonVaultRequestState,
-    };
-  };
-
-  const stateBefore = await fetchState();
-
-  const tx = await vaultsProgram.methods
-    .mintRequest(toBN(amountToken), referrerId)
-    .accountsPartial({
-      ...baseAccounts,
-
-      mMintFeed: stateBefore.mMintFeed.underlyingFeed,
-      mMintDataFeed: stateBefore.commonVaultState.mMintFeed,
-      signer: from.publicKey,
-      paymentMint: paymentMint,
-      paymentMintDataFeed: stateBefore.paymentTokenState.dataFeed,
-      paymentMintFeed: stateBefore.paymentTokenFeed.underlyingFeed,
-      paymentMintTokenProgram: TOKEN_PROGRAM_ID,
-      mintRequest: getMinterVaultRequestPda(
-        getMinterVaultPda(baseAccounts.vaultCommon),
-        fromBN(stateBefore.commonVaultState.requestsCount)
-      ),
-      accountAc: getAccountAcStatePda(baseAccounts.ac, from.publicKey),
-    })
-    .preInstructions([
-      approveMintInstruction(
-        paymentMint,
-        from,
-        getMinterVaultPda(baseAccounts.vaultCommon),
-        amountToken
-      ),
-    ])
-    .transaction();
-
-  if (opt?.revertedWith !== undefined) {
-    await expectTxReverted(context, tx, [from], opt);
-    return;
-  }
-
-  await expectTxNotReverted(context, tx, [from]);
-
-  const stateAfter = await fetchState();
-
-  expect(stateAfter.commonVaultRequestState).not.toEqual(null);
-};
-
-export const approveMintRequest = async (
-  fixture: CommonVaultsParams,
-  {
-    newRate,
-    isSafe,
-    requestId,
-  }: {
-    requestId?: bigint;
-    newRate?: bigint;
-    isSafe?: boolean;
-  },
-  accounts?: {
-    commonVault?: PublicKey;
-  },
-  opt?: OptionalCommonParams
-) => {
-  const {
-    vaultsProgram,
-    tokenAuthorityProgram,
-    authority: owner,
-    context,
-    connection,
-  } = fixture;
-
-  newRate ??= parseUnits("1");
-  isSafe ??= false;
-  requestId ??= 0n;
-
-  const baseAccounts = {
-    vaultCommon: accounts?.commonVault ?? fixture.minterCommonVault.publicKey,
-  };
-
-  const from = opt?.from ?? owner;
-
-  const fetchState = async (user?: PublicKey) => {
-    const minterVaultState = await fetchMinterVaultState(
-      vaultsProgram,
-      getMinterVaultPda(baseAccounts.vaultCommon)
-    );
-    const mintAuthorityState = await fetchTokenAuthorityState(
-      tokenAuthorityProgram,
-      minterVaultState.mintAuthorityPda
-    );
-
-    const commonVaultState = await fetchVaultCommonState(
-      vaultsProgram,
-      baseAccounts.vaultCommon
-    );
-
-    const requestState = await fetchMinterVaultRequestState(
-      vaultsProgram,
-      getMinterVaultRequestPda(
-        getMinterVaultPda(baseAccounts.vaultCommon),
-        requestId
-      ),
-      true
-    );
-
-    const balanceFromMToken = await getBalance(
-      connection,
-      user ?? requestState.user,
-      commonVaultState.mMint,
-      TOKEN_2022_PROGRAM_ID
-    );
-
-    return {
-      minterVaultState,
-      commonVaultState,
-      requestState,
-      balanceFromMToken,
-      mintAuthorityState,
-    };
-  };
-
-  const stateBefore = await fetchState();
-
-  const user = stateBefore.requestState.user;
-
-  const tx = await vaultsProgram.methods
-    .approveMintRequest(toBN(requestId), toBN(newRate), isSafe)
-    .accountsPartial({
-      ...baseAccounts,
-      authority: from.publicKey,
-      mintRequest: getMinterVaultRequestPda(
-        getMinterVaultPda(baseAccounts.vaultCommon),
-        requestId
-      ),
-      tokenAuthority: stateBefore.minterVaultState.mintAuthorityPda,
-      userAccount: user,
-      mMint: stateBefore.commonVaultState.mMint,
-      mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
-      authorityAcRole: getAccountAcRoleStatePda(
-        stateBefore.commonVaultState.acRole,
-        from.publicKey,
-        VAULT_AC_ROLES.VAULT_ADMIN
-      ),
-      vaultMinterRole: getAccountAcRoleStatePda(
-        stateBefore.mintAuthorityState.acRole,
-        getMinterVaultPda(baseAccounts.vaultCommon),
-        TOKEN_AUTHORITY_ROLES.M_MINTER
-      ),
-    })
-    .transaction();
-
-  if (opt?.revertedWith !== undefined) {
-    await expectTxReverted(context, tx, [from], opt);
-    return;
-  }
-
-  await expectTxNotReverted(context, tx, [from]);
-
-  const stateAfter = await fetchState(user);
-
-  expect(stateAfter.requestState).toEqual(null);
-};
-
-export const rejectMintRequest = async (
-  fixture: CommonVaultsParams,
-  {
-    requestId,
-  }: {
-    requestId?: bigint;
-  },
-  accounts?: {
-    commonVault?: PublicKey;
-  },
-  opt?: OptionalCommonParams
-) => {
-  const { vaultsProgram, authority: owner, context, connection } = fixture;
-
-  requestId ??= 0n;
-
-  const baseAccounts = {
-    vaultCommon: accounts?.commonVault ?? fixture.minterCommonVault.publicKey,
-  };
-
-  const from = opt?.from ?? owner;
-
-  const fetchState = async (user?: PublicKey) => {
-    const minterVaultState = await fetchMinterVaultState(
-      vaultsProgram,
-      getMinterVaultPda(baseAccounts.vaultCommon)
-    );
-
-    const commonVaultState = await fetchVaultCommonState(
-      vaultsProgram,
-      baseAccounts.vaultCommon
-    );
-
-    const requestState = await fetchMinterVaultRequestState(
-      vaultsProgram,
-      getMinterVaultRequestPda(
-        getMinterVaultPda(baseAccounts.vaultCommon),
-        requestId
-      ),
-      true
-    );
-
-    const balanceFromMToken = await getBalance(
-      connection,
-      user ?? requestState.user,
-      commonVaultState.mMint,
-      TOKEN_2022_PROGRAM_ID
-    );
-
-    return {
-      minterVaultState,
-      commonVaultState,
-      requestState,
-      balanceFromMToken,
-    };
-  };
-
-  const stateBefore = await fetchState();
-
-  const user = stateBefore.requestState.user;
-
-  const tx = await vaultsProgram.methods
-    .rejectMintRequest(toBN(requestId))
-    .accountsPartial({
-      ...baseAccounts,
-      authority: from.publicKey,
-      mintRequest: getMinterVaultRequestPda(
-        getMinterVaultPda(baseAccounts.vaultCommon),
-        requestId
-      ),
-      userAccount: user,
-      authorityAcRole: getAccountAcRoleStatePda(
-        stateBefore.commonVaultState.acRole,
-        from.publicKey,
-        VAULT_AC_ROLES.VAULT_ADMIN
-      ),
-    })
-    .transaction();
-
-  if (opt?.revertedWith !== undefined) {
-    await expectTxReverted(context, tx, [from], opt);
-    return;
-  }
-
-  await expectTxNotReverted(context, tx, [from]);
-
-  const stateAfter = await fetchState(user);
-
-  expect(stateAfter.requestState).toEqual(null);
-};
+type CommonRedeemVaultParams = VaultsFixtureReturnType;
 
 export const redeemInstant = async (
-  fixture: CommonVaultsParams,
+  fixture: CommonRedeemVaultParams,
   {
     amountMToken,
     minReceiveAmount,
@@ -704,7 +197,7 @@ export const redeemInstant = async (
 };
 
 export const redeemRequest = async (
-  fixture: CommonVaultsParams,
+  fixture: CommonRedeemVaultParams,
   {
     amountMToken,
     paymentMint,
@@ -853,7 +346,7 @@ export const redeemRequest = async (
 };
 
 export const approveRedeemRequest = async (
-  fixture: CommonVaultsParams,
+  fixture: CommonRedeemVaultParams,
   {
     newRate,
     isSafe,
@@ -957,7 +450,7 @@ export const approveRedeemRequest = async (
 };
 
 export const rejectRedeemRequest = async (
-  fixture: CommonVaultsParams,
+  fixture: CommonRedeemVaultParams,
   {
     requestId,
   }: {
@@ -1048,7 +541,7 @@ export const rejectRedeemRequest = async (
 };
 
 export const mintToken = async (
-  fixture: CommonVaultsParams,
+  fixture: CommonRedeemVaultParams,
   {
     mint,
     to,
@@ -1097,8 +590,68 @@ export const mintToken = async (
   );
 };
 
+export const transferToken = async (
+  fixture: CommonRedeemVaultParams,
+  {
+    mint,
+    to,
+    amount,
+    tokenProgram,
+  }: {
+    mint?: PaymentMint;
+    to?: PublicKey;
+    amount?: bigint;
+    tokenProgram?: PublicKey;
+  },
+  opt?: OptionalCommonParams
+) => {
+  mint ??= fixture.paymentMints.usdc;
+  to ??= fixture.authority.publicKey;
+
+  // TODO: pass optional from
+  const from = opt?.from ?? fixture.authority;
+
+  amount ??= await getBalance(fixture.connection, from.publicKey, mint.mint);
+
+  const { ata: ataFrom } = await getOrCreateAta(
+    fixture.context,
+    fixture.provider.connection,
+    mint.mint,
+    from.publicKey,
+    from,
+    tokenProgram
+  );
+
+  const { ata: ataTo } = await getOrCreateAta(
+    fixture.context,
+    fixture.provider.connection,
+    mint.mint,
+    to,
+    from,
+    tokenProgram
+  );
+
+  await expectTxNotReverted(
+    fixture.context,
+
+    new Transaction().add(
+      createTransferCheckedInstruction(
+        ataFrom,
+        mint.mint,
+        ataTo,
+        from.publicKey,
+        amount,
+        mint.decimals,
+        [],
+        tokenProgram
+      )
+    ),
+    [from]
+  );
+};
+
 export const mintPaymentTokenAndApprove = async (
-  fixture: CommonVaultsParams,
+  fixture: CommonRedeemVaultParams,
   {
     mint,
     to,
@@ -1143,7 +696,9 @@ export const mintPaymentTokenAndApprove = async (
   );
 };
 
-export const prepareCommonRedeemTest = async (fixture: CommonVaultsParams) => {
+export const prepareCommonRedeemTest = async (
+  fixture: CommonRedeemVaultParams
+) => {
   await addPaymentToken(
     fixture,
     {},

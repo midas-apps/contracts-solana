@@ -1,25 +1,3 @@
-import * as anchor from "@coral-xyz/anchor";
-import { dataFeedFixture } from "./fixture/dafa-feed.fixture";
-import { DATA_FEED_PROGRAM_ID } from "./constants/data-feed.constants";
-import { DataFeedMode, fetchDataFeedState } from "./helpers/data-feed.helpers";
-import {
-  createNewFeed,
-  createNewManualFeed,
-} from "./testers/data-feed.testers";
-import { VaultError, VAULTS_PROGRAM_ID } from "./constants/vaults.constants";
-import {
-  approveMintRequest,
-  mintInstant,
-  mintRequest,
-  rejectMintRequest,
-} from "./testers/vaults.testers";
-import { approveMint, parsePercent } from "./helpers/common.helpers";
-import {
-  addPaymentToken,
-  newVaultCommon,
-  newVaultCommonAccount,
-  updateVaultCommon,
-} from "./testers/common-vaults.testers";
 import {
   grantRole,
   newAc,

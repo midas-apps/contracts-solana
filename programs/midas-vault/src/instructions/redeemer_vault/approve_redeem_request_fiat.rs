@@ -22,10 +22,7 @@ pub struct ApproveRedeemRequestFiat<'info> {
     )]
     pub user_account: AccountInfo<'info>,
 
-    #[account(
-        mut,
-        address = redeemer_vault.common_vault,
-    )]
+    #[account(mut)]
     pub vault_common: Account<'info, VaultCommonState>,
 
     #[account(

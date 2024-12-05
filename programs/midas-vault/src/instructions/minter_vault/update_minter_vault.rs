@@ -35,11 +35,16 @@ pub struct UpdateMinterVault<'info> {
 pub fn handle(
     ctx: Context<UpdateMinterVault>,
     new_first_deposit_min_m_tokens: Option<u64>,
+    mint_authority_pda: Option<Pubkey>,
 ) -> Result<()> {
     // TODO: add event
 
     if let Some(new_first_deposit_min_m_tokens) = new_first_deposit_min_m_tokens {
         ctx.accounts.minter_vault.first_deposit_min_m_tokens = new_first_deposit_min_m_tokens;
+    }
+
+    if let Some(mint_authority_pda) = mint_authority_pda {
+        ctx.accounts.minter_vault.mint_authority_pda = mint_authority_pda;
     }
 
     Ok(())

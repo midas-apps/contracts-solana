@@ -9,17 +9,14 @@ import {
 import { vaultsFixture } from "./fixture/vaults.fixture";
 import { VAULTS_PROGRAM_ID } from "./constants/vaults.constants";
 import {
-  approveMintRequest,
   approveRedeemRequest,
-  mintInstant,
   mintToken,
   mintPaymentTokenAndApprove,
   prepareCommonRedeemTest,
   redeemInstant,
   redeemRequest,
-  rejectMintRequest,
   rejectRedeemRequest,
-} from "./testers/vaults.testers";
+} from "./testers/redeem-vault.testers";
 import { approveMint } from "./helpers/common.helpers";
 import {
   getRedeemerVaultPda,

@@ -21,9 +21,7 @@ pub struct RejectRedeemRequest<'info> {
     )]
     pub user_account: AccountInfo<'info>,
 
-    #[account(
-        address = redeemer_vault.common_vault,
-    )]
+    #[account()]
     pub vault_common: Account<'info, VaultCommonState>,
 
     #[account(

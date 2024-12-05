@@ -26,7 +26,7 @@ pub fn handle(
     ac: Pubkey,
     m_mint: Pubkey,
     m_mint_feed: Pubkey,
-
+    greenlist_enforced: bool,
     ac_role: Pubkey,
     tokens_receiver: Pubkey,
     fee_receiver: Pubkey,
@@ -43,6 +43,7 @@ pub fn handle(
 
     update_common_vault(
         state,
+        Some(greenlist_enforced),
         Some(ac_role),
         Some(tokens_receiver),
         Some(fee_receiver),
@@ -64,6 +65,7 @@ pub fn handle(
         instant_daily_limit: Some(instant_daily_limit),
         variation_tolerance: Some(variation_tolerance),
         min_amount: Some(min_amount),
+        greenlist_enforced: Some(greenlist_enforced)
     });
 
     Ok(())

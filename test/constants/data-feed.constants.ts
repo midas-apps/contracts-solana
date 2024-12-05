@@ -24,4 +24,6 @@ export enum DataFeedError {
   InvalidMinPrice,
   InvalidMaxPrice,
   InvalidUnderlyingFeed,
+  PriceIsLowerThanMin,
+  PriceIsHigherThanMax,
 }

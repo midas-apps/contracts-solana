@@ -53,7 +53,17 @@ export const dataFeedFixture = async () => {
   );
 
   // TODO: move to helpers
-  const createManualFeed = async (feed: Keypair, acRole: PublicKey) => {
+  const createManualFeed = async (
+    feed: Keypair,
+    acRole: PublicKey,
+    {
+      minPrice,
+      maxPrice,
+    }: {
+      minPrice: bigint;
+      maxPrice: bigint;
+    }
+  ) => {
     const createFeedTx = new Transaction().add(
       await acProgram.methods
         .grantRole(acRoleToBuffer(DATA_FEED_AC_ROLES.FEED_ADMIN))
@@ -78,8 +88,8 @@ export const dataFeedFixture = async () => {
           acRole,
           getManualFeedStatePda(feed.publicKey),
           DataFeedMode.manual,
-          toBN(parseUnits("0.1")),
-          toBN(parseUnits("10")),
+          toBN(minPrice),
+          toBN(maxPrice),
           3600
         )
         .accounts({
@@ -105,8 +115,15 @@ export const dataFeedFixture = async () => {
     await processTransaction(context, createFeedTx, [authority, feed]);
   };
 
-  await createManualFeed(dataFeedMTBill, acRoleMTbill.publicKey);
-  await createManualFeed(dataFeedPaymentToken, acRoleGlobal.publicKey);
+  await createManualFeed(dataFeedMTBill, acRoleMTbill.publicKey, {
+    minPrice: parseUnits("0.1"),
+    maxPrice: parseUnits("10"),
+  });
+
+  await createManualFeed(dataFeedPaymentToken, acRoleGlobal.publicKey, {
+    minPrice: parseUnits("0.997"),
+    maxPrice: parseUnits("1.05"),
+  });
 
   return {
     ...acF,
