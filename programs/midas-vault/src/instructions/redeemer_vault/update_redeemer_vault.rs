@@ -5,6 +5,7 @@ use crate::{
     constants::ac_roles,
     errors::MidasVaultsError,
     state::{MinterVaultState, RedeemerVaultState, VaultCommonState},
+    utils::redeemer,
 };
 
 #[derive(Accounts)]
@@ -37,20 +38,13 @@ pub fn handle(
     fiat_additional_fee: Option<u64>,
     fiat_flat_fee: Option<u64>,
 ) -> Result<()> {
-    // TODO: add event
-    let vault = &mut ctx.accounts.redeemer_vault;
-
-    if let Some(min_fiat_redeem_amount) = min_fiat_redeem_amount {
-        vault.min_fiat_redeem_amount = min_fiat_redeem_amount;
-    }
-
-    if let Some(fiat_additional_fee) = fiat_additional_fee {
-        vault.fiat_additional_fee = fiat_additional_fee;
-    }
-
-    if let Some(fiat_flat_fee) = fiat_flat_fee {
-        vault.fiat_flat_fee = fiat_flat_fee;
-    }
+    redeemer::update_redeemer(
+        &ctx.accounts.vault_common.key(),
+        &mut ctx.accounts.redeemer_vault,
+        min_fiat_redeem_amount,
+        fiat_additional_fee,
+        fiat_flat_fee,
+    )?;
 
     Ok(())
 }

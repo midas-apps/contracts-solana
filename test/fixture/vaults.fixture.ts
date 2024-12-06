@@ -24,6 +24,7 @@ import {
   generateCommonVaultAccount,
   getMinterVaultPda,
   getRedeemerVaultPda,
+  getRedeemerVaultRedeemerPda,
 } from "../helpers/vaults.helpers";
 import { createMTokenMint } from "../../common/create-mtoken-mint";
 import {
@@ -117,6 +118,7 @@ export const vaultsFixture = async () => {
       tokensReceiver.publicKey,
       feeReceiver.publicKey,
       requestRedeemer.publicKey,
+      getRedeemerVaultRedeemerPda(redeemerCommonVault.publicKey),
     ].map((a) => ({
       mint: usdcMint,
       owner: a,
@@ -128,6 +130,7 @@ export const vaultsFixture = async () => {
       tokensReceiver.publicKey,
       feeReceiver.publicKey,
       requestRedeemer.publicKey,
+      getRedeemerVaultRedeemerPda(redeemerCommonVault.publicKey),
     ].map((a) => ({
       mint: usdtMint,
       owner: a,

@@ -77,6 +77,29 @@ describe("minter-vault", () => {
       await newMinterVault(fixture, { commonVault });
       await updateMinterVault(fixture, { commonVault });
     });
+
+    it("update new_first_deposit_min_m_tokens", async () => {
+      const fixture = await vaultsFixture();
+
+      const commonVault = await newVaultCommon(fixture, {});
+      await newMinterVault(fixture, { commonVault });
+      await updateMinterVault(fixture, {
+        commonVault,
+        firstDepositMinMTokens: parseUnits("100"),
+      });
+    });
+
+    it("update mint_authority_pda", async () => {
+      const fixture = await vaultsFixture();
+
+      const commonVault = await newVaultCommon(fixture, {});
+      await newMinterVault(fixture, { commonVault });
+      await updateMinterVault(fixture, {
+        commonVault,
+        tokenAuthority: fixture.regularAccounts[0].publicKey,
+      });
+    });
+
     it("should fail; call from non-authority", async () => {
       const fixture = await vaultsFixture();
 
@@ -163,6 +186,34 @@ describe("minter-vault", () => {
       });
 
       const { stateAfter } = await mintInstant(fixture, {});
+
+      expect(fromBN(stateAfter.paymentTokenState.allowance)).toEqual(0n);
+    });
+
+    it("when allowance is not set to u128.max - it should  decrease, mToken price is 1.1$", async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {
+        addPaymentToken: {
+          allowance: parseUnits("11"),
+        },
+      });
+
+      await updateManualFeed(fixture, {
+        price: parseUnits("1.1"),
+      });
+
+      const { stateAfter } = await mintInstant(
+        fixture,
+        {
+          amountToken: 11,
+        },
+        {},
+        {
+          tokensMinted: parseUnits("9.9"),
+          fee: 0.11,
+        }
+      );
 
       expect(fromBN(stateAfter.paymentTokenState.allowance)).toEqual(0n);
     });
@@ -747,6 +798,33 @@ describe("minter-vault", () => {
       expect(fromBN(stateAfter.paymentTokenState.allowance)).toEqual(0n);
     });
 
+    it("when allowance is not set to u128.max - it should  decrease, mToken price is 1.1$", async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {
+        addPaymentToken: {
+          allowance: parseUnits("11"),
+        },
+      });
+
+      await updateManualFeed(fixture, {
+        price: parseUnits("1.1"),
+      });
+
+      const { stateAfter } = await mintRequest(
+        fixture,
+        {
+          amountToken: 11,
+        },
+        {},
+        {
+          fee: 0.11,
+        }
+      );
+
+      expect(fromBN(stateAfter.paymentTokenState.allowance)).toEqual(0n);
+    });
+
     it("when first_deposit_min_m_tokens is 10 and mint amount is 10.0089", async () => {
       const fixture = await vaultsFixture();
 
@@ -1158,7 +1236,7 @@ describe("minter-vault", () => {
     });
   });
 
-  describe("approve_request", () => {
+  describe("approve_mint_request", () => {
     it("should approve mint request", async () => {
       const fixture = await vaultsFixture();
 
@@ -1226,7 +1304,7 @@ describe("minter-vault", () => {
     });
   });
 
-  describe("reject_request", () => {
+  describe("reject_mint_request", () => {
     it("should reject mint request", async () => {
       const fixture = await vaultsFixture();
 

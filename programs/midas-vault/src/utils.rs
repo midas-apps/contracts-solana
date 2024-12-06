@@ -674,6 +674,33 @@ pub mod redeemer {
         pub m_token_amount_wo_fee: u128,
     }
 
+    pub fn update_redeemer<'info>(
+        common_vault: &Pubkey,
+        vault: &mut Account<'info, RedeemerVaultState>,
+        min_fiat_redeem_amount: Option<u64>,
+        fiat_additional_fee: Option<u64>,
+        fiat_flat_fee: Option<u64>,
+    ) -> Result<()> {
+        vault.common_vault = common_vault.clone();
+
+        if let Some(min_fiat_redeem_amount) = min_fiat_redeem_amount {
+            vault.min_fiat_redeem_amount = min_fiat_redeem_amount;
+        }
+
+        if let Some(fiat_additional_fee) = fiat_additional_fee {
+            validate_fee(fiat_additional_fee, false)?;
+            vault.fiat_additional_fee = fiat_additional_fee;
+        }
+
+        if let Some(fiat_flat_fee) = fiat_flat_fee {
+            vault.fiat_flat_fee = fiat_flat_fee;
+        }
+
+        // TODO: add event
+
+        Ok(())
+    }
+
     pub fn create_redeem_request<'info>(
         signer: &Signer<'info>,
         vault_common: &mut Account<'info, VaultCommonState>,
@@ -748,6 +775,8 @@ pub mod redeemer {
         redeem_request.m_token_amount = params.m_token_amount_wo_fee.try_into().unwrap();
         redeem_request.m_token_rate = m_token_rate.try_into().unwrap();
         redeem_request.payment_mint_rate = payment_mint_rate.try_into().unwrap();
+
+        vault_common.requests_count = vault_common.requests_count.checked_add(1).unwrap();
 
         Ok(())
     }
@@ -846,7 +875,7 @@ pub mod redeemer {
     ) -> Result<CalcAndValidateRedeemReturn> {
         require_gt!(m_token_amount, 0, MidasVaultsError::InvalidInAmount);
 
-        if common_account.free_from_min_amount {
+        if !common_account.free_from_min_amount {
             let min_redeem_amount: u128 = if is_fiat {
                 redeemer.min_fiat_redeem_amount.into()
             } else {

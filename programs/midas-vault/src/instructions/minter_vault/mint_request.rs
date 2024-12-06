@@ -191,6 +191,7 @@ pub fn handle(
     mint_request.m_mint_rate = params.m_token_rate.try_into().unwrap();
     
 
+    ctx.accounts.vault_common.requests_count = ctx.accounts.vault_common.requests_count.checked_add(1).unwrap();
 
     // TODO: add event
     Ok(())

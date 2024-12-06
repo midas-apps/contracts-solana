@@ -421,7 +421,10 @@ export const getBalance = async (
     const balance = await getAccount(connection, ata, undefined, programId)
       .then((v) => v.amount)
       .catch((err) => {
-        if (err instanceof TokenAccountNotFoundError) {
+        if (
+          err instanceof TokenAccountNotFoundError ||
+          err?.toString?.()?.includes?.("Could not find")
+        ) {
           return 0n;
         }
         throw err;

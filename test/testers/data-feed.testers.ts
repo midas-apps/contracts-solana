@@ -364,7 +364,6 @@ export const updateManualFeed = async (
 
   if (price !== null) {
     expect(fromBN(feedFetched.price)).toBe(price);
-    console.log("price", feedFetched.price);
   }
 };
 

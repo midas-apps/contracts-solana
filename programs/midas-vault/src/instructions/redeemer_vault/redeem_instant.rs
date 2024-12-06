@@ -15,6 +15,7 @@ pub struct RedeemInstant<'info> {
     pub signer: Signer<'info>,
 
     #[account(
+        mut,
         address = redeemer_vault.common_vault
     )]
     pub vault_common: Account<'info, VaultCommonState>,

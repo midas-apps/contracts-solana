@@ -405,8 +405,6 @@ export const mintInstant = async (
 
   const stateAfter = await fetchState();
 
-  console.log({ stateBefore, stateAfter });
-
   if (fromBN(stateBefore.paymentTokenState.allowance) !== MAX_U128) {
     expect(fromBN(stateAfter.paymentTokenState.allowance)).toEqual(
       fromBN(stateBefore.paymentTokenState.allowance) -
@@ -518,7 +516,7 @@ export const mintRequest = async (
 
   const from = opt?.from ?? owner;
 
-  const fetchState = async () => {
+  const fetchState = async (reqId?: bigint) => {
     const commonVaultAccountState = await fetchVaultCommonAccountState(
       vaultsProgram,
       getCommonVaultAccountStatePda(baseAccounts.vaultCommon, from.publicKey)
@@ -538,7 +536,7 @@ export const mintRequest = async (
       vaultsProgram,
       getMinterVaultRequestPda(
         getMinterVaultPda(baseAccounts.vaultCommon),
-        fromBN(commonVaultState.requestsCount)
+        reqId ?? fromBN(commonVaultState.requestsCount)
       ),
       true
     );
@@ -654,7 +652,13 @@ export const mintRequest = async (
 
   await expectTxNotReverted(context, tx, [from]);
 
-  const stateAfter = await fetchState();
+  const stateAfter = await fetchState(
+    fromBN(stateBefore.commonVaultState.requestsCount)
+  );
+
+  expect(fromBN(stateAfter.commonVaultState.requestsCount)).toEqual(
+    fromBN(stateBefore.commonVaultState.requestsCount) + 1n
+  );
 
   expect(stateAfter.commonVaultRequestState).not.toEqual(null);
   expect(

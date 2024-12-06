@@ -22,6 +22,7 @@ pub struct RedeemRequest<'info> {
     pub redeemer_vault: Account<'info, RedeemerVaultState>,
 
     #[account(
+        mut,
         address = redeemer_vault.common_vault
     )]
     pub vault_common: Account<'info, VaultCommonState>,
