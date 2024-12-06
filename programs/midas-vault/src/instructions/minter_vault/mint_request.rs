@@ -4,7 +4,7 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion};
 
 use crate::{
-    constants::{ac_roles, seeds, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, state::{
+    constants::{ac_roles, seeds, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, events::MinterVaultRequestCreatedEvent, state::{
           MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState, VaultCommonState
     }, utils::{mint_token, minter::{self}, require_and_update_limit, transfer_token, validate_common, Validate, VaultActionId}
 };
@@ -136,8 +136,6 @@ pub fn handle(
     amount_token: u64,
     referrer_id: [u8; 32],
 ) -> Result<()> {
-    // TODO: use separate mint authority to manage burn and mints
-
     let amount_token_base9 = decimals_conversion::convert_to_base_9(amount_token.into(), ctx.accounts.payment_mint.decimals).unwrap();
 
     let params= minter::calc_and_validate_deposit(
@@ -165,8 +163,6 @@ pub fn handle(
         params.amount_token_wo_fee
     )?;
 
-    msg!("TRANSFERRED1");
-
     if params.fee_token_amount > 0 { 
         transfer_token(
             &ctx.accounts.vault_common.key(), 
@@ -178,8 +174,6 @@ pub fn handle(
             &ctx.accounts.payment_mint_fee_receiver_ata, 
             params.fee_token_amount
         )?;
-    msg!("TRANSFERRED2");
-        
     }
     
     let mint_request = &mut ctx.accounts.mint_request;
@@ -191,8 +185,19 @@ pub fn handle(
     mint_request.m_mint_rate = params.m_token_rate.try_into().unwrap();
     
 
-    ctx.accounts.vault_common.requests_count = ctx.accounts.vault_common.requests_count.checked_add(1).unwrap();
+    let request_id= ctx.accounts.vault_common.requests_count;
 
-    // TODO: add event
-    Ok(())
+    ctx.accounts.vault_common.requests_count= ctx.accounts.vault_common.requests_count.checked_add(1).unwrap();
+
+    emit!(MinterVaultRequestCreatedEvent {
+        common_vault: ctx.accounts.vault_common.key(),
+        payment_mint: ctx.accounts.payment_mint.key(),
+        signer: ctx.accounts.signer.key(),
+        payment_amount: amount_token_base9.try_into().unwrap(),
+        calculated: params,
+        referrer_id,
+        request_id
+    });
+
+    Ok(()) 
 }

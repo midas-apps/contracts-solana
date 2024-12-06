@@ -5,7 +5,7 @@ use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion}
 use token_authority::{constants::ac_roles as ac_roles_token_authority, program::TokenAuthority, state::TokenAuthorityState};
 
 use crate::{
-    constants::{ac_roles, seeds, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, state::{
+    constants::{ac_roles, seeds, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, events::MinterVaultRequestApprovedEvent, state::{
         MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState, VaultCommonState
     }, utils::{close_account, mint_token, minter::{self}, require_and_update_limit, require_variation_tolerance, transfer_token, Closable}
 };
@@ -97,8 +97,6 @@ pub fn handle(
     new_out_rate: u64,
     is_safe: bool,
 ) -> Result<()> {
-    // TODO: create a new fn to handle is_safe case
-
     let request = &ctx.accounts.mint_request;
 
     if is_safe {
@@ -123,6 +121,11 @@ pub fn handle(
 
     ctx.accounts.close()?;
 
-    // TODO: add event
+    emit!(MinterVaultRequestApprovedEvent {
+        common_vault: ctx.accounts.vault_common.key(),
+        new_out_rate,
+        request_id
+    });
+
     Ok(())
 }

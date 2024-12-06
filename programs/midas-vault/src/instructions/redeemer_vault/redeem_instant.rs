@@ -4,7 +4,7 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion};
 
 use crate::{
-    constants::seeds, errors::MidasVaultsError, state::{
+    constants::seeds, errors::MidasVaultsError, events::RedeemerVaultInstantRedeemedEvent, state::{
           MinterVaultState, PauseInxState, PaymentMintState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState
     }, utils::{burn_mtoken, mint_token, minter::{self}, redeemer, require_and_update_allowance, require_and_update_limit, transfer_token, truncate, validate_common, Validate, VaultActionId}
 };
@@ -160,7 +160,6 @@ pub fn handle(
 
     let decimals = ctx.accounts.payment_mint.decimals;
 
-
     let (amount_m_token_in_usd, m_token_rate) = redeemer::convert_m_token_to_usd(&ctx.accounts.m_mint_data_feed, &ctx.accounts.m_mint_feed, amount_m_token.into())?;
 
     let (amount_payment_token,payment_token_rate) = redeemer::convert_usd_to_payment_mint(&ctx.accounts.payment_mint_state, &ctx.accounts.payment_mint_data_feed, &ctx.accounts.payment_mint_feed, amount_m_token_in_usd)?;
@@ -189,7 +188,6 @@ pub fn handle(
             &ctx.accounts.m_mint_fee_receiver_ata, 
             params.fee_amount
         )?;
-        msg!("TRANSFERRED1");
     }
     
     transfer_token(
@@ -203,8 +201,21 @@ pub fn handle(
         amount_payment_token_wo_fee
     )?;
 
-    msg!("TRANSFERRED3");
 
-    // TODO: add event
+    emit!(RedeemerVaultInstantRedeemedEvent {
+        common_vault: ctx.accounts.vault_common.key(),
+        payment_mint: ctx.accounts.payment_mint.key(),
+        signer: ctx.accounts.signer.key(),
+        fee_amount: params.fee_amount,
+        m_token_amount_wo_fee: params.m_token_amount_wo_fee,
+        amount_m_token,
+        amount_m_token_in_usd,
+        m_token_rate,
+        amount_payment_token,
+        payment_token_rate,
+        amount_payment_token_wo_fee,
+        decimals,
+    });
+
     Ok(())
 }

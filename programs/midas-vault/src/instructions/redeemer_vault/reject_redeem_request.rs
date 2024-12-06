@@ -4,7 +4,7 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion};
 
 use crate::{
-    constants::{ac_roles, seeds, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, state::{
+    constants::{ac_roles, seeds, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, events::RedeemerVaultRequestRejectedEvent, state::{
   MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState, RedeemerVaultRequestState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState
     }, utils::{mint_token, minter::{self}, require_and_update_limit, require_variation_tolerance, transfer_token}
 };
@@ -50,9 +50,16 @@ pub struct RejectRedeemRequest<'info> {
 }
 
 pub fn handle(
-    _: Context<RejectRedeemRequest>,
-    _: u64
+    ctx: Context<RejectRedeemRequest>,
+    request_id: u64
 ) -> Result<()> {
-    // TODO: add event
+    
+    emit!(
+        RedeemerVaultRequestRejectedEvent {
+            common_vault: ctx.accounts.vault_common.key(),
+            request_id
+        }
+    );
+    
     Ok(())
 }

@@ -41,6 +41,7 @@ import {
 } from "./helpers/vaults.helpers";
 import { mintMToken } from "./testers/token-authority.testers";
 import {
+  addPaymentToken,
   newVaultCommon,
   updatePause,
   updatePauseInx,
@@ -1093,6 +1094,130 @@ describe("redeemer-vault", () => {
     });
   });
 
+  describe("redeem_request_fiat", () => {
+    it("should create redeem request fiat", async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, { isFiat: true });
+      await redeemRequest(fixture, { isFiat: true }, {});
+    });
+
+    it("when greenlist is enforced and user is in greenlist", async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, { isFiat: true });
+      await updateVaultCommon(fixture, {
+        vaultCommon: fixture.redeemerCommonVault.publicKey,
+        greenlistEnforced: true,
+      });
+      await redeemRequest(fixture, { isFiat: true }, {});
+    });
+
+    it("should fail: when greenlist not enforced and user is not greenlisted", async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        isFiat: true,
+        addToGreenList: false,
+      });
+      await redeemRequest(
+        fixture,
+        { isFiat: true },
+        {},
+        {},
+        { revertedWith: VaultError.NotGreenListed }
+      );
+    });
+
+    it("should fail: when fn is paused", async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        isFiat: true,
+      });
+
+      await updatePauseInx(
+        fixture,
+        {
+          fnId: VaultActionIds.REDEEM_REQUEST_FIAT,
+        },
+        {
+          commonVault: fixture.redeemerCommonVault.publicKey,
+        }
+      );
+
+      await redeemRequest(
+        fixture,
+        { isFiat: true },
+        {},
+        {},
+        { revertedWith: VaultError.VaultInxPaused }
+      );
+    });
+
+    it("should fail: when vault is paused", async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        isFiat: true,
+      });
+
+      await updatePause(
+        fixture,
+        {},
+        {
+          commonVault: fixture.redeemerCommonVault.publicKey,
+        }
+      );
+
+      await redeemRequest(
+        fixture,
+        { isFiat: true },
+        {},
+        {},
+        { revertedWith: VaultError.VaultPaused }
+      );
+    });
+  });
+
+  describe("approve_redeem_request_fiat", () => {
+    it("should approve redeem request fiat", async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        isFiat: true,
+      });
+      await redeemRequest(fixture, { isFiat: true }, {});
+      await approveRedeemRequest(fixture, { isFiat: true }, {});
+    });
+
+    it("should fail: try to approve non-fiat request", async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {});
+      await addPaymentToken(
+        fixture,
+        {
+          mint: DEFAULT_PUBKEY,
+        },
+        {
+          commonVault: fixture.redeemerCommonVault.publicKey,
+        }
+      );
+
+      await redeemRequest(fixture, {}, {});
+      await approveRedeemRequest(
+        fixture,
+        { isFiat: true },
+        {},
+        {},
+        {
+          revertedWith: VaultError.InvalidPaymentMint,
+        }
+      );
+    });
+  });
+
   describe("approve_redeem_request", () => {
     it("should approve redeem request", async () => {
       const fixture = await vaultsFixture();
@@ -1222,12 +1347,20 @@ describe("redeemer-vault", () => {
     });
   });
 
-  describe.only("reject_redeem_request", () => {
+  describe("reject_redeem_request", () => {
     it("should reject redeem request", async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonRedeemTest(fixture, {});
       await redeemRequest(fixture, {}, {});
+      await rejectRedeemRequest(fixture, {}, {});
+    });
+
+    it("should reject redeem fiat request", async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, { isFiat: true });
+      await redeemRequest(fixture, { isFiat: true }, {});
       await rejectRedeemRequest(fixture, {}, {});
     });
 

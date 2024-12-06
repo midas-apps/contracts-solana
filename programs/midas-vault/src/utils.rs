@@ -443,6 +443,7 @@ pub mod minter {
 
     use super::*;
 
+    #[derive(AnchorDeserialize, AnchorSerialize)]
     pub struct CalcAndValidateDepositReturn {
         pub mint_amount_in_usd: u128,
         pub fee_token_amount: u128,
@@ -667,6 +668,11 @@ pub mod common_vault {
 
 pub mod redeemer {
 
+    use crate::events::{
+        RedeemerVaultRequestApprovedEvent, RedeemerVaultRequestCreatedEvent,
+        RedeemerVaultUpdatedEvent,
+    };
+
     use super::*;
 
     pub struct CalcAndValidateRedeemReturn {
@@ -696,7 +702,12 @@ pub mod redeemer {
             vault.fiat_flat_fee = fiat_flat_fee;
         }
 
-        // TODO: add event
+        emit!(RedeemerVaultUpdatedEvent {
+            common_vault: *common_vault,
+            fiat_additional_fee,
+            fiat_flat_fee,
+            min_fiat_redeem_amount
+        });
 
         Ok(())
     }
@@ -718,11 +729,9 @@ pub mod redeemer {
         m_mint_vault_ata: &Box<InterfaceAccount<'info, TokenAccount>>,
         m_mint_fee_receiver_ata: &Box<InterfaceAccount<'info, TokenAccount>>,
         redeem_request: &mut Account<'info, RedeemerVaultRequestState>,
-
         amount_m_token: u128,
+        is_fiat: bool,
     ) -> Result<()> {
-        let is_fiat = false;
-
         let params = redeemer::calc_and_validate_redeem(
             payment_mint_state,
             vault_common,
@@ -776,7 +785,22 @@ pub mod redeemer {
         redeem_request.m_token_rate = m_token_rate.try_into().unwrap();
         redeem_request.payment_mint_rate = payment_mint_rate.try_into().unwrap();
 
-        vault_common.requests_count = vault_common.requests_count.checked_add(1).unwrap();
+        let request_id = vault_common.requests_count;
+
+        vault_common.requests_count = request_id.checked_add(1).unwrap();
+
+        emit!(RedeemerVaultRequestCreatedEvent {
+            amount_m_token,
+            request_id,
+            common_vault: vault_common.key(),
+            payment_mint: payment_mint.key(),
+            signer: signer.key(),
+            is_fiat,
+            m_token_rate,
+            payment_mint_rate,
+            fee_amount: params.fee_amount,
+            m_token_amount_wo_fee: params.m_token_amount_wo_fee,
+        });
 
         Ok(())
     }
@@ -860,6 +884,11 @@ pub mod redeemer {
             )?;
         }
 
+        emit!(RedeemerVaultRequestApprovedEvent {
+            request_id,
+            common_vault: vault_common.key(),
+            new_out_rate: new_m_token_rate as u64
+        });
         // TODO: add event
         Ok(())
     }

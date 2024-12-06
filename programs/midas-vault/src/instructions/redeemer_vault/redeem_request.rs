@@ -162,8 +162,8 @@ pub fn handle(
         &ctx.accounts.m_mint_fee_receiver_ata,
         &mut ctx.accounts.redeem_request,
         amount_m_token.into(),
+        false
     )?;
 
-    // TODO: add event
     Ok(())
 }

@@ -5,6 +5,7 @@ use token_authority::{program::TokenAuthority, state::TokenAuthorityState};
 use crate::{
     constants::{ac_roles, seeds},
     errors::MidasVaultsError,
+    events::MinterVaultUpdatedEvent,
     state::{MinterVaultState, VaultCommonState},
 };
 
@@ -46,11 +47,15 @@ pub struct NewMinterVault<'info> {
 }
 
 pub fn handle(ctx: Context<NewMinterVault>, first_deposit_min_m_tokens: u64) -> Result<()> {
-    // TODO: add event
-
     ctx.accounts.minter_vault.common_vault = ctx.accounts.vault_common.key();
     ctx.accounts.minter_vault.first_deposit_min_m_tokens = first_deposit_min_m_tokens;
     ctx.accounts.minter_vault.mint_authority_pda = ctx.accounts.token_authority.key();
+
+    emit!(MinterVaultUpdatedEvent {
+        common_vault: ctx.accounts.vault_common.key(),
+        first_deposit_min_m_tokens: Some(first_deposit_min_m_tokens),
+        mint_authority_pda: Some(ctx.accounts.token_authority.key())
+    });
 
     Ok(())
 }

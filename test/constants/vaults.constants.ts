@@ -46,4 +46,5 @@ export enum VaultError {
   InvalidConvertAmount,
   InvalidRate,
   LessThanMinReceiveAmount,
+  InvalidPaymentMint,
 }

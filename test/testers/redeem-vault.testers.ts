@@ -51,7 +51,7 @@ import {
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { MAX_U128, ONE } from "../constants/common.constants";
+import { DEFAULT_PUBKEY, MAX_U128, ONE } from "../constants/common.constants";
 import {
   addPaymentToken,
   newVaultCommonAccount,
@@ -61,7 +61,7 @@ import {
   getAccountAcRoleStatePda,
   getAccountAcStatePda,
 } from "../helpers/ac.helpers";
-import { newAccountAc } from "./ac.testers";
+import { newAccountAc, updateAccountAc } from "./ac.testers";
 import { VAULT_AC_ROLES } from "../constants/vaults.constants";
 import { fetchTokenAuthorityState } from "../helpers/token-authority.helpers";
 import { TOKEN_AUTHORITY_ROLES } from "../constants/token-authority.constants";
@@ -483,9 +483,11 @@ export const redeemRequest = async (
   {
     amountMToken,
     paymentMint,
+    isFiat,
   }: {
     paymentMint?: PaymentMint;
     amountMToken?: bigint;
+    isFiat?: boolean;
   },
   accounts?: {
     minterVault?: PublicKey;
@@ -511,6 +513,7 @@ export const redeemRequest = async (
 
   amountMToken ??= parseUnits("10");
   paymentMint ??= fixture.paymentMints.usdc;
+  isFiat ??= false;
 
   const baseAccounts = {
     vaultCommon: accounts?.commonVault ?? fixture.redeemerCommonVault.publicKey,
@@ -556,18 +559,22 @@ export const redeemRequest = async (
 
     const paymentTokenState = await fetchPaymentMintState(
       vaultsProgram,
-      getPaymentMintStatePda(baseAccounts.vaultCommon, paymentMint.mint)
+      getPaymentMintStatePda(
+        baseAccounts.vaultCommon,
+        !isFiat ? paymentMint.mint : DEFAULT_PUBKEY
+      )
     );
 
-    const paymentTokenFeed = await fetchDataFeedState(
-      dataFeedProgram,
-      paymentTokenState.dataFeed
-    );
+    const paymentTokenFeed = !isFiat
+      ? await fetchDataFeedState(dataFeedProgram, paymentTokenState.dataFeed)
+      : null;
 
-    const paymentTokenFeedManual = await fetchManualFeedState(
-      dataFeedProgram,
-      paymentTokenFeed.underlyingFeed
-    );
+    const paymentTokenFeedManual = !isFiat
+      ? await fetchManualFeedState(
+          dataFeedProgram,
+          paymentTokenFeed.underlyingFeed
+        )
+      : null;
 
     const balanceFromPaymentMint = await getBalance(
       connection,
@@ -620,40 +627,64 @@ export const redeemRequest = async (
     };
   };
 
-  console.log("before state");
   const stateBefore = await fetchState();
-  console.log("after state");
 
-  const tx = await vaultsProgram.methods
-    .redeemRequest(toBN(amountMToken))
-    .accountsPartial({
-      ...baseAccounts,
+  const tx = isFiat
+    ? await vaultsProgram.methods
+        .redeemRequestFiat(toBN(amountMToken))
+        .accountsPartial({
+          ...baseAccounts,
+          mMintFeed: stateBefore.mMintFeed.underlyingFeed,
+          mMintDataFeed: stateBefore.commonVaultState.mMintFeed,
+          signer: from.publicKey,
+          redeemRequest: getRedeemerVaultRequestPda(
+            getRedeemerVaultPda(baseAccounts.vaultCommon),
+            fromBN(stateBefore.commonVaultState.requestsCount)
+          ),
+          mMint: stateBefore.commonVaultState.mMint,
+          mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
+          accountAc: getAccountAcStatePda(baseAccounts.ac, from.publicKey),
+        })
+        .preInstructions([
+          approveMintInstruction(
+            stateBefore.commonVaultState.mMint,
+            from,
+            getRedeemerVaultPda(baseAccounts.vaultCommon),
+            amountMToken,
+            TOKEN_2022_PROGRAM_ID
+          ),
+        ])
+        .transaction()
+    : await vaultsProgram.methods
+        .redeemRequest(toBN(amountMToken))
+        .accountsPartial({
+          ...baseAccounts,
 
-      mMintFeed: stateBefore.mMintFeed.underlyingFeed,
-      mMintDataFeed: stateBefore.commonVaultState.mMintFeed,
-      signer: from.publicKey,
-      paymentMint: paymentMint.mint,
-      paymentMintDataFeed: stateBefore.paymentTokenState.dataFeed,
-      paymentMintFeed: stateBefore.paymentTokenFeed.underlyingFeed,
-      paymentMintTokenProgram: TOKEN_PROGRAM_ID,
-      redeemRequest: getRedeemerVaultRequestPda(
-        getRedeemerVaultPda(baseAccounts.vaultCommon),
-        fromBN(stateBefore.commonVaultState.requestsCount)
-      ),
-      mMint: stateBefore.commonVaultState.mMint,
-      mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
-      accountAc: getAccountAcStatePda(baseAccounts.ac, from.publicKey),
-    })
-    .preInstructions([
-      approveMintInstruction(
-        stateBefore.commonVaultState.mMint,
-        from,
-        getRedeemerVaultPda(baseAccounts.vaultCommon),
-        amountMToken,
-        TOKEN_2022_PROGRAM_ID
-      ),
-    ])
-    .transaction();
+          mMintFeed: stateBefore.mMintFeed.underlyingFeed,
+          mMintDataFeed: stateBefore.commonVaultState.mMintFeed,
+          signer: from.publicKey,
+          paymentMint: paymentMint.mint,
+          paymentMintDataFeed: stateBefore.paymentTokenState.dataFeed,
+          paymentMintFeed: stateBefore.paymentTokenFeed.underlyingFeed,
+          paymentMintTokenProgram: TOKEN_PROGRAM_ID,
+          redeemRequest: getRedeemerVaultRequestPda(
+            getRedeemerVaultPda(baseAccounts.vaultCommon),
+            fromBN(stateBefore.commonVaultState.requestsCount)
+          ),
+          mMint: stateBefore.commonVaultState.mMint,
+          mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
+          accountAc: getAccountAcStatePda(baseAccounts.ac, from.publicKey),
+        })
+        .preInstructions([
+          approveMintInstruction(
+            stateBefore.commonVaultState.mMint,
+            from,
+            getRedeemerVaultPda(baseAccounts.vaultCommon),
+            amountMToken,
+            TOKEN_2022_PROGRAM_ID
+          ),
+        ])
+        .transaction();
 
   if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);
@@ -702,7 +733,7 @@ export const redeemRequest = async (
     fromBN(stateBefore.commonVaultState.requestsCount) + 1n
   );
 
-  expect(stateAfter.requestState.user).toEqual(from.publicKey);
+  expect(stateAfter.requestState.user.equals(from.publicKey)).toBe(true);
   expect(fromBN(stateAfter.requestState.mTokenAmount)).toEqual(
     amountMToken - (expected.fee ?? 0n)
   );
@@ -710,11 +741,15 @@ export const redeemRequest = async (
     fromBN(stateBefore.mMintFeedManual.price)
   );
   expect(fromBN(stateAfter.requestState.paymentMintRate)).toEqual(
-    stateBefore.paymentTokenState.stable
+    stateBefore.paymentTokenState.stable || isFiat
       ? ONE
       : fromBN(stateBefore.paymentTokenFeedManual.price)
   );
-  expect(stateAfter.requestState.paymentMint).toEqual(paymentMint.mint);
+  expect(
+    stateAfter.requestState.paymentMint.equals(
+      isFiat ? DEFAULT_PUBKEY : paymentMint.mint
+    )
+  ).toBe(true);
 
   return { stateAfter, stateBefore };
 };
@@ -725,10 +760,12 @@ export const approveRedeemRequest = async (
     newRate,
     isSafe,
     requestId,
+    isFiat,
   }: {
     requestId?: bigint;
     newRate?: bigint;
     isSafe?: boolean;
+    isFiat?: boolean;
   },
   accounts?: {
     commonVault?: PublicKey;
@@ -750,6 +787,7 @@ export const approveRedeemRequest = async (
     tokensReceived: 9.9,
   };
 
+  isFiat ??= false;
   newRate ??= parseUnits("1");
   isSafe ??= false;
   requestId ??= 0n;
@@ -798,13 +836,15 @@ export const approveRedeemRequest = async (
 
     const paymentTokenState = await fetchPaymentMintState(
       vaultsProgram,
-      getPaymentMintStatePda(baseAccounts.vaultCommon, state.paymentMint)
+      getPaymentMintStatePda(
+        baseAccounts.vaultCommon,
+        !isFiat ? state.paymentMint : DEFAULT_PUBKEY
+      )
     );
 
-    const paymentTokenFeed = await fetchDataFeedState(
-      dataFeedProgram,
-      paymentTokenState.dataFeed
-    );
+    const paymentTokenFeed = !isFiat
+      ? await fetchDataFeedState(dataFeedProgram, paymentTokenState.dataFeed)
+      : null;
 
     const balanceUserPaymentMint = await getBalance(
       connection,
@@ -851,7 +891,9 @@ export const approveRedeemRequest = async (
       TOKEN_2022_PROGRAM_ID
     );
 
-    const paymentToken = await getMint(connection, state.paymentMint);
+    const paymentToken = !isFiat
+      ? await getMint(connection, state.paymentMint)
+      : null;
 
     return {
       redeemerVaultState,
@@ -875,37 +917,61 @@ export const approveRedeemRequest = async (
   const stateBefore = await fetchState();
   requestStateCached = stateBefore.requestState;
 
-  const expectedTokensReceivedParsed = parseUnits(
-    (expected?.tokensReceived ?? 0n).toString(),
-    stateBefore.paymentToken.decimals
-  );
+  const expectedTokensReceivedParsed = !isFiat
+    ? parseUnits(
+        (expected?.tokensReceived ?? 0n).toString(),
+        stateBefore.paymentToken.decimals
+      )
+    : 0n;
 
   expect(stateBefore.requestState).not.toEqual(null);
 
   const user = stateBefore.requestState.user;
 
-  const tx = await vaultsProgram.methods
-    .approveRedeemRequest(toBN(requestId), toBN(newRate), isSafe)
-    .accountsPartial({
-      ...baseAccounts,
-      authority: from.publicKey,
-      redeemRequest: getRedeemerVaultRequestPda(
-        getRedeemerVaultPda(baseAccounts.vaultCommon),
-        requestId
-      ),
-      userAccount: user,
-      mMint: stateBefore.commonVaultState.mMint,
-      mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
-      paymentMint: stateBefore.requestState.paymentMint,
-      paymentMintTokenProgram: TOKEN_PROGRAM_ID,
-      requestRedeemer: getRedeemerVaultRedeemerPda(baseAccounts.vaultCommon),
-      authorityAcRole: getAccountAcRoleStatePda(
-        stateBefore.commonVaultState.acRole,
-        from.publicKey,
-        VAULT_AC_ROLES.VAULT_ADMIN
-      ),
-    })
-    .transaction();
+  const tx = isFiat
+    ? await vaultsProgram.methods
+        .approveRedeemRequestFiat(toBN(requestId), toBN(newRate), isSafe)
+        .accountsPartial({
+          ...baseAccounts,
+          authority: from.publicKey,
+          redeemRequest: getRedeemerVaultRequestPda(
+            getRedeemerVaultPda(baseAccounts.vaultCommon),
+            requestId
+          ),
+          userAccount: user,
+          mMint: stateBefore.commonVaultState.mMint,
+          mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
+          authorityAcRole: getAccountAcRoleStatePda(
+            stateBefore.commonVaultState.acRole,
+            from.publicKey,
+            VAULT_AC_ROLES.VAULT_ADMIN
+          ),
+        })
+        .transaction()
+    : await vaultsProgram.methods
+        .approveRedeemRequest(toBN(requestId), toBN(newRate), isSafe)
+        .accountsPartial({
+          ...baseAccounts,
+          authority: from.publicKey,
+          redeemRequest: getRedeemerVaultRequestPda(
+            getRedeemerVaultPda(baseAccounts.vaultCommon),
+            requestId
+          ),
+          userAccount: user,
+          mMint: stateBefore.commonVaultState.mMint,
+          mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
+          paymentMint: stateBefore.requestState.paymentMint,
+          paymentMintTokenProgram: TOKEN_PROGRAM_ID,
+          requestRedeemer: getRedeemerVaultRedeemerPda(
+            baseAccounts.vaultCommon
+          ),
+          authorityAcRole: getAccountAcRoleStatePda(
+            stateBefore.commonVaultState.acRole,
+            from.publicKey,
+            VAULT_AC_ROLES.VAULT_ADMIN
+          ),
+        })
+        .transaction();
 
   if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);
@@ -1221,6 +1287,8 @@ export const mintPaymentTokenAndApprove = async (
 export const prepareCommonRedeemTest = async (
   fixture: CommonRedeemVaultParams,
   params: {
+    isFiat?: boolean;
+    addToGreenList?: boolean;
     addPaymentToken?: {
       stable?: boolean;
       allowance?: bigint;
@@ -1235,9 +1303,18 @@ export const prepareCommonRedeemTest = async (
     };
   } = {}
 ) => {
-  await addPaymentToken(fixture, params.addPaymentToken ?? {}, {
-    commonVault: fixture.redeemerCommonVault.publicKey,
-  });
+  const addToGreenList = params.addToGreenList ?? params.isFiat ?? false;
+
+  await addPaymentToken(
+    fixture,
+    {
+      mint: params.isFiat ? DEFAULT_PUBKEY : undefined,
+      ...(params.addPaymentToken ?? {}),
+    },
+    {
+      commonVault: fixture.redeemerCommonVault.publicKey,
+    }
+  );
 
   await newVaultCommonAccount(
     fixture,
@@ -1247,8 +1324,15 @@ export const prepareCommonRedeemTest = async (
   await newAccountAc(fixture, {});
 
   await mintMToken(fixture, params?.mintMToken ?? {});
-  await mintPaymentTokenAndApprove(
-    fixture,
-    params?.mintPaymentTokenAndApprove ?? {}
-  );
+
+  if (!params.isFiat) {
+    await mintPaymentTokenAndApprove(
+      fixture,
+      params?.mintPaymentTokenAndApprove ?? {}
+    );
+  } else if (addToGreenList) {
+    await updateAccountAc(fixture, {
+      greenListed: true,
+    });
+  }
 };

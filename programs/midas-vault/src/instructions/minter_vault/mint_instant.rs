@@ -5,7 +5,7 @@ use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion}
 use token_authority::{constants::ac_roles as ac_roles_token_authority, program::TokenAuthority, state::TokenAuthorityState};
 
 use crate::{
-    constants::{ac_roles, seeds}, errors::MidasVaultsError, state::{
+    constants::{ac_roles, seeds}, errors::MidasVaultsError, events::MinterVaultInstantMintedEvent, state::{
         MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState, VaultCommonState
     }, utils::{mint_token, minter::{self}, require_and_update_limit, transfer_token, validate_common, Validate, VaultActionId}
 };
@@ -162,8 +162,6 @@ pub fn handle(
     min_receive_amount: u64,
     referrer_id: [u8; 32],
 ) -> Result<()> {
-    // TODO: use separate mint authority to manage burn and mints
-
     let amount_token_base9 = decimals_conversion::convert_to_base_9(amount_token.into(), ctx.accounts.payment_mint.decimals).unwrap();
 
     let params= minter::calc_and_validate_deposit(
@@ -180,7 +178,6 @@ pub fn handle(
         true
     )?;
 
-    // FIXME: error
     require_gte!(
         params.m_token_amount, min_receive_amount as u128,
         MidasVaultsError::LessThanMinReceiveAmount
@@ -199,8 +196,6 @@ pub fn handle(
         params.amount_token_wo_fee
     )?;
 
-    msg!("TRANSFERRED1");
-
     if params.fee_token_amount > 0 { 
         transfer_token(
             &ctx.accounts.vault_common.key(), 
@@ -212,11 +207,8 @@ pub fn handle(
             &ctx.accounts.payment_mint_fee_receiver_ata, 
             params.fee_token_amount
         )?;
-    msg!("TRANSFERRED2");
-        
     }
 
- 
     mint_token(
         &ctx.accounts.vault_common.key(),
         &ctx.accounts.minter_vault.to_account_info(),
@@ -231,9 +223,16 @@ pub fn handle(
         params.m_token_amount.try_into().unwrap()
     )?;
 
-    msg!("TRANSFERRED3");
+    emit!(
+        MinterVaultInstantMintedEvent {
+            common_vault: ctx.accounts.vault_common.key(),
+            payment_mint: ctx.accounts.payment_mint.key(),
+            signer: ctx.accounts.signer.key(),
+            payment_amount: amount_token_base9.try_into().unwrap(),
+            calculated: params,
+            referrer_id
+        }
+    );
 
-
-    // TODO: add event
     Ok(())
 }

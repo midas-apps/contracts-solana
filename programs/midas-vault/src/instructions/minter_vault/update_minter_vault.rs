@@ -4,6 +4,7 @@ use anchor_lang::prelude::*;
 use crate::{
     constants::ac_roles,
     errors::MidasVaultsError,
+    events::MinterVaultUpdatedEvent,
     state::{MinterVaultState, VaultCommonState},
 };
 
@@ -34,18 +35,22 @@ pub struct UpdateMinterVault<'info> {
 
 pub fn handle(
     ctx: Context<UpdateMinterVault>,
-    new_first_deposit_min_m_tokens: Option<u64>,
+    first_deposit_min_m_tokens: Option<u64>,
     mint_authority_pda: Option<Pubkey>,
 ) -> Result<()> {
-    // TODO: add event
-
-    if let Some(new_first_deposit_min_m_tokens) = new_first_deposit_min_m_tokens {
-        ctx.accounts.minter_vault.first_deposit_min_m_tokens = new_first_deposit_min_m_tokens;
+    if let Some(first_deposit_min_m_tokens) = first_deposit_min_m_tokens {
+        ctx.accounts.minter_vault.first_deposit_min_m_tokens = first_deposit_min_m_tokens;
     }
 
     if let Some(mint_authority_pda) = mint_authority_pda {
         ctx.accounts.minter_vault.mint_authority_pda = mint_authority_pda;
     }
+
+    emit!(MinterVaultUpdatedEvent {
+        common_vault: ctx.accounts.vault_common.key(),
+        first_deposit_min_m_tokens,
+        mint_authority_pda
+    });
 
     Ok(())
 }

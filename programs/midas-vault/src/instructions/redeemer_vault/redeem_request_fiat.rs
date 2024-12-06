@@ -22,6 +22,7 @@ pub struct RedeemRequestFiat<'info> {
     pub redeemer_vault: Account<'info, RedeemerVaultState>,
 
     #[account(
+        mut,
         address = redeemer_vault.common_vault
     )]
     pub vault_common: Account<'info, VaultCommonState>,
@@ -105,17 +106,6 @@ pub struct RedeemRequestFiat<'info> {
     pub m_mint_feed: AccountInfo<'info>,
 
     #[account(
-        address = payment_mint_state.data_feed
-    )]
-    pub payment_mint_data_feed: Account<'info, FeedState>,
-
-    /// CHECK:
-    #[account(
-        address = payment_mint_data_feed.underlying_feed 
-    )]
-    pub payment_mint_feed: AccountInfo<'info>,
-
-    #[account(
         seeds = [PauseInxState::SEED, vault_common.key().as_ref(), (VaultActionId::RedeemRequestFiat as u8).to_le_bytes().as_ref()],
         bump
     )]
@@ -155,8 +145,8 @@ pub fn handle(
         &ctx.accounts.m_mint_fee_receiver_ata,
         &mut ctx.accounts.redeem_request,
         amount_m_token.into(),
+        true
     )?;
 
-    // TODO: add event
     Ok(())
 }

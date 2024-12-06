@@ -411,10 +411,12 @@ export const getTime = async (ctx: ProgramTestContext) => {
 export const getBalance = async (
   connection: Connection,
   owner: PublicKey,
-  mint: PublicKey = DEFAULT_PUBKEY,
+  mint: PublicKey | null = DEFAULT_PUBKEY,
   programId = TOKEN_PROGRAM_ID
 ) => {
   if (mint.equals(DEFAULT_PUBKEY)) {
+    return 0n;
+  } else if (mint === null) {
     return connection.getBalance(owner).then((v) => BigInt(v));
   } else {
     const ata = getAssociatedTokenAddressSync(mint, owner, true, programId);

@@ -360,6 +360,18 @@ export const vaultsFixture = async () => {
           VAULT_AC_ROLES.VAULT_PAUSER
         ),
       })
+      .instruction(),
+    await vaultsProgram.methods
+      .newPauseInx(VaultActionIds.REDEEM_REQUEST_FIAT)
+      .accountsPartial({
+        vaultCommon: redeemerCommonVault.publicKey,
+        authority: authority.publicKey,
+        authorityAcRole: getAccountAcRoleStatePda(
+          acRoleMTbill.publicKey,
+          authority.publicKey,
+          VAULT_AC_ROLES.VAULT_PAUSER
+        ),
+      })
       .instruction()
   );
 
