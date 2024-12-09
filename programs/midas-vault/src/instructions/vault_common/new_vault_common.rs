@@ -20,7 +20,6 @@ pub struct NewVaultCommon<'info> {
 
     pub system_program: Program<'info, System>,
 }
-// TODO: move params to struct
 pub fn handle(
     ctx: Context<NewVaultCommon>,
     ac: Pubkey,

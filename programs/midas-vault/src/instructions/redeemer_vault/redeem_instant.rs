@@ -121,7 +121,6 @@ pub struct RedeemInstant<'info> {
     pub payment_mint_feed: AccountInfo<'info>,
 
     #[account(
-        // FIXME: move to enum
         seeds = [PauseInxState::SEED, vault_common.key().as_ref(), (VaultActionId::RedeemInstant as u8).to_le_bytes().as_ref()],
         bump
     )]

@@ -370,7 +370,6 @@ pub fn mint_token<'info>(
     token_authority_program: &AccountInfo<'info>,
     amount: u64,
 ) -> Result<()> {
-    // TODO: replace with minter
     let (minter_vault, vault_pda_bump_seed) = Pubkey::find_program_address(
         &[MinterVaultState::SEED, common_vault.as_ref()],
         &MidasVaults::id(),
@@ -824,8 +823,6 @@ pub mod redeemer {
         new_m_token_rate: u128,
         is_safe: bool,
     ) -> Result<()> {
-        // TODO: move to separate helper fn
-
         let (expected_mint_key, is_fiat) = if let Some(payment_mint) = payment_mint {
             (payment_mint.key().clone(), false)
         } else {
@@ -889,7 +886,6 @@ pub mod redeemer {
             common_vault: vault_common.key(),
             new_out_rate: new_m_token_rate as u64
         });
-        // TODO: add event
         Ok(())
     }
     pub fn calc_and_validate_redeem(

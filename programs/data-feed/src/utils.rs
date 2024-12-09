@@ -136,7 +136,6 @@ pub fn update_manual_feed(
     Ok(())
 }
 
-// TODO: cover with tests
 pub mod decimals_conversion {
     use anchor_lang::Result;
 
