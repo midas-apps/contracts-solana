@@ -23,7 +23,8 @@ pub struct UpdateRedeemerVault<'info> {
     )]
     pub authority_ac_role: Account<'info, AccountAccessControlRoleState>,
 
-    #[account(mut,
+    #[account(
+        mut,
         seeds = [RedeemerVaultState::SEED, vault_common.key().as_ref()],
         bump
     )]
@@ -34,15 +35,17 @@ pub struct UpdateRedeemerVault<'info> {
 
 pub fn handle(
     ctx: Context<UpdateRedeemerVault>,
+    request_redeemer: Option<Pubkey>,
     min_fiat_redeem_amount: Option<u64>,
-    fiat_additional_fee: Option<u64>,
+    fiat_fee: Option<u64>,
     fiat_flat_fee: Option<u64>,
 ) -> Result<()> {
     redeemer::update_redeemer(
         &ctx.accounts.vault_common.key(),
         &mut ctx.accounts.redeemer_vault,
+        request_redeemer,
         min_fiat_redeem_amount,
-        fiat_additional_fee,
+        fiat_fee,
         fiat_flat_fee,
     )?;
 

@@ -17,4 +17,5 @@ export enum CommonError {
   AccountIsAlreadyInitialized = 0,
   GenericError = "Program failed to complete",
   SplInsufficientFunds = "custom program error: 0x1",
+  SplOwnerDoesNotMatch = "custom program error: 0x4",
 }

@@ -25,8 +25,7 @@ pub struct ApproveRedeemRequest<'info> {
     /// CHECK:
     #[account(
         mut, 
-        seeds = [seeds::REQUEST_REDEEMER, redeemer_vault.key().as_ref()],
-        bump
+        address = redeemer_vault.request_redeemer
     )]
     pub request_redeemer: AccountInfo<'info>,
 

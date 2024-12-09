@@ -33,30 +33,22 @@ pub struct NewRedeemerVault<'info> {
     )]
     pub redeemer_vault: Account<'info, RedeemerVaultState>,
 
-    /// CHECK:
-    #[account(
-        init,
-        payer = authority,
-        space = 0,
-        seeds = [seeds::REQUEST_REDEEMER, redeemer_vault.key().as_ref()],
-        bump
-    )]
-    pub request_redeemer: AccountInfo<'info>,
-
     pub system_program: Program<'info, System>,
 }
 
 pub fn handle(
     ctx: Context<NewRedeemerVault>,
+    request_redeemer: Pubkey,
     min_fiat_redeem_amount: u64,
-    fiat_additional_fee: u64,
+    fiat_fee: u64,
     fiat_flat_fee: u64,
 ) -> Result<()> {
     redeemer::update_redeemer(
         &ctx.accounts.vault_common.key(),
         &mut ctx.accounts.redeemer_vault,
+        Some(request_redeemer),
         Some(min_fiat_redeem_amount),
-        Some(fiat_additional_fee),
+        Some(fiat_fee),
         Some(fiat_flat_fee),
     )?;
 

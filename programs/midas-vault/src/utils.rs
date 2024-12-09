@@ -205,16 +205,16 @@ pub fn get_fee_amount(
     account_common: &VaultCommonAccountState,
     amount: u128,
     is_instant: bool,
-    additional_fee: u128,
+    override_fee: u128,
 ) -> Result<u128> {
     if account_common.waived_fee {
         return Ok(0);
     }
 
-    let mut fee_percent = if additional_fee == 0 {
+    let mut fee_percent = if override_fee == 0 {
         mint_config.fee.into()
     } else {
-        additional_fee
+        override_fee
     };
 
     if is_instant {
@@ -288,67 +288,6 @@ pub fn transfer_token<'info>(
                 to: to.to_account_info(),
             },
             &[&[vault_seed, vault_common.as_ref(), &[vault_pda_bump_seed]]],
-        ),
-        amount,
-        mint.decimals,
-    )?;
-
-    Ok(())
-}
-
-pub fn transfer_token_from_redeemer<'info>(
-    vault_common: &Pubkey,
-    token_program: &Interface<'info, TokenInterface>,
-    mint: &Box<InterfaceAccount<'info, Mint>>,
-    authority: &AccountInfo<'info>,
-    from: &Box<InterfaceAccount<'info, TokenAccount>>,
-    to: &Box<InterfaceAccount<'info, TokenAccount>>,
-    amount_base9: u128,
-) -> Result<()> {
-    let (redeemer, vault_pda_bump_seed) = Pubkey::find_program_address(
-        &[RedeemerVaultState::SEED, vault_common.as_ref()],
-        &MidasVaults::id(),
-    );
-
-    let (_, redeemer_pda_bump_seed) = Pubkey::find_program_address(
-        &[seeds::REQUEST_REDEEMER, redeemer.as_ref()],
-        &MidasVaults::id(),
-    );
-
-    let amount: u64 =
-        decimals_conversion::convert_from_base_9(amount_base9, mint.decimals)?.try_into()?;
-
-    msg!("TRANSFER AMOUNT {}", amount);
-
-    msg!(
-        "Accounts {} {} {} {}",
-        from.key(),
-        to.key(),
-        authority.key(),
-        mint.key()
-    );
-
-    transfer_checked(
-        CpiContext::new_with_signer(
-            token_program.to_account_info(),
-            TransferChecked {
-                authority: authority.to_account_info(),
-                mint: mint.to_account_info(),
-                from: from.to_account_info(),
-                to: to.to_account_info(),
-            },
-            &[
-                // &[
-                //     RedeemerVaultState::SEED,
-                //     vault_common.as_ref(),
-                //     &[vault_pda_bump_seed],
-                // ],
-                &[
-                    seeds::REQUEST_REDEEMER,
-                    redeemer.as_ref(),
-                    &[redeemer_pda_bump_seed],
-                ],
-            ],
         ),
         amount,
         mint.decimals,
@@ -682,8 +621,9 @@ pub mod redeemer {
     pub fn update_redeemer<'info>(
         common_vault: &Pubkey,
         vault: &mut Account<'info, RedeemerVaultState>,
+        request_redeemer: Option<Pubkey>,
         min_fiat_redeem_amount: Option<u64>,
-        fiat_additional_fee: Option<u64>,
+        fiat_fee: Option<u64>,
         fiat_flat_fee: Option<u64>,
     ) -> Result<()> {
         vault.common_vault = common_vault.clone();
@@ -692,19 +632,24 @@ pub mod redeemer {
             vault.min_fiat_redeem_amount = min_fiat_redeem_amount;
         }
 
-        if let Some(fiat_additional_fee) = fiat_additional_fee {
-            validate_fee(fiat_additional_fee, false)?;
-            vault.fiat_additional_fee = fiat_additional_fee;
+        if let Some(fiat_fee) = fiat_fee {
+            validate_fee(fiat_fee, false)?;
+            vault.fiat_fee = fiat_fee;
         }
 
         if let Some(fiat_flat_fee) = fiat_flat_fee {
             vault.fiat_flat_fee = fiat_flat_fee;
         }
 
+        if let Some(request_redeemer) = request_redeemer {
+            vault.request_redeemer = request_redeemer;
+        }
+
         emit!(RedeemerVaultUpdatedEvent {
             common_vault: *common_vault,
-            fiat_additional_fee,
+            fiat_fee,
             fiat_flat_fee,
+            request_redeemer,
             min_fiat_redeem_amount
         });
 
@@ -738,7 +683,7 @@ pub mod redeemer {
             redeemer_vault,
             amount_m_token.into(),
             false,
-            false,
+            is_fiat,
         )?;
 
         let payment_mint_rate = if !is_fiat {
@@ -870,11 +815,12 @@ pub mod redeemer {
         require_and_update_allowance(payment_mint_state, amount_token_wo_fee)?;
 
         if !is_fiat {
-            transfer_token_from_redeemer(
+            transfer_token(
                 &vault_common.key(),
+                RedeemerVaultState::SEED,
                 payment_mint_token_program.unwrap(),
                 payment_mint.unwrap(),
-                request_redeemer.unwrap(),
+                &redeemer_vault.to_account_info(),
                 payment_mint_redeemer_ata.unwrap(),
                 payment_mint_user_ata.unwrap(),
                 amount_token_wo_fee,
@@ -920,15 +866,11 @@ pub mod redeemer {
             common_account,
             m_token_amount,
             is_instant,
-            if is_fiat {
-                redeemer.fiat_additional_fee.into()
-            } else {
-                0
-            },
+            if is_fiat { redeemer.fiat_fee.into() } else { 0 },
         )?;
 
         if is_fiat {
-            if common_account.waived_fee {
+            if !common_account.waived_fee {
                 fee_amount += redeemer.fiat_flat_fee as u128;
             }
         }

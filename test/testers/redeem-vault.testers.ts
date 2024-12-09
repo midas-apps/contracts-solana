@@ -35,11 +35,8 @@ import {
   fetchVaultCommonAccountState,
   fetchVaultCommonState,
   getCommonVaultAccountStatePda,
-  getMinterVaultPda,
-  getMinterVaultRequestPda,
   getPaymentMintStatePda,
   getRedeemerVaultPda,
-  getRedeemerVaultRedeemerPda,
   getRedeemerVaultRequestPda,
   PaymentMint,
 } from "../helpers/vaults.helpers";
@@ -76,11 +73,13 @@ export const newRedeemerVault = async (
     fiatAdditionalFee,
     fiatFlatFee,
     minFiatRedeemAmount,
+    requestRedeemer,
   }: {
     commonVault?: PublicKey;
     minFiatRedeemAmount?: bigint;
     fiatAdditionalFee?: bigint;
     fiatFlatFee?: bigint;
+    requestRedeemer?: PublicKey;
   },
 
   opt?: OptionalCommonParams
@@ -98,6 +97,7 @@ export const newRedeemerVault = async (
   fiatAdditionalFee ??= parsePercent(1);
   fiatFlatFee ??= parseUnits("1");
   minFiatRedeemAmount ??= parseUnits("10");
+  requestRedeemer ??= fixture.requestRedeemer.publicKey;
 
   const fetchState = async () => {
     const common = await fetchVaultCommonState(vaultsProgram, commonVault);
@@ -117,6 +117,7 @@ export const newRedeemerVault = async (
 
   const tx = await vaultsProgram.methods
     .newRedeemerVault(
+      requestRedeemer,
       toBN(minFiatRedeemAmount),
       toBN(fiatAdditionalFee),
       toBN(fiatFlatFee)
@@ -150,9 +151,7 @@ export const newRedeemerVault = async (
   );
 
   expect(fromBN(stateAfter.redeemer.fiatFlatFee)).toEqual(fiatFlatFee);
-  expect(fromBN(stateAfter.redeemer.fiatAdditionalFee)).toEqual(
-    fiatAdditionalFee
-  );
+  expect(fromBN(stateAfter.redeemer.fiatFee)).toEqual(fiatAdditionalFee);
 };
 
 export const updateRedeemerVault = async (
@@ -162,9 +161,11 @@ export const updateRedeemerVault = async (
     fiatAdditionalFee,
     fiatFlatFee,
     minFiatRedeemAmount,
+    requestRedeemer,
   }: {
     commonVault?: PublicKey;
     minFiatRedeemAmount?: bigint;
+    requestRedeemer?: PublicKey;
     fiatAdditionalFee?: bigint;
     fiatFlatFee?: bigint;
   },
@@ -184,7 +185,7 @@ export const updateRedeemerVault = async (
   fiatAdditionalFee ??= null;
   fiatFlatFee ??= null;
   minFiatRedeemAmount ??= null;
-
+  requestRedeemer ??= null;
   const fetchState = async () => {
     const common = await fetchVaultCommonState(vaultsProgram, commonVault);
     const redeemer = await fetchRedeemerVaultState(
@@ -202,6 +203,7 @@ export const updateRedeemerVault = async (
 
   const tx = await vaultsProgram.methods
     .updateRedeemerVault(
+      requestRedeemer,
       toBNNullable(minFiatRedeemAmount),
       toBNNullable(fiatAdditionalFee),
       toBNNullable(fiatFlatFee)
@@ -239,8 +241,12 @@ export const updateRedeemerVault = async (
   }
 
   if (fiatAdditionalFee !== null) {
-    expect(fromBN(stateAfter.redeemer.fiatAdditionalFee)).toEqual(
-      fiatAdditionalFee
+    expect(fromBN(stateAfter.redeemer.fiatFee)).toEqual(fiatAdditionalFee);
+  }
+
+  if (requestRedeemer !== null) {
+    expect(stateAfter.redeemer.requestRedeemer.equals(requestRedeemer)).toBe(
+      true
     );
   }
 };
@@ -866,7 +872,7 @@ export const approveRedeemRequest = async (
 
     const balanceRedeemerPaymentMint = await getBalance(
       connection,
-      getRedeemerVaultRedeemerPda(baseAccounts.vaultCommon),
+      redeemerVaultState.requestRedeemer,
       state.paymentMint
     );
 
@@ -962,9 +968,10 @@ export const approveRedeemRequest = async (
           mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
           paymentMint: stateBefore.requestState.paymentMint,
           paymentMintTokenProgram: TOKEN_PROGRAM_ID,
-          requestRedeemer: getRedeemerVaultRedeemerPda(
-            baseAccounts.vaultCommon
-          ),
+          requestRedeemer: stateBefore.redeemerVaultState.requestRedeemer,
+          // requestRedeemer: getRedeemerVaultRedeemerPda(
+          //   baseAccounts.vaultCommon
+          // ),
           authorityAcRole: getAccountAcRoleStatePda(
             stateBefore.commonVaultState.acRole,
             from.publicKey,
@@ -1244,6 +1251,7 @@ export const mintPaymentTokenAndApprove = async (
     to,
     amountBase9,
     approveTo,
+    doApprove,
     approveFrom,
   }: {
     mint?: PaymentMint;
@@ -1251,10 +1259,13 @@ export const mintPaymentTokenAndApprove = async (
     to?: PublicKey;
     amountBase9?: bigint;
     approveFrom?: Keypair;
+    doApprove?: boolean;
   }
 ) => {
   mint ??= fixture.paymentMints.usdc;
   to ??= getRedeemerVaultPda(fixture.redeemerCommonVault.publicKey);
+
+  doApprove ??= true;
 
   amountBase9 ??= parseUnits("10");
   approveTo ??= getRedeemerVaultPda(fixture.redeemerCommonVault.publicKey);
@@ -1262,7 +1273,6 @@ export const mintPaymentTokenAndApprove = async (
 
   const amount = parseUnits(formatUnits(amountBase9).toString(), mint.decimals);
 
-  // TODO: pass optional from
   const from = fixture.authority;
 
   const { ata } = await getOrCreateAta(
@@ -1273,15 +1283,18 @@ export const mintPaymentTokenAndApprove = async (
     from
   );
 
-  await processTransaction(
-    fixture.context,
-
-    new Transaction().add(
-      createMintToInstruction(mint.mint, ata, from.publicKey, amount),
-      approveMintInstruction(mint.mint, approveFrom, approveTo, amount)
-    ),
-    [from, approveFrom]
+  const tx = new Transaction().add(
+    createMintToInstruction(mint.mint, ata, from.publicKey, amount)
   );
+
+  const signers = [from];
+
+  if (doApprove) {
+    tx.add(approveMintInstruction(mint.mint, approveFrom, approveTo, amount));
+    signers.push(approveFrom);
+  }
+
+  await processTransaction(fixture.context, tx, signers);
 };
 
 export const prepareCommonRedeemTest = async (
@@ -1300,6 +1313,7 @@ export const prepareCommonRedeemTest = async (
     mintPaymentTokenAndApprove?: {
       to?: PublicKey;
       amountBase9?: bigint;
+      doApprove?: boolean;
     };
   } = {}
 ) => {

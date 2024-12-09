@@ -41,10 +41,6 @@ import {
   getMinterVaultRequestPda,
   getPauseInxStatePda,
   getPaymentMintStatePda,
-  getRedeemerVaultPda,
-  getRedeemerVaultRedeemerPda,
-  getRedeemerVaultRequestPda,
-  PaymentMint,
 } from "../helpers/vaults.helpers";
 import {
   createMintToInstruction,

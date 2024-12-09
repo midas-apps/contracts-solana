@@ -1,5 +1,6 @@
 import {
   createMint,
+  findATA,
   getOrCreateAta,
   initBankrun,
   parseUnits,
@@ -24,11 +25,11 @@ import {
   generateCommonVaultAccount,
   getMinterVaultPda,
   getRedeemerVaultPda,
-  getRedeemerVaultRedeemerPda,
 } from "../helpers/vaults.helpers";
 import { createMTokenMint } from "../../common/create-mtoken-mint";
 import {
   AuthorityType,
+  createApproveInstruction,
   createMintToInstruction,
   createSetAuthorityInstruction,
   getAssociatedTokenAddressSync,
@@ -118,7 +119,6 @@ export const vaultsFixture = async () => {
       tokensReceiver.publicKey,
       feeReceiver.publicKey,
       requestRedeemer.publicKey,
-      getRedeemerVaultRedeemerPda(redeemerCommonVault.publicKey),
     ].map((a) => ({
       mint: usdcMint,
       owner: a,
@@ -130,7 +130,6 @@ export const vaultsFixture = async () => {
       tokensReceiver.publicKey,
       feeReceiver.publicKey,
       requestRedeemer.publicKey,
-      getRedeemerVaultRedeemerPda(redeemerCommonVault.publicKey),
     ].map((a) => ({
       mint: usdtMint,
       owner: a,
@@ -326,7 +325,7 @@ export const vaultsFixture = async () => {
       })
       .instruction(),
     await vaultsProgram.methods
-      .newRedeemerVault(toBN(0), toBN(0), toBN(0))
+      .newRedeemerVault(requestRedeemer.publicKey, toBN(0), toBN(0), toBN(0))
       .accountsPartial({
         vaultCommon: redeemerCommonVault.publicKey,
         authority: authority.publicKey,

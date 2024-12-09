@@ -35,10 +35,6 @@ import {
   parseUnits,
   timeTravel,
 } from "./helpers/common.helpers";
-import {
-  getRedeemerVaultPda,
-  getRedeemerVaultRedeemerPda,
-} from "./helpers/vaults.helpers";
 import { mintMToken } from "./testers/token-authority.testers";
 import {
   addPaymentToken,
@@ -1113,6 +1109,67 @@ describe("redeemer-vault", () => {
       await redeemRequest(fixture, { isFiat: true }, {});
     });
 
+    it("when fiat_fee is 2% and redemption fee is 1%", async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, { isFiat: true });
+      await updateRedeemerVault(fixture, {
+        fiatAdditionalFee: parsePercent(2),
+      });
+
+      await redeemRequest(
+        fixture,
+        { isFiat: true },
+        {},
+        {
+          fee: parseUnits("0.2"),
+        }
+      );
+    });
+
+    it("when fiat_fee is 2%, fiat_flat_fee is 1 mToken", async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, { isFiat: true });
+      await updateRedeemerVault(fixture, {
+        fiatAdditionalFee: parsePercent(2),
+        fiatFlatFee: parseUnits("1"),
+      });
+
+      await redeemRequest(
+        fixture,
+        { isFiat: true },
+        {},
+        {
+          fee: parseUnits("1.2"),
+        }
+      );
+    });
+
+    it("should fail: when min_fiat_redeem_amount is > redeem amount and min_amount should not count", async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        isFiat: true,
+      });
+      await updateRedeemerVault(fixture, {
+        minFiatRedeemAmount: parseUnits("10.01"),
+      });
+
+      await updateVaultCommon(fixture, {
+        minAmount: parseUnits("1"),
+        vaultCommon: fixture.redeemerCommonVault.publicKey,
+      });
+
+      await redeemRequest(
+        fixture,
+        { isFiat: true },
+        {},
+        {},
+        { revertedWith: VaultError.LessThanMinAmount }
+      );
+    });
+
     it("should fail: when greenlist not enforced and user is not greenlisted", async () => {
       const fixture = await vaultsFixture();
 
@@ -1224,9 +1281,7 @@ describe("redeemer-vault", () => {
 
       await prepareCommonRedeemTest(fixture, {
         mintPaymentTokenAndApprove: {
-          to: getRedeemerVaultRedeemerPda(
-            fixture.redeemerCommonVault.publicKey
-          ),
+          to: fixture.requestRedeemer.publicKey,
         },
       });
       await redeemRequest(fixture, {}, {});
@@ -1241,9 +1296,7 @@ describe("redeemer-vault", () => {
           allowance: parseUnits("9.9"),
         },
         mintPaymentTokenAndApprove: {
-          to: getRedeemerVaultRedeemerPda(
-            fixture.redeemerCommonVault.publicKey
-          ),
+          to: fixture.requestRedeemer.publicKey,
         },
       });
       await redeemRequest(fixture, {}, {});
@@ -1265,9 +1318,7 @@ describe("redeemer-vault", () => {
           allowance: parseUnits("10.89"),
         },
         mintPaymentTokenAndApprove: {
-          to: getRedeemerVaultRedeemerPda(
-            fixture.redeemerCommonVault.publicKey
-          ),
+          to: fixture.requestRedeemer.publicKey,
           amountBase9: parseUnits("10.89"),
         },
       });
@@ -1289,9 +1340,7 @@ describe("redeemer-vault", () => {
 
       await prepareCommonRedeemTest(fixture, {
         mintPaymentTokenAndApprove: {
-          to: getRedeemerVaultRedeemerPda(
-            fixture.redeemerCommonVault.publicKey
-          ),
+          to: fixture.requestRedeemer.publicKey,
           amountBase9: parseUnits("10.89"),
         },
       });
@@ -1323,6 +1372,48 @@ describe("redeemer-vault", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
+        }
+      );
+    });
+
+    it("should fail: when request redeemer approve is insufficient", async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        mintPaymentTokenAndApprove: {
+          doApprove: false,
+          to: fixture.requestRedeemer.publicKey,
+        },
+      });
+      await redeemRequest(fixture, {}, {});
+      await approveRedeemRequest(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          revertedWith: CommonError.SplOwnerDoesNotMatch,
+        }
+      );
+    });
+
+    it("should fail: when request redeemer balance is insufficient", async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        mintPaymentTokenAndApprove: {
+          amountBase9: parseUnits("0.01"),
+          to: fixture.requestRedeemer.publicKey,
+        },
+      });
+      await redeemRequest(fixture, {}, {});
+      await approveRedeemRequest(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          revertedWith: CommonError.SplInsufficientFunds,
         }
       );
     });

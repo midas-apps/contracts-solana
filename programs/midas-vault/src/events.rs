@@ -104,10 +104,12 @@ pub struct MinterVaultRequestRejectedEvent {
 
 /* Redeemer Vault Events */
 #[event]
+// TODO: add request redeemer
 pub struct RedeemerVaultUpdatedEvent {
     pub common_vault: Pubkey,
     pub min_fiat_redeem_amount: Option<u64>,
-    pub fiat_additional_fee: Option<u64>,
+    pub fiat_fee: Option<u64>,
+    pub request_redeemer: Option<Pubkey>,
     pub fiat_flat_fee: Option<u64>,
 }
 

@@ -21,7 +21,6 @@ export const VAULTS_SEEDS = {
   VAULT_COMMON_ACCOUNT: "vault_account_state",
   MINTER_VAULT: "minter_vault",
   REDEEMER_VAULT: "redeemer_vault",
-  REQUEST_REDEEMER: "request_redeemer",
 };
 
 export const VAULT_AC_ROLES = {

@@ -72,28 +72,32 @@ pub mod midas_vaults {
 
     pub fn new_redeemer_vault(
         ctx: Context<NewRedeemerVault>,
+        request_redeemer: Pubkey,
         min_fiat_redeem_amount: u64,
-        fiat_additional_fee: u64,
+        fiat_fee: u64,
         fiat_flat_fee: u64,
     ) -> Result<()> {
         redeemer_vault::new_redeemer_vault::handle(
             ctx,
+            request_redeemer,
             min_fiat_redeem_amount,
-            fiat_additional_fee,
+            fiat_fee,
             fiat_flat_fee,
         )
     }
 
     pub fn update_redeemer_vault(
         ctx: Context<UpdateRedeemerVault>,
+        request_redeemer: Option<Pubkey>,
         min_fiat_redeem_amount: Option<u64>,
-        fiat_additional_fee: Option<u64>,
+        fiat_fee: Option<u64>,
         fiat_flat_fee: Option<u64>,
     ) -> Result<()> {
         redeemer_vault::update_redeemer_vault::handle(
             ctx,
+            request_redeemer,
             min_fiat_redeem_amount,
-            fiat_additional_fee,
+            fiat_fee,
             fiat_flat_fee,
         )
     }
