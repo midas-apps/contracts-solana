@@ -38,7 +38,6 @@ import {
   getMinterVaultRequestPda,
   getPaymentMintStatePda,
   getRedeemerVaultPda,
-  getRedeemerVaultRedeemerPda,
   getRedeemerVaultRequestPda,
   PaymentMint,
 } from "../helpers/vaults.helpers";
