@@ -13,7 +13,7 @@ use token_authority::{
 use crate::{
     constants::{ac_roles, seeds},
     errors::MidasVaultsError,
-    events::MinterVaultInstantMintedEvent,
+    events::{MinterVaultInstantMintedEvent, TokensWithdrawnEvent},
     program::MidasVaults,
     state::{
         MinterVaultState, PauseInxState, PaymentMintState, RedeemerVaultState,
@@ -110,14 +110,13 @@ pub fn handle(ctx: Context<WithdrawTokens>, vault_seed: Vec<u8>, amount: u64) ->
         amount_base9,
     )?;
 
-    // emit!(MinterVaultInstantMintedEvent {
-    //     common_vault: ctx.accounts.vault_common.key(),
-    //     payment_mint: ctx.accounts.payment_mint.key(),
-    //     signer: ctx.accounts.signer.key(),
-    //     payment_amount: amount_token_base9.try_into().unwrap(),
-    //     calculated: params,
-    //     referrer_id
-    // });
+    emit!(TokensWithdrawnEvent {
+        common_vault: ctx.accounts.vault_common.key(),
+        mint: ctx.accounts.mint.key(),
+        caller: ctx.accounts.authority.key(),
+        receiver: ctx.accounts.receiver.key(),
+        amount
+    });
 
     Ok(())
 }

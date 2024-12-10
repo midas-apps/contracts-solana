@@ -44,6 +44,15 @@ pub struct PaymentTokenRemovedEvent {
     pub mint: Pubkey,
 }
 
+#[event]
+pub struct TokensWithdrawnEvent {
+    pub common_vault: Pubkey,
+    pub mint: Pubkey,
+    pub amount: u64,
+    pub receiver: Pubkey,
+    pub caller: Pubkey,
+}
+
 /* Pause Events */
 
 #[event]

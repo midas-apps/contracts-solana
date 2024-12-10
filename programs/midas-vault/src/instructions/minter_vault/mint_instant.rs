@@ -233,6 +233,5 @@ pub fn handle(
             referrer_id
         }
     );
-
     Ok(())
 }
