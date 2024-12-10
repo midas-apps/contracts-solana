@@ -81,8 +81,3 @@ pub fn handle(
 
     Ok(())
 }
-
-// TODO: create next wrapper instructions: 
-// - freeze
-// - thaw
-// - burn

@@ -176,61 +176,104 @@ export const vaultsFixture = async () => {
     [authority]
   );
 
+  await processTransaction(
+    context,
+    new Transaction().add(
+      await acProgram.methods
+        .grantRole(acRoleToBuffer(VAULT_AC_ROLES.VAULT_ADMIN))
+        .accountsPartial({
+          account: authority.publicKey,
+          acRole: acRoleMTbill.publicKey,
+          authority: authority.publicKey,
+          authorityAcAdminRole: getAccountAcRoleStatePda(
+            acRoleMTbill.publicKey,
+            authority.publicKey,
+            AC_ROLES.ADMIN
+          ),
+          accountAcRole: getAccountAcRoleStatePda(
+            acRoleMTbill.publicKey,
+            authority.publicKey,
+            VAULT_AC_ROLES.VAULT_ADMIN
+          ),
+        })
+        .instruction(),
+      await acProgram.methods
+        .grantRole(acRoleToBuffer(VAULT_AC_ROLES.VAULT_PAUSER))
+        .accountsPartial({
+          account: authority.publicKey,
+          acRole: acRoleMTbill.publicKey,
+          authority: authority.publicKey,
+          authorityAcAdminRole: getAccountAcRoleStatePda(
+            acRoleMTbill.publicKey,
+            authority.publicKey,
+            AC_ROLES.ADMIN
+          ),
+          accountAcRole: getAccountAcRoleStatePda(
+            acRoleMTbill.publicKey,
+            authority.publicKey,
+            VAULT_AC_ROLES.VAULT_PAUSER
+          ),
+        })
+        .instruction(),
+      await acProgram.methods
+        .grantRole(acRoleToBuffer(TOKEN_AUTHORITY_ROLES.M_MINTER))
+        .accountsPartial({
+          account: getMinterVaultPda(minterCommonVault.publicKey),
+          acRole: acRoleMTbill.publicKey,
+          authority: authority.publicKey,
+          authorityAcAdminRole: getAccountAcRoleStatePda(
+            acRoleMTbill.publicKey,
+            authority.publicKey,
+            AC_ROLES.ADMIN
+          ),
+          accountAcRole: getAccountAcRoleStatePda(
+            acRoleMTbill.publicKey,
+            getMinterVaultPda(minterCommonVault.publicKey),
+            TOKEN_AUTHORITY_ROLES.M_MINTER
+          ),
+        })
+        .instruction(),
+      await acProgram.methods
+        .grantRole(acRoleToBuffer(TOKEN_AUTHORITY_ROLES.M_BURNER))
+        .accountsPartial({
+          account: authority.publicKey,
+          acRole: acRoleMTbill.publicKey,
+          authority: authority.publicKey,
+          authorityAcAdminRole: getAccountAcRoleStatePda(
+            acRoleMTbill.publicKey,
+            authority.publicKey,
+            AC_ROLES.ADMIN
+          ),
+          accountAcRole: getAccountAcRoleStatePda(
+            acRoleMTbill.publicKey,
+            authority.publicKey,
+            TOKEN_AUTHORITY_ROLES.M_BURNER
+          ),
+        })
+        .instruction(),
+      await acProgram.methods
+        .grantRole(acRoleToBuffer(TOKEN_AUTHORITY_ROLES.M_FREEZER))
+        .accountsPartial({
+          account: authority.publicKey,
+          acRole: acRoleMTbill.publicKey,
+          authority: authority.publicKey,
+          authorityAcAdminRole: getAccountAcRoleStatePda(
+            acRoleMTbill.publicKey,
+            authority.publicKey,
+            AC_ROLES.ADMIN
+          ),
+          accountAcRole: getAccountAcRoleStatePda(
+            acRoleMTbill.publicKey,
+            authority.publicKey,
+            TOKEN_AUTHORITY_ROLES.M_FREEZER
+          ),
+        })
+        .instruction()
+    ),
+    [authority]
+  );
+
   const createMinterVaultTx = new Transaction().add(
-    await acProgram.methods
-      .grantRole(acRoleToBuffer(VAULT_AC_ROLES.VAULT_ADMIN))
-      .accountsPartial({
-        account: authority.publicKey,
-        acRole: acRoleMTbill.publicKey,
-        authority: authority.publicKey,
-        authorityAcAdminRole: getAccountAcRoleStatePda(
-          acRoleMTbill.publicKey,
-          authority.publicKey,
-          AC_ROLES.ADMIN
-        ),
-        accountAcRole: getAccountAcRoleStatePda(
-          acRoleMTbill.publicKey,
-          authority.publicKey,
-          VAULT_AC_ROLES.VAULT_ADMIN
-        ),
-      })
-      .instruction(),
-    await acProgram.methods
-      .grantRole(acRoleToBuffer(VAULT_AC_ROLES.VAULT_PAUSER))
-      .accountsPartial({
-        account: authority.publicKey,
-        acRole: acRoleMTbill.publicKey,
-        authority: authority.publicKey,
-        authorityAcAdminRole: getAccountAcRoleStatePda(
-          acRoleMTbill.publicKey,
-          authority.publicKey,
-          AC_ROLES.ADMIN
-        ),
-        accountAcRole: getAccountAcRoleStatePda(
-          acRoleMTbill.publicKey,
-          authority.publicKey,
-          VAULT_AC_ROLES.VAULT_PAUSER
-        ),
-      })
-      .instruction(),
-    await acProgram.methods
-      .grantRole(acRoleToBuffer(TOKEN_AUTHORITY_ROLES.M_MINTER))
-      .accountsPartial({
-        account: getMinterVaultPda(minterCommonVault.publicKey),
-        acRole: acRoleMTbill.publicKey,
-        authority: authority.publicKey,
-        authorityAcAdminRole: getAccountAcRoleStatePda(
-          acRoleMTbill.publicKey,
-          authority.publicKey,
-          AC_ROLES.ADMIN
-        ),
-        accountAcRole: getAccountAcRoleStatePda(
-          acRoleMTbill.publicKey,
-          getMinterVaultPda(minterCommonVault.publicKey),
-          TOKEN_AUTHORITY_ROLES.M_MINTER
-        ),
-      })
-      .instruction(),
     await vaultsProgram.methods
       .newCommonVault(
         ac.publicKey,

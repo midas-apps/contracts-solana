@@ -24,6 +24,18 @@ pub mod token_authority {
         mint::handle(ctx, amount)
     }
 
+    pub fn burn(ctx: Context<Burn>, amount: u64) -> Result<()> {
+        burn::handle(ctx, amount)
+    }
+
+    pub fn freeze(ctx: Context<Freeze>) -> Result<()> {
+        freeze::handle(ctx)
+    }
+
+    pub fn thaw(ctx: Context<Thaw>) -> Result<()> {
+        thaw::handle(ctx)
+    }
+
     pub fn set_authority(
         ctx: Context<SetAuthority>,
         authority_type: u8,

@@ -10,6 +10,8 @@ export const TOKEN_AUTHORITY_SEEDS = {
 
 export const TOKEN_AUTHORITY_ROLES = {
   M_MINTER: "m_minter_role",
+  M_BURNER: "m_burner_role",
+  M_FREEZER: "m_freezer_role",
 };
 
 export enum TokenAuthorityError {
