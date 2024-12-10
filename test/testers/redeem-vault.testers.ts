@@ -1150,7 +1150,6 @@ export const mintToken = async (
 
   const amount = parseUnits(formatUnits(amountBase9).toString(), mint.decimals);
 
-  // TODO: pass optional from
   const from = opt?.from ?? fixture.authority;
 
   const { ata } = await getOrCreateAta(
@@ -1197,7 +1196,6 @@ export const transferToken = async (
   mint ??= fixture.paymentMints.usdc;
   to ??= fixture.authority.publicKey;
 
-  // TODO: pass optional from
   const from = opt?.from ?? fixture.authority;
 
   amount ??= await getBalance(

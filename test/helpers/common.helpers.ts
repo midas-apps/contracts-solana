@@ -478,3 +478,20 @@ export const getBalance = async (
 export const parsePercent = (val: number) => {
   return parseUnits(val.toString(), 2);
 };
+
+export const fetchAccountNullable = async <TReturn>(
+  publicKey: PublicKey,
+  account: {
+    fetch: (account: PublicKey) => Promise<TReturn>;
+  },
+  allowNull = false
+) => {
+  try {
+    return await account.fetch(publicKey);
+  } catch (err) {
+    if (!allowNull) {
+      throw new Error("Account state is empty");
+    }
+    return null;
+  }
+};

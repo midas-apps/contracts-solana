@@ -1,6 +1,10 @@
 import { Connection, Keypair, PublicKey, Transaction } from "@solana/web3.js";
 
-import { AccessControlProgram, findPDA } from "./common.helpers";
+import {
+  AccessControlProgram,
+  fetchAccountNullable,
+  findPDA,
+} from "./common.helpers";
 import { AC_PROGRAM_ID, AC_SEEDS } from "../constants/ac.constants";
 
 export const DataFeedMode = {
@@ -20,15 +24,11 @@ export const fetchAcState = async (
   ac: PublicKey,
   allowNull = false
 ) => {
-  // TODO: refactor
-  try {
-    return await program.account.accessControlState.fetchNullable(ac);
-  } catch (err) {
-    if (!allowNull) {
-      throw new Error("Payment mint state is null");
-    }
-    return null;
-  }
+  return fetchAccountNullable(
+    ac,
+    program.account.accessControlState,
+    allowNull
+  );
 };
 
 export const fetchAccountAcState = async (
@@ -36,17 +36,11 @@ export const fetchAccountAcState = async (
   accountAc: PublicKey,
   allowNull = false
 ) => {
-  // TODO: refactor
-  try {
-    return await program.account.accountAccessControlState.fetchNullable(
-      accountAc
-    );
-  } catch (err) {
-    if (!allowNull) {
-      throw new Error("Payment mint state is null");
-    }
-    return null;
-  }
+  return fetchAccountNullable(
+    accountAc,
+    program.account.accountAccessControlState,
+    allowNull
+  );
 };
 
 export const fetchAcRoleState = async (
@@ -54,17 +48,11 @@ export const fetchAcRoleState = async (
   accountAc: PublicKey,
   allowNull = false
 ) => {
-  // TODO: refactor
-  try {
-    return await program.account.accessControlRoleState.fetchNullable(
-      accountAc
-    );
-  } catch (err) {
-    if (!allowNull) {
-      throw new Error("Payment mint state is null");
-    }
-    return null;
-  }
+  return fetchAccountNullable(
+    accountAc,
+    program.account.accessControlRoleState,
+    allowNull
+  );
 };
 
 export const fetchAccountAcRoleState = async (
@@ -72,17 +60,11 @@ export const fetchAccountAcRoleState = async (
   accountAc: PublicKey,
   allowNull = false
 ) => {
-  // TODO: refactor
-  try {
-    return await program.account.accountAccessControlRoleState.fetchNullable(
-      accountAc
-    );
-  } catch (err) {
-    if (!allowNull) {
-      throw new Error("Payment mint state is null");
-    }
-    return null;
-  }
+  return fetchAccountNullable(
+    accountAc,
+    program.account.accountAccessControlRoleState,
+    allowNull
+  );
 };
 
 export const acRoleToBuffer = (role: string) => {

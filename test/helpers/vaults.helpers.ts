@@ -2,6 +2,7 @@ import { Connection, Keypair, PublicKey, Transaction } from "@solana/web3.js";
 
 import {
   DataFeedProgram,
+  fetchAccountNullable,
   findPDA,
   toBN,
   TokenAuthorityProgram,
@@ -38,14 +39,11 @@ export const fetchVaultCommonState = async (
   vault: PublicKey,
   allowNull = false
 ) => {
-  try {
-    return await program.account.vaultCommonState.fetchNullable(vault);
-  } catch (err) {
-    if (!allowNull) {
-      throw new Error("Payment mint state is null");
-    }
-    return null;
-  }
+  return fetchAccountNullable(
+    vault,
+    program.account.vaultCommonState,
+    allowNull
+  );
 };
 
 export const fetchVaultCommonAccountState = async (
@@ -53,17 +51,11 @@ export const fetchVaultCommonAccountState = async (
   commonAccount: PublicKey,
   allowNull = false
 ) => {
-  // TODO: refactor
-  try {
-    return await program.account.vaultCommonAccountState.fetchNullable(
-      commonAccount
-    );
-  } catch (err) {
-    if (!allowNull) {
-      throw new Error("Payment mint state is null");
-    }
-    return null;
-  }
+  return fetchAccountNullable(
+    commonAccount,
+    program.account.vaultCommonAccountState,
+    allowNull
+  );
 };
 
 export const fetchMinterVaultState = async (
@@ -71,14 +63,11 @@ export const fetchMinterVaultState = async (
   vault: PublicKey,
   allowNull = false
 ) => {
-  try {
-    return await program.account.minterVaultState.fetchNullable(vault);
-  } catch (err) {
-    if (!allowNull) {
-      throw err;
-    }
-    return null;
-  }
+  return fetchAccountNullable(
+    vault,
+    program.account.minterVaultState,
+    allowNull
+  );
 };
 
 export const fetchRedeemerVaultState = async (
@@ -86,14 +75,11 @@ export const fetchRedeemerVaultState = async (
   vault: PublicKey,
   allowNull = false
 ) => {
-  try {
-    return await program.account.redeemerVaultState.fetchNullable(vault);
-  } catch (err) {
-    if (!allowNull) {
-      throw err;
-    }
-    return null;
-  }
+  return fetchAccountNullable(
+    vault,
+    program.account.redeemerVaultState,
+    allowNull
+  );
 };
 
 export const fetchMinterVaultRequestState = async (
@@ -101,14 +87,11 @@ export const fetchMinterVaultRequestState = async (
   request: PublicKey,
   allowNull = false
 ) => {
-  try {
-    return await program.account.mintVaultRequestState.fetchNullable(request);
-  } catch (err) {
-    if (!allowNull) {
-      throw err;
-    }
-    return null;
-  }
+  return fetchAccountNullable(
+    request,
+    program.account.mintVaultRequestState,
+    allowNull
+  );
 };
 
 export const fetchRedeemerVaultRequestState = async (
@@ -116,16 +99,11 @@ export const fetchRedeemerVaultRequestState = async (
   request: PublicKey,
   allowNull = false
 ) => {
-  try {
-    return await program.account.redeemerVaultRequestState.fetchNullable(
-      request
-    );
-  } catch (err) {
-    if (!allowNull) {
-      throw err;
-    }
-    return null;
-  }
+  return fetchAccountNullable(
+    request,
+    program.account.redeemerVaultRequestState,
+    allowNull
+  );
 };
 
 export const fetchPaymentMintState = async (
@@ -133,15 +111,11 @@ export const fetchPaymentMintState = async (
   mintState: PublicKey,
   allowNull = false
 ) => {
-  // TODO: refactor
-  try {
-    return await program.account.paymentMintState.fetchNullable(mintState);
-  } catch (err) {
-    if (!allowNull) {
-      throw new Error("Payment mint state is null");
-    }
-    return null;
-  }
+  return fetchAccountNullable(
+    mintState,
+    program.account.paymentMintState,
+    allowNull
+  );
 };
 
 export const fetchPauseInxState = async (
@@ -149,14 +123,11 @@ export const fetchPauseInxState = async (
   pauseInxState: PublicKey,
   allowNull = false
 ) => {
-  try {
-    return await program.account.pauseInxState.fetchNullable(pauseInxState);
-  } catch (err) {
-    if (!allowNull) {
-      throw new Error("Payment mint state is null");
-    }
-    return null;
-  }
+  return fetchAccountNullable(
+    pauseInxState,
+    program.account.pauseInxState,
+    allowNull
+  );
 };
 
 export const getMinterVaultPda = (commonVault: PublicKey) => {

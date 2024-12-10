@@ -141,7 +141,6 @@ export const mintMToken = async (
   to ??= fixture.authority.publicKey;
   amount ??= parseUnits("10");
 
-  // TODO: pass optional from
   const from = opt?.from ?? fixture.authority;
 
   const { ata } = await getOrCreateAta(

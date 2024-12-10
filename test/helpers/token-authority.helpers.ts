@@ -2,6 +2,7 @@ import { Connection, Keypair, PublicKey, Transaction } from "@solana/web3.js";
 
 import {
   DataFeedProgram,
+  fetchAccountNullable,
   findPDA,
   toBN,
   TokenAuthorityProgram,
@@ -30,17 +31,11 @@ export const fetchTokenAuthorityState = async (
   tokenAuthority: PublicKey,
   allowNull = false
 ) => {
-  // TODO: refactor
-  try {
-    return await program.account.tokenAuthorityState.fetchNullable(
-      tokenAuthority
-    );
-  } catch (err) {
-    if (!allowNull) {
-      throw new Error("Payment mint state is null");
-    }
-    return null;
-  }
+  return fetchAccountNullable(
+    tokenAuthority,
+    program.account.tokenAuthorityState,
+    allowNull
+  );
 };
 
 export const mintAuthoritySeedToBuffer = (seed: string) => {
