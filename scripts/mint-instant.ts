@@ -113,6 +113,17 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     await getSwitchboardPullInx(provider, mFeed.underlyingFeed, config.env)
   );
 
+  const txRes1 = await sendAndConfirmTransaction(
+    provider.connection,
+    tx1,
+    [payer],
+    {
+      commitment: "finalized",
+    }
+  );
+
+  console.log({ txRes1 });
+
   const tx2 = new Transaction();
 
   if (ata) {

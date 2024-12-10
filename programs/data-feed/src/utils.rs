@@ -54,6 +54,8 @@ pub fn get_price_in_base_9<'info>(
 
     let price = decimals_conversion::convert_to_base_9(raw_price.into(), decimals)?;
 
+    msg!("price: {}, {}", raw_price, price);
+
     require_gte!(
         price,
         data_feed.min_price as u128,
@@ -65,8 +67,6 @@ pub fn get_price_in_base_9<'info>(
         price,
         DataFeedError::PriceIsHigherThanMax
     );
-
-    msg!("price: {}, {}", raw_price, price);
 
     Ok(price)
 }
