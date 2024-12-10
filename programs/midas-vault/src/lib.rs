@@ -252,6 +252,14 @@ pub mod midas_vaults {
         )
     }
 
+    pub fn withdraw_tokens(
+        ctx: Context<WithdrawTokens>,
+        vault_seed: Vec<u8>,
+        amount: u64,
+    ) -> Result<()> {
+        vault_common::withdraw_tokens::handle(ctx, vault_seed, amount)
+    }
+
     /** Pause Instructions */
 
     pub fn new_pause_inx(ctx: Context<NewPauseInx>, fn_id: u8) -> Result<()> {

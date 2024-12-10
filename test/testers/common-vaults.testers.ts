@@ -41,6 +41,7 @@ import {
   getMinterVaultRequestPda,
   getPauseInxStatePda,
   getPaymentMintStatePda,
+  getVaultPda,
 } from "../helpers/vaults.helpers";
 import {
   createMintToInstruction,
@@ -50,7 +51,11 @@ import {
 } from "@solana/spl-token";
 import { DEFAULT_PUBKEY, MAX_U128 } from "../constants/common.constants";
 import { getAccountAcRoleStatePda } from "../helpers/ac.helpers";
-import { VAULT_AC_ROLES, VaultActionIds } from "../constants/vaults.constants";
+import {
+  VAULT_AC_ROLES,
+  VaultActionIds,
+  VAULTS_SEEDS,
+} from "../constants/vaults.constants";
 
 type CommonVaultsParams = VaultsFixtureReturnType;
 
@@ -922,4 +927,123 @@ export const updatePause = async (
   const stateAfter = await fetchState();
 
   expect(stateAfter.commonState.paused).toBe(paused);
+};
+
+export const withdrawTokens = async (
+  fixture: CommonVaultsParams,
+  {
+    mint,
+    amount,
+    receiver,
+    vaultSeed,
+    vaultSeedParam,
+  }: {
+    mint?: PublicKey;
+    vaultSeed?: Buffer;
+    vaultSeedParam?: Buffer;
+    amount?: bigint;
+    receiver?: PublicKey;
+  },
+  accounts?: {
+    tokenProgram?: PublicKey;
+    commonVault?: PublicKey;
+  },
+  opt?: OptionalCommonParams
+) => {
+  const {
+    dataFeedProgram,
+    vaultsProgram,
+    authority: owner,
+    context,
+    provider,
+  } = fixture;
+
+  receiver ??= owner.publicKey;
+  amount ??= parseUnits("10", fixture.paymentMints.usdc.decimals);
+  mint ??= fixture.paymentMints.usdc.mint;
+  vaultSeed ??= Buffer.from(VAULTS_SEEDS.MINTER_VAULT);
+  vaultSeedParam ??= vaultSeed;
+  const baseAccounts = {
+    tokenProgram: accounts?.tokenProgram ?? TOKEN_PROGRAM_ID,
+    vaultCommon: accounts?.commonVault ?? fixture.minterCommonVault.publicKey,
+  };
+  const from = opt?.from ?? owner;
+
+  // const { ata: ataReceiver } = await getOrCreateAta(
+  //   fixture.context,
+  //   fixture.provider.connection,
+  //   mint,
+  //   receiver,
+  //   from,
+  //   baseAccounts.tokenProgram
+  // );
+
+  // const { ata: ataVault } = await getOrCreateAta(
+  //   fixture.context,
+  //   fixture.provider.connection,
+  //   mint,
+  //   getVaultPda(baseAccounts.vaultCommon, vaultSeed),
+  //   from,
+  //   tokenProgram
+  // );
+
+  const fetchState = async () => {
+    const commonState = await fetchVaultCommonState(
+      vaultsProgram,
+      baseAccounts.vaultCommon
+    );
+    const balanceReceiver = await getBalance(
+      fixture.connection,
+      receiver,
+      mint,
+      baseAccounts.tokenProgram
+    );
+
+    const balanceVault = await getBalance(
+      fixture.connection,
+      getVaultPda(baseAccounts.vaultCommon, vaultSeed),
+      mint,
+      baseAccounts.tokenProgram
+    );
+
+    return {
+      balanceReceiver,
+      balanceVault,
+      commonState,
+    };
+  };
+
+  const stateBefore = await fetchState();
+
+  const tx = await vaultsProgram.methods
+    .withdrawTokens(vaultSeedParam, toBN(amount))
+    .accountsPartial({
+      ...baseAccounts,
+      authority: from.publicKey,
+      mint: mint,
+      receiver,
+      authorityAdminRole: getAccountAcRoleStatePda(
+        stateBefore.commonState.acRole,
+        from.publicKey,
+        VAULT_AC_ROLES.VAULT_ADMIN
+      ),
+      vault: getVaultPda(baseAccounts.vaultCommon, vaultSeed),
+      // mintVaultAta: ataVault,
+      // mintReceiverAta: ataReceiver,
+    })
+    .transaction();
+
+  if (opt?.revertedWith !== undefined) {
+    await expectTxReverted(context, tx, [from], opt);
+    return;
+  }
+
+  await expectTxNotReverted(context, tx, [from]);
+
+  const stateAfter = await fetchState();
+
+  expect(stateAfter.balanceReceiver).toEqual(
+    stateBefore.balanceReceiver + amount
+  );
+  expect(stateAfter.balanceVault).toEqual(stateBefore.balanceVault - amount);
 };

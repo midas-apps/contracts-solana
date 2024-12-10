@@ -234,3 +234,8 @@ export const getCommonVaultAccountStatePda = (
   );
   return pda;
 };
+
+export const getVaultPda = (commonVault: PublicKey, vaultSeed: Buffer) => {
+  const [pda] = findPDA([vaultSeed, commonVault], VAULTS_PROGRAM_ID);
+  return pda;
+};

@@ -36,4 +36,8 @@ pub enum MidasVaultsError {
     LessThanMinReceiveAmount,
     #[msg("Invalid payment mint provided")]
     InvalidPaymentMint,
+    #[msg("Invalid seed provided")]
+    InvalidSeedProvided,
+    #[msg("Invalid vault provided")]
+    InvalidVaultProvided,
 }

@@ -21,3 +21,6 @@ pub use new_vault_common_account::*;
 
 pub mod new_vault_common;
 pub use new_vault_common::*;
+
+pub mod withdraw_tokens;
+pub use withdraw_tokens::*;

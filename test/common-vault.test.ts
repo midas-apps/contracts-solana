@@ -7,9 +7,17 @@ import {
   createNewManualFeed,
 } from "./testers/data-feed.testers";
 import { vaultsFixture } from "./fixture/vaults.fixture";
-import { VaultError, VAULTS_PROGRAM_ID } from "./constants/vaults.constants";
+import {
+  VaultError,
+  VAULTS_PROGRAM_ID,
+  VAULTS_SEEDS,
+} from "./constants/vaults.constants";
 
-import { approveMint, parsePercent } from "./helpers/common.helpers";
+import {
+  approveMint,
+  parsePercent,
+  parseUnits,
+} from "./helpers/common.helpers";
 import {
   addPaymentToken,
   newPauseInx,
@@ -21,8 +29,16 @@ import {
   updatePaymentToken,
   updateVaultCommon,
   updateVaultCommonAccount,
+  withdrawTokens,
 } from "./testers/common-vaults.testers";
 import { CommonError, DEFAULT_PUBKEY } from "./constants/common.constants";
+import { mintToken } from "./testers/redeem-vault.testers";
+import {
+  getMinterVaultPda,
+  getRedeemerVaultPda,
+} from "./helpers/vaults.helpers";
+import { mintMToken } from "./testers/token-authority.testers";
+import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 
 describe("common-vault", () => {
   describe("new_common_vault", () => {
@@ -414,6 +430,132 @@ describe("common-vault", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
+        }
+      );
+    });
+  });
+
+  describe("withdraw_tokens", () => {
+    it("call with default params (token program)", async () => {
+      const fixture = await vaultsFixture();
+
+      await mintToken(fixture, {
+        to: getMinterVaultPda(fixture.minterCommonVault.publicKey),
+      });
+
+      await withdrawTokens(fixture, {});
+    });
+
+    it("withdraw m tokens (token 2022 program)", async () => {
+      const fixture = await vaultsFixture();
+
+      await mintMToken(fixture, {
+        to: getMinterVaultPda(fixture.minterCommonVault.publicKey),
+      });
+
+      await withdrawTokens(
+        fixture,
+        {
+          amount: parseUnits("10"),
+          mint: fixture.mTBillMint.publicKey,
+        },
+        {
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        }
+      );
+    });
+
+    it("withdraw from redeemer vault (token program)", async () => {
+      const fixture = await vaultsFixture();
+
+      await mintToken(fixture, {
+        to: getRedeemerVaultPda(fixture.redeemerCommonVault.publicKey),
+      });
+
+      await withdrawTokens(
+        fixture,
+        {
+          vaultSeed: Buffer.from(VAULTS_SEEDS.REDEEMER_VAULT),
+        },
+        {
+          commonVault: fixture.redeemerCommonVault.publicKey,
+        }
+      );
+    });
+
+    it("withdraw from redeemer vault (token 2022 program)", async () => {
+      const fixture = await vaultsFixture();
+
+      await mintMToken(fixture, {
+        to: getRedeemerVaultPda(fixture.redeemerCommonVault.publicKey),
+      });
+
+      await withdrawTokens(
+        fixture,
+        {
+          amount: parseUnits("10"),
+          mint: fixture.mTBillMint.publicKey,
+          vaultSeed: Buffer.from(VAULTS_SEEDS.REDEEMER_VAULT),
+        },
+        {
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          commonVault: fixture.redeemerCommonVault.publicKey,
+        }
+      );
+    });
+
+    it("should fail: call from non-authority", async () => {
+      const fixture = await vaultsFixture();
+
+      await mintToken(fixture, {
+        to: getMinterVaultPda(fixture.minterCommonVault.publicKey),
+      });
+
+      await withdrawTokens(
+        fixture,
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        }
+      );
+    });
+
+    it("should fail: when invalid seed provided", async () => {
+      const fixture = await vaultsFixture();
+
+      await mintToken(fixture, {
+        to: getMinterVaultPda(fixture.minterCommonVault.publicKey),
+      });
+
+      await withdrawTokens(
+        fixture,
+        {
+          vaultSeedParam: Buffer.from("some-seed"),
+        },
+        {},
+        {
+          revertedWith: VaultError.InvalidSeedProvided,
+        }
+      );
+    });
+
+    it("should fail: when invalid vault provided", async () => {
+      const fixture = await vaultsFixture();
+
+      await mintToken(fixture, {
+        to: getMinterVaultPda(fixture.minterCommonVault.publicKey),
+      });
+
+      await withdrawTokens(
+        fixture,
+        {
+          vaultSeedParam: Buffer.from(VAULTS_SEEDS.REDEEMER_VAULT),
+        },
+        {},
+        {
+          revertedWith: VaultError.InvalidVaultProvided,
         }
       );
     });
