@@ -107,7 +107,8 @@ export const updateAccountAc = async (
   const fetchState = async () => {
     const accountAcState = await fetchAccountAcState(
       acProgram,
-      getAccountAcStatePda(ac, account)
+      getAccountAcStatePda(ac, account),
+      true
     );
     const acState = await fetchAcState(acProgram, ac);
 

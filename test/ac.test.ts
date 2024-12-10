@@ -60,19 +60,19 @@ describe("access-control", () => {
       });
     });
 
-    // it("should fail: call from non-admin account", async () => {
-    //   const fixture = await acFixture();
-    //   await newAccountAc(fixture, {});
+    it("should fail: call from non-admin account", async () => {
+      const fixture = await acFixture();
+      await newAccountAc(fixture, {});
 
-    //   await updateAccountAc(
-    //     fixture,
-    //     {},
-    //     {
-    //       from: fixture.regularAccounts[1],
-    //       revertedWith: CommonError.AccountIsNotInitialized,
-    //     }
-    //   );
-    // });
+      await updateAccountAc(
+        fixture,
+        {},
+        {
+          from: fixture.regularAccounts[1],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        }
+      );
+    });
   });
 
   describe("grant_role", () => {
