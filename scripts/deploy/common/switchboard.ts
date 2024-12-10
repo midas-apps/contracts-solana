@@ -1,7 +1,8 @@
 import { executeAnchorScript } from "@/common/utils";
-import { AnchorProvider } from "@coral-xyz/anchor";
+import { AnchorProvider, Program } from "@coral-xyz/anchor";
 import {
   Keypair,
+  PublicKey,
   sendAndConfirmTransaction,
   Transaction,
 } from "@solana/web3.js";
@@ -14,8 +15,19 @@ import {
   getDefaultDevnetQueue,
   asV0Tx,
 } from "@switchboard-xyz/on-demand";
+import { CommonParams } from "./common";
+import { Address } from "viem";
+import * as sb from "@switchboard-xyz/on-demand";
 
-const main = async (provider: AnchorProvider, payer: Keypair) => {
+export type DeploySwitchboardFeedParams = {
+  ethDataFeed: Address;
+  env: "devnet" | "mainnet";
+};
+
+export const deploySwitchboardFeed = async (
+  { payer, provider }: CommonParams,
+  { ethDataFeed, env }: DeploySwitchboardFeedParams
+) => {
   const jobs: OracleJob[] = [
     OracleJob.create({
       tasks: [
@@ -34,8 +46,8 @@ const main = async (provider: AnchorProvider, payer: Keypair) => {
                           method: "eth_call",
                           params: [
                             {
-                              from: "0xfCEE9754E8C375e145303b7cE7BEca3201734A2B",
-                              to: "0xfCEE9754E8C375e145303b7cE7BEca3201734A2B",
+                              from: ethDataFeed,
+                              to: ethDataFeed,
                               data: "0x63692905",
                             },
                           ],
@@ -93,7 +105,10 @@ const main = async (provider: AnchorProvider, payer: Keypair) => {
   const response = await fetch("https://api.switchboard.xyz/api/simulate", {
     method: "POST",
     headers: [["Content-Type", "application/json"]],
-    body: JSON.stringify({ cluster: "Devnet", jobs: serializedJobs }),
+    body: JSON.stringify({
+      cluster: env === "devnet" ? "Devnet" : "Mainnet",
+      jobs: serializedJobs,
+    }),
   });
 
   // Check response.
@@ -109,7 +124,8 @@ const main = async (provider: AnchorProvider, payer: Keypair) => {
   console.log("Storing and creating the feed...\n");
 
   // Get the queue for the network you're deploying on
-  let queue = await getDefaultDevnetQueue(); // or `getDefaultDevnetQueue()` for devnet,
+  let queue =
+    env === "devnet" ? await getDefaultDevnetQueue() : await getDefaultQueue(); // or `getDefaultDevnetQueue()` for devnet,
 
   // Get the crossbar server client
   const crossbarClient = CrossbarClient.default();
@@ -156,6 +172,28 @@ const main = async (provider: AnchorProvider, payer: Keypair) => {
   );
 
   console.log(`Feed ${feedKeypair.publicKey} initialized: ${sig}`);
+
+  return feedKeypair.publicKey;
 };
 
-executeAnchorScript(main);
+export const getSwitchboardPullInx = async (
+  provider: AnchorProvider,
+  feed: PublicKey,
+  env: "devnet" | "mainnet"
+) => {
+  const idl = await Program.fetchIdl(
+    env === "devnet"
+      ? "Aio4gaXjXzJNVLtzwtNVmSqGKpANtXhybbkhtAC94ji2"
+      : undefined, // FIXME
+    provider
+  );
+  const program = new Program(idl, provider);
+
+  const feedAccount = new sb.PullFeed(program, feed);
+
+  const [pullIx] = await feedAccount.fetchUpdateIx({
+    network: env,
+  });
+
+  return pullIx;
+};
