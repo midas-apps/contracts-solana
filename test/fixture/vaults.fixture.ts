@@ -16,8 +16,6 @@ import {
   generateFeedAcccount,
   getManualFeedStatePda,
 } from "../helpers/data-feed.helpers";
-import { DataFeed } from "@/target/types/data_feed";
-import { MidasVaults } from "@/target/types/midas_vaults";
 import { PublicKey, Transaction } from "@solana/web3.js";
 import { dataFeedFixture } from "./dafa-feed.fixture";
 import {
@@ -48,6 +46,7 @@ import { AC_ROLES } from "../constants/ac.constants";
 import { tokenAuthorityFixture } from "./token-authority.fixture";
 import { TOKEN_AUTHORITY_ROLES } from "../constants/token-authority.constants";
 import { getTokenAuthorityPda } from "../helpers/token-authority.helpers";
+import { MidasVaults } from "target/types/midas_vaults";
 
 export const vaultsFixture = async () => {
   const dfFixture = await dataFeedFixture();

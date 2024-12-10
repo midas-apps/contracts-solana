@@ -1,7 +1,7 @@
 import { PublicKey } from "@solana/web3.js";
 
 export const DATA_FEED_PROGRAM_ID = new PublicKey(
-  "3gzjMNSbos3eXopGnzHqQ137htQwCjG93N4f9T6avoim"
+  "7dTNTpTqbHCLxc1FtpCRAq5d4u1Y6WVqrAc1znVGQDxV"
 );
 
 export const DATA_FEED_SEEDS = {

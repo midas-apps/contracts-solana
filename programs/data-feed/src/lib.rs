@@ -9,7 +9,7 @@ pub mod utils;
 
 use instructions::*;
 
-declare_id!("3gzjMNSbos3eXopGnzHqQ137htQwCjG93N4f9T6avoim");
+declare_id!("7dTNTpTqbHCLxc1FtpCRAq5d4u1Y6WVqrAc1znVGQDxV");
 
 #[program]
 pub mod data_feed {

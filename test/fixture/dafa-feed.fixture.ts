@@ -15,8 +15,6 @@ import {
   generateFeedAcccount,
   getManualFeedStatePda,
 } from "../helpers/data-feed.helpers";
-import { DataFeed } from "@/target/types/data_feed";
-import { MidasVaults } from "@/target/types/midas_vaults";
 import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import { acFixture } from "./ac.fixture";
 import {
@@ -25,6 +23,7 @@ import {
 } from "../helpers/ac.helpers";
 import { DATA_FEED_AC_ROLES } from "../constants/data-feed.constants";
 import { AC_ROLES } from "../constants/ac.constants";
+import { DataFeed } from "target/types/data_feed";
 
 export const dataFeedFixture = async () => {
   const acF = await acFixture();

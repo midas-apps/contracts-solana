@@ -4,7 +4,6 @@ import { Program } from "@coral-xyz/anchor";
 
 import * as TOKEN_AUTHORITY_IDL from "../../target/idl/token_authority.json";
 
-import { AccessControl } from "@/target/types/access_control";
 import { Transaction } from "@solana/web3.js";
 import {
   acRoleToBuffer,
@@ -13,7 +12,6 @@ import {
 } from "../helpers/ac.helpers";
 import { generateAcAccount } from "../helpers/vaults.helpers";
 import { AC_ROLES } from "../constants/ac.constants";
-import { TokenAuthority } from "@/target/types/token_authority";
 import { AccessControlFixtureReturnType } from "./ac.fixture";
 import { newTokenAuthority } from "../testers/token-authority.testers";
 import {
@@ -21,6 +19,7 @@ import {
   mintAuthoritySeedToBuffer,
 } from "../helpers/token-authority.helpers";
 import { TOKEN_AUTHORITY_ROLES } from "../constants/token-authority.constants";
+import { TokenAuthority } from "target/types/token_authority";
 
 export const tokenAuthorityFixture = async (
   acFixture: AccessControlFixtureReturnType

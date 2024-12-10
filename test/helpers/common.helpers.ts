@@ -14,6 +14,7 @@ import {
   createApproveInstruction,
   createAssociatedTokenAccountInstruction,
   createInitializeMint2Instruction,
+  createRevokeInstruction,
   getAccount,
   getAssociatedTokenAddressSync,
   getMinimumBalanceForRentExemptMint,
@@ -304,6 +305,20 @@ export const approveMintInstruction = (
   );
 };
 
+export const revokeMintInstruction = (
+  mint: PublicKey,
+  payer: Signer,
+
+  programId = TOKEN_PROGRAM_ID
+) => {
+  return createRevokeInstruction(
+    findATA(mint, payer.publicKey, programId),
+    payer.publicKey,
+    undefined,
+    programId
+  );
+};
+
 export const approveMint = async (
   ctx: ProgramTestContext,
   mint: PublicKey,
@@ -356,6 +371,30 @@ export const getOrCreateAta = async (
         ataAccount,
         ata: newAta,
       };
+    }
+
+    throw e;
+  }
+};
+
+export const createAtaIfNotExistsInx = async (
+  connection: Connection,
+  mint: PublicKey,
+  owner: PublicKey,
+  payer: Keypair,
+  program = TOKEN_PROGRAM_ID
+) => {
+  const ata = getAssociatedTokenAddressSync(mint, owner, true, program);
+  try {
+    await getAccount(connection, ata, undefined, program);
+    return null;
+  } catch (e: any) {
+    if (
+      e instanceof TokenAccountNotFoundError ||
+      e instanceof TokenInvalidAccountOwnerError ||
+      e?.message?.includes("Could not find")
+    ) {
+      return createAtaInx(payer.publicKey, ata, mint, owner, program);
     }
 
     throw e;

@@ -4,11 +4,11 @@ import { Program } from "@coral-xyz/anchor";
 
 import * as ACCESS_CONTROL_IDL from "../../target/idl/access_control.json";
 
-import { AccessControl } from "@/target/types/access_control";
 import { Transaction } from "@solana/web3.js";
 import { acRoleToBuffer, generateAcRoleAccount } from "../helpers/ac.helpers";
 import { generateAcAccount } from "../helpers/vaults.helpers";
 import { AC_ROLES } from "../constants/ac.constants";
+import { AccessControl } from "target/types/access_control";
 
 export const acFixture = async () => {
   const { provider, context, accounts } = await initBankrun();

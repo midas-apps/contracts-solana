@@ -43,7 +43,7 @@ pub fn get_price_in_base_9<'info>(
     let current_ts = get_current_ts()?;
 
     if last_updated_at > 0 {
-        let update_diff = last_updated_at.checked_sub(current_ts).unwrap();
+        let update_diff = current_ts.checked_sub(last_updated_at).unwrap();
 
         require_gte!(
             data_feed.max_staleness,
