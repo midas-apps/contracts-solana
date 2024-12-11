@@ -12,6 +12,7 @@ import {
   expectTxNotReverted,
   expectTxReverted,
   fromBN,
+  getTime,
   OptionalCommonParams,
   parseUnits,
   toBN,
@@ -363,7 +364,9 @@ export const updateManualFeed = async (
   }
 
   if (price !== null) {
+    const currentTs = await getTime(fixture.context);
     expect(fromBN(feedFetched.price)).toBe(price);
+    expect(BigInt(feedFetched.lastUpdatedAt)).toBe(currentTs);
   }
 };
 

@@ -10,6 +10,7 @@ import {
   createNewFeed,
   createNewManualFeed,
   updateFeed,
+  updateManualFeed,
 } from "./testers/data-feed.testers";
 import { CommonError, DEFAULT_PUBKEY } from "./constants/common.constants";
 import { parseUnits } from "./helpers/common.helpers";
@@ -243,6 +244,47 @@ describe("data-feed", () => {
           underlyingFeed: DEFAULT_PUBKEY,
         },
         { revertedWith: DataFeedError.InvalidUnderlyingFeed }
+      );
+    });
+  });
+
+  describe("update_manual_feed", () => {
+    it("update price", async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultDataFeed(fixture);
+
+      await updateManualFeed(fixture, {
+        baseFeed,
+        price: parseUnits("1"),
+      });
+    });
+
+    it("update decimals", async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultDataFeed(fixture);
+
+      await updateManualFeed(fixture, {
+        baseFeed,
+        decimals: 2,
+      });
+    });
+
+    it("should fail: update from non-authority", async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultDataFeed(fixture);
+
+      await updateManualFeed(
+        fixture,
+        {
+          baseFeed,
+        },
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        }
       );
     });
   });

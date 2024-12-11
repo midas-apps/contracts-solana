@@ -27,6 +27,7 @@ import { DATA_FEED_AC_ROLES } from "@/test/constants/data-feed.constants";
 import { fetchDataFeedState } from "@/test/helpers/data-feed.helpers";
 import { getAcProgram } from "./deploy/common/ac";
 import { AC_ROLES } from "@/test/constants/ac.constants";
+import { getSwitchboardPullInx } from "./deploy/common/switchboard";
 
 // TODO: change config before execution
 const config = {
@@ -40,6 +41,14 @@ const config = {
 };
 
 async function main(provider: AnchorProvider, payer: Keypair) {
+  await getSwitchboardPullInx(
+    provider,
+    new PublicKey("5GjQDcVcPwwMAzT6ZUjXgeVgRVM4UTvbpYieiBKuQi7f"),
+    "devnet"
+  );
+
+  return;
+
   const feedProgram = getDataFeedProgram(provider);
   const acProgram = getAcProgram(provider);
 

@@ -15,42 +15,42 @@ pub fn get_price_in_base_9<'info>(
         DataFeedError::InvalidUnderlyingFeedProvided
     );
 
-    let (raw_price, decimals, last_updated_at) = match data_feed.mode {
+    let (raw_price, decimals) = match data_feed.mode {
         FeedMode::MANUAL => {
             // parse manual feed
             let mut buf: &[u8] = &feed.try_borrow_mut_data()?[..];
             let feed_parsed = ManualFeedState::try_deserialize(&mut buf).unwrap();
-            (
-                feed_parsed.price as u128,
-                feed_parsed.decimals,
-                feed_parsed.last_updated_at,
-            )
+
+            let current_ts = get_current_ts()?;
+
+            if feed_parsed.last_updated_at > 0 {
+                let update_diff = current_ts.checked_sub(feed_parsed.last_updated_at).unwrap();
+
+                require_gte!(
+                    data_feed.max_staleness,
+                    update_diff,
+                    DataFeedError::PriceIsStale
+                );
+            }
+
+            (feed_parsed.price as u128, feed_parsed.decimals)
         }
         FeedMode::SWITCHBOARD => {
             // parse switchboard feed
             let feed_data = feed.data.borrow();
             let feed = PullFeedAccountData::parse(feed_data).unwrap();
-            let raw_price = feed.result.value;
+            let raw_price = feed
+                .get_value(
+                    &Clock::get()?,
+                    feed.max_staleness.into(),
+                    feed.min_sample_size.into(),
+                    true,
+                )
+                .unwrap();
 
-            (
-                raw_price as u128,
-                PRECISION.try_into().unwrap(),
-                feed.last_update_timestamp.try_into()?,
-            )
+            (raw_price.mantissa() as u128, PRECISION.try_into().unwrap())
         }
     };
-
-    let current_ts = get_current_ts()?;
-
-    if last_updated_at > 0 {
-        let update_diff = current_ts.checked_sub(last_updated_at).unwrap();
-
-        require_gte!(
-            data_feed.max_staleness,
-            update_diff,
-            DataFeedError::PriceIsStale
-        );
-    }
 
     let price = decimals_conversion::convert_to_base_9(raw_price.into(), decimals)?;
 
@@ -127,6 +127,7 @@ pub fn update_manual_feed(
 ) -> Result<()> {
     if let Some(price) = price {
         state.price = price;
+        state.last_updated_at = get_current_ts().unwrap();
     }
 
     if let Some(decimals) = decimals {
