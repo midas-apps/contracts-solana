@@ -45,8 +45,8 @@ import {
 import { fetchDataFeedState } from "@/test/helpers/data-feed.helpers";
 import { getDataFeedProgram } from "./deploy/common/common";
 import { TOKEN_AUTHORITY_ROLES } from "@/test/constants/token-authority.constants";
-import { getSwitchboardPullInx } from "./get-switchboard-pull-inx";
 import { getAcProgram } from "./deploy/common/ac";
+import { getSwitchboardPullInx } from "./deploy/common/switchboard";
 
 // TODO: change config before execution
 const config = {
