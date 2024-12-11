@@ -11,7 +11,7 @@ const configs: Record<string, DeployDataFeedConfig> = {
     minPrice: parseUnits("0.1"),
     mode: "switchboard",
     underlyingFeed: new PublicKey(
-      "DHB2Ph8CK7PmR3xswqcmDkgQeucnwSZtfnMpnc7mQgkb"
+      "5GjQDcVcPwwMAzT6ZUjXgeVgRVM4UTvbpYieiBKuQi7f"
     ),
     maxStaleness: 86400,
   },
