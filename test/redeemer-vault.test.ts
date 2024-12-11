@@ -8,6 +8,7 @@ import { DataFeedMode, fetchDataFeedState } from "./helpers/data-feed.helpers";
 import {
   createNewFeed,
   createNewManualFeed,
+  updateFeed,
   updateManualFeed,
 } from "./testers/data-feed.testers";
 import { vaultsFixture } from "./fixture/vaults.fixture";
@@ -78,19 +79,6 @@ describe("redeemer-vault", () => {
         }
       );
     });
-
-    it("should fail: when fee is 101%", async () => {
-      const fixture = await vaultsFixture();
-
-      const commonVault = await newVaultCommon(fixture, {});
-      await newRedeemerVault(
-        fixture,
-        { commonVault, fiatAdditionalFee: parsePercent(101) },
-        {
-          revertedWith: VaultError.InvalidFee,
-        }
-      );
-    });
   });
 
   describe("update_redeemer_vault", () => {
@@ -109,18 +97,6 @@ describe("redeemer-vault", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
-      );
-    });
-
-    it("should fail: when fee is 101%", async () => {
-      const fixture = await vaultsFixture();
-
-      await updateRedeemerVault(
-        fixture,
-        { fiatAdditionalFee: parsePercent(101) },
-        {
-          revertedWith: VaultError.InvalidFee,
         }
       );
     });
@@ -242,6 +218,15 @@ describe("redeemer-vault", () => {
 
     it("use all daily limit, then skip to next day and use all limit again", async () => {
       const fixture = await vaultsFixture();
+
+      await updateFeed(fixture, {
+        maxStaleness: 86400 * 2,
+      });
+
+      await updateFeed(fixture, {
+        maxStaleness: 86400 * 2,
+        feed: fixture.dataFeedPaymentToken.publicKey,
+      });
 
       await prepareCommonRedeemTest(fixture, {
         mintMToken: { amount: parseUnits("20") },
@@ -1109,13 +1094,16 @@ describe("redeemer-vault", () => {
       await redeemRequest(fixture, { isFiat: true }, {});
     });
 
-    it("when fiat_fee is 2% and redemption fee is 1%", async () => {
+    it("when fiat payment token fee is 2%", async () => {
       const fixture = await vaultsFixture();
 
-      await prepareCommonRedeemTest(fixture, { isFiat: true });
-      await updateRedeemerVault(fixture, {
-        fiatAdditionalFee: parsePercent(2),
+      await prepareCommonRedeemTest(fixture, {
+        isFiat: true,
+        addPaymentToken: {
+          fee: parsePercent(2),
+        },
       });
+      await updateRedeemerVault(fixture, {});
 
       await redeemRequest(
         fixture,
@@ -1127,12 +1115,16 @@ describe("redeemer-vault", () => {
       );
     });
 
-    it("when fiat_fee is 2%, fiat_flat_fee is 1 mToken", async () => {
+    it("when fiat payment token fee is 2%, fiat_flat_fee is 1 mToken", async () => {
       const fixture = await vaultsFixture();
 
-      await prepareCommonRedeemTest(fixture, { isFiat: true });
+      await prepareCommonRedeemTest(fixture, {
+        isFiat: true,
+        addPaymentToken: {
+          fee: parsePercent(2),
+        },
+      });
       await updateRedeemerVault(fixture, {
-        fiatAdditionalFee: parsePercent(2),
         fiatFlatFee: parseUnits("1"),
       });
 

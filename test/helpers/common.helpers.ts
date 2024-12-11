@@ -243,6 +243,12 @@ export const processTransaction = async (
   transaction.recentBlockhash = blockHash;
   transaction.sign(...signers);
 
+  const serialized = transaction.serialize({
+    verifySignatures: false,
+    requireAllSignatures: false,
+  });
+  const size = serialized.length + 1 + transaction.signatures.length * 64;
+
   return await client.processTransaction(transaction);
 };
 

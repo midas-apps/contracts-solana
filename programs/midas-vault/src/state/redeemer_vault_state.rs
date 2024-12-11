@@ -4,7 +4,6 @@ use anchor_lang::prelude::*;
 #[derive(InitSpace)]
 pub struct RedeemerVaultState {
     pub min_fiat_redeem_amount: u64,
-    pub fiat_fee: u64,
     pub fiat_flat_fee: u64,
     pub common_vault: Pubkey,
     pub request_redeemer: Pubkey,

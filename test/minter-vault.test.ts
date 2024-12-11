@@ -237,6 +237,15 @@ describe("minter-vault", () => {
     it("use all daily limit, then skip to next day and use all limit again", async () => {
       const fixture = await vaultsFixture();
 
+      await updateFeed(fixture, {
+        maxStaleness: 86400 * 2,
+      });
+
+      await updateFeed(fixture, {
+        maxStaleness: 86400 * 2,
+        feed: fixture.dataFeedPaymentToken.publicKey,
+      });
+
       await prepareCommonMintTest(fixture, {});
 
       await updateVaultCommon(fixture, {

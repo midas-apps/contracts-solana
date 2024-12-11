@@ -70,14 +70,12 @@ export const newRedeemerVault = async (
   fixture: CommonRedeemVaultParams,
   {
     commonVault,
-    fiatAdditionalFee,
     fiatFlatFee,
     minFiatRedeemAmount,
     requestRedeemer,
   }: {
     commonVault?: PublicKey;
     minFiatRedeemAmount?: bigint;
-    fiatAdditionalFee?: bigint;
     fiatFlatFee?: bigint;
     requestRedeemer?: PublicKey;
   },
@@ -94,7 +92,6 @@ export const newRedeemerVault = async (
   const from = opt?.from ?? owner;
 
   commonVault ??= redeemerCommonVault.publicKey;
-  fiatAdditionalFee ??= parsePercent(1);
   fiatFlatFee ??= parseUnits("1");
   minFiatRedeemAmount ??= parseUnits("10");
   requestRedeemer ??= fixture.requestRedeemer.publicKey;
@@ -119,7 +116,6 @@ export const newRedeemerVault = async (
     .newRedeemerVault(
       requestRedeemer,
       toBN(minFiatRedeemAmount),
-      toBN(fiatAdditionalFee),
       toBN(fiatFlatFee)
     )
     .accountsPartial({
@@ -151,14 +147,12 @@ export const newRedeemerVault = async (
   );
 
   expect(fromBN(stateAfter.redeemer.fiatFlatFee)).toEqual(fiatFlatFee);
-  expect(fromBN(stateAfter.redeemer.fiatFee)).toEqual(fiatAdditionalFee);
 };
 
 export const updateRedeemerVault = async (
   fixture: CommonRedeemVaultParams,
   {
     commonVault,
-    fiatAdditionalFee,
     fiatFlatFee,
     minFiatRedeemAmount,
     requestRedeemer,
@@ -166,7 +160,6 @@ export const updateRedeemerVault = async (
     commonVault?: PublicKey;
     minFiatRedeemAmount?: bigint;
     requestRedeemer?: PublicKey;
-    fiatAdditionalFee?: bigint;
     fiatFlatFee?: bigint;
   },
 
@@ -182,7 +175,6 @@ export const updateRedeemerVault = async (
   const from = opt?.from ?? owner;
 
   commonVault ??= redeemerCommonVault.publicKey;
-  fiatAdditionalFee ??= null;
   fiatFlatFee ??= null;
   minFiatRedeemAmount ??= null;
   requestRedeemer ??= null;
@@ -205,7 +197,6 @@ export const updateRedeemerVault = async (
     .updateRedeemerVault(
       requestRedeemer,
       toBNNullable(minFiatRedeemAmount),
-      toBNNullable(fiatAdditionalFee),
       toBNNullable(fiatFlatFee)
     )
     .accountsPartial({
@@ -238,10 +229,6 @@ export const updateRedeemerVault = async (
 
   if (fiatFlatFee !== null) {
     expect(fromBN(stateAfter.redeemer.fiatFlatFee)).toEqual(fiatFlatFee);
-  }
-
-  if (fiatAdditionalFee !== null) {
-    expect(fromBN(stateAfter.redeemer.fiatFee)).toEqual(fiatAdditionalFee);
   }
 
   if (requestRedeemer !== null) {

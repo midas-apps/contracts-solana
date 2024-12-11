@@ -205,17 +205,12 @@ pub fn get_fee_amount(
     account_common: &VaultCommonAccountState,
     amount: u128,
     is_instant: bool,
-    override_fee: u128,
 ) -> Result<u128> {
     if account_common.waived_fee {
         return Ok(0);
     }
 
-    let mut fee_percent = if override_fee == 0 {
-        mint_config.fee.into()
-    } else {
-        override_fee
-    };
+    let mut fee_percent = mint_config.fee.into();
 
     if is_instant {
         fee_percent += common.instant_fee as u128;
@@ -427,7 +422,6 @@ pub mod minter {
                 common_account,
                 payment_amount,
                 is_instant,
-                0,
             )?,
             decimals,
         )?;
@@ -623,18 +617,12 @@ pub mod redeemer {
         vault: &mut Account<'info, RedeemerVaultState>,
         request_redeemer: Option<Pubkey>,
         min_fiat_redeem_amount: Option<u64>,
-        fiat_fee: Option<u64>,
         fiat_flat_fee: Option<u64>,
     ) -> Result<()> {
         vault.common_vault = common_vault.clone();
 
         if let Some(min_fiat_redeem_amount) = min_fiat_redeem_amount {
             vault.min_fiat_redeem_amount = min_fiat_redeem_amount;
-        }
-
-        if let Some(fiat_fee) = fiat_fee {
-            validate_fee(fiat_fee, false)?;
-            vault.fiat_fee = fiat_fee;
         }
 
         if let Some(fiat_flat_fee) = fiat_flat_fee {
@@ -647,7 +635,6 @@ pub mod redeemer {
 
         emit!(RedeemerVaultUpdatedEvent {
             common_vault: *common_vault,
-            fiat_fee,
             fiat_flat_fee,
             request_redeemer,
             min_fiat_redeem_amount
@@ -866,7 +853,6 @@ pub mod redeemer {
             common_account,
             m_token_amount,
             is_instant,
-            if is_fiat { redeemer.fiat_fee.into() } else { 0 },
         )?;
 
         if is_fiat {

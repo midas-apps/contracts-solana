@@ -133,7 +133,7 @@ export const updateFeed = async (
   const { dataFeedProgram, authority: owner, context } = fixture;
 
   acRole ??= null;
-  feed ??= null;
+  feed ??= fixture.dataFeedMTBill.publicKey;
   minPrice ??= null;
   maxPrice ??= null;
   maxStaleness ??= null;

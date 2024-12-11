@@ -41,14 +41,6 @@ const config = {
 };
 
 async function main(provider: AnchorProvider, payer: Keypair) {
-  await getSwitchboardPullInx(
-    provider,
-    new PublicKey("5GjQDcVcPwwMAzT6ZUjXgeVgRVM4UTvbpYieiBKuQi7f"),
-    "devnet"
-  );
-
-  return;
-
   const feedProgram = getDataFeedProgram(provider);
   const acProgram = getAcProgram(provider);
 

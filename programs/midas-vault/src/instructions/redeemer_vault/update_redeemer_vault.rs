@@ -37,7 +37,6 @@ pub fn handle(
     ctx: Context<UpdateRedeemerVault>,
     request_redeemer: Option<Pubkey>,
     min_fiat_redeem_amount: Option<u64>,
-    fiat_fee: Option<u64>,
     fiat_flat_fee: Option<u64>,
 ) -> Result<()> {
     redeemer::update_redeemer(
@@ -45,7 +44,6 @@ pub fn handle(
         &mut ctx.accounts.redeemer_vault,
         request_redeemer,
         min_fiat_redeem_amount,
-        fiat_fee,
         fiat_flat_fee,
     )?;
 

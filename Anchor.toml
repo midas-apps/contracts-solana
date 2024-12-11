@@ -28,3 +28,4 @@ test-feed = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/data-feed.test.
 test-minter = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/minter-vault.test.ts"
 test-redeemer = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/redeemer-vault.test.ts"
 test-auth = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/token-authority.test.ts"
+test-tokens = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/mtokens.test.ts"
