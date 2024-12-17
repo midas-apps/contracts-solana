@@ -1,4 +1,4 @@
-use crate::{constants::DEFAULT_PUBKEY, errors::DataFeedError, program::DataFeed, state::FeedMode};
+use crate::{constants::DEFAULT_PUBKEY, errors::DataFeedError, state::FeedMode};
 use anchor_lang::{prelude::*, require_keys_eq, AccountDeserialize, Key, Result};
 
 use switchboard_on_demand::{PullFeedAccountData, PRECISION};

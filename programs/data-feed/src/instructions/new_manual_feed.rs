@@ -6,7 +6,6 @@ use anchor_lang::prelude::*;
 
 use crate::{
     constants::ac_roles,
-    errors::DataFeedError,
     events::ManualFeedUpdatedEvent,
     state::{FeedState, ManualFeedState},
     utils::update_manual_feed,
