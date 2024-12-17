@@ -3,8 +3,7 @@ use anchor_lang::prelude::*;
 use token_authority::{program::TokenAuthority, state::TokenAuthorityState};
 
 use crate::{
-    constants::{ac_roles, seeds},
-    errors::MidasVaultsError,
+    constants::ac_roles,
     events::MinterVaultUpdatedEvent,
     state::{MinterVaultState, VaultCommonState},
 };

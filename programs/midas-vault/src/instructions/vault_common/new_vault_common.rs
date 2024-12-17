@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    events::{CommonVaultAccountUpdatedEvent, CommonVaultUpdatedEvent},
+    events::CommonVaultUpdatedEvent,
     state::VaultCommonState,
     utils::common_vault::update_common_vault,
 };

@@ -3,7 +3,6 @@ use anchor_lang::prelude::*;
 
 use crate::{
     constants::{ac_roles, FIAT_MINT},
-    errors::MidasVaultsError,
     state::{PaymentMintState, VaultCommonState},
     utils::common_vault,
 };

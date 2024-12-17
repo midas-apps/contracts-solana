@@ -4,7 +4,6 @@ use data_feed::{program::DataFeed, state::FeedState};
 
 use crate::{
     constants::ac_roles,
-    errors::MidasVaultsError,
     state::{PaymentMintState, VaultCommonState},
     utils::common_vault,
 };

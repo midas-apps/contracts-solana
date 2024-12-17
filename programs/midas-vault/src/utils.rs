@@ -1,12 +1,10 @@
-use core::panic;
 
 use ::token_authority::cpi::accounts::Mint as AuthorityMint;
 use access_control::state::AccountAccessControlState;
 use anchor_lang::{prelude::*, solana_program::clock::SECONDS_PER_DAY};
-use token_authority::token_authority;
 
 use crate::{
-    constants::{seeds, FIAT_MINT, MAX_UINT128, ONE, ONE_HUNDRED_PERCENT, STABLECOIN_RATE},
+    constants::{FIAT_MINT, MAX_UINT128, ONE, ONE_HUNDRED_PERCENT, STABLECOIN_RATE},
     errors::MidasVaultsError,
     program::MidasVaults,
     state::{
@@ -15,11 +13,10 @@ use crate::{
     },
 };
 use anchor_spl::{
-    token_2022::{burn, mint_to, transfer_checked, Burn, MintTo, TransferChecked},
+    token_2022::{burn, transfer_checked, Burn, TransferChecked},
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
 use data_feed::{
-    errors::DataFeedError,
     state::FeedState,
     utils::{decimals_conversion, get_price_in_base_9},
 };

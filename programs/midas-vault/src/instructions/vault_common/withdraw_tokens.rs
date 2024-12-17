@@ -1,29 +1,20 @@
 use access_control::{
     program::AccessControl,
-    state::{AccessControlState, AccountAccessControlRoleState, AccountAccessControlState},
+    state::AccountAccessControlRoleState,
 };
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
-use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion};
-use token_authority::{
-    constants::ac_roles as ac_roles_token_authority, program::TokenAuthority,
-    state::TokenAuthorityState,
-};
+use data_feed::utils::decimals_conversion;
 
 use crate::{
-    constants::{ac_roles, seeds},
+    constants::ac_roles,
     errors::MidasVaultsError,
-    events::{MinterVaultInstantMintedEvent, TokensWithdrawnEvent},
+    events::TokensWithdrawnEvent,
     program::MidasVaults,
     state::{
-        MinterVaultState, PauseInxState, PaymentMintState, RedeemerVaultState,
-        VaultCommonAccountState, VaultCommonState,
+        MinterVaultState, RedeemerVaultState, VaultCommonState,
     },
-    utils::{
-        mint_token,
-        minter::{self},
-        require_and_update_limit, transfer_token, validate_common, Validate, VaultActionId,
-    },
+    utils::transfer_token,
 };
 
 #[derive(Accounts)]

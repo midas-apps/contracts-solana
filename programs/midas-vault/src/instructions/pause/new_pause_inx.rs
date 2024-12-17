@@ -3,7 +3,6 @@ use anchor_lang::prelude::*;
 
 use crate::{
     constants::ac_roles,
-    errors::MidasVaultsError,
     events::PauseInxUpdatedEvent,
     state::{PauseInxState, VaultCommonState},
 };

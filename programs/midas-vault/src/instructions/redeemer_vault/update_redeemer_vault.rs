@@ -3,8 +3,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     constants::ac_roles,
-    errors::MidasVaultsError,
-    state::{MinterVaultState, RedeemerVaultState, VaultCommonState},
+    state::{RedeemerVaultState, VaultCommonState},
     utils::redeemer,
 };
 

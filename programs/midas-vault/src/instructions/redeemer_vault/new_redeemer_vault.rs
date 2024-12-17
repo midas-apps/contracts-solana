@@ -2,8 +2,7 @@ use access_control::{program::AccessControl, state::AccountAccessControlRoleStat
 use anchor_lang::prelude::*;
 
 use crate::{
-    constants::{ac_roles, seeds},
-    errors::MidasVaultsError,
+    constants::ac_roles,
     state::{RedeemerVaultState, VaultCommonState},
     utils::redeemer,
 };

@@ -1,11 +1,11 @@
 use access_control::{program::AccessControl, state::{AccessControlState, AccountAccessControlRoleState, AccountAccessControlState}};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
-use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion};
+use data_feed::{state::FeedState, utils::decimals_conversion};
 use token_authority::{constants::ac_roles as ac_roles_token_authority, program::TokenAuthority, state::TokenAuthorityState};
 
 use crate::{
-    constants::{ac_roles, seeds}, errors::MidasVaultsError, events::MinterVaultInstantMintedEvent, state::{
+    errors::MidasVaultsError, events::MinterVaultInstantMintedEvent, state::{
         MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState, VaultCommonState
     }, utils::{mint_token, minter::{self}, require_and_update_limit, transfer_token, validate_common, Validate, VaultActionId}
 };

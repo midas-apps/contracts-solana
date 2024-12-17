@@ -1,12 +1,12 @@
 use access_control::{program::AccessControl, state::{AccessControlState, AccountAccessControlState}};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
-use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion};
+use data_feed::state::FeedState;
 
 use crate::{
-    constants::seeds, errors::MidasVaultsError, events::RedeemerVaultInstantRedeemedEvent, state::{
-          MinterVaultState, PauseInxState, PaymentMintState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState
-    }, utils::{burn_mtoken, mint_token, minter::{self}, redeemer, require_and_update_allowance, require_and_update_limit, transfer_token, truncate, validate_common, Validate, VaultActionId}
+    errors::MidasVaultsError, events::RedeemerVaultInstantRedeemedEvent, state::{
+          PauseInxState, PaymentMintState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState
+    }, utils::{burn_mtoken, redeemer, require_and_update_allowance, require_and_update_limit, transfer_token, truncate, validate_common, Validate, VaultActionId}
 };
 
 #[derive(Accounts)]

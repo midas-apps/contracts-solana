@@ -1,12 +1,11 @@
 use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
-use anchor_lang::{prelude::*, solana_program::address_lookup_table::instruction};
+use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
-use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion};
 
 use crate::{
-    accounts, constants::{ac_roles, seeds, FIAT_MINT, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, state::{
-         MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState, RedeemerVaultRequestState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState
-    }, utils::{burn_mtoken, close_account, mint_token, minter::{self}, redeemer, require_and_update_allowance, require_and_update_limit, require_variation_tolerance, transfer_token, truncate, Closable}
+    constants::{ac_roles, FIAT_MINT}, state::{
+         PaymentMintState, RedeemerVaultRequestState, RedeemerVaultState, VaultCommonState
+    }, utils::{close_account, redeemer, Closable}
 };
 
 #[derive(Accounts)]

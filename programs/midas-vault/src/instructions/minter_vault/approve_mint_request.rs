@@ -1,13 +1,12 @@
 use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
-use anchor_lang::{prelude::*, solana_program::address_lookup_table::instruction};
+use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
-use data_feed::{program::DataFeed, state::FeedState, utils::decimals_conversion};
 use token_authority::{constants::ac_roles as ac_roles_token_authority, program::TokenAuthority, state::TokenAuthorityState};
 
 use crate::{
-    constants::{ac_roles, seeds, ONE, ONE_HUNDRED_PERCENT}, errors::MidasVaultsError, events::MinterVaultRequestApprovedEvent, state::{
-        MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState, VaultCommonState
-    }, utils::{close_account, mint_token, minter::{self}, require_and_update_limit, require_variation_tolerance, transfer_token, Closable}
+    constants::{ac_roles, ONE}, events::MinterVaultRequestApprovedEvent, state::{
+        MintVaultRequestState, MinterVaultState, VaultCommonState
+    }, utils::{close_account, mint_token, require_variation_tolerance, Closable}
 };
 
 #[derive(Accounts)]
