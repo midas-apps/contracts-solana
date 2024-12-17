@@ -1,6 +1,6 @@
 use access_control::{constants::ac_roles, program::AccessControl, state::AccountAccessControlRoleState};
 use anchor_lang::prelude::*;
-use anchor_spl::{token_2022::{mint_to, set_authority, spl_token_2022::{self, instruction::AuthorityType}, MintTo, SetAuthority as SplSetAuthority}, token_interface::{Mint as SplMint, TokenAccount, TokenInterface}};
+use anchor_spl::{token_2022::{set_authority, spl_token_2022::{instruction::AuthorityType}, SetAuthority as SplSetAuthority}, token_interface::TokenInterface};
 
 use crate::{
     program::TokenAuthority, state::TokenAuthorityState
