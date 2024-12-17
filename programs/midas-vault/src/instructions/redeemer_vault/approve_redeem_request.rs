@@ -129,7 +129,6 @@ pub fn handle(
         &ctx.accounts.m_mint, 
         &ctx.accounts.m_mint_vault_ata, 
         &mut ctx.accounts.payment_mint_state, 
-        Some(&ctx.accounts.request_redeemer),
         Some(&ctx.accounts.payment_mint),
         Some (&ctx.accounts.payment_mint_token_program), 
         Some(&ctx.accounts.payment_mint_redeemer_ata), 

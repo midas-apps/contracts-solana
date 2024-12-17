@@ -745,7 +745,6 @@ pub mod redeemer {
         m_mint_vault_ata: &Box<InterfaceAccount<'info, TokenAccount>>,
         payment_mint_state: &mut PaymentMintState,
 
-        request_redeemer: Option<&AccountInfo<'info>>,
         payment_mint: Option<&Box<InterfaceAccount<'info, Mint>>>,
         payment_mint_token_program: Option<&Interface<'info, TokenInterface>>,
         payment_mint_redeemer_ata: Option<&Box<InterfaceAccount<'info, TokenAccount>>>,
