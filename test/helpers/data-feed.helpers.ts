@@ -9,7 +9,9 @@ import {
 export const DataFeedMode = {
   manual: { manual: {} },
   switchboard: { switchboard: {} },
+  pyth: { pyth: {} },
 };
+
 export const generateFeedAcccount = () => {
   return Keypair.generate();
 };

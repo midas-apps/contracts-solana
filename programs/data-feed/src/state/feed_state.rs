@@ -4,6 +4,7 @@ use anchor_lang::prelude::*;
 pub enum FeedMode {
     MANUAL,
     SWITCHBOARD,
+    PYTH,
 }
 
 #[account]
