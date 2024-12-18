@@ -8,5 +8,5 @@ pub struct TokenAuthorityState {
 }
 
 impl TokenAuthorityState {
-    pub const SEED: &[u8; 15] = b"token_authority";
+    pub const SEED: &'static[u8; 15] = b"token_authority";
 }

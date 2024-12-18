@@ -9,5 +9,5 @@ pub struct VaultCommonAccountState {
 }
 
 impl VaultCommonAccountState {
-    pub const SEED: &[u8; 19] = b"vault_account_state";
+    pub const SEED: &'static[u8; 19] = b"vault_account_state";
 }

@@ -11,5 +11,5 @@ pub struct MintVaultRequestState {
 }
 
 impl MintVaultRequestState {
-    pub const SEED: &[u8; 18] = b"mint_vault_request";
+    pub const SEED: &'static[u8; 18] = b"mint_vault_request";
 }

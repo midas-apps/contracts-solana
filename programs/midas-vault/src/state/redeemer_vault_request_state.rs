@@ -11,5 +11,5 @@ pub struct RedeemerVaultRequestState {
 }
 
 impl RedeemerVaultRequestState {
-    pub const SEED: &[u8; 22] = b"redeemer_vault_request";
+    pub const SEED: &'static[u8; 22] = b"redeemer_vault_request";
 }

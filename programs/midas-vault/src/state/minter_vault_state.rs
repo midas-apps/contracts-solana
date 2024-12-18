@@ -9,5 +9,5 @@ pub struct MinterVaultState {
 }
 
 impl MinterVaultState {
-    pub const SEED: &[u8; 12] = b"minter_vault";
+    pub const SEED: &'static[u8; 12] = b"minter_vault";
 }

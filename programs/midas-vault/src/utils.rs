@@ -1,4 +1,3 @@
-
 use ::token_authority::cpi::accounts::Mint as AuthorityMint;
 use access_control::state::AccountAccessControlState;
 use anchor_lang::{prelude::*, solana_program::clock::SECONDS_PER_DAY};
@@ -742,7 +741,7 @@ pub mod redeemer {
         m_mint_vault_ata: &Box<InterfaceAccount<'info, TokenAccount>>,
         payment_mint_state: &mut PaymentMintState,
 
-        payment_mint: Option<&Box<InterfaceAccount<'info, Mint>>>,
+        payment_mint: Option<&InterfaceAccount<'info, Mint>>,
         payment_mint_token_program: Option<&Interface<'info, TokenInterface>>,
         payment_mint_redeemer_ata: Option<&Box<InterfaceAccount<'info, TokenAccount>>>,
         payment_mint_user_ata: Option<&Box<InterfaceAccount<'info, TokenAccount>>>,
@@ -752,7 +751,7 @@ pub mod redeemer {
         is_safe: bool,
     ) -> Result<()> {
         let (expected_mint_key, is_fiat) = if let Some(payment_mint) = payment_mint {
-            (payment_mint.key().clone(), false)
+            (payment_mint.key(), false)
         } else {
             (FIAT_MINT, true)
         };
@@ -765,9 +764,9 @@ pub mod redeemer {
 
         if is_safe {
             require_variation_tolerance(
-                &vault_common,
+                vault_common,
                 request.m_token_rate.into(),
-                new_m_token_rate.into(),
+                new_m_token_rate,
             )?;
         }
 
@@ -777,7 +776,7 @@ pub mod redeemer {
             m_mint,
             &redeemer_vault.to_account_info(),
             m_mint_vault_ata,
-            request.m_token_amount.try_into().unwrap(),
+            request.m_token_amount.into(),
         )?;
 
         let decimals = if let Some(payment_mint) = payment_mint {
@@ -788,7 +787,7 @@ pub mod redeemer {
 
         let amount_token_wo_fee = truncate(
             (request.m_token_amount as u128)
-                .checked_mul(new_m_token_rate.into())
+                .checked_mul(new_m_token_rate)
                 .unwrap()
                 .checked_div(request.payment_mint_rate.into())
                 .unwrap(),
@@ -916,8 +915,8 @@ pub fn get_current_ts() -> Result<u32> {
 }
 
 pub fn truncate(value: u128, decimals: u8) -> Result<u128> {
-    return Ok(decimals_conversion::convert_to_base_9(
+    return decimals_conversion::convert_to_base_9(
         decimals_conversion::convert_from_base_9(value, decimals)?,
         decimals,
-    )?);
+    );
 }

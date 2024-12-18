@@ -18,5 +18,5 @@ pub struct FeedState {
 }
 
 impl FeedState {
-    pub const SEED: &[u8; 10] = b"feed_state";
+    pub const SEED: &'static [u8; 10] = b"feed_state";
 }

@@ -8,5 +8,5 @@ pub struct AccountAccessControlState {
 }
 
 impl AccountAccessControlState {
-    pub const SEED: &[u8; 10] = b"account_ac";
+    pub const SEED: &'static [u8; 10] = b"account_ac";
 }

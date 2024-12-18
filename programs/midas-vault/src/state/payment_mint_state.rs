@@ -11,5 +11,5 @@ pub struct PaymentMintState {
 }
 
 impl PaymentMintState {
-    pub const SEED: &[u8; 12] = b"payment_mint";
+    pub const SEED: &'static[u8; 12] = b"payment_mint";
 }

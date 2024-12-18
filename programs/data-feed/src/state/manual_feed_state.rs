@@ -9,5 +9,5 @@ pub struct ManualFeedState {
 }
 
 impl ManualFeedState {
-    pub const SEED: &[u8; 17] = b"manual_feed_state";
+    pub const SEED: &'static[u8; 17] = b"manual_feed_state";
 }
