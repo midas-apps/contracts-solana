@@ -25,10 +25,13 @@ import {
 } from "@/test/constants/vaults.constants";
 import { TOKEN_AUTHORITY_ROLES } from "@/test/constants/token-authority.constants";
 import {
+  fetchRedeemerVaultState,
+  fetchVaultCommonState,
   getMinterVaultPda,
   getRedeemerVaultPda,
 } from "@/test/helpers/vaults.helpers";
-import { toBN } from "@/test/helpers/common.helpers";
+import { createAtaIfNotExistsInx, toBN } from "@/test/helpers/common.helpers";
+import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 
 export const getVaultsProgram = (provider: AnchorProvider) => {
   return new Program<MidasVaults>(VAULTS_IDL as any, provider);
@@ -66,7 +69,6 @@ export type DeployRedeemerVaultConfig = {
   minAmount: bigint;
   requestRedeemer?: PublicKey;
   minFiatRedeemAmount: bigint;
-  fiatFee: bigint;
   fiatFlatFee: bigint;
 };
 
@@ -243,7 +245,6 @@ export const deployRedeemerVault = async (
     minAmount,
     tokensReceiver,
     variationTolerance,
-    fiatFee,
     fiatFlatFee,
     minFiatRedeemAmount,
     requestRedeemer,
@@ -256,6 +257,43 @@ export const deployRedeemerVault = async (
   requestRedeemer ??= common.payer.publicKey;
 
   const vaultsProgram = getVaultsProgram(common.provider);
+
+  const commonState = await fetchVaultCommonState(
+    vaultsProgram,
+    commonVault.publicKey
+  );
+  const vaultState = await fetchRedeemerVaultState(
+    vaultsProgram,
+    getRedeemerVaultPda(commonVault.publicKey)
+  );
+
+  const ataVault = await createAtaIfNotExistsInx(
+    common.provider.connection,
+    mToken,
+    common.payer.publicKey,
+    common.payer,
+    TOKEN_2022_PROGRAM_ID
+  );
+
+  const ataReceiver = await createAtaIfNotExistsInx(
+    common.provider.connection,
+    mToken,
+    commonState.tokensReceiver,
+    common.payer,
+    TOKEN_2022_PROGRAM_ID
+  );
+
+  const ataFeeReceiver = commonState.feeReceiver.equals(
+    commonState.tokensReceiver
+  )
+    ? null
+    : await createAtaIfNotExistsInx(
+        common.provider.connection,
+        commonState.mMint,
+        commonState.feeReceiver,
+        common.payer,
+        TOKEN_2022_PROGRAM_ID
+      );
 
   const tx = new Transaction().add(
     await vaultsProgram.methods
@@ -281,7 +319,6 @@ export const deployRedeemerVault = async (
       .newRedeemerVault(
         requestRedeemer,
         toBN(minFiatRedeemAmount),
-        toBN(fiatFee),
         toBN(fiatFlatFee)
       )
       .accountsPartial({
@@ -331,6 +368,18 @@ export const deployRedeemerVault = async (
       })
       .instruction()
   );
+
+  if (ataVault) {
+    tx.add(ataVault);
+  }
+
+  if (ataFeeReceiver) {
+    tx.add(ataFeeReceiver);
+  }
+
+  if (ataReceiver) {
+    tx.add(ataReceiver);
+  }
 
   const txRes = await sendAndConfirmTransaction(
     common.provider.connection,

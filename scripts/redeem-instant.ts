@@ -136,14 +136,17 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const tx1 = new Transaction();
 
   tx1.add(
-    await getSwitchboardPullInx(
-      provider,
-      paymentFeed.underlyingFeed,
-      config.env
-    ),
     await getSwitchboardPullInx(provider, mFeed.underlyingFeed, config.env)
   );
 
+  const txRes1 = await sendAndConfirmTransaction(
+    provider.connection,
+    tx1,
+    [payer],
+    {
+      commitment: "finalized",
+    }
+  );
   const tx2 = new Transaction();
 
   if (ata) {
@@ -206,6 +209,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
       .redeemInstant(toBN(config.amount), toBN(0))
       .accountsPartial({
         vaultCommon: vaultCommon,
+        redeemerVault: getRedeemerVaultPda(vaultCommon),
         ac: commonState.ac,
         mMint: commonState.mMint,
         mMintFeed: mFeed.underlyingFeed,

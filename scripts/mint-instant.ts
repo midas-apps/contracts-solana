@@ -105,11 +105,6 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const tx1 = new Transaction();
 
   tx1.add(
-    await getSwitchboardPullInx(
-      provider,
-      paymentFeed.underlyingFeed,
-      config.env
-    ),
     await getSwitchboardPullInx(provider, mFeed.underlyingFeed, config.env)
   );
 

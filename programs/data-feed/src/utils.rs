@@ -1,6 +1,7 @@
 use crate::{constants::DEFAULT_PUBKEY, errors::DataFeedError, state::FeedMode};
 use anchor_lang::{prelude::*, require_keys_eq, AccountDeserialize, Key, Result};
-use pyth_sdk_solana::state::SolanaPriceAccount;
+use pyth_solana_receiver_sdk::price_update::PriceUpdateV2;
+
 use switchboard_on_demand::{PullFeedAccountData, PRECISION};
 
 use crate::state::{FeedState, ManualFeedState};
@@ -52,12 +53,21 @@ pub fn get_price_in_base_9<'info>(
         }
         FeedMode::PYTH => {
             // parse pyth feed
-            let feed = SolanaPriceAccount::account_info_to_feed(feed).unwrap();
-            let raw_price = feed
-                .get_price_no_older_than(get_current_ts()?.into(), data_feed.max_staleness.into())
+            let mut buf: &[u8] = &feed.try_borrow_mut_data()?[..];
+            let feed_parsed = PriceUpdateV2::try_deserialize(&mut buf).unwrap();
+
+            let raw_price = feed_parsed
+                .get_price_no_older_than(
+                    &Clock::get()?,
+                    data_feed.max_staleness.into(),
+                    &feed_parsed.price_message.feed_id,
+                )
                 .unwrap();
 
-            (raw_price.price as u128, raw_price.expo.try_into().unwrap())
+            (
+                raw_price.price as u128,
+                raw_price.exponent.abs().try_into().unwrap(),
+            )
         }
     };
 

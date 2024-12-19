@@ -15,10 +15,7 @@ use anchor_spl::{
     token_2022::{burn, transfer_checked, Burn, TransferChecked},
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
-use data_feed::{
-    state::FeedState,
-    utils::{decimals_conversion, get_price_in_base_9},
-};
+use data_feed::{state::FeedState, utils::decimals_conversion};
 
 pub enum VaultActionId {
     MintInstant = 0,
@@ -224,7 +221,7 @@ pub fn get_fee_amount(
 }
 
 pub fn get_token_rate(data_feed: &FeedState, feed: &AccountInfo<'_>, stable: bool) -> Result<u128> {
-    let price = get_price_in_base_9(data_feed, feed)?;
+    let price = data_feed.get_price_in_base_9(feed)?;
 
     if stable {
         return Ok(STABLECOIN_RATE.into());

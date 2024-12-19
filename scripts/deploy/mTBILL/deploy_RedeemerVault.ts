@@ -19,7 +19,6 @@ const configs: Record<string, DeployRedeemerVaultConfig> = {
     mToken: addresses["devnet"].mTBILL!.mToken,
     minAmount: parseUnits("1"),
     variationTolerance: parsePercent(1),
-    fiatFee: parsePercent(1),
     fiatFlatFee: parseUnits("1"),
     minFiatRedeemAmount: parseUnits("10"),
   },
