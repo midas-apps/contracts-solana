@@ -8,16 +8,20 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct UpdateAccountAccessControl<'info> {
+    /// Account with admin role
     #[account(mut)]
     pub authority: Signer<'info>,
 
     /// CHECK:
+    /// `account_ac` owner
     #[account(mut)]
     pub account: AccountInfo<'info>,
 
+    /// AC instance
     #[account()]
     pub ac: Account<'info, AccessControlState>,
 
+    /// `AccountAccessControlState` instance of `account`
     #[account(
         mut,
         seeds = [AccountAccessControlState::SEED, ac.key().as_ref(), account.key().as_ref()],
@@ -25,6 +29,7 @@ pub struct UpdateAccountAccessControl<'info> {
     )]
     pub account_ac: Account<'info, AccountAccessControlState>,
 
+    /// Admin role of authority
     #[account(
         seeds = [AccountAccessControlRoleState::SEED, ac.ac_role.key().as_ref(), authority.key().as_ref(), ac_roles::UPDATE_ACCOUNT_AC],
         bump,
@@ -34,6 +39,12 @@ pub struct UpdateAccountAccessControl<'info> {
     pub system_program: Program<'info, System>,
 }
 
+/// Updates data in `account_ac` and emits an event.
+///
+/// # Arguments
+///
+/// - `green_listed` - if set, then used as a new green_listed value of an account
+/// - `black_listed` - if set, then used as a new black_listed value of an account
 pub fn handle(
     ctx: Context<UpdateAccountAccessControl>,
     green_listed: Option<bool>,

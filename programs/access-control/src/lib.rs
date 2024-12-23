@@ -41,6 +41,3 @@ pub mod access_control {
         revoke_role::handle(ctx, role)
     }
 }
-
-#[derive(Accounts)]
-pub struct Initialize {}

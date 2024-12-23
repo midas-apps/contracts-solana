@@ -7,9 +7,11 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct NewAccessControl<'info> {
+    /// Init payer
     #[account(mut)]
     pub payer: Signer<'info>,
 
+    /// New `AccessControlState` instance
     #[account(
         init,
         payer = payer,
@@ -17,12 +19,14 @@ pub struct NewAccessControl<'info> {
     )]
     pub ac: Account<'info, AccessControlState>,
 
+    /// AC Role instance that will be set for a new AC instance
     #[account()]
     pub ac_role: Account<'info, AccessControlRoleState>,
 
     pub system_program: Program<'info, System>,
 }
 
+/// Initializes `ctx.ac` and emits an event
 pub fn handle(ctx: Context<NewAccessControl>) -> Result<()> {
     let ac = &mut ctx.accounts.ac;
 

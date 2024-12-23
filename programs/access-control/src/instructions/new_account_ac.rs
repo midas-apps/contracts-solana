@@ -7,16 +7,20 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct NewAccountAccessControl<'info> {
+    /// Init payer and signer
     #[account(mut)]
     pub signer: Signer<'info>,
 
     /// CHECK:
+    /// owner of a new `account_ac`
     #[account()]
     pub account: AccountInfo<'info>,
 
+    /// `AccessControlState` instance
     #[account()]
     pub ac: Account<'info, AccessControlState>,
 
+    /// new `AccountAccessControlState` instance
     #[account(
         init,
         payer = signer,
@@ -29,6 +33,8 @@ pub struct NewAccountAccessControl<'info> {
     pub system_program: Program<'info, System>,
 }
 
+/// Initializes AccountAccessControlState account and emits an event.
+/// black_list and green_list values are set to false by default
 pub fn handle(ctx: Context<NewAccountAccessControl>) -> Result<()> {
     emit!(AccountAcUpdatedEvent {
         ac: ctx.accounts.ac.key(),
