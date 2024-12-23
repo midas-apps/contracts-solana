@@ -1,9 +1,10 @@
 {
   "scripts": {
+    "anchor:script": "anchor run script --",
     "build": "anchor build",
-    "test": "anchor run test",
+    "test": "yarn test:anchor && yarn test:cargo",
     "test:cargo": "anchor run test-cargo",
-    "test:all": "yarn test && yarn test:cargo"
+    "test:anchor": "anchor run test"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
