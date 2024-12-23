@@ -287,7 +287,7 @@ pub fn mint_token<'info>(
     token_authority_program: &AccountInfo<'info>,
     amount: u64,
 ) -> Result<()> {
-    let (minter_vault, vault_pda_bump_seed) = Pubkey::find_program_address(
+    let (_, vault_pda_bump_seed) = Pubkey::find_program_address(
         &[MinterVaultState::SEED, common_vault.as_ref()],
         &MidasVaults::id(),
     );

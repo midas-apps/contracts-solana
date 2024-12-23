@@ -11,6 +11,8 @@ pub mod seeds {
 }
 
 pub mod ac_roles {
+    /// Holder of this role can manage vaults (update values, approve/reject requests)
     pub const VAULT_ADMIN: &[u8; 16] = b"vault_admin_role";
+    /// Holder of this role can pause whole vault or specific instruction
     pub const VAULT_PAUSER: &[u8; 17] = b"vault_pauser_role";
 }
