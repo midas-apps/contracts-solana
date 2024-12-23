@@ -8,19 +8,23 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct Burn<'info> {
+    /// Account with burner role
     #[account(mut)]
     pub authority: Signer<'info>,
 
     /// CHECK:
+    /// account to burn from
     #[account()]
     pub from: AccountInfo<'info>,
 
+    /// Token authority PDA
     #[account(
         seeds = [TokenAuthorityState::SEED, token_authority.base_seed.as_ref()],
         bump    
     )]
     pub token_authority: Account<'info, TokenAuthorityState>,
 
+    /// `authority` burner role
     #[account(
         seeds = [AccountAccessControlRoleState::SEED, token_authority.ac_role.as_ref(), authority.key().as_ref(), ac_roles::M_BURNER],
         seeds::program = AccessControl::id(),
@@ -28,12 +32,14 @@ pub struct Burn<'info> {
     )]
     pub authority_burn_role: Account<'info, AccountAccessControlRoleState>,
 
+    /// SPL mint account (SplBurn::mint)
     #[account(
         mut,
         mint::token_program = token_program
     )]
     pub mint: Box<InterfaceAccount<'info, SplMint>>,
 
+    /// ATA of `from` (ThawAccount::from)
     #[account(
         mut,
         associated_token::token_program = token_program,
@@ -42,11 +48,18 @@ pub struct Burn<'info> {
     )]
     pub from_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// SPL token program
     pub token_program: Interface<'info, TokenInterface>,
 
     pub system_program: Program<'info, System>,
 }
 
+
+/// Does `spl's burn` invocation
+/// 
+/// # Arguments
+/// 
+/// - `amount` - amount to burn
 pub fn handle(ctx: Context<Burn>, amount: u64) -> Result<()> {
     let (_, vault_pda_bump_seed) = Pubkey::find_program_address(
         &[TokenAuthorityState::SEED, ctx.accounts.token_authority.base_seed.as_ref()],

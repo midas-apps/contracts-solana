@@ -8,19 +8,23 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct Freeze<'info> {
+    /// Account with freezer role
     #[account(mut)]
     pub authority: Signer<'info>,
 
     /// CHECK:
+    /// account to freeze
     #[account()]
     pub to_freeze: AccountInfo<'info>,
 
+    /// Token authority PDA
     #[account(
         seeds = [TokenAuthorityState::SEED, token_authority.base_seed.as_ref()],
         bump    
     )]
     pub token_authority: Account<'info, TokenAuthorityState>,
 
+    /// `authority` freeze role
     #[account(
         seeds = [AccountAccessControlRoleState::SEED, token_authority.ac_role.as_ref(), authority.key().as_ref(), ac_roles::M_FREEZER],
         seeds::program = AccessControl::id(),
@@ -28,12 +32,14 @@ pub struct Freeze<'info> {
     )]
     pub authority_freeze_role: Account<'info, AccountAccessControlRoleState>,
 
+    /// SPL mint account (FreezeAccount::mint)
     #[account(
         mut,
         mint::token_program = token_program
     )]
     pub mint: Box<InterfaceAccount<'info, SplMint>>,
 
+    /// ATA of `to_to_freeze` (FreezeAccount::account)
     #[account(
         mut,
         associated_token::token_program = token_program,
@@ -42,11 +48,13 @@ pub struct Freeze<'info> {
     )]
     pub to_freeze_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// SPL token program
     pub token_program: Interface<'info, TokenInterface>,
 
     pub system_program: Program<'info, System>,
 }
 
+/// Does `spl's freeze_account` invocation
 pub fn handle(ctx: Context<Freeze>) -> Result<()> {
     let (_, vault_pda_bump_seed) = Pubkey::find_program_address(
         &[TokenAuthorityState::SEED, ctx.accounts.token_authority.base_seed.as_ref()],

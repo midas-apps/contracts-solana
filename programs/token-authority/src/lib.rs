@@ -1,7 +1,5 @@
 use anchor_lang::prelude::*;
 pub mod constants;
-pub mod errors;
-pub mod events;
 pub mod instructions;
 use instructions::*;
 pub mod state;
@@ -44,6 +42,3 @@ pub mod token_authority {
         set_authority::handle(ctx, authority_type, new_authority)
     }
 }
-
-#[derive(Accounts)]
-pub struct Initialize {}
