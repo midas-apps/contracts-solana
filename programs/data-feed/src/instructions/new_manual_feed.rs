@@ -13,9 +13,11 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct NewManualFeed<'info> {
+    /// Account with Feed Admin role
     #[account(mut)]
     pub authority: Signer<'info>,
 
+    /// New `ManualFeedState` instance
     #[account(
         init,
         payer = authority,
@@ -25,11 +27,13 @@ pub struct NewManualFeed<'info> {
     )]
     pub manual_feed: Account<'info, ManualFeedState>,
 
+    /// AccessControlRoles instance that is set in base_feed
     #[account(
         address = base_feed.ac_role
     )]
     pub ac_role: Account<'info, AccessControlRoleState>,
 
+    /// Feed Admin AC role of `authority`
     #[account(
         seeds = [AccountAccessControlRoleState::SEED, ac_role.key().as_ref(), authority.key().as_ref(), ac_roles::FEED_ADMIN],
         seeds::program = AccessControl::id(),
@@ -37,12 +41,19 @@ pub struct NewManualFeed<'info> {
     )]
     pub authority_ac_role: Account<'info, AccountAccessControlRoleState>,
 
+    /// `DataFeed` account
     #[account()]
     pub base_feed: Account<'info, FeedState>,
 
     pub system_program: Program<'info, System>,
 }
 
+/// Initializes new `manual_feed` account
+///
+/// # Arguments
+///
+/// - `initial_price` - initial value for `ManualFeedState.price`
+/// - `decimals` - decimals value for `ManualFeedState.decimals`
 pub fn handle(ctx: Context<NewManualFeed>, initial_price: u64, decimals: u8) -> Result<()> {
     let state = &mut ctx.accounts.manual_feed;
 

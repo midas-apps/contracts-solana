@@ -6,6 +6,9 @@ use switchboard_on_demand::{PullFeedAccountData, PRECISION};
 
 use crate::state::{FeedState, ManualFeedState};
 
+/// Parses the price from `feed` account and converts it
+/// to the price with 9 decimal points.
+/// Checks that price is not stale and its within max/min boundaries
 pub fn get_price_in_base_9<'info>(
     data_feed: &FeedState,
     feed: &AccountInfo<'info>,
@@ -94,6 +97,8 @@ pub fn get_current_ts() -> Result<u32> {
     Ok(Clock::get().unwrap().unix_timestamp as u32)
 }
 
+/// Updates `FeedState` values.
+/// If parameter value is None - it wont be updated
 pub fn update_feed(
     state: &mut FeedState,
     ac_role: Option<Pubkey>,
@@ -139,6 +144,8 @@ pub fn update_feed(
     Ok(())
 }
 
+/// Updates `ManualFeedState` values.
+/// If parameter value is None - it wont be updated
 pub fn update_manual_feed(
     state: &mut ManualFeedState,
     price: Option<u64>,
@@ -156,9 +163,16 @@ pub fn update_manual_feed(
     Ok(())
 }
 
+/// library for converting values from one decimal point precision to another
 pub mod decimals_conversion {
     use anchor_lang::Result;
 
+    /// converts `value` with `value_decimals` precision to a `value` with `target_decimals` precision
+    /// # Arguments
+    ///
+    /// - `value` - value to convert
+    /// - `value_decimals` - current value decimals
+    /// - `value_decimals` - new value decimals
     pub fn convert(value: u128, value_decimals: u8, target_decimals: u8) -> Result<u128> {
         if value == 0 {
             return Ok(0);
@@ -177,10 +191,20 @@ pub mod decimals_conversion {
         Ok(adjusted_amount)
     }
 
+    /// converts `value` with `value_decimals` precision to a `value` with 9 decimals precision
+    /// # Arguments
+    ///
+    /// - `value` - value to convert
+    /// - `value_decimals` - current value decimals
     pub fn convert_to_base_9(value: u128, value_decimals: u8) -> Result<u128> {
         convert(value, value_decimals, 9)
     }
 
+    /// converts `value` with 9 decimals precision to a `value` with `target_decimals` precision
+    /// # Arguments
+    ///
+    /// - `value` - value to convert
+    /// - `value_decimals` - current value decimals
     pub fn convert_from_base_9(value: u128, target_decimals: u8) -> Result<u128> {
         convert(value, 9, target_decimals)
     }

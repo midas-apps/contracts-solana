@@ -256,16 +256,6 @@ pub fn transfer_token<'info>(
     let amount: u64 =
         decimals_conversion::convert_from_base_9(amount_base9, mint.decimals)?.try_into()?;
 
-    msg!("TRANSFER AMOUNT {}", amount);
-
-    msg!(
-        "Accounts {} {} {} {}",
-        from.key(),
-        to.key(),
-        authority.key(),
-        mint.key()
-    );
-
     transfer_checked(
         CpiContext::new_with_signer(
             token_program.to_account_info(),
@@ -341,8 +331,6 @@ pub fn burn_mtoken<'info>(
         &[RedeemerVaultState::SEED, vault_common.as_ref()],
         &MidasVaults::id(),
     );
-
-    msg!("TRANSFER AMOUNT {}", amount);
 
     burn(
         CpiContext::new_with_signer(
@@ -426,14 +414,6 @@ pub mod minter {
             .checked_div(ONE.into())
             .unwrap();
 
-        msg!(
-            "AMOUNTS {} {} {} {} {}",
-            mint_amount_in_usd,
-            fee_in_usd,
-            fee_token_amount,
-            mint_in_rate,
-            payment_amount
-        );
         let (m_token_amount, m_token_rate) = convert_usd_to_m_token(
             m_data_feed,
             m_feed,
@@ -700,7 +680,6 @@ pub mod redeemer {
                 &m_mint_fee_receiver_ata,
                 params.fee_amount,
             )?;
-            msg!("TRANSFERRED1");
         }
 
         redeem_request.user = signer.key();
