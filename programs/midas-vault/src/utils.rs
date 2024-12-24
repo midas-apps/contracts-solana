@@ -230,6 +230,15 @@ pub fn require_variation_tolerance(
     Ok(())
 }
 
+/// Calculates fee for a given amount
+///
+/// #Arguments
+///
+/// - `mint_config` - payment mint state
+/// - `common` - vault common state
+/// - `account_common` - vault common account state
+/// - `amount` - amount to calculate fee for
+/// - `is_instant` - if true, instant fee will be added
 pub fn get_fee_amount(
     mint_config: &PaymentMintState,
     common: &VaultCommonState,
@@ -258,6 +267,14 @@ pub fn get_fee_amount(
         .unwrap())
 }
 
+/// Gets token rate from a data feed.
+/// In case if `stable` is true, it will return `STABLECOIN_RATE`
+///
+/// #Arguments
+///
+/// - `data_feed` - data feed state
+/// - `feed` - data feed account
+/// - `stable` - if true, `STABLECOIN_RATE` will be returned
 pub fn get_token_rate(data_feed: &FeedState, feed: &AccountInfo<'_>, stable: bool) -> Result<u128> {
     let price = data_feed.get_price_in_base_9(feed)?;
 
@@ -267,7 +284,8 @@ pub fn get_token_rate(data_feed: &FeedState, feed: &AccountInfo<'_>, stable: boo
 
     Ok(price)
 }
-
+/// Validates that fee does not exceed 100%.
+/// In case if check_min is true, it will also check that fee is more than 0
 pub fn validate_fee(fee: u64, check_min: bool) -> Result<()> {
     require_gte!(ONE_HUNDRED_PERCENT, fee, MidasVaultsError::InvalidFee);
 
@@ -278,6 +296,18 @@ pub fn validate_fee(fee: u64, check_min: bool) -> Result<()> {
     Ok(())
 }
 
+/// Does SPL transfer using vault common as a signer.
+///
+/// #Arguments
+///
+/// - `vault_common` - vault common state
+/// - `vault_seed` - vault seed
+/// - `token_program` - SPL token program
+/// - `mint` - SPL mint account (`TransferChecked::mint`)
+/// - `authority` - `TransferChecked::authority`
+/// - `from` - `TransferChecked::from`
+/// - `to` - `TransferChecked::to`
+/// - `amount_base9` - amount to transfer in with 9 decimals
 pub fn transfer_token<'info>(
     vault_common: &Pubkey,
     vault_seed: &[u8],
@@ -312,6 +342,22 @@ pub fn transfer_token<'info>(
     Ok(())
 }
 
+/// Does SPL mint using vault common as a signer.
+/// The minting is done through token-authority program.
+///
+/// #Arguments
+///
+/// - `common_vault` - common vault state
+/// - `authority` - `AuthorityMint::authority`
+/// - `receiver` - `AuthorityMint::receiver`
+/// - `token_authority` - `AuthorityMint::token_authority`
+/// - `authority_minter_role` - `AuthorityMint::authority_minter_role`
+/// - `mint` - `AuthorityMint::mint`
+/// - `receiver_ata` - `AuthorityMint::receiver_ata`
+/// - `token_program` - SPL token program
+/// - `system_program` - system program
+/// - `token_authority_program` - token authority program
+/// - `amount` - amount to mint (in base 9)
 pub fn mint_token<'info>(
     common_vault: &Pubkey,
     authority: &AccountInfo<'info>,
@@ -357,6 +403,16 @@ pub fn mint_token<'info>(
     Ok(())
 }
 
+/// Burns mToken using vault common as a signer.
+///
+/// #Arguments
+///
+/// - `vault_common` - vault common state
+/// - `token_program` - SPL token program
+/// - `mint` - SPL mint account (`Burn::mint`)
+/// - `authority` - `Burn::authority`
+/// - `from` - `Burn::from`
+/// - `amount` - amount to burn (in base 9)
 pub fn burn_mtoken<'info>(
     vault_common: &Pubkey,
     token_program: &Interface<'info, TokenInterface>,
@@ -390,22 +446,34 @@ pub fn burn_mtoken<'info>(
     Ok(())
 }
 
+/// Contains utils and helpers for minter vault
 pub mod minter {
     use anchor_spl::token_interface::Mint;
 
     use super::*;
 
     #[derive(AnchorDeserialize, AnchorSerialize)]
+    /// Return type for `calc_and_validate_deposit`
     pub struct CalcAndValidateDepositReturn {
+        /// How much of mToken to mint in USD
         pub mint_amount_in_usd: u128,
+        /// Fee amount in payment token
         pub fee_token_amount: u128,
+        /// Original payment token amount without fee
         pub amount_token_wo_fee: u128,
+        /// How much of mToken to mint
         pub m_token_amount: u128,
+        /// Payment mint rate
         pub mint_in_rate: u128,
+        /// mToken rate
         pub m_token_rate: u128,
+        /// Payment mint decimals
         pub decimals: u8,
     }
 
+    /// Calculates shared parameters for instant and request mints.
+    /// Also does shared checks like check for min amounts, daily limits
+    /// and payment allowance
     pub fn calc_and_validate_deposit(
         payment_mint: &Box<InterfaceAccount<'_, Mint>>,
         payment_mint_data_feed: &FeedState,
@@ -473,6 +541,8 @@ pub mod minter {
         })
     }
 
+    /// Converts payment mint to USD by using rate from a data feed
+    /// Requires that `amount` is more than 0 and rate is more than 0
     pub fn convert_payment_mint_to_usd(
         payment_mint_state: &PaymentMintState,
         data_feed: &FeedState,
@@ -494,6 +564,8 @@ pub mod minter {
         ))
     }
 
+    /// Converts USD to mToken by using rate from a data feed
+    /// Requires that `amount` is more than 0 and rate is more than 0
     pub fn convert_usd_to_m_token(
         data_feed: &FeedState,
         feed: &AccountInfo<'_>,
@@ -520,6 +592,8 @@ pub mod common_vault {
 
     use super::*;
 
+    /// Updates payment token state with new values
+    /// If parameter is None, it will not be updated
     pub fn update_payment_token(
         common_vault: &Pubkey,
         payment_mint_state: &mut PaymentMintState,
@@ -560,6 +634,8 @@ pub mod common_vault {
         Ok(())
     }
 
+    /// Updates common vault state with new values
+    /// If parameter is None, it will not be updated
     pub fn update_common_vault(
         state: &mut VaultCommonState,
         greenlist_enforced: Option<bool>,
@@ -618,11 +694,16 @@ pub mod redeemer {
 
     use super::*;
 
+    /// Return type for `calc_and_validate_redeem`
     pub struct CalcAndValidateRedeemReturn {
+        /// Calculated fee amount in mToken
         pub fee_amount: u128,
+        /// Original mToken amount without fee
         pub m_token_amount_wo_fee: u128,
     }
 
+    /// Updates redeemer vault state with new values
+    /// If parameter is None, it will not be updated
     pub fn update_redeemer<'info>(
         common_vault: &Pubkey,
         vault: &mut Account<'info, RedeemerVaultState>,
@@ -654,6 +735,8 @@ pub mod redeemer {
         Ok(())
     }
 
+    /// Creates redeem request. Moved to utils as the creation
+    /// logic is the same for fiat and not-fiat requests
     pub fn create_redeem_request<'info>(
         signer: &Signer<'info>,
         vault_common: &mut Account<'info, VaultCommonState>,
@@ -746,6 +829,8 @@ pub mod redeemer {
         Ok(())
     }
 
+    /// Approves redeem request. Moved to utils as the approval
+    /// logic is the same for fiat and not-fiat requests
     pub fn approve_redeem_request<'info>(
         request: &RedeemerVaultRequestState,
         vault_common: &Account<'info, VaultCommonState>,
@@ -830,6 +915,9 @@ pub mod redeemer {
         });
         Ok(())
     }
+
+    /// Calculates shared parameters for instant and redeem redeems.
+    /// Also does shared checks like min amount check
     pub fn calc_and_validate_redeem(
         mint_config: &PaymentMintState,
         common: &VaultCommonState,
@@ -882,6 +970,8 @@ pub mod redeemer {
         })
     }
 
+    /// Converts payment mint to USD by using rate from a data feed
+    /// Requires that `amount` is more than 0 and rate is more than 0
     pub fn convert_usd_to_payment_mint(
         payment_mint_state: &PaymentMintState,
         data_feed: &FeedState,
@@ -903,6 +993,8 @@ pub mod redeemer {
         ))
     }
 
+    /// Converts mToken to USD by using rate from a data feed
+    /// Requires that `amount` is more than 0 and rate is more than 0
     pub fn convert_m_token_to_usd(
         data_feed: &FeedState,
         feed: &AccountInfo<'_>,
@@ -924,10 +1016,30 @@ pub mod redeemer {
     }
 }
 
+/// Returns current unix timestamp from the clock
 pub fn get_current_ts() -> Result<u32> {
     Ok(Clock::get().unwrap().unix_timestamp as u32)
 }
 
+/// Truncates value to a given number of decimals and returns
+/// the result in base 9
+///
+/// Example:
+///
+/// ```
+/// let value = 123456789;
+/// let decimals = 6;
+///
+/// let truncated = truncate(value, decimals).unwrap();
+///
+/// assert_eq!(truncated, 123456000);
+/// ```
+///
+///
+/// #Returns
+///
+/// Truncated value in base 9
+///
 pub fn truncate(value: u128, decimals: u8) -> Result<u128> {
     return decimals_conversion::convert_to_base_9(
         decimals_conversion::convert_from_base_9(value, decimals)?,
