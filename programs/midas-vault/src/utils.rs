@@ -26,6 +26,7 @@ pub enum VaultActionId {
 }
 
 pub trait Closable {
+    /// Closes the account
     fn close(&mut self) -> Result<()>;
 }
 
@@ -34,6 +35,13 @@ pub trait Validate<'info> {
     fn validate(&self) -> Result<()>;
 }
 
+/// Default close account behavior for `Closable::close`
+///
+/// #Arguments
+///
+/// - `acc_to_close` - account to close
+/// - `receiver` - receiver of sol locked on on account
+/// - `system_program` - system program
 pub fn close_account(
     acc_to_close: &mut AccountInfo<'_>,
     receiver: &mut AccountInfo<'_>,
@@ -53,6 +61,15 @@ pub fn close_account(
     Ok(())
 }
 
+/// Checks that user is green listed. Skips green_list checks
+/// in case if `require_green_list` and `common.greenlist_enforced`
+/// are both false
+///
+/// #Arguments
+///
+/// - `common` - vault common state
+/// - `account_ac` - account access control state
+/// - `require_green_list` - if true, then `account_ac.green_listed` must be true
 pub fn validate_green_listed(
     common: &VaultCommonState,
     account_ac: &AccountAccessControlState,
@@ -67,12 +84,14 @@ pub fn validate_green_listed(
     Ok(())
 }
 
+/// checks that user is black listed
 pub fn validate_black_listed(account_ac: &AccountAccessControlState) -> Result<()> {
     require!(!account_ac.black_listed, MidasVaultsError::Blacklisted);
 
     Ok(())
 }
 
+/// checks that vault and calling instruction are not paused
 pub fn validate_paused(common: &VaultCommonState, pause_inx: &PauseInxState) -> Result<()> {
     require!(!common.paused, MidasVaultsError::VaultPaused);
     require!(!pause_inx.paused, MidasVaultsError::VaultInxPaused);
@@ -80,6 +99,10 @@ pub fn validate_paused(common: &VaultCommonState, pause_inx: &PauseInxState) -> 
     Ok(())
 }
 
+/// do several checks:
+/// 1. That user is green listed
+/// 2. That user is not black listed
+/// 3. That vault and instruction are not paused
 pub fn validate_common(
     common: &VaultCommonState,
     account_ac: &AccountAccessControlState,
@@ -93,6 +116,11 @@ pub fn validate_common(
     Ok(())
 }
 
+/// Checks that provided `amount` is more than `common.min_amount`
+/// but only in case if user is not free from min amount check
+/// If minter vault is passed, also does the min firs mint check,
+/// but only user wasnt manually freed by vault admin or didnt make
+/// any mints before  
 pub fn require_and_update_min_amount(
     common: &VaultCommonState,
     common_account: &mut VaultCommonAccountState,
@@ -124,6 +152,9 @@ pub fn require_and_update_min_amount(
     Ok(())
 }
 
+/// Updates allowance of a payment mint.
+/// In case if allowance is set to `MAX_UINT128` it woul
+/// be treated as infinite allowance and wont be updated
 pub fn require_and_update_allowance(
     mint_config: &mut PaymentMintState,
     amount: u128,
@@ -143,6 +174,11 @@ pub fn require_and_update_allowance(
     Ok(())
 }
 
+/// Validates and updates instant daily limit
+/// In case if current day is the same as previous
+/// recorded, amount will be added to a current recorded limit used.
+/// In case if current day is different, it will reset previous
+/// recorded limit first
 pub fn require_and_update_limit(common: &mut VaultCommonState, amount: u128) -> Result<()> {
     let current_day = get_current_ts()?
         .checked_div(SECONDS_PER_DAY as u32)
@@ -166,6 +202,8 @@ pub fn require_and_update_limit(common: &mut VaultCommonState, amount: u128) -> 
     Ok(())
 }
 
+/// Checks that the difference between 2 values
+/// does not exceed `common.variation_tolerance`
 pub fn require_variation_tolerance(
     common: &VaultCommonState,
     price: u128,
