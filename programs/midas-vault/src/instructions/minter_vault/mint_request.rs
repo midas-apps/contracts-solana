@@ -11,15 +11,18 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct MintRequest<'info> {
+    /// User account
     #[account(mut)]
     pub signer: Signer<'info>,
 
+    /// Vault common state account
     #[account(
         mut,
         address = minter_vault.common_vault
     )]
     pub vault_common: Account<'info, VaultCommonState>,
 
+    /// Vault common account of user
     #[account(
         mut,
         seeds = [VaultCommonAccountState::SEED, vault_common.key().as_ref(), signer.key().as_ref()],
@@ -27,6 +30,7 @@ pub struct MintRequest<'info> {
     )]
     pub vault_common_signer: Account<'info, VaultCommonAccountState>,
 
+    /// Minter vault state account
     #[account(
         mut,
         seeds = [MinterVaultState::SEED, vault_common.key().as_ref()],
@@ -34,6 +38,7 @@ pub struct MintRequest<'info> {
     )]
     pub minter_vault: Account<'info, MinterVaultState>,
 
+    /// Mint request state account
     #[account(
         init,
         payer = signer,
@@ -43,12 +48,14 @@ pub struct MintRequest<'info> {
     )]
     pub mint_request: Account<'info, MintVaultRequestState>,
 
+    /// AccessControlState account
     #[account(
         address = vault_common.ac,
         owner = AccessControl::id(),
     )]
     pub ac: Account<'info, AccessControlState>,
 
+    /// Account access control state account
     #[account(
         seeds = [AccountAccessControlState::SEED, ac.key().as_ref(), signer.key().as_ref()],
         seeds::program = AccessControl::id(),
@@ -56,11 +63,13 @@ pub struct MintRequest<'info> {
     )]
     pub account_ac: Account<'info, AccountAccessControlState>,
 
+    /// Payment mint account
     #[account(
         mint::token_program = payment_mint_token_program
     )]
     pub payment_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    /// Payment mint ATA of `tokens_receiver`
     #[account(
         mut,
         associated_token::token_program = payment_mint_token_program,
@@ -69,6 +78,7 @@ pub struct MintRequest<'info> {
     )]
     pub payment_mint_tokens_receiver_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// Payment mint ATA of `fee_receiver`
     #[account(
         mut,
         associated_token::token_program = payment_mint_token_program,
@@ -77,6 +87,7 @@ pub struct MintRequest<'info> {
     )]
     pub payment_mint_fee_receiver_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// Payment mint ATA of `signer`
     #[account(
         mut,
         associated_token::token_program = payment_mint_token_program,
@@ -85,6 +96,7 @@ pub struct MintRequest<'info> {
     )]
     pub payment_mint_signer_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// Payment mint state account
     #[account(
         mut,
         seeds = [PaymentMintState::SEED, vault_common.key().as_ref(), payment_mint.key().as_ref()],
@@ -92,45 +104,61 @@ pub struct MintRequest<'info> {
     )]
     pub payment_mint_state: Account<'info, PaymentMintState>,
 
+    /// mMint data feed state account
     #[account(
         address = vault_common.m_mint_feed
     )]
     pub m_mint_data_feed: Account<'info, FeedState>,
 
     /// CHECK:
+    /// mMint underlying feed account
     #[account(
         address = m_mint_data_feed.underlying_feed 
     )]
     pub m_mint_feed: AccountInfo<'info>,
 
+    /// Payment mint data feed state account
     #[account(
         address = payment_mint_state.data_feed
     )]
     pub payment_mint_data_feed: Account<'info, FeedState>,
 
     /// CHECK:
+    /// Payment mint underlying feed account
     #[account(
         address = payment_mint_data_feed.underlying_feed 
     )]
     pub payment_mint_feed: AccountInfo<'info>,
 
+    /// Instruction pause state account
     #[account(
         seeds = [PauseInxState::SEED, vault_common.key().as_ref(), (VaultActionId::MintRequest as u8).to_le_bytes().as_ref()],
         bump
     )]
     pub pause_inx_state: Account<'info, PauseInxState>,
 
+    /// payment mint token program
     pub payment_mint_token_program: Interface<'info, TokenInterface>,
+    /// system program
     pub system_program: Program<'info, System>,
 }
 
 impl<'info> Validate<'info> for MintRequest<'info> {
+    /// validates implementation for MintRequest
     fn validate(&self) -> Result<()> {
         validate_common(&self.vault_common, &self.account_ac, &self.pause_inx_state, false)?;
         Ok(())
     }
 }
 
+/// Takes payment token from user and creates a mint request.
+/// Vault admin reviews the request and decides whether to approve it or reject it.
+/// mTokens are minting during the approval process.
+/// 
+/// # Arguments
+/// 
+/// - `amount_token` - amount of payment token
+/// - `referrer_id` - referrer id (can be anything encoded as 32 bytes array)
 pub fn handle(
     ctx: Context<MintRequest>,
     amount_token: u64,

@@ -37,7 +37,7 @@ pub trait Validate<'info> {
 
 /// Default close account behavior for `Closable::close`
 ///
-/// #Arguments
+/// # Arguments
 ///
 /// - `acc_to_close` - account to close
 /// - `receiver` - receiver of sol locked on on account
@@ -65,7 +65,7 @@ pub fn close_account(
 /// in case if `require_green_list` and `common.greenlist_enforced`
 /// are both false
 ///
-/// #Arguments
+/// # Arguments
 ///
 /// - `common` - vault common state
 /// - `account_ac` - account access control state
@@ -232,7 +232,7 @@ pub fn require_variation_tolerance(
 
 /// Calculates fee for a given amount
 ///
-/// #Arguments
+/// # Arguments
 ///
 /// - `mint_config` - payment mint state
 /// - `common` - vault common state
@@ -270,7 +270,7 @@ pub fn get_fee_amount(
 /// Gets token rate from a data feed.
 /// In case if `stable` is true, it will return `STABLECOIN_RATE`
 ///
-/// #Arguments
+/// # Arguments
 ///
 /// - `data_feed` - data feed state
 /// - `feed` - data feed account
@@ -298,7 +298,7 @@ pub fn validate_fee(fee: u64, check_min: bool) -> Result<()> {
 
 /// Does SPL transfer using vault common as a signer.
 ///
-/// #Arguments
+/// # Arguments
 ///
 /// - `vault_common` - vault common state
 /// - `vault_seed` - vault seed
@@ -345,7 +345,7 @@ pub fn transfer_token<'info>(
 /// Does SPL mint using vault common as a signer.
 /// The minting is done through token-authority program.
 ///
-/// #Arguments
+/// # Arguments
 ///
 /// - `common_vault` - common vault state
 /// - `authority` - `AuthorityMint::authority`
@@ -405,7 +405,7 @@ pub fn mint_token<'info>(
 
 /// Burns mToken using vault common as a signer.
 ///
-/// #Arguments
+/// # Arguments
 ///
 /// - `vault_common` - vault common state
 /// - `token_program` - SPL token program

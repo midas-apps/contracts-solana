@@ -10,12 +10,15 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct NewMinterVault<'info> {
+    /// Account with vault admin role
     #[account(mut)]
     pub authority: Signer<'info>,
 
+    /// Vault common state account
     #[account()]
     pub vault_common: Account<'info, VaultCommonState>,
 
+    /// Admin role of authority
     #[account(
         seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::VAULT_ADMIN],
         seeds::program = AccessControl::id(),
@@ -23,6 +26,7 @@ pub struct NewMinterVault<'info> {
     )]
     pub authority_ac_role: Account<'info, AccountAccessControlRoleState>,
 
+    /// Minter vault state account
     #[account(
         init,
         payer = authority,
@@ -32,6 +36,7 @@ pub struct NewMinterVault<'info> {
     )]
     pub minter_vault: Account<'info, MinterVaultState>,
 
+    /// Token authority state account
     #[account(
         seeds = [TokenAuthorityState::SEED, token_authority.base_seed.as_ref()],
         seeds::program = TokenAuthority::id(),
@@ -40,11 +45,18 @@ pub struct NewMinterVault<'info> {
     )]
     pub token_authority: Account<'info, TokenAuthorityState>,
 
+    /// Token authority program
     pub token_authority_program: Program<'info, TokenAuthority>,
-
+    /// System program
     pub system_program: Program<'info, System>,
 }
 
+/// Initializes minter vault account and emits an event.
+/// Can only be called by the vault admin.
+///
+/// # Arguments
+///
+/// - `first_deposit_min_m_tokens` - minimum amount of mTokens required for the first deposit
 pub fn handle(ctx: Context<NewMinterVault>, first_deposit_min_m_tokens: u64) -> Result<()> {
     ctx.accounts.minter_vault.common_vault = ctx.accounts.vault_common.key();
     ctx.accounts.minter_vault.first_deposit_min_m_tokens = first_deposit_min_m_tokens;

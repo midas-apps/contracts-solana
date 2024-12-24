@@ -9,6 +9,14 @@ use crate::state::{FeedState, ManualFeedState};
 /// Parses the price from `feed` account and converts it
 /// to the price with 9 decimal points.
 /// Checks that price is not stale and its within max/min boundaries
+///
+/// # Arguments
+///
+/// - `data_feed` - `FeedState` account
+/// - `feed` - account of the price feed. Currently supported types are:
+///     - `ManualFeedState`
+///     - `PullFeedAccountData`
+///     - `PriceUpdateV2`
 pub fn get_price_in_base_9<'info>(
     data_feed: &FeedState,
     feed: &AccountInfo<'info>,
@@ -93,6 +101,7 @@ pub fn get_price_in_base_9<'info>(
     Ok(price)
 }
 
+/// Returns current unix timestamp from clock
 pub fn get_current_ts() -> Result<u32> {
     Ok(Clock::get().unwrap().unix_timestamp as u32)
 }

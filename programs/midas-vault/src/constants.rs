@@ -1,9 +1,14 @@
 use anchor_lang::prelude::Pubkey;
 
+/// Pubkey that indicates that mint in request is fiat
 pub const FIAT_MINT: Pubkey = Pubkey::new_from_array([0; 32]);
+/// One in base 9
 pub const ONE: u64 = 10u64.pow(9);
+/// Fixed stablecoin rate for payment mints with stable=true
 pub const STABLECOIN_RATE: u64 = ONE;
+/// 100% with 2 decimals precision
 pub const ONE_HUNDRED_PERCENT: u64 = 100 * 100;
+/// Max u128 value
 pub const MAX_UINT128: u128 = u128::max_value(); // 18446744073709551615
 
 pub mod seeds {

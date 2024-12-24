@@ -11,9 +11,11 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct RedeemRequest<'info> {
+    /// User account
     #[account(mut)]
     pub signer: Signer<'info>,
 
+    /// Redeemer vault state account
     #[account(
         mut,
         seeds = [RedeemerVaultState::SEED, vault_common.key().as_ref()],
@@ -21,12 +23,14 @@ pub struct RedeemRequest<'info> {
     )]
     pub redeemer_vault: Account<'info, RedeemerVaultState>,
 
+    /// Vault common state account
     #[account(
         mut,
         address = redeemer_vault.common_vault
     )]
     pub vault_common: Account<'info, VaultCommonState>,
 
+    /// Vault common account of user
     #[account(
         mut,
         seeds = [VaultCommonAccountState::SEED, vault_common.key().as_ref(), signer.key().as_ref()],
@@ -34,6 +38,7 @@ pub struct RedeemRequest<'info> {
     )]
     pub vault_common_signer: Account<'info, VaultCommonAccountState>,
 
+    /// Redeem request state account
     #[account(
         init,
         payer = signer,
@@ -43,12 +48,14 @@ pub struct RedeemRequest<'info> {
     )]
     pub redeem_request: Account<'info, RedeemerVaultRequestState>,
 
+    /// AccessControlState account
     #[account(
         address = vault_common.ac,
         owner = AccessControl::id(),
     )]
     pub ac: Account<'info, AccessControlState>,
 
+    /// Account access control state account
     #[account(
         seeds = [AccountAccessControlState::SEED, ac.key().as_ref(), signer.key().as_ref()],
         seeds::program = AccessControl::id(),
@@ -56,11 +63,13 @@ pub struct RedeemRequest<'info> {
     )]
     pub account_ac: Account<'info, AccountAccessControlState>,
 
+    /// Payment mint account
     #[account(
         mint::token_program = payment_mint_token_program
     )]
     pub payment_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    /// mMint vault ATA
     #[account(
         mut,
         associated_token::token_program = m_mint_token_program,
@@ -69,6 +78,7 @@ pub struct RedeemRequest<'info> {
     )]
     pub m_mint_vault_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// mMint fee receiver ATA
     #[account(
         mut,
         associated_token::token_program = m_mint_token_program,
@@ -77,6 +87,7 @@ pub struct RedeemRequest<'info> {
     )]
     pub m_mint_fee_receiver_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// mMint signer ATA
     #[account(
         mut,
         associated_token::token_program = m_mint_token_program,
@@ -85,6 +96,7 @@ pub struct RedeemRequest<'info> {
     )]
     pub m_mint_signer_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// mMint SPL account
     #[account(
         mut,
         mint::token_program = m_mint_token_program,
@@ -92,6 +104,7 @@ pub struct RedeemRequest<'info> {
     )]
     pub m_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    /// Payment mint state account
     #[account(
         mut,
         seeds = [PaymentMintState::SEED, vault_common.key().as_ref(), payment_mint.key().as_ref()],
@@ -99,46 +112,62 @@ pub struct RedeemRequest<'info> {
     )]
     pub payment_mint_state: Account<'info, PaymentMintState>,
 
+    /// mMint data feed state account
     #[account(
         address = vault_common.m_mint_feed
     )]
     pub m_mint_data_feed: Account<'info, FeedState>,
 
     /// CHECK:
+    /// mMint underlying feed state account
     #[account(
         address = m_mint_data_feed.underlying_feed 
     )]
     pub m_mint_feed: AccountInfo<'info>,
 
+    /// Payment mint data feed state account
     #[account(
         address = payment_mint_state.data_feed
     )]
     pub payment_mint_data_feed: Account<'info, FeedState>,
 
     /// CHECK:
+    /// Payment mint underlying feed state account
     #[account(
         address = payment_mint_data_feed.underlying_feed 
     )]
     pub payment_mint_feed: AccountInfo<'info>,
 
+    /// Instruction pause state account
     #[account(
         seeds = [PauseInxState::SEED, vault_common.key().as_ref(), (VaultActionId::RedeemRequest as u8).to_le_bytes().as_ref()],
         bump
     )]
     pub pause_inx_state: Account<'info, PauseInxState>,
 
+    /// mMint token program
     pub m_mint_token_program: Interface<'info, TokenInterface>,
+    /// Payment mint token program
     pub payment_mint_token_program: Interface<'info, TokenInterface>,
+    /// System program
     pub system_program: Program<'info, System>,
 }
 
 impl<'info> Validate<'info> for RedeemRequest<'info> {
+    /// validates implementation for MintRequest
     fn validate(&self) -> Result<()> {
         validate_common(&self.vault_common, &self.account_ac, &self.pause_inx_state, false)?;
         Ok(())
     }
 }
 
+/// Takes mToken from user and creates a redeem request.
+/// Vault admin reviews the request and decides whether to approve it or reject it.
+/// Payment tokens are sent to the user's account if the request is approved.
+/// 
+/// # Arguments
+/// 
+/// - `amount_m_token` - amount of mToken to redeem 
 pub fn handle(
     ctx: Context<RedeemRequest>,
     amount_m_token: u64,

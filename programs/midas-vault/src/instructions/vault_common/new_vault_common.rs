@@ -1,16 +1,17 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    events::CommonVaultUpdatedEvent,
-    state::VaultCommonState,
+    events::CommonVaultUpdatedEvent, state::VaultCommonState,
     utils::common_vault::update_common_vault,
 };
 
 #[derive(Accounts)]
 pub struct NewVaultCommon<'info> {
+    /// Signer and Payer
     #[account(mut)]
     pub signer: Signer<'info>,
 
+    /// New vault common account
     #[account(
         init,
         payer = signer,
@@ -18,8 +19,29 @@ pub struct NewVaultCommon<'info> {
     )]
     pub vault_common: Account<'info, VaultCommonState>,
 
+    /// System program
     pub system_program: Program<'info, System>,
 }
+
+/// Initializes a new vault common account and emits an event.
+/// Currently, parameters `ac`, `m_mint` and `m_mint_feed`
+/// are immutable and cannot be changed after initialization
+///
+/// # Arguments
+///
+/// - `ac` - access_control::AccessControlState pubkey that will be used
+/// for green/black lists checks
+/// - `m_mint` - mToken mint pubkey
+/// - `m_mint_feed` - mToken data_feed::FeedState pubkey
+/// - `greenlist_enforced` - if true, only greenlisted accounts can interact with the vault
+/// - `ac_role` - access_control::AccountAccessControlRoleState pubkey that will be used
+/// to manage access control
+/// - `tokens_receiver` - pubkey that will receive tokens from the vault (not ATA)
+/// - `fee_receiver` - pubkey that will receive fees from the vault (not ATA)
+/// - `instant_fee` - % fee that will be charged for instant swaps
+/// - `instant_daily_limit` - daily limit in mToken for instant operations
+/// - `variation_tolerance` - % max. price deviation for request approval
+/// - `min_amount` - min amount for all operations in mToken
 pub fn handle(
     ctx: Context<NewVaultCommon>,
     ac: Pubkey,

@@ -12,19 +12,23 @@ use crate::{
 #[derive(Accounts)]
 #[instruction(request_id: u64)]
 pub struct ApproveMintRequest<'info> {
+    /// Account with vault admin role
     #[account(mut)]
     pub authority: Signer<'info>,
 
     /// CHECK:
+    /// request user account
     #[account(
         mut, 
         address = mint_request.user
     )]
     pub user_account: AccountInfo<'info>,
 
+    /// Vault common state account
     #[account()]
     pub vault_common: Account<'info, VaultCommonState>,
 
+    /// Admin role of authority
     #[account(
         seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::VAULT_ADMIN],
         seeds::program = AccessControl::id(),
@@ -32,6 +36,7 @@ pub struct ApproveMintRequest<'info> {
     )]
     pub authority_ac_role: Account<'info, AccountAccessControlRoleState>,
 
+    /// Vault minter role
     #[account(
         seeds = [AccountAccessControlRoleState::SEED, token_authority.ac_role.as_ref(), minter_vault.key().as_ref(), ac_roles_token_authority::M_MINTER],
         seeds::program = AccessControl::id(),
@@ -39,6 +44,7 @@ pub struct ApproveMintRequest<'info> {
     )]
     pub vault_minter_role: Account<'info, AccountAccessControlRoleState>,
     
+    /// Minter vault state account
     #[account(
         mut,
         seeds = [MinterVaultState::SEED, vault_common.key().as_ref()],
@@ -46,6 +52,7 @@ pub struct ApproveMintRequest<'info> {
     )]
     pub minter_vault: Account<'info, MinterVaultState>,
 
+    /// Mint vault request state account
     #[account(
         mut,
         seeds = [MintVaultRequestState::SEED, minter_vault.key().as_ref(), &request_id.to_le_bytes()],
@@ -53,6 +60,7 @@ pub struct ApproveMintRequest<'info> {
     )]
     pub mint_request: Account<'info, MintVaultRequestState>,
 
+    /// Token authority state account (token-authority program)
     #[account(
         mut,
         address = minter_vault.mint_authority_pda,
@@ -60,6 +68,7 @@ pub struct ApproveMintRequest<'info> {
     )]
     pub token_authority: Account<'info, TokenAuthorityState>,
 
+    /// mMint ATA of `user_account`
     #[account(
         mut,
         associated_token::token_program = m_mint_token_program,
@@ -68,6 +77,7 @@ pub struct ApproveMintRequest<'info> {
     )]
     pub m_mint_user_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// SPL mint account
     #[account(
         mut,
         mint::token_program = m_mint_token_program,
@@ -75,21 +85,34 @@ pub struct ApproveMintRequest<'info> {
     )]
     pub m_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    /// SPL token program for mMint
     pub m_mint_token_program: Interface<'info, TokenInterface>,
+    /// Token authority program
     pub token_authority_program: Program<'info, TokenAuthority>,
-
+    /// System program
     pub system_program: Program<'info, System>,
 }
 
 impl<'info> Closable for ApproveMintRequest<'info> {
+    /// close implementation for closing mint request 
+    /// after it was processed
     fn close(&mut self) -> Result<()> {
-
         close_account(&mut self.mint_request.to_account_info(), &mut self.user_account, &self.system_program)?;
 
         Ok(())
     }
 }
 
+/// Approves mint request, mints tokens to user account and emits an event.
+/// Will close mint request account after processing.
+/// Can only be called by the vault admin.
+/// 
+/// # Arguments
+/// 
+/// - `request_id` - id of the mint request
+/// - `new_out_rate` - new out rate for the mint request. 
+/// Using this value admin can correct the output mToken amount
+/// - `is_safe` - if true, will check variation tolerance before minting
 pub fn handle(
     ctx: Context<ApproveMintRequest>,
     request_id: u64,

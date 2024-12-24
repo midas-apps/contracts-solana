@@ -9,12 +9,15 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct UpdateMinterVault<'info> {
+    /// Account with vault admin role
     #[account(mut)]
     pub authority: Signer<'info>,
 
+    /// Vault common state account
     #[account()]
     pub vault_common: Account<'info, VaultCommonState>,
 
+    /// Admin role of authority
     #[account(
         seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::VAULT_ADMIN],
         seeds::program = AccessControl::id(),
@@ -22,6 +25,7 @@ pub struct UpdateMinterVault<'info> {
     )]
     pub authority_ac_role: Account<'info, AccountAccessControlRoleState>,
 
+    /// Minter vault state account
     #[account(
         mut,
         seeds = [MinterVaultState::SEED, vault_common.key().as_ref()],
@@ -29,9 +33,17 @@ pub struct UpdateMinterVault<'info> {
     )]
     pub minter_vault: Account<'info, MinterVaultState>,
 
+    /// System program
     pub system_program: Program<'info, System>,
 }
 
+/// Updates the minter vault account with new values and emits an event.
+/// Can only be called by the vault admin.
+///
+/// # Arguments
+///
+/// - `first_deposit_min_m_tokens` - new value for `first_deposit_min_m_tokens`
+/// - `mint_authority_pda` - new value for `mint_authority_pda`
 pub fn handle(
     ctx: Context<UpdateMinterVault>,
     first_deposit_min_m_tokens: Option<u64>,

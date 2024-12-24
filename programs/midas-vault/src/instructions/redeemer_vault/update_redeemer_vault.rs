@@ -9,12 +9,15 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct UpdateRedeemerVault<'info> {
+    /// Account with vault admin role
     #[account(mut)]
     pub authority: Signer<'info>,
 
+    /// Vault common state account
     #[account()]
     pub vault_common: Account<'info, VaultCommonState>,
 
+    /// Admin role of authority
     #[account(
         seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::VAULT_ADMIN],
         seeds::program = AccessControl::id(),
@@ -22,6 +25,7 @@ pub struct UpdateRedeemerVault<'info> {
     )]
     pub authority_ac_role: Account<'info, AccountAccessControlRoleState>,
 
+    /// Redeemer vault state account
     #[account(
         mut,
         seeds = [RedeemerVaultState::SEED, vault_common.key().as_ref()],
@@ -29,9 +33,18 @@ pub struct UpdateRedeemerVault<'info> {
     )]
     pub redeemer_vault: Account<'info, RedeemerVaultState>,
 
+    /// System program
     pub system_program: Program<'info, System>,
 }
 
+/// Updates redeemer vault state and emits an event.
+/// Can only be called by the vault admin.
+///
+/// # Arguments
+///
+/// - `request_redeemer` - New redeemer account address.
+/// - `min_fiat_redeem_amount` - New minimum fiat redeem amount.
+/// - `fiat_flat_fee` - New fiat flat fee.
 pub fn handle(
     ctx: Context<UpdateRedeemerVault>,
     request_redeemer: Option<Pubkey>,

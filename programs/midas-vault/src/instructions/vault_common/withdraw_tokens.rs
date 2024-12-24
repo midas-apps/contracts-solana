@@ -1,7 +1,4 @@
-use access_control::{
-    program::AccessControl,
-    state::AccountAccessControlRoleState,
-};
+use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use data_feed::utils::decimals_conversion;
@@ -11,24 +8,26 @@ use crate::{
     errors::MidasVaultsError,
     events::TokensWithdrawnEvent,
     program::MidasVaults,
-    state::{
-        MinterVaultState, RedeemerVaultState, VaultCommonState,
-    },
+    state::{MinterVaultState, RedeemerVaultState, VaultCommonState},
     utils::transfer_token,
 };
 
 #[derive(Accounts)]
 pub struct WithdrawTokens<'info> {
+    /// Account with vault admin role
     #[account(mut)]
     pub authority: Signer<'info>,
 
     /// CHECK:
+    /// receiver of tokens
     #[account()]
     pub receiver: AccountInfo<'info>,
 
+    /// Vault common state account
     #[account(mut)]
     pub vault_common: Account<'info, VaultCommonState>,
 
+    /// Admin role of authority
     #[account(
         seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::VAULT_ADMIN],
         seeds::program = AccessControl::id(),
@@ -40,6 +39,7 @@ pub struct WithdrawTokens<'info> {
     #[account()]
     pub vault: AccountInfo<'info>,
 
+    /// ATA of `receiver`
     #[account(
         mut,
         associated_token::token_program = token_program,
@@ -48,6 +48,7 @@ pub struct WithdrawTokens<'info> {
     )]
     pub mint_receiver_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// ATA of `vault`
     #[account(
         mut,
         associated_token::token_program = token_program,
@@ -56,17 +57,27 @@ pub struct WithdrawTokens<'info> {
     )]
     pub mint_vault_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// SPL mint account to withdraw
     #[account(
         mut,
         mint::token_program = token_program,
     )]
     pub mint: Box<InterfaceAccount<'info, Mint>>,
 
+    /// SPL token program
     pub token_program: Interface<'info, TokenInterface>,
 
+    /// System program
     pub system_program: Program<'info, System>,
 }
 
+/// Withdraws any tokens from the vault to the receiver and emits an event.
+/// Can only be called by the vault admin.
+///
+/// # Arguments
+///
+/// - `vault_seed` - seed of the vault. Will be used to sign CPI
+/// - `amount` - amount to withdraw
 pub fn handle(ctx: Context<WithdrawTokens>, vault_seed: Vec<u8>, amount: u64) -> Result<()> {
     let amount_base9 =
         decimals_conversion::convert_to_base_9(amount.into(), ctx.accounts.mint.decimals).unwrap();

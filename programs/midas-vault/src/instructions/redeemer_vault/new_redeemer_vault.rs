@@ -9,12 +9,15 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct NewRedeemerVault<'info> {
+    /// Account with vault admin role
     #[account(mut)]
     pub authority: Signer<'info>,
 
+    /// Vault common state account
     #[account()]
     pub vault_common: Account<'info, VaultCommonState>,
 
+    /// Admin role of authority
     #[account(
         seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::VAULT_ADMIN],
         seeds::program = AccessControl::id(),
@@ -22,6 +25,7 @@ pub struct NewRedeemerVault<'info> {
     )]
     pub authority_ac_role: Account<'info, AccountAccessControlRoleState>,
 
+    /// Redeemer vault state account
     #[account(
         init,
         payer = authority,
@@ -32,9 +36,20 @@ pub struct NewRedeemerVault<'info> {
     )]
     pub redeemer_vault: Account<'info, RedeemerVaultState>,
 
+    /// System program
     pub system_program: Program<'info, System>,
 }
 
+/// Initializes redeemer vault account.
+/// Can only be called by the vault admin.
+///
+/// # Arguments
+///
+/// - `request_redeemer` - account from which tokens will be taken during
+/// the request approval (not ATA)
+/// - `min_fiat_redeem_amount` - minimum amount of mTokens to initiate
+/// a fiat redeem request
+/// - `fiat_flat_fee` - flat mToken fee (not it %) for fiat redeem request
 pub fn handle(
     ctx: Context<NewRedeemerVault>,
     request_redeemer: Pubkey,

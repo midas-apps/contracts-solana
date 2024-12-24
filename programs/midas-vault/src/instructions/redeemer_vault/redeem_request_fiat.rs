@@ -11,9 +11,11 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct RedeemRequestFiat<'info> {
+    /// User account
     #[account(mut)]
     pub signer: Signer<'info>,
 
+    /// Redeemer vault state account
     #[account(
         mut,
         seeds = [RedeemerVaultState::SEED, vault_common.key().as_ref()],
@@ -21,12 +23,14 @@ pub struct RedeemRequestFiat<'info> {
     )]
     pub redeemer_vault: Account<'info, RedeemerVaultState>,
 
+    /// Vault common state account
     #[account(
         mut,
         address = redeemer_vault.common_vault
     )]
     pub vault_common: Account<'info, VaultCommonState>,
 
+    /// User vault common account
     #[account(
         mut,
         seeds = [VaultCommonAccountState::SEED, vault_common.key().as_ref(), signer.key().as_ref()],
@@ -34,6 +38,7 @@ pub struct RedeemRequestFiat<'info> {
     )]
     pub vault_common_signer: Account<'info, VaultCommonAccountState>,
 
+    /// Redeem request state account
     #[account(
         init,
         payer = signer,
@@ -43,12 +48,14 @@ pub struct RedeemRequestFiat<'info> {
     )]
     pub redeem_request: Account<'info, RedeemerVaultRequestState>,
 
+    /// AccessControlState account
     #[account(
         address = vault_common.ac,
         owner = AccessControl::id(),
     )]
     pub ac: Account<'info, AccessControlState>,
 
+    /// Account access control state account
     #[account(
         seeds = [AccountAccessControlState::SEED, ac.key().as_ref(), signer.key().as_ref()],
         seeds::program = AccessControl::id(),
@@ -56,6 +63,7 @@ pub struct RedeemRequestFiat<'info> {
     )]
     pub account_ac: Account<'info, AccountAccessControlState>,
 
+    /// mMint vault ATA
     #[account(
         mut,
         associated_token::token_program = m_mint_token_program,
@@ -64,6 +72,7 @@ pub struct RedeemRequestFiat<'info> {
     )]
     pub m_mint_vault_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// mMint fee receiver ATA
     #[account(
         mut,
         associated_token::token_program = m_mint_token_program,
@@ -72,6 +81,7 @@ pub struct RedeemRequestFiat<'info> {
     )]
     pub m_mint_fee_receiver_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// mMint signer ATA
     #[account(
         mut,
         associated_token::token_program = m_mint_token_program,
@@ -80,6 +90,7 @@ pub struct RedeemRequestFiat<'info> {
     )]
     pub m_mint_signer_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// mMint SPL account
     #[account(
         mut,
         mint::token_program = m_mint_token_program,
@@ -87,6 +98,7 @@ pub struct RedeemRequestFiat<'info> {
     )]
     pub m_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    /// Payment mint state account
     #[account(
         mut,
         seeds = [PaymentMintState::SEED, vault_common.key().as_ref(), FIAT_MINT.as_ref()],
@@ -94,34 +106,48 @@ pub struct RedeemRequestFiat<'info> {
     )]
     pub payment_mint_state: Account<'info, PaymentMintState>,
 
+    /// mMint data feed state account
     #[account(
         address = vault_common.m_mint_feed
     )]
     pub m_mint_data_feed: Account<'info, FeedState>,
 
     /// CHECK:
+    /// mMint underlying feed state account
     #[account(
         address = m_mint_data_feed.underlying_feed 
     )]
     pub m_mint_feed: AccountInfo<'info>,
 
+    /// Instruction pause state account
     #[account(
         seeds = [PauseInxState::SEED, vault_common.key().as_ref(), (VaultActionId::RedeemRequestFiat as u8).to_le_bytes().as_ref()],
         bump
     )]
     pub pause_inx_state: Account<'info, PauseInxState>,
 
+    /// mMint token program
     pub m_mint_token_program: Interface<'info, TokenInterface>,
+    /// System program
     pub system_program: Program<'info, System>,
 }
 
 impl<'info> Validate<'info> for RedeemRequestFiat<'info> {
+    /// Validate implementation for redeem request instruction
     fn validate(&self) -> Result<()> {
         validate_common(&self.vault_common, &self.account_ac, &self.pause_inx_state, true)?;
         Ok(())
     }
 }
 
+/// Takes mToken from user and creates a redeem request.
+/// Vault admin reviews the request and decides whether to approve it or reject it.
+/// As fiat during approval should be transferred off-chain, green list is required
+/// for this instruction
+/// 
+/// # Arguments
+/// 
+/// - `amount_m_token` - amount of mToken to redeem 
 pub fn handle(
     ctx: Context<RedeemRequestFiat>,
     amount_m_token: u64,
