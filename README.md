@@ -54,6 +54,20 @@ To run only anchor tests:
 yarn test:anchor
 ```
 
+## How to view documentation
+
+Generate rust docs:
+
+```
+yarn codegen
+```
+
+Open HTML file in browser:
+
+```
+target/doc/<program_name>/index.html
+```
+
 > **_NOTE:_** in case if you don't have program keypairs for the programs, please build the project, get the new program account addresses and using global search just replace everywhere current addresses with the newly created
 
 ## Programs
