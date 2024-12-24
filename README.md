@@ -58,10 +58,10 @@ yarn test:anchor
 
 ## Programs
 
-- [access-control](./programs/access-control) - program that is responsible for granting/revoking roles for a specific address
+- [access-control](./programs/access-control/README.md) - program that is responsible for granting/revoking roles for a specific address
 - [data-feed](./programs/data-feed)- program that wraps a underlying price feed and exposes utility function to fetch and validate the price from that underlying data feed
 - [token-authority](./programs/token-authority) - program that holds different authorities for SPL-2022 token mint and utilizes access-control to make it possible to have multiple authorities
-- [midas-vaults](./programs/midas-vaults) - program that is responsible for issuing/redeeming mTokens
+- [midas-vaults](./programs/midas-vault/README.md) - program that is responsible for issuing/redeeming mTokens
 
 ## Program addresses
 
