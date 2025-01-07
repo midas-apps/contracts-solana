@@ -13,7 +13,13 @@ import {
   updateManualFeed,
 } from "./testers/data-feed.testers";
 import { CommonError, DEFAULT_PUBKEY } from "./constants/common.constants";
-import { parseUnits } from "./helpers/common.helpers";
+import { parseUnits, setClockTime } from "./helpers/common.helpers";
+import { updatePaymentToken } from "./testers/common-vaults.testers";
+import { vaultsFixture } from "./fixture/vaults.fixture";
+import {
+  mintInstant,
+  prepareCommonMintTest,
+} from "./testers/minter-vault.testers";
 
 describe("data-feed", () => {
   describe("initializing", () => {
@@ -284,6 +290,80 @@ describe("data-feed", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
+        }
+      );
+    });
+  });
+
+  describe("PYTH underlying ", () => {
+    it("when underlying PYTH feed is valid", async () => {
+      const fixture = await vaultsFixture();
+
+      const feed = await createNewFeed(fixture, {
+        mode: "pyth",
+        underlyingFeed: fixture.mockedFeeds.pyth.account,
+        maxPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()),
+      });
+
+      await updateFeed(fixture, {
+        mode: "pyth",
+        underlyingFeed: fixture.mockedFeeds.pyth.account,
+        maxPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()),
+      });
+
+      await prepareCommonMintTest(fixture);
+
+      await updatePaymentToken(fixture, {
+        dataFeed: feed.publicKey,
+      });
+
+      await setClockTime(
+        fixture.context,
+        BigInt(fixture.mockedFeeds.pyth.lastUpdatedAtTs)
+      );
+
+      await mintInstant(
+        fixture,
+        { minReceiveAmount: 0n },
+        {},
+        {
+          fee: 0.1,
+          tokensMinted: parseUnits("0.044523197"),
+        }
+      );
+    });
+
+    it("when underlying PYTH feed is stale", async () => {
+      const fixture = await vaultsFixture();
+
+      const feed = await createNewFeed(fixture, {
+        mode: "pyth",
+        underlyingFeed: fixture.mockedFeeds.pyth.account,
+        maxPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()),
+      });
+
+      await updateFeed(fixture, {
+        mode: "pyth",
+        underlyingFeed: fixture.mockedFeeds.pyth.account,
+        maxPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()),
+      });
+
+      await prepareCommonMintTest(fixture);
+
+      await updatePaymentToken(fixture, {
+        dataFeed: feed.publicKey,
+      });
+
+      await mintInstant(
+        fixture,
+        { minReceiveAmount: 0n },
+        {},
+        {
+          fee: 0.1,
+          tokensMinted: parseUnits("0.044523197"),
+        },
+        {
+          revertedWith: CommonError.GenericError,
         }
       );
     });

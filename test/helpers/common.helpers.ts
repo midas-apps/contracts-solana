@@ -448,6 +448,23 @@ export const timeTravel = async (
   );
 };
 
+export const setClockTime = async (
+  ctx: ProgramTestContext,
+  newTimestamp: bigint
+) => {
+  const client = ctx.banksClient;
+  const currentClock = await client.getClock();
+  ctx.setClock(
+    new Clock(
+      currentClock.slot,
+      newTimestamp,
+      currentClock.epoch,
+      currentClock.leaderScheduleEpoch,
+      newTimestamp
+    )
+  );
+};
+
 export const getTime = async (ctx: ProgramTestContext) => {
   const client = ctx.banksClient;
   return (await client.getClock()).unixTimestamp;
