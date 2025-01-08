@@ -169,7 +169,6 @@ pub struct MinterVaultRequestRejectedEvent {
 
 /* Redeemer Vault Events */
 #[event]
-// TODO: add request redeemer
 pub struct RedeemerVaultUpdatedEvent {
     /// common vault account
     pub common_vault: Pubkey,

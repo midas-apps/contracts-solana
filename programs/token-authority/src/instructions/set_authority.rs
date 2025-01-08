@@ -84,7 +84,7 @@ pub fn handle(
             12 =>AuthorityType::MetadataPointer,
             13 =>AuthorityType::GroupPointer,
             14 =>AuthorityType::GroupMemberPointer,
-            _ => panic!() // FIXME
+            _ => panic!()
         },
         new_authority
     )?;
