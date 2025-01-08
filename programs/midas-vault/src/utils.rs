@@ -1036,7 +1036,7 @@ pub fn get_current_ts() -> Result<u32> {
 /// ```
 ///
 ///
-/// #Returns
+/// # Returns
 ///
 /// Truncated value in base 9
 ///
