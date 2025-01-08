@@ -5,7 +5,7 @@
     "test": "yarn test:anchor && yarn test:cargo",
     "test:cargo": "anchor run test-cargo",
     "test:anchor": "anchor run test",
-    "codegen": "cargo doc"
+    "docgen": "cargo doc"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
