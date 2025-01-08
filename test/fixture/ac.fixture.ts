@@ -10,8 +10,8 @@ import { generateAcAccount } from "../helpers/vaults.helpers";
 import { AC_ROLES } from "../constants/ac.constants";
 import { AccessControl } from "target/types/access_control";
 
-export const acFixture = async () => {
-  const { provider, context, accounts } = await initBankrun();
+export const acFixture = async (initSlot?: bigint) => {
+  const { provider, context, accounts } = await initBankrun(10, initSlot);
   const [authority, ...regularAccounts] = accounts;
 
   const acProgram = new Program<AccessControl>(

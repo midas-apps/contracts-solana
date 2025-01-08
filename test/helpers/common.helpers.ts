@@ -59,7 +59,10 @@ export function numToHex(decimalCode: number): string {
   return hexCode;
 }
 
-export const initBankrun = async (numAccounts: number = 10) => {
+export const initBankrun = async (
+  numAccounts: number = 10,
+  initSlot?: bigint
+) => {
   const accounts: Keypair[] = [];
 
   const accountsToInject: AddedAccount[] = [];
@@ -80,6 +83,9 @@ export const initBankrun = async (numAccounts: number = 10) => {
   }
 
   const context = await startAnchor(".", [], [...accountsToInject]);
+  if (initSlot) {
+    await warpToSlot(context, initSlot);
+  }
   const provider = new BankrunProvider(context);
 
   anchor.setProvider(provider);
@@ -228,6 +234,13 @@ export const expectTxNotReverted = async (
 };
 
 let latestSlot = 1;
+
+export const warpToSlot = async (ctx: ProgramTestContext, slot: bigint) => {
+  ctx.warpToSlot(slot);
+
+  latestSlot = Number(slot);
+};
+
 export const processTransaction = async (
   ctx: ProgramTestContext,
   transaction: Transaction,
@@ -461,6 +474,42 @@ export const setClockTime = async (
       currentClock.epoch,
       currentClock.leaderScheduleEpoch,
       newTimestamp
+    )
+  );
+};
+
+export const setClockSlot = async (
+  ctx: ProgramTestContext,
+  newSlot: bigint
+) => {
+  const client = ctx.banksClient;
+  const currentClock = await client.getClock();
+  ctx.setClock(
+    new Clock(
+      newSlot,
+      currentClock.epochStartTimestamp,
+      currentClock.epoch,
+      currentClock.leaderScheduleEpoch,
+      currentClock.unixTimestamp
+    )
+  );
+};
+
+export const setClockEpoch = async (
+  ctx: ProgramTestContext,
+  newEpoch: bigint,
+  epochStartTimestamp: bigint
+) => {
+  const client = ctx.banksClient;
+  const currentClock = await client.getClock();
+
+  ctx.setClock(
+    new Clock(
+      currentClock.slot,
+      epochStartTimestamp,
+      newEpoch,
+      currentClock.leaderScheduleEpoch,
+      currentClock.unixTimestamp
     )
   );
 };

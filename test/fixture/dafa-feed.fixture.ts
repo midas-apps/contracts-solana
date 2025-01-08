@@ -44,6 +44,7 @@ const initMockedFeeds = async (context: ProgramTestContext) => {
       "base64"
     ),
     1734607233,
+    348058928,
   ] as const;
 
   for (const feed of [pythHealhyFeed, switchboardHealhyFeed]) {
@@ -66,12 +67,14 @@ const initMockedFeeds = async (context: ProgramTestContext) => {
       account: switchboardHealhyFeed[0].publicKey,
       data: switchboardHealhyFeed[1],
       lastUpdatedAtTs: switchboardHealhyFeed[2],
+      lastUpdatedAtSlot: switchboardHealhyFeed[3],
+      price: formatUnits(1011997930000000000n, 18),
     },
   };
 };
 
-export const dataFeedFixture = async () => {
-  const acF = await acFixture();
+export const dataFeedFixture = async (initSlot?: bigint) => {
+  const acF = await acFixture(initSlot);
 
   const {
     provider,

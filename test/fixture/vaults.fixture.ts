@@ -48,8 +48,8 @@ import { TOKEN_AUTHORITY_ROLES } from "../constants/token-authority.constants";
 import { getTokenAuthorityPda } from "../helpers/token-authority.helpers";
 import { MidasVaults } from "target/types/midas_vaults";
 
-export const vaultsFixture = async () => {
-  const dfFixture = await dataFeedFixture();
+export const vaultsFixture = async (initSlot?: bigint) => {
+  const dfFixture = await dataFeedFixture(initSlot);
   const taFixture = await tokenAuthorityFixture(dfFixture);
 
   const {

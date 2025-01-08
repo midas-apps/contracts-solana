@@ -333,7 +333,7 @@ describe("data-feed", () => {
       );
     });
 
-    it("when underlying PYTH feed is stale", async () => {
+    it("should fail: when underlying PYTH feed is stale", async () => {
       const fixture = await vaultsFixture();
 
       const feed = await createNewFeed(fixture, {
@@ -361,6 +361,232 @@ describe("data-feed", () => {
         {
           fee: 0.1,
           tokensMinted: parseUnits("0.044523197"),
+        },
+        {
+          revertedWith: CommonError.GenericError,
+        }
+      );
+    });
+
+    it("should fail: when price is > max price", async () => {
+      const fixture = await vaultsFixture();
+
+      const feed = await createNewFeed(fixture, {
+        mode: "pyth",
+        underlyingFeed: fixture.mockedFeeds.pyth.account,
+        maxPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()) - 1n,
+      });
+
+      await updateFeed(fixture, {
+        mode: "pyth",
+        underlyingFeed: fixture.mockedFeeds.pyth.account,
+        maxPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()),
+      });
+
+      await prepareCommonMintTest(fixture);
+
+      await updatePaymentToken(fixture, {
+        dataFeed: feed.publicKey,
+      });
+
+      await setClockTime(
+        fixture.context,
+        BigInt(fixture.mockedFeeds.pyth.lastUpdatedAtTs)
+      );
+
+      await mintInstant(
+        fixture,
+        { minReceiveAmount: 0n },
+        {},
+        {
+          fee: 0.1,
+          tokensMinted: parseUnits("0.044523197"),
+        },
+        {
+          revertedWith: CommonError.GenericError,
+        }
+      );
+    });
+
+    it("should fail: when price is < min price", async () => {
+      const fixture = await vaultsFixture();
+
+      const feed = await createNewFeed(fixture, {
+        mode: "pyth",
+        underlyingFeed: fixture.mockedFeeds.pyth.account,
+        maxPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()) + 2n,
+        minPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()) + 1n,
+      });
+
+      await updateFeed(fixture, {
+        mode: "pyth",
+        underlyingFeed: fixture.mockedFeeds.pyth.account,
+        maxPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()),
+      });
+
+      await prepareCommonMintTest(fixture);
+
+      await updatePaymentToken(fixture, {
+        dataFeed: feed.publicKey,
+      });
+
+      await setClockTime(
+        fixture.context,
+        BigInt(fixture.mockedFeeds.pyth.lastUpdatedAtTs)
+      );
+
+      await mintInstant(
+        fixture,
+        { minReceiveAmount: 0n },
+        {},
+        {
+          fee: 0.1,
+          tokensMinted: parseUnits("0.044523197"),
+        },
+        {
+          revertedWith: CommonError.GenericError,
+        }
+      );
+    });
+  });
+
+  describe("Switchboard underlying ", () => {
+    const feedUpdatedAtSlot = 348058928n;
+
+    it("when underlying Switchboard feed is valid", async () => {
+      const fixture = await vaultsFixture(feedUpdatedAtSlot);
+
+      const feed = await createNewFeed(fixture, {
+        mode: "switchboard",
+        underlyingFeed: fixture.mockedFeeds.switchboard.account,
+        maxPrice: parseUnits(fixture.mockedFeeds.switchboard.price.toString()),
+      });
+
+      await updateFeed(fixture, {
+        mode: "switchboard",
+        underlyingFeed: fixture.mockedFeeds.switchboard.account,
+        maxPrice: parseUnits(fixture.mockedFeeds.switchboard.price.toString()),
+      });
+
+      await prepareCommonMintTest(fixture);
+
+      await updatePaymentToken(fixture, {
+        dataFeed: feed.publicKey,
+      });
+
+      await mintInstant(
+        fixture,
+        { minReceiveAmount: 0n },
+        {},
+        {
+          fee: 0.1,
+          tokensMinted: parseUnits("9.782628705"),
+        }
+      );
+    });
+
+    it("should fail: when underlying Switchboard feed is stale", async () => {
+      const fixture = await vaultsFixture(feedUpdatedAtSlot + 150n);
+
+      const feed = await createNewFeed(fixture, {
+        mode: "switchboard",
+        underlyingFeed: fixture.mockedFeeds.switchboard.account,
+        maxPrice: parseUnits(fixture.mockedFeeds.switchboard.price.toString()),
+      });
+
+      await updateFeed(fixture, {
+        mode: "switchboard",
+        underlyingFeed: fixture.mockedFeeds.switchboard.account,
+        maxPrice: parseUnits(fixture.mockedFeeds.switchboard.price.toString()),
+      });
+
+      await prepareCommonMintTest(fixture);
+
+      await updatePaymentToken(fixture, {
+        dataFeed: feed.publicKey,
+      });
+
+      await mintInstant(
+        fixture,
+        { minReceiveAmount: 0n },
+        {},
+        {
+          fee: 0.1,
+          tokensMinted: parseUnits("9.782628705"),
+        },
+        {
+          revertedWith: CommonError.GenericError,
+        }
+      );
+    });
+
+    it("should fail: when price is > max price", async () => {
+      const fixture = await vaultsFixture(feedUpdatedAtSlot);
+
+      const feed = await createNewFeed(fixture, {
+        mode: "switchboard",
+        underlyingFeed: fixture.mockedFeeds.switchboard.account,
+        maxPrice:
+          parseUnits(fixture.mockedFeeds.switchboard.price.toString()) - 1n,
+      });
+
+      await updateFeed(fixture, {
+        mode: "switchboard",
+        underlyingFeed: fixture.mockedFeeds.switchboard.account,
+        maxPrice: parseUnits(fixture.mockedFeeds.switchboard.price.toString()),
+      });
+
+      await prepareCommonMintTest(fixture);
+
+      await updatePaymentToken(fixture, {
+        dataFeed: feed.publicKey,
+      });
+
+      await mintInstant(
+        fixture,
+        { minReceiveAmount: 0n },
+        {},
+        {
+          fee: 0.1,
+          tokensMinted: parseUnits("9.782628705"),
+        },
+        {
+          revertedWith: CommonError.GenericError,
+        }
+      );
+    });
+
+    it("should fail: when price is < min price", async () => {
+      const fixture = await vaultsFixture(feedUpdatedAtSlot);
+
+      const feed = await createNewFeed(fixture, {
+        mode: "switchboard",
+        underlyingFeed: fixture.mockedFeeds.switchboard.account,
+        maxPrice:
+          parseUnits(fixture.mockedFeeds.switchboard.price.toString()) + 2n,
+        minPrice:
+          parseUnits(fixture.mockedFeeds.switchboard.price.toString()) + 1n,
+      });
+
+      await updateFeed(fixture, {
+        mode: "switchboard",
+        underlyingFeed: fixture.mockedFeeds.switchboard.account,
+        maxPrice: parseUnits(fixture.mockedFeeds.switchboard.price.toString()),
+      });
+
+      await prepareCommonMintTest(fixture);
+
+      await updatePaymentToken(fixture, {
+        dataFeed: feed.publicKey,
+      });
+
+      await mintInstant(
+        fixture,
+        { minReceiveAmount: 0n },
+        {},
+        {
+          fee: 0.1,
+          tokensMinted: parseUnits("9.782628705"),
         },
         {
           revertedWith: CommonError.GenericError,
