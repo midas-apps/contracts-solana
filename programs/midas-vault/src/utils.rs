@@ -1026,14 +1026,12 @@ pub fn get_current_ts() -> Result<u32> {
 ///
 /// Example:
 ///
-/// ```
 /// let value = 123456789;
 /// let decimals = 6;
 ///
 /// let truncated = truncate(value, decimals).unwrap();
 ///
 /// assert_eq!(truncated, 123456000);
-/// ```
 ///
 ///
 /// # Returns
