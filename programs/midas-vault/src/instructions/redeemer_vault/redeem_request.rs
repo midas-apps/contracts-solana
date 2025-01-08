@@ -28,7 +28,7 @@ pub struct RedeemRequest<'info> {
         mut,
         address = redeemer_vault.common_vault
     )]
-    pub vault_common: Account<'info, VaultCommonState>,
+    pub vault_common: Box<Account<'info, VaultCommonState>>,
 
     /// Vault common account of user
     #[account(

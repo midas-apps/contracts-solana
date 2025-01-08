@@ -20,7 +20,7 @@ pub struct MintRequest<'info> {
         mut,
         address = minter_vault.common_vault
     )]
-    pub vault_common: Account<'info, VaultCommonState>,
+    pub vault_common: Box<Account<'info, VaultCommonState>>,
 
     /// Vault common account of user
     #[account(
