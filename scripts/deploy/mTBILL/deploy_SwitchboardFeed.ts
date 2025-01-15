@@ -12,7 +12,8 @@ import { getAddress } from "viem";
 const configs: Record<string, DeploySwitchboardFeedParams> = {
   devnet: {
     env: "devnet",
-    ethDataFeed: getAddress("0xfCEE9754E8C375e145303b7cE7BEca3201734A2B"),
+    ethRpc: "https://ethereum-sepolia-rpc.publicnode.com",
+    ethDataFeed: getAddress("0x4E677F7FE252DE44682a913f609EA3eb6F29DC3E"),
   },
 };
 

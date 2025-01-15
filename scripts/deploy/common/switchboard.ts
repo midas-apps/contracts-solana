@@ -21,12 +21,13 @@ import * as sb from "@switchboard-xyz/on-demand";
 
 export type DeploySwitchboardFeedParams = {
   ethDataFeed: Address;
+  ethRpc: string;
   env: "devnet" | "mainnet";
 };
 
 export const deploySwitchboardFeed = async (
   { payer, provider }: CommonParams,
-  { ethDataFeed, env }: DeploySwitchboardFeedParams
+  { ethDataFeed, ethRpc, env }: DeploySwitchboardFeedParams
 ) => {
   const jobs: OracleJob[] = [
     OracleJob.create({
@@ -40,7 +41,7 @@ export const deploySwitchboardFeed = async (
                   tasks: [
                     {
                       httpTask: {
-                        url: "https://eth.drpc.org",
+                        url: ethRpc,
                         body: JSON.stringify({
                           jsonrpc: "2.0",
                           method: "eth_call",
@@ -145,10 +146,10 @@ export const deploySwitchboardFeed = async (
     name: "mTBILL/USD", // the feed name (max 32 bytes)
     queue: queue.pubkey, // the queue of oracles to bind to
     maxVariance: 5.0, // the maximum variance allowed for the feed results
-    minResponses: 3, // minimum number of responses of jobs to allow
+    minResponses: 1, // minimum number of responses of jobs to allow
     feedHash: Buffer.from(feedHash.slice(2), "hex"), // the feed hash
-    minSampleSize: 2, // The minimum number of samples required for setting feed value
-    maxStaleness: 150, // The maximum number of slots that can pass before a feed value is considered stale.
+    minSampleSize: 1, // The minimum number of samples required for setting feed value
+    maxStaleness: 9000, // The maximum number of slots that can pass before a feed value is considered stale.
     payer: payer.publicKey, // the payer of the feed
   });
 

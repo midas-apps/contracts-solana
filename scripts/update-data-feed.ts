@@ -34,11 +34,10 @@ import { getSwitchboardPullInx } from "./deploy/common/switchboard";
 
 // TODO: change config before execution
 const config = {
-  dataFeed: addresses["devnet"].feeds["usdc"].dataFeed,
+  dataFeed: addresses["devnet"].mTBILL.mTokenDataFeed,
   newUnderlyingFeed: new PublicKey(
-    "Dpw1EAVrSB1ibxiDQyTAW6Zip3J4Btk2x4SgApQCeFbX"
+    "782zyJs63RQmYVHjUiNsP1xVxVtTkj12ZZcPobCRstkX"
   ),
-  newMode: "pyth",
 } as {
   dataFeed: PublicKey;
   newUnderlyingFeed: PublicKey | null;
