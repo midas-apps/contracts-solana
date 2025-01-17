@@ -94,7 +94,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const commonUser = await fetchVaultCommonAccountState(
     vaultsProgram,
     getCommonVaultAccountStatePda(vaultCommon, payer.publicKey),
-    null
+    true
   );
 
   const ata = await createAtaIfNotExistsInx(
@@ -121,6 +121,14 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     TOKEN_2022_PROGRAM_ID
   );
 
+  const vaultCreateAtaInx = await createAtaIfNotExistsInx(
+    provider.connection,
+    config.mint,
+    getRedeemerVaultPda(vaultCommon),
+    payer,
+    config.tokenProgram
+  );
+
   const ataFeeReceiver = commonState.feeReceiver.equals(
     commonState.tokensReceiver
   )
@@ -133,20 +141,20 @@ async function main(provider: AnchorProvider, payer: Keypair) {
         TOKEN_2022_PROGRAM_ID
       );
 
-  const tx1 = new Transaction();
+  // const tx1 = new Transaction();
 
-  tx1.add(
-    await getSwitchboardPullInx(provider, mFeed.underlyingFeed, config.env)
-  );
+  // tx1.add(
+  //   await getSwitchboardPullInx(provider, mFeed.underlyingFeed, config.env)
+  // );
 
-  const txRes1 = await sendAndConfirmTransaction(
-    provider.connection,
-    tx1,
-    [payer],
-    {
-      commitment: "finalized",
-    }
-  );
+  // const txRes1 = await sendAndConfirmTransaction(
+  //   provider.connection,
+  //   tx1,
+  //   [payer],
+  //   {
+  //     commitment: "finalized",
+  //   }
+  // );
   const tx2 = new Transaction();
 
   if (ata) {
@@ -162,6 +170,10 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   if (ataFeeReceiver) {
     console.log("ata");
     tx2.add(ataFeeReceiver);
+  }
+
+  if (vaultCreateAtaInx) {
+    tx2.add(vaultCreateAtaInx);
   }
 
   if (!acUser) {

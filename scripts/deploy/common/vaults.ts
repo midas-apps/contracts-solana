@@ -258,15 +258,6 @@ export const deployRedeemerVault = async (
 
   const vaultsProgram = getVaultsProgram(common.provider);
 
-  const commonState = await fetchVaultCommonState(
-    vaultsProgram,
-    commonVault.publicKey
-  );
-  const vaultState = await fetchRedeemerVaultState(
-    vaultsProgram,
-    getRedeemerVaultPda(commonVault.publicKey)
-  );
-
   const ataVault = await createAtaIfNotExistsInx(
     common.provider.connection,
     mToken,
@@ -278,19 +269,17 @@ export const deployRedeemerVault = async (
   const ataReceiver = await createAtaIfNotExistsInx(
     common.provider.connection,
     mToken,
-    commonState.tokensReceiver,
+    tokensReceiver,
     common.payer,
     TOKEN_2022_PROGRAM_ID
   );
 
-  const ataFeeReceiver = commonState.feeReceiver.equals(
-    commonState.tokensReceiver
-  )
+  const ataFeeReceiver = feeReceiver.equals(tokensReceiver)
     ? null
     : await createAtaIfNotExistsInx(
         common.provider.connection,
-        commonState.mMint,
-        commonState.feeReceiver,
+        mToken,
+        feeReceiver,
         common.payer,
         TOKEN_2022_PROGRAM_ID
       );

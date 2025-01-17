@@ -84,34 +84,35 @@ async function main(provider: AnchorProvider, payer: Keypair) {
           .instruction()
   );
 
-  const feeReceiverCreateAtaInx = await createAtaIfNotExistsInx(
-    provider.connection,
-    config.mint,
-    commonState.feeReceiver,
-    payer,
-    config.tokenProgram
-  );
+  if (!config.isFiat) {
+    const feeReceiverCreateAtaInx = await createAtaIfNotExistsInx(
+      provider.connection,
+      config.mint,
+      commonState.feeReceiver,
+      payer,
+      config.tokenProgram
+    );
 
-  const tokensReceiverCreateAtaInx = commonState.tokensReceiver.equals(
-    commonState.feeReceiver
-  )
-    ? null
-    : await createAtaIfNotExistsInx(
-        provider.connection,
-        config.mint,
-        commonState.tokensReceiver,
-        payer,
-        config.tokenProgram
-      );
+    const tokensReceiverCreateAtaInx = commonState.tokensReceiver.equals(
+      commonState.feeReceiver
+    )
+      ? null
+      : await createAtaIfNotExistsInx(
+          provider.connection,
+          config.mint,
+          commonState.tokensReceiver,
+          payer,
+          config.tokenProgram
+        );
 
-  if (feeReceiverCreateAtaInx) {
-    tx.add(feeReceiverCreateAtaInx);
+    if (feeReceiverCreateAtaInx) {
+      tx.add(feeReceiverCreateAtaInx);
+    }
+
+    if (tokensReceiverCreateAtaInx) {
+      tx.add(tokensReceiverCreateAtaInx);
+    }
   }
-
-  if (tokensReceiverCreateAtaInx) {
-    tx.add(tokensReceiverCreateAtaInx);
-  }
-
   const txRes = await sendAndConfirmTransaction(
     provider.connection,
     tx,

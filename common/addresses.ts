@@ -65,9 +65,9 @@ export const addresses: Record<string, NetworkAddresses> = {
       },
       redeemer: {
         commonVault: new PublicKey(
-          "mNvGKc7sprcdgJRaAbTQWyDb7VL27x7sNpgmJgC3Yfp"
+          "Fx9UQYKPhxZzd6nQx4AhHvPN8SoYrsrPegUYsfqrE9dp"
         ),
-        account: new PublicKey("3gAp9v4mzQALeQLnLUXeVbCTdmTs9j3b5ba1yaytaPbc"),
+        account: new PublicKey("HN4n1gHRP2vwe3hv9C7GBkX2cE1CCHQSGQqmRaJ4uhMq"),
       },
     },
   },
