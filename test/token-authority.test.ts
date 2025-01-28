@@ -121,6 +121,38 @@ describe("token-authority", () => {
       await burnToken(fixture, {}, {});
     });
 
+    it("call when the `from` is a different from the `authority`", async () => {
+      const fixture = await vaultsFixture();
+
+      const burnFrom = fixture.accounts[1].publicKey;
+
+      await mintMToken(fixture, {});
+
+      await expectTxNotReverted(
+        fixture.context,
+        new Transaction().add(
+          createSetAuthorityInstruction(
+            fixture.mTBillMint.publicKey,
+            fixture.authority.publicKey,
+            AuthorityType.PermanentDelegate,
+            getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed),
+            undefined,
+            TOKEN_2022_PROGRAM_ID
+          )
+        ),
+        [fixture.authority]
+      );
+
+      expect(burnFrom).not.toEqual(fixture.authority.publicKey);
+
+      await mintMToken(fixture, {
+        to: burnFrom,
+        amount: 100n,
+      });
+
+      await burnToken(fixture, { address: burnFrom, amount: 100n }, {});
+    });
+
     it("should fail: call from non-authority", async () => {
       const fixture = await vaultsFixture();
 
