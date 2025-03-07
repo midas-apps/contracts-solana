@@ -364,8 +364,11 @@ export const updateManualFeed = async (
   }
 
   if (price !== null) {
-    const currentTs = await getTime(fixture.context);
     expect(fromBN(feedFetched.price)).toBe(price);
+  }
+
+  if (price !== null || decimals !== null) {
+    const currentTs = await getTime(fixture.context);
     expect(BigInt(feedFetched.lastUpdatedAt)).toBe(currentTs);
   }
 };
