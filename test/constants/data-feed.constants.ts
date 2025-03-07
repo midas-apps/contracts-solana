@@ -21,6 +21,7 @@ export enum DataFeedError {
   NotAuthority,
   PriceIsStale,
   InvalidStaleness,
+  ExceedsMaxStaleness,
   InvalidMinPrice,
   InvalidMaxPrice,
   InvalidUnderlyingFeed,
