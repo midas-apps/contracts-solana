@@ -187,11 +187,14 @@ pub fn update_manual_feed(
 ) -> Result<()> {
     if let Some(price) = price {
         state.price = price;
-        state.last_updated_at = get_current_ts().unwrap();
     }
 
     if let Some(decimals) = decimals {
         state.decimals = decimals;
+    }
+
+    if Option::is_some(&decimals) || Option::is_some(&price) {
+        state.last_updated_at = get_current_ts().unwrap();
     }
 
     Ok(())
