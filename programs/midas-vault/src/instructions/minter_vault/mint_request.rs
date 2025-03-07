@@ -4,7 +4,7 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use data_feed::{state::FeedState, utils::decimals_conversion};
 
 use crate::{
-    constants::ONE, events::MinterVaultRequestCreatedEvent, state::{
+    events::MinterVaultRequestCreatedEvent, state::{
           MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState, VaultCommonState
     }, utils::{minter::{self}, transfer_token, validate_common, Validate, VaultActionId}
 };
@@ -209,7 +209,7 @@ pub fn handle(
     mint_request.user = ctx.accounts.signer.key();
     mint_request.payment_mint = ctx.accounts.payment_mint.key();
     mint_request.deposited_usd = params.mint_amount_in_usd.try_into()?;
-    mint_request.deposited_usd_wo_fees = params.amount_token_wo_fee.checked_mul(params.mint_in_rate).unwrap().checked_div(ONE.into()).unwrap().try_into().unwrap();
+    mint_request.deposited_usd_wo_fees = params.deposited_usd.try_into()?;
     mint_request.m_mint_rate = params.m_token_rate.try_into().unwrap();
     
 

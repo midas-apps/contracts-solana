@@ -469,6 +469,8 @@ pub mod minter {
         pub m_token_rate: u128,
         /// Payment mint decimals
         pub decimals: u8,
+        /// Deposited amount in USD exluding all fees
+        pub deposited_usd: u128,
     }
 
     /// Calculates shared parameters for instant and request mints.
@@ -520,11 +522,10 @@ pub mod minter {
             .checked_div(ONE.into())
             .unwrap();
 
-        let (m_token_amount, m_token_rate) = convert_usd_to_m_token(
-            m_data_feed,
-            m_feed,
-            mint_amount_in_usd.checked_sub(fee_in_usd).unwrap(),
-        )?;
+        let deposited_usd = mint_amount_in_usd.checked_sub(fee_in_usd).unwrap();
+
+        let (m_token_amount, m_token_rate) =
+            convert_usd_to_m_token(m_data_feed, m_feed, deposited_usd)?;
 
         require_and_update_min_amount(common, common_account, Some(minter), m_token_amount)?;
 
@@ -538,6 +539,7 @@ pub mod minter {
             mint_in_rate,
             m_token_rate,
             decimals,
+            deposited_usd,
         })
     }
 
