@@ -494,7 +494,7 @@ describe("data-feed", () => {
   describe("Switchboard underlying ", () => {
     const feedUpdatedAtSlot = 348058928n;
 
-    it.only("when underlying Switchboard feed is valid", async () => {
+    it("when underlying Switchboard feed is valid", async () => {
       const fixture = await vaultsFixture(feedUpdatedAtSlot);
 
       const feed = await createNewFeed(fixture, {
