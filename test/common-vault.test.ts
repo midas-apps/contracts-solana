@@ -383,6 +383,20 @@ describe("common-vault", () => {
         }
       );
     });
+
+    it("should fail: call when the new value is the same as an old one", async () => {
+      const fixture = await vaultsFixture();
+
+      const commonVault = await newVaultCommon(fixture, {});
+      await updatePause(
+        fixture,
+        { paused: false },
+        { commonVault },
+        {
+          revertedWith: VaultError.ValueDidtnChange,
+        }
+      );
+    });
   });
 
   describe("new_pause_inx", () => {
@@ -430,6 +444,21 @@ describe("common-vault", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
+        }
+      );
+    });
+
+    it("should fail: call when the new value is the same as an old one", async () => {
+      const fixture = await vaultsFixture();
+
+      const commonVault = await newVaultCommon(fixture, {});
+      await newPauseInx(fixture, {}, { commonVault });
+      await updatePauseInx(
+        fixture,
+        { paused: false },
+        { commonVault },
+        {
+          revertedWith: VaultError.ValueDidtnChange,
         }
       );
     });

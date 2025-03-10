@@ -40,4 +40,6 @@ pub enum MidasVaultsError {
     InvalidSeedProvided,
     #[msg("Invalid vault provided")]
     InvalidVaultProvided,
+    #[msg("The new value is the same as the old one")]
+    ValueDidntChange,
 }

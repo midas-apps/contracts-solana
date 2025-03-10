@@ -1,7 +1,10 @@
 use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
 use anchor_lang::prelude::*;
 
-use crate::{constants::ac_roles, events::PauseUpdatedEvent, state::VaultCommonState};
+use crate::{
+    constants::ac_roles, errors::MidasVaultsError, events::PauseUpdatedEvent,
+    state::VaultCommonState,
+};
 
 #[derive(Accounts)]
 pub struct UpdatePause<'info> {
@@ -32,6 +35,12 @@ pub struct UpdatePause<'info> {
 ///
 /// - `paused` - new value for `paused`
 pub fn handle(ctx: Context<UpdatePause>, paused: bool) -> Result<()> {
+    require_neq!(
+        ctx.accounts.vault_common.paused,
+        paused,
+        MidasVaultsError::ValueDidntChange
+    );
+
     ctx.accounts.vault_common.paused = paused;
 
     emit!(PauseUpdatedEvent {
