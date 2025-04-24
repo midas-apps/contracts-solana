@@ -10,6 +10,8 @@ export const DAY = 86400n;
 export const ONE = 10n ** 9n;
 
 export const MAX_U128 = 340_282_366_920_938_463_463_374_607_431_768_211_455n;
+export const MAX_U64 = 18_446_744_073_709_551_615n;
+
 export const DEFAULT_PUBKEY = new PublicKey(0);
 
 export enum CommonError {

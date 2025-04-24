@@ -53,7 +53,7 @@ const config = {
   product: "mTBILL",
   mint: addresses["devnet"].feeds["usdc"].token,
   tokenProgram: addresses["devnet"].feeds["usdc"].tokenProgram,
-  amount: parseUnits("90", 9),
+  amount: parseUnits("10", 9),
   env: "devnet",
 } as {
   product: "mTBILL";
@@ -88,7 +88,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const acUser = await fetchAccountAcState(
     acProgram,
     getAccountAcStatePda(commonState.ac, payer.publicKey),
-    null
+    true
   );
 
   const commonUser = await fetchVaultCommonAccountState(
