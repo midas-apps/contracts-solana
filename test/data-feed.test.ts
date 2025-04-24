@@ -252,6 +252,64 @@ describe("data-feed", () => {
         { revertedWith: DataFeedError.InvalidUnderlyingFeed }
       );
     });
+
+    it("should fail: update max_staleness when value is 0 and mode is manual", async () => {
+      const fixture = await dataFeedFixture();
+
+      const feed = await createDefaultDataFeed(fixture);
+
+      await updateFeed(
+        fixture,
+        {
+          feed,
+          maxStaleness: 0,
+        },
+        { revertedWith: DataFeedError.InvalidStaleness }
+      );
+    });
+
+    it("should fail: update max_staleness when value is 0 and mode is manual", async () => {
+      const fixture = await dataFeedFixture();
+
+      const feed = await createDefaultDataFeed(fixture);
+
+      await updateFeed(
+        fixture,
+        {
+          feed,
+          maxStaleness: 1 + 365 * 86400,
+        },
+        { revertedWith: DataFeedError.ExceedsMaxStaleness }
+      );
+    });
+
+    it("should fail: update max_staleness when value is 0 and mode is pyth", async () => {
+      const fixture = await dataFeedFixture();
+
+      await updateFeed(
+        fixture,
+        {
+          mode: "pyth",
+          underlyingFeed: fixture.mockedFeeds.pyth.account,
+          maxStaleness: 1 + 5 * 60,
+        },
+        { revertedWith: DataFeedError.ExceedsMaxStaleness }
+      );
+    });
+
+    it("should fail: update max_staleness when value is 0 and mode is switchboard", async () => {
+      const fixture = await dataFeedFixture();
+
+      await updateFeed(
+        fixture,
+        {
+          mode: "switchboard",
+          underlyingFeed: fixture.mockedFeeds.switchboard.account,
+          maxStaleness: 1 + 216000,
+        },
+        { revertedWith: DataFeedError.ExceedsMaxStaleness }
+      );
+    });
   });
 
   describe("update_manual_feed", () => {
@@ -309,6 +367,7 @@ describe("data-feed", () => {
         mode: "pyth",
         underlyingFeed: fixture.mockedFeeds.pyth.account,
         maxPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()),
+        maxStaleness: 5 * 60,
       });
 
       await prepareCommonMintTest(fixture);
@@ -342,12 +401,6 @@ describe("data-feed", () => {
         maxPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()),
       });
 
-      await updateFeed(fixture, {
-        mode: "pyth",
-        underlyingFeed: fixture.mockedFeeds.pyth.account,
-        maxPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()),
-      });
-
       await prepareCommonMintTest(fixture);
 
       await updatePaymentToken(fixture, {
@@ -375,12 +428,6 @@ describe("data-feed", () => {
         mode: "pyth",
         underlyingFeed: fixture.mockedFeeds.pyth.account,
         maxPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()) - 1n,
-      });
-
-      await updateFeed(fixture, {
-        mode: "pyth",
-        underlyingFeed: fixture.mockedFeeds.pyth.account,
-        maxPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()),
       });
 
       await prepareCommonMintTest(fixture);
@@ -416,12 +463,6 @@ describe("data-feed", () => {
         underlyingFeed: fixture.mockedFeeds.pyth.account,
         maxPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()) + 2n,
         minPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()) + 1n,
-      });
-
-      await updateFeed(fixture, {
-        mode: "pyth",
-        underlyingFeed: fixture.mockedFeeds.pyth.account,
-        maxPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()),
       });
 
       await prepareCommonMintTest(fixture);
@@ -460,12 +501,14 @@ describe("data-feed", () => {
         mode: "switchboard",
         underlyingFeed: fixture.mockedFeeds.switchboard.account,
         maxPrice: parseUnits(fixture.mockedFeeds.switchboard.price.toString()),
+        maxStaleness: 216000, // max allowed staleness for switchboard feed,
       });
 
       await updateFeed(fixture, {
         mode: "switchboard",
         underlyingFeed: fixture.mockedFeeds.switchboard.account,
         maxPrice: parseUnits(fixture.mockedFeeds.switchboard.price.toString()),
+        maxStaleness: 216000, // max allowed staleness for switchboard feed,
       });
 
       await prepareCommonMintTest(fixture);

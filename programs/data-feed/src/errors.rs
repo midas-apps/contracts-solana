@@ -10,6 +10,8 @@ pub enum DataFeedError {
     PriceIsStale,
     #[msg("Invalid staleness value")]
     InvalidStaleness,
+    #[msg("Staleness value exceeds max allowed staleness")]
+    ExceedsMaxStaleness,
     #[msg("Invalid min price value")]
     InvalidMinPrice,
     #[msg("Invalid max price value")]

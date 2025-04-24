@@ -52,8 +52,8 @@ export const createNewFeed = async (
   feed ??= generateFeedAcccount();
   minPrice ??= parseUnits("0.1");
   maxPrice ??= parseUnits("10");
-  maxStaleness ??= 3600;
   mode ??= "manual";
+  maxStaleness ??= mode === "manual" ? 3600 : 60;
   underlyingFeed ??= getManualFeedStatePda(feed.publicKey);
 
   const from = opt?.from ?? owner;
@@ -364,8 +364,11 @@ export const updateManualFeed = async (
   }
 
   if (price !== null) {
-    const currentTs = await getTime(fixture.context);
     expect(fromBN(feedFetched.price)).toBe(price);
+  }
+
+  if (price !== null || decimals !== null) {
+    const currentTs = await getTime(fixture.context);
     expect(BigInt(feedFetched.lastUpdatedAt)).toBe(currentTs);
   }
 };

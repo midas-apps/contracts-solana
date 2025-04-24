@@ -3,6 +3,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     constants::ac_roles,
+    errors::MidasVaultsError,
     events::PauseInxUpdatedEvent,
     state::{PauseInxState, VaultCommonState},
 };
@@ -46,6 +47,12 @@ pub struct UpdatePauseInx<'info> {
 /// - `fn_id` - id of the instruction to pause. See `utils::VaultActionId` enum for possible values.
 /// - `paused` - new value for `paused`
 pub fn handle(ctx: Context<UpdatePauseInx>, fn_id: u8, paused: bool) -> Result<()> {
+    require_neq!(
+        ctx.accounts.pause_inx_state.paused,
+        paused,
+        MidasVaultsError::ValueDidntChange
+    );
+
     ctx.accounts.pause_inx_state.paused = paused;
 
     emit!(PauseInxUpdatedEvent {

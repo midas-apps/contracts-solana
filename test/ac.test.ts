@@ -8,6 +8,7 @@ import {
 } from "./testers/ac.testers";
 import { CommonError } from "./constants/common.constants";
 import { acFixture } from "./fixture/ac.fixture";
+import { AcError } from "./constants/ac.constants";
 
 describe("access-control", () => {
   describe("new_ac_role", () => {
@@ -70,6 +71,22 @@ describe("access-control", () => {
         {
           from: fixture.regularAccounts[1],
           revertedWith: CommonError.AccountIsNotInitialized,
+        }
+      );
+    });
+
+    it("should fail: blacklist and greenlist at the same time", async () => {
+      const fixture = await acFixture();
+      await newAccountAc(fixture, {});
+
+      await updateAccountAc(
+        fixture,
+        {
+          blackListed: true,
+          greenListed: true,
+        },
+        {
+          revertedWith: AcError.BothBlacklistedAndWhitelisted,
         }
       );
     });

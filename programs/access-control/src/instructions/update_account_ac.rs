@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     constants::ac_roles,
+    errors::AccessControlError,
     events::AccountAcUpdatedEvent,
     state::{AccessControlState, AccountAccessControlRoleState, AccountAccessControlState},
 };
@@ -59,6 +60,12 @@ pub fn handle(
     if let Some(new_black_listed) = black_listed {
         state.black_listed = new_black_listed;
     }
+
+    require_neq!(
+        state.black_listed && state.green_listed,
+        true,
+        AccessControlError::BothBlacklistedAndWhitelisted
+    );
 
     emit!(AccountAcUpdatedEvent {
         ac: ctx.accounts.ac.key(),

@@ -1,4 +1,11 @@
-use crate::{constants::DEFAULT_PUBKEY, errors::DataFeedError, state::FeedMode};
+use crate::{
+    constants::{
+        DEFAULT_PUBKEY, MANUAL_FEED_MAX_STALENESS, PYTH_FEED_MAX_STALENESS,
+        SWITCHBOARD_FEED_MAX_STALENESS,
+    },
+    errors::DataFeedError,
+    state::FeedMode,
+};
 use anchor_lang::{prelude::*, require_keys_eq, AccountDeserialize, Key, Result};
 use pyth_solana_receiver_sdk::price_update::PriceUpdateV2;
 
@@ -54,7 +61,7 @@ pub fn get_price_in_base_9<'info>(
             let raw_price = feed
                 .get_value(
                     &Clock::get()?,
-                    feed.max_staleness.into(),
+                    data_feed.max_staleness.into(),
                     feed.min_sample_size.into(),
                     true,
                 )
@@ -150,6 +157,24 @@ pub fn update_feed(
         state.max_staleness = max_staleness;
     }
 
+    match state.mode {
+        FeedMode::MANUAL => require_gte!(
+            MANUAL_FEED_MAX_STALENESS,
+            state.max_staleness,
+            DataFeedError::ExceedsMaxStaleness
+        ),
+        FeedMode::PYTH => require_gte!(
+            PYTH_FEED_MAX_STALENESS,
+            state.max_staleness,
+            DataFeedError::ExceedsMaxStaleness
+        ),
+        FeedMode::SWITCHBOARD => require_gte!(
+            SWITCHBOARD_FEED_MAX_STALENESS,
+            state.max_staleness,
+            DataFeedError::ExceedsMaxStaleness
+        ),
+    }
+
     Ok(())
 }
 
@@ -162,11 +187,14 @@ pub fn update_manual_feed(
 ) -> Result<()> {
     if let Some(price) = price {
         state.price = price;
-        state.last_updated_at = get_current_ts().unwrap();
     }
 
     if let Some(decimals) = decimals {
         state.decimals = decimals;
+    }
+
+    if Option::is_some(&decimals) || Option::is_some(&price) {
+        state.last_updated_at = get_current_ts().unwrap();
     }
 
     Ok(())
