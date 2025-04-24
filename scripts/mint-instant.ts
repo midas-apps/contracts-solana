@@ -85,13 +85,13 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const acUser = await fetchAccountAcState(
     acProgram,
     getAccountAcStatePda(commonState.ac, payer.publicKey),
-    null
+    true
   );
 
   const commonUser = await fetchVaultCommonAccountState(
     vaultsProgram,
     getCommonVaultAccountStatePda(vaultCommon, payer.publicKey),
-    null
+    true
   );
 
   const ata = await createAtaIfNotExistsInx(

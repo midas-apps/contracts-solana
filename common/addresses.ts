@@ -59,15 +59,15 @@ export const addresses: Record<string, NetworkAddresses> = {
       mToken: new PublicKey("7MnCPtnhcyNNsKJnZhu9joyEiQCGLBLYULsrXXiUxxWG"),
       minter: {
         commonVault: new PublicKey(
-          "BpFdNp11K2ZwLqV2ABymGnQcnRqakzB6sZnJvGp54q32"
+          "2XKR94FbetbtVAg94KPSrXCXAh7vZP9mSfwiRkioPovN"
         ),
-        account: new PublicKey("DLgLmWSPwAppbfzG8nT82VwqoymwyMBckPB9kqdNcNe9"),
+        account: new PublicKey("CbCHN1eEmuH5z7MqsJ3bUHQsJrKawrGeLyNxbNRjWNJw"),
       },
       redeemer: {
         commonVault: new PublicKey(
-          "Fx9UQYKPhxZzd6nQx4AhHvPN8SoYrsrPegUYsfqrE9dp"
+          "2Gn5LQEyLruiUjJrqtSKAtFTzoRdnjDSmdM2fFMFxTNU"
         ),
-        account: new PublicKey("HN4n1gHRP2vwe3hv9C7GBkX2cE1CCHQSGQqmRaJ4uhMq"),
+        account: new PublicKey("HQAtnBuJndvEj2N5HhETc55hrzC2yTKhSkMGj7URz8SZ"),
       },
     },
   },
