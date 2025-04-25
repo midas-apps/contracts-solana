@@ -22,7 +22,7 @@ const config = {
   // ),
   account: addresses["devnet"].mTBILL.mToken,
   newAuthority: addresses["devnet"].mTBILL.tokenAuthority.account,
-  authorityType: AuthorityType.MintTokens,
+  authorityType: AuthorityType.FreezeAccount,
   programId: TOKEN_2022_PROGRAM_ID,
 } as {
   currentAuthority?: PublicKey;
