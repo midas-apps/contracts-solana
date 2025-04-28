@@ -6,7 +6,7 @@ use data_feed::{state::FeedState, utils::decimals_conversion};
 use crate::{
     events::MinterVaultRequestCreatedEvent, state::{
           MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState, VaultCommonState
-    }, utils::{minter::{self}, transfer_token, validate_common, Validate, VaultActionId}
+    }, utils::{minter::{self}, transfer_token_with_signer, validate_common, Validate, VaultActionId}
 };
 
 #[derive(Accounts)]
@@ -180,7 +180,7 @@ pub fn handle(
         false
     )?;
 
-    transfer_token(
+    transfer_token_with_signer(
         &ctx.accounts.vault_common.key(), 
         MinterVaultState::SEED,
         &ctx.accounts.payment_mint_token_program,
@@ -192,7 +192,7 @@ pub fn handle(
     )?;
 
     if params.fee_token_amount > 0 { 
-        transfer_token(
+        transfer_token_with_signer(
             &ctx.accounts.vault_common.key(), 
             MinterVaultState::SEED,
             &ctx.accounts.payment_mint_token_program,

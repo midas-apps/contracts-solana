@@ -9,7 +9,7 @@ use crate::{
     events::TokensWithdrawnEvent,
     program::MidasVaults,
     state::{MinterVaultState, RedeemerVaultState, VaultCommonState},
-    utils::transfer_token,
+    utils::transfer_token_with_signer,
 };
 
 #[derive(Accounts)]
@@ -101,7 +101,7 @@ pub fn handle(ctx: Context<WithdrawTokens>, vault_seed: Vec<u8>, amount: u64) ->
         MidasVaultsError::InvalidVaultProvided
     );
 
-    transfer_token(
+    transfer_token_with_signer(
         &ctx.accounts.vault_common.key(),
         vault_seed.as_ref(),
         &ctx.accounts.token_program,

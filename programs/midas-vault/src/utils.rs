@@ -296,6 +296,44 @@ pub fn validate_fee(fee: u64, check_min: bool) -> Result<()> {
     Ok(())
 }
 
+/// Does SPL transfer. Requires that `authority` is a signer.
+///
+/// # Arguments
+///
+/// - `token_program` - SPL token program
+/// - `mint` - SPL mint account (`TransferChecked::mint`)
+/// - `authority` - `TransferChecked::authority`
+/// - `from` - `TransferChecked::from`
+/// - `to` - `TransferChecked::to`
+/// - `amount_base9` - amount to transfer in with 9 decimals
+pub fn transfer_token<'info>(
+    token_program: &Interface<'info, TokenInterface>,
+    mint: &Box<InterfaceAccount<'info, Mint>>,
+    authority: &AccountInfo<'info>,
+    from: &Box<InterfaceAccount<'info, TokenAccount>>,
+    to: &Box<InterfaceAccount<'info, TokenAccount>>,
+    amount_base9: u128,
+) -> Result<()> {
+    let amount: u64 =
+        decimals_conversion::convert_from_base_9(amount_base9, mint.decimals)?.try_into()?;
+
+    transfer_checked(
+        CpiContext::new(
+            token_program.to_account_info(),
+            TransferChecked {
+                authority: authority.to_account_info(),
+                mint: mint.to_account_info(),
+                from: from.to_account_info(),
+                to: to.to_account_info(),
+            },
+        ),
+        amount,
+        mint.decimals,
+    )?;
+
+    Ok(())
+}
+
 /// Does SPL transfer using vault common as a signer.
 ///
 /// # Arguments
@@ -308,7 +346,7 @@ pub fn validate_fee(fee: u64, check_min: bool) -> Result<()> {
 /// - `from` - `TransferChecked::from`
 /// - `to` - `TransferChecked::to`
 /// - `amount_base9` - amount to transfer in with 9 decimals
-pub fn transfer_token<'info>(
+pub fn transfer_token_with_signer<'info>(
     vault_common: &Pubkey,
     vault_seed: &[u8],
     token_program: &Interface<'info, TokenInterface>,
@@ -781,7 +819,7 @@ pub mod redeemer {
 
         let m_token_rate = get_token_rate(&m_mint_data_feed, &m_mint_feed, false)?;
 
-        transfer_token(
+        transfer_token_with_signer(
             &vault_common.key(),
             RedeemerVaultState::SEED,
             &m_mint_token_program,
@@ -793,7 +831,7 @@ pub mod redeemer {
         )?;
 
         if params.fee_amount > 0 {
-            transfer_token(
+            transfer_token_with_signer(
                 &vault_common.key(),
                 RedeemerVaultState::SEED,
                 &m_mint_token_program,
@@ -898,7 +936,7 @@ pub mod redeemer {
         require_and_update_allowance(payment_mint_state, amount_token_wo_fee)?;
 
         if !is_fiat {
-            transfer_token(
+            transfer_token_with_signer(
                 &vault_common.key(),
                 RedeemerVaultState::SEED,
                 payment_mint_token_program.unwrap(),
