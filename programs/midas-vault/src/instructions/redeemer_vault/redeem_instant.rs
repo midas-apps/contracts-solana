@@ -202,12 +202,10 @@ pub fn handle(
 
     require_and_update_allowance(&mut ctx.accounts.payment_mint_state, amount_payment_token)?;
 
-    burn_mtoken(&ctx.accounts.vault_common.key(), &ctx.accounts.m_mint_token_program, &ctx.accounts.m_mint, &ctx.accounts.signer, &ctx.accounts.m_mint_signer_ata, params.m_token_amount_wo_fee)?;
+    burn_mtoken(&ctx.accounts.m_mint_token_program, &ctx.accounts.m_mint, &ctx.accounts.signer, &ctx.accounts.m_mint_signer_ata, params.m_token_amount_wo_fee)?;
 
     if params.fee_amount > 0 {
-        transfer_token_with_signer(
-            &ctx.accounts.vault_common.key(), 
-            RedeemerVaultState::SEED,
+        transfer_token(
             &ctx.accounts.m_mint_token_program,
             &ctx.accounts.m_mint, 
             &ctx.accounts.signer.to_account_info(), 

@@ -7,7 +7,7 @@ use token_authority::{constants::ac_roles as ac_roles_token_authority, program::
 use crate::{
     errors::MidasVaultsError, events::MinterVaultInstantMintedEvent, state::{
         MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState, VaultCommonState
-    }, utils::{mint_token, minter::{self}, require_and_update_limit, transfer_token_with_signer, validate_common, Validate, VaultActionId}
+    }, utils::{mint_token, minter::{self}, require_and_update_limit, transfer_token, validate_common, Validate, VaultActionId}
 };
 
 #[derive(Accounts)]
@@ -215,9 +215,7 @@ pub fn handle(
 
     require_and_update_limit(&mut ctx.accounts.vault_common, params.m_token_amount)?;
 
-    transfer_token_with_signer(
-        &ctx.accounts.vault_common.key(), 
-        MinterVaultState::SEED,
+    transfer_token(
         &ctx.accounts.payment_mint_token_program,
         &ctx.accounts.payment_mint, 
         &ctx.accounts.signer.to_account_info(), 
@@ -227,9 +225,7 @@ pub fn handle(
     )?;
 
     if params.fee_token_amount > 0 { 
-        transfer_token_with_signer(
-            &ctx.accounts.vault_common.key(), 
-            MinterVaultState::SEED,
+        transfer_token(
             &ctx.accounts.payment_mint_token_program,
             &ctx.accounts.payment_mint, 
             &ctx.accounts.signer.to_account_info(), 

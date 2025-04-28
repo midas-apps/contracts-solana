@@ -441,6 +441,37 @@ pub fn mint_token<'info>(
     Ok(())
 }
 
+/// Burns mToken. Requires that `authority` is a signer.
+///
+/// # Arguments
+///
+/// - `token_program` - SPL token program
+/// - `mint` - SPL mint account (`Burn::mint`)
+/// - `authority` - `Burn::authority`
+/// - `from` - `Burn::from`
+/// - `amount` - amount to burn (in base 9)
+pub fn burn_mtoken<'info>(
+    token_program: &Interface<'info, TokenInterface>,
+    mint: &Box<InterfaceAccount<'info, Mint>>,
+    authority: &AccountInfo<'info>,
+    from: &Box<InterfaceAccount<'info, TokenAccount>>,
+    amount: u128,
+) -> Result<()> {
+    burn(
+        CpiContext::new(
+            token_program.to_account_info(),
+            Burn {
+                authority: authority.to_account_info(),
+                mint: mint.to_account_info(),
+                from: from.to_account_info(),
+            },
+        ),
+        amount.try_into().unwrap(),
+    )?;
+
+    Ok(())
+}
+
 /// Burns mToken using vault common as a signer.
 ///
 /// # Arguments
@@ -451,7 +482,7 @@ pub fn mint_token<'info>(
 /// - `authority` - `Burn::authority`
 /// - `from` - `Burn::from`
 /// - `amount` - amount to burn (in base 9)
-pub fn burn_mtoken<'info>(
+pub fn burn_mtoken_with_signer<'info>(
     vault_common: &Pubkey,
     token_program: &Interface<'info, TokenInterface>,
     mint: &Box<InterfaceAccount<'info, Mint>>,
@@ -819,9 +850,7 @@ pub mod redeemer {
 
         let m_token_rate = get_token_rate(&m_mint_data_feed, &m_mint_feed, false)?;
 
-        transfer_token_with_signer(
-            &vault_common.key(),
-            RedeemerVaultState::SEED,
+        transfer_token(
             &m_mint_token_program,
             &m_mint,
             &signer.to_account_info(),
@@ -831,9 +860,7 @@ pub mod redeemer {
         )?;
 
         if params.fee_amount > 0 {
-            transfer_token_with_signer(
-                &vault_common.key(),
-                RedeemerVaultState::SEED,
+            transfer_token(
                 &m_mint_token_program,
                 &m_mint,
                 &signer.to_account_info(),
@@ -909,7 +936,7 @@ pub mod redeemer {
             )?;
         }
 
-        burn_mtoken(
+        burn_mtoken_with_signer(
             &vault_common.key(),
             m_mint_token_program,
             m_mint,
