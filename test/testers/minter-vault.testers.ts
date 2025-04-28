@@ -385,14 +385,6 @@ export const mintInstant = async (
         TOKEN_AUTHORITY_ROLES.M_MINTER
       ),
     })
-    .preInstructions([
-      approveMintInstruction(
-        paymentMint.mint,
-        from,
-        getMinterVaultPda(baseAccounts.vaultCommon),
-        amountTokenParsed
-      ),
-    ])
     .transaction();
 
   if (opt?.revertedWith !== undefined) {
@@ -634,14 +626,6 @@ export const mintRequest = async (
       ),
       accountAc: getAccountAcStatePda(baseAccounts.ac, from.publicKey),
     })
-    .preInstructions([
-      approveMintInstruction(
-        paymentMint.mint,
-        from,
-        getMinterVaultPda(baseAccounts.vaultCommon),
-        amountTokenParsed
-      ),
-    ])
     .transaction();
 
   if (opt?.revertedWith !== undefined) {
