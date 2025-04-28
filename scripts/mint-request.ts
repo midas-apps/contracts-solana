@@ -160,12 +160,6 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   }
 
   tx2.add(
-    approveMintInstruction(
-      config.mint,
-      payer,
-      getMinterVaultPda(vaultCommon),
-      config.amount
-    ),
     await vaultsProgram.methods
       .mintRequest(toBN(config.amount), Array.from(payer.publicKey.toBytes()))
       .accountsPartial({
@@ -180,8 +174,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
         paymentMintTokenProgram: config.tokenProgram,
         accountAc: getAccountAcStatePda(commonState.ac, payer.publicKey),
       })
-      .instruction(),
-    revokeMintInstruction(config.mint, payer, config.tokenProgram)
+      .instruction()
   );
 
   const txRes = await sendAndConfirmTransaction(

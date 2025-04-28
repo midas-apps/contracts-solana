@@ -14,7 +14,7 @@ token_authority = "6XqSwGFEuadyqXC9vBLYGJhvQsEVjPdCrtvN6inAb4z3"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/midas_id.json"
 
 [scripts]
