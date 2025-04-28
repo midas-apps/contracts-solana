@@ -3,9 +3,9 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 use crate::{
-    constants::ac_roles, state::{
-         PaymentMintState, RedeemerVaultRequestState, RedeemerVaultState, VaultCommonState
-    }, utils::{close_account, redeemer, Closable}
+    constants::ac_roles,
+    state::{PaymentMintState, RedeemerVaultRequestState, RedeemerVaultState, VaultCommonState},
+    utils::{close_account, redeemer, Closable},
 };
 
 #[derive(Accounts)]
@@ -18,7 +18,7 @@ pub struct ApproveRedeemRequest<'info> {
     /// CHECK:
     /// request user account
     #[account(
-        mut, 
+        mut,
         address = redeem_request.user
     )]
     pub user_account: AccountInfo<'info>,
@@ -26,7 +26,7 @@ pub struct ApproveRedeemRequest<'info> {
     /// CHECK:
     /// request redeemer account
     #[account(
-        mut, 
+        mut,
         address = redeemer_vault.request_redeemer
     )]
     pub request_redeemer: AccountInfo<'info>,
@@ -122,7 +122,11 @@ pub struct ApproveRedeemRequest<'info> {
 impl<'info> Closable for ApproveRedeemRequest<'info> {
     /// Close implementation to close redeem request
     fn close(&mut self) -> Result<()> {
-        close_account(&mut self.redeem_request.to_account_info(), &mut self.user_account, &self.system_program)?;
+        close_account(
+            &mut self.redeem_request.to_account_info(),
+            &mut self.user_account,
+            &self.system_program,
+        )?;
 
         Ok(())
     }
@@ -131,9 +135,9 @@ impl<'info> Closable for ApproveRedeemRequest<'info> {
 /// Approves redeem request and emits an event.
 /// Can be used only for non-fiat redeem requests.
 /// Can be called only by vault admin.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// - `request_id` - ID of redeem request
 /// - `new_m_token_rate` - new mToken rate
 /// Using this value admin can correct the output mToken amount.
@@ -145,20 +149,20 @@ pub fn handle(
     is_safe: bool,
 ) -> Result<()> {
     redeemer::approve_redeem_request(
-        &ctx.accounts.redeem_request, 
-        &ctx.accounts.vault_common, 
-        &ctx.accounts.redeemer_vault, 
-        &ctx.accounts.m_mint_token_program, 
-        &ctx.accounts.m_mint, 
-        &ctx.accounts.m_mint_vault_ata, 
-        &mut ctx.accounts.payment_mint_state, 
+        &ctx.accounts.redeem_request,
+        &ctx.accounts.vault_common,
+        &ctx.accounts.redeemer_vault,
+        &ctx.accounts.m_mint_token_program,
+        &ctx.accounts.m_mint,
+        &ctx.accounts.m_mint_vault_ata,
+        &mut ctx.accounts.payment_mint_state,
         Some(&ctx.accounts.payment_mint),
-        Some (&ctx.accounts.payment_mint_token_program), 
-        Some(&ctx.accounts.payment_mint_redeemer_ata), 
-        Some(&ctx.accounts.payment_mint_user_ata), 
+        Some(&ctx.accounts.payment_mint_token_program),
+        Some(&ctx.accounts.payment_mint_redeemer_ata),
+        Some(&ctx.accounts.payment_mint_user_ata),
         request_id,
-        new_m_token_rate.into(), 
-        is_safe
+        new_m_token_rate.into(),
+        is_safe,
     )?;
 
     ctx.accounts.close()?;

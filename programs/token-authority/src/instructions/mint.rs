@@ -1,10 +1,11 @@
 use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
 use anchor_lang::prelude::*;
-use anchor_spl::{token_2022::{mint_to, MintTo}, token_interface::{Mint as SplMint, TokenAccount, TokenInterface}};
-
-use crate::{
-    constants::ac_roles, program::TokenAuthority, state::TokenAuthorityState
+use anchor_spl::{
+    token_2022::{mint_to, MintTo},
+    token_interface::{Mint as SplMint, TokenAccount, TokenInterface},
 };
+
+use crate::{constants::ac_roles, program::TokenAuthority, state::TokenAuthorityState};
 
 #[derive(Accounts)]
 pub struct Mint<'info> {
@@ -20,7 +21,7 @@ pub struct Mint<'info> {
     /// Token authority PDA
     #[account(
         seeds = [TokenAuthorityState::SEED, token_authority.base_seed.as_ref()],
-        bump    
+        bump
     )]
     pub token_authority: Account<'info, TokenAuthorityState>,
 
@@ -31,14 +32,14 @@ pub struct Mint<'info> {
         bump,
     )]
     pub authority_minter_role: Account<'info, AccountAccessControlRoleState>,
-    
+
     /// SPL mint account (MintTo::mint)
     #[account(
         mut,
         mint::token_program = token_program
     )]
     pub mint: Box<InterfaceAccount<'info, SplMint>>,
-    
+
     /// ATA of `receiver` (MintTo::account)
     #[account(
         mut,
@@ -47,7 +48,7 @@ pub struct Mint<'info> {
         associated_token::authority = receiver,
     )]
     pub receiver_ata: Box<InterfaceAccount<'info, TokenAccount>>,
-    
+
     /// SPL token program
     pub token_program: Interface<'info, TokenInterface>,
 
@@ -55,13 +56,16 @@ pub struct Mint<'info> {
 }
 
 /// Does `spl's mint_to` invocation
-/// 
+///
 /// # Arguments
-/// 
+///
 /// - `amount` - amount to mint
 pub fn handle(ctx: Context<Mint>, amount: u64) -> Result<()> {
     let (_, vault_pda_bump_seed) = Pubkey::find_program_address(
-        &[TokenAuthorityState::SEED, ctx.accounts.token_authority.base_seed.as_ref()],
+        &[
+            TokenAuthorityState::SEED,
+            ctx.accounts.token_authority.base_seed.as_ref(),
+        ],
         &TokenAuthority::id(),
     );
 

@@ -1,7 +1,9 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    constants::ac_roles, events::AccountAcRoleUpdatedEvent, state::{AccessControlRoleState, AccountAccessControlRoleState}
+    constants::ac_roles,
+    events::AccountAcRoleUpdatedEvent,
+    state::{AccessControlRoleState, AccountAccessControlRoleState},
 };
 
 #[derive(Accounts)]
@@ -29,7 +31,7 @@ pub struct GrantRole<'info> {
 
     /// Role that will be granted to `account`
     #[account(
-        init, 
+        init,
         payer = authority,
         space = 8 + AccountAccessControlRoleState::INIT_SPACE,
         seeds = [AccountAccessControlRoleState::SEED, ac_role.key().as_ref(), account.key().as_ref(), role.as_ref()],
@@ -40,11 +42,10 @@ pub struct GrantRole<'info> {
     pub system_program: Program<'info, System>,
 }
 
-
 /// Grants `role` to a `ctx.account` and emits an event
-/// 
+///
 /// # Arguments
-/// 
+///
 /// - `role` - role identifier
 pub fn handle(ctx: Context<GrantRole>, role: Vec<u8>) -> Result<()> {
     emit!(AccountAcRoleUpdatedEvent {

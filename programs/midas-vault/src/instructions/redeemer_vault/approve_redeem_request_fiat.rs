@@ -3,9 +3,9 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 use crate::{
-    constants::{ac_roles, FIAT_MINT}, state::{
-         PaymentMintState, RedeemerVaultRequestState, RedeemerVaultState, VaultCommonState
-    }, utils::{close_account, redeemer, Closable}
+    constants::{ac_roles, FIAT_MINT},
+    state::{PaymentMintState, RedeemerVaultRequestState, RedeemerVaultState, VaultCommonState},
+    utils::{close_account, redeemer, Closable},
 };
 
 #[derive(Accounts)]
@@ -18,7 +18,7 @@ pub struct ApproveRedeemRequestFiat<'info> {
     /// CHECK:
     /// request user account
     #[account(
-        mut, 
+        mut,
         address = redeem_request.user
     )]
     pub user_account: AccountInfo<'info>,
@@ -85,7 +85,11 @@ pub struct ApproveRedeemRequestFiat<'info> {
 impl<'info> Closable for ApproveRedeemRequestFiat<'info> {
     /// Close implementation to close redeem request
     fn close(&mut self) -> Result<()> {
-        close_account(&mut self.redeem_request.to_account_info(), &mut self.user_account, &self.system_program)?;
+        close_account(
+            &mut self.redeem_request.to_account_info(),
+            &mut self.user_account,
+            &self.system_program,
+        )?;
 
         Ok(())
     }
@@ -95,9 +99,9 @@ impl<'info> Closable for ApproveRedeemRequestFiat<'info> {
 /// Reason fiat was moved to a different instruction is because
 /// it requires a different list of accounts.
 /// Can be called only by vault admin.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// - `request_id` - id of the request to approve
 /// - `new_m_token_rate` - new rate of mToken.
 /// Using this value admin can correct the output mToken amount.
@@ -109,20 +113,20 @@ pub fn handle(
     is_safe: bool,
 ) -> Result<()> {
     redeemer::approve_redeem_request(
-        &ctx.accounts.redeem_request, 
-        &ctx.accounts.vault_common, 
-        &ctx.accounts.redeemer_vault, 
-        &ctx.accounts.m_mint_token_program, 
-        &ctx.accounts.m_mint, 
-        &ctx.accounts.m_mint_vault_ata, 
-        &mut ctx.accounts.payment_mint_state, 
+        &ctx.accounts.redeem_request,
+        &ctx.accounts.vault_common,
+        &ctx.accounts.redeemer_vault,
+        &ctx.accounts.m_mint_token_program,
+        &ctx.accounts.m_mint,
+        &ctx.accounts.m_mint_vault_ata,
+        &mut ctx.accounts.payment_mint_state,
         None,
         None,
         None,
         None,
         request_id,
-        new_m_token_rate.into(), 
-        is_safe
+        new_m_token_rate.into(),
+        is_safe,
     )?;
 
     ctx.accounts.close()?;

@@ -1,10 +1,15 @@
-use access_control::{constants::ac_roles, program::AccessControl, state::AccountAccessControlRoleState};
-use anchor_lang::prelude::*;
-use anchor_spl::{token_2022::{set_authority, spl_token_2022::{instruction::AuthorityType}, SetAuthority as SplSetAuthority}, token_interface::TokenInterface};
-
-use crate::{
-    program::TokenAuthority, state::TokenAuthorityState
+use access_control::{
+    constants::ac_roles, program::AccessControl, state::AccountAccessControlRoleState,
 };
+use anchor_lang::prelude::*;
+use anchor_spl::{
+    token_2022::{
+        set_authority, spl_token_2022::instruction::AuthorityType, SetAuthority as SplSetAuthority,
+    },
+    token_interface::TokenInterface,
+};
+
+use crate::{program::TokenAuthority, state::TokenAuthorityState};
 
 #[derive(Accounts)]
 pub struct SetAuthority<'info> {
@@ -15,7 +20,7 @@ pub struct SetAuthority<'info> {
     /// Token authority PDA
     #[account(
         seeds = [TokenAuthorityState::SEED, token_authority.base_seed.as_ref()],
-        bump    
+        bump
     )]
     pub token_authority: Account<'info, TokenAuthorityState>,
 
@@ -38,19 +43,21 @@ pub struct SetAuthority<'info> {
     pub system_program: Program<'info, System>,
 }
 
-
 /// Does `spl's set_authority` invocation
 /// # Arguments
-/// 
+///
 /// - authority_type - authority type to update. Value is `AuthorityType` enum
 /// - new_authority - new authority pubkey
 pub fn handle(
-    ctx: Context<SetAuthority>, 
+    ctx: Context<SetAuthority>,
     authority_type: u8,
-    new_authority: Option<Pubkey>
+    new_authority: Option<Pubkey>,
 ) -> Result<()> {
     let (_, vault_pda_bump_seed) = Pubkey::find_program_address(
-        &[TokenAuthorityState::SEED, ctx.accounts.token_authority.base_seed.as_ref()],
+        &[
+            TokenAuthorityState::SEED,
+            ctx.accounts.token_authority.base_seed.as_ref(),
+        ],
         &TokenAuthority::id(),
     );
 
@@ -59,7 +66,7 @@ pub fn handle(
             ctx.accounts.token_program.to_account_info(),
             SplSetAuthority {
                 current_authority: ctx.accounts.token_authority.to_account_info(),
-                account_or_mint: ctx.accounts.account_or_mint.to_account_info()
+                account_or_mint: ctx.accounts.account_or_mint.to_account_info(),
             },
             &[&[
                 TokenAuthorityState::SEED,
@@ -79,14 +86,14 @@ pub fn handle(
             7 => AuthorityType::InterestRate,
             8 => AuthorityType::PermanentDelegate,
             9 => AuthorityType::ConfidentialTransferMint,
-            10 =>AuthorityType::TransferHookProgramId,
-            11 =>AuthorityType::ConfidentialTransferFeeConfig,
-            12 =>AuthorityType::MetadataPointer,
-            13 =>AuthorityType::GroupPointer,
-            14 =>AuthorityType::GroupMemberPointer,
-            _ => panic!()
+            10 => AuthorityType::TransferHookProgramId,
+            11 => AuthorityType::ConfidentialTransferFeeConfig,
+            12 => AuthorityType::MetadataPointer,
+            13 => AuthorityType::GroupPointer,
+            14 => AuthorityType::GroupMemberPointer,
+            _ => panic!(),
         },
-        new_authority
+        new_authority,
     )?;
 
     Ok(())

@@ -1,10 +1,11 @@
 use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
 use anchor_lang::prelude::*;
-use anchor_spl::{token_2022::{freeze_account, FreezeAccount}, token_interface::{Mint as SplMint, TokenAccount, TokenInterface}};
-
-use crate::{
-    constants::ac_roles, program::TokenAuthority, state::TokenAuthorityState
+use anchor_spl::{
+    token_2022::{freeze_account, FreezeAccount},
+    token_interface::{Mint as SplMint, TokenAccount, TokenInterface},
 };
+
+use crate::{constants::ac_roles, program::TokenAuthority, state::TokenAuthorityState};
 
 #[derive(Accounts)]
 pub struct Freeze<'info> {
@@ -20,7 +21,7 @@ pub struct Freeze<'info> {
     /// Token authority PDA
     #[account(
         seeds = [TokenAuthorityState::SEED, token_authority.base_seed.as_ref()],
-        bump    
+        bump
     )]
     pub token_authority: Account<'info, TokenAuthorityState>,
 
@@ -57,25 +58,26 @@ pub struct Freeze<'info> {
 /// Does `spl's freeze_account` invocation
 pub fn handle(ctx: Context<Freeze>) -> Result<()> {
     let (_, vault_pda_bump_seed) = Pubkey::find_program_address(
-        &[TokenAuthorityState::SEED, ctx.accounts.token_authority.base_seed.as_ref()],
+        &[
+            TokenAuthorityState::SEED,
+            ctx.accounts.token_authority.base_seed.as_ref(),
+        ],
         &TokenAuthority::id(),
     );
 
-    freeze_account(
-        CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
-            FreezeAccount {
-                authority: ctx.accounts.token_authority.to_account_info(),
-                mint: ctx.accounts.mint.to_account_info(),
-                account: ctx.accounts.to_freeze_ata.to_account_info(),
-            },
-            &[&[ 
-                TokenAuthorityState::SEED,
-                ctx.accounts.token_authority.base_seed.as_ref(),
-                &[vault_pda_bump_seed],
-            ]],
-        )
-    )?;
+    freeze_account(CpiContext::new_with_signer(
+        ctx.accounts.token_program.to_account_info(),
+        FreezeAccount {
+            authority: ctx.accounts.token_authority.to_account_info(),
+            mint: ctx.accounts.mint.to_account_info(),
+            account: ctx.accounts.to_freeze_ata.to_account_info(),
+        },
+        &[&[
+            TokenAuthorityState::SEED,
+            ctx.accounts.token_authority.base_seed.as_ref(),
+            &[vault_pda_bump_seed],
+        ]],
+    ))?;
 
     Ok(())
 }

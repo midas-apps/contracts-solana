@@ -1,10 +1,11 @@
 use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
 use anchor_lang::prelude::*;
-use anchor_spl::{token_2022::{burn, Burn as SplBurn}, token_interface::{Mint as SplMint, TokenAccount, TokenInterface}};
-
-use crate::{
-    constants::ac_roles, program::TokenAuthority, state::TokenAuthorityState
+use anchor_spl::{
+    token_2022::{burn, Burn as SplBurn},
+    token_interface::{Mint as SplMint, TokenAccount, TokenInterface},
 };
+
+use crate::{constants::ac_roles, program::TokenAuthority, state::TokenAuthorityState};
 
 #[derive(Accounts)]
 pub struct Burn<'info> {
@@ -20,7 +21,7 @@ pub struct Burn<'info> {
     /// Token authority PDA
     #[account(
         seeds = [TokenAuthorityState::SEED, token_authority.base_seed.as_ref()],
-        bump    
+        bump
     )]
     pub token_authority: Account<'info, TokenAuthorityState>,
 
@@ -54,15 +55,17 @@ pub struct Burn<'info> {
     pub system_program: Program<'info, System>,
 }
 
-
 /// Does `spl's burn` invocation
-/// 
+///
 /// # Arguments
-/// 
+///
 /// - `amount` - amount to burn
 pub fn handle(ctx: Context<Burn>, amount: u64) -> Result<()> {
     let (_, vault_pda_bump_seed) = Pubkey::find_program_address(
-        &[TokenAuthorityState::SEED, ctx.accounts.token_authority.base_seed.as_ref()],
+        &[
+            TokenAuthorityState::SEED,
+            ctx.accounts.token_authority.base_seed.as_ref(),
+        ],
         &TokenAuthority::id(),
     );
 
