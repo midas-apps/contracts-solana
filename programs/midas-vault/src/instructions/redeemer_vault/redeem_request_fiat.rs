@@ -1,12 +1,18 @@
-use access_control::{program::AccessControl, state::{AccessControlState, AccountAccessControlState}};
+use access_control::{
+    program::AccessControl,
+    state::{AccessControlState, AccountAccessControlState},
+};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use data_feed::state::FeedState;
 
 use crate::{
-    constants::FIAT_MINT, state::{
-         PauseInxState, PaymentMintState, RedeemerVaultRequestState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState
-    }, utils::{redeemer, validate_common, Validate, VaultActionId}
+    constants::FIAT_MINT,
+    state::{
+        PauseInxState, PaymentMintState, RedeemerVaultRequestState, RedeemerVaultState,
+        VaultCommonAccountState, VaultCommonState,
+    },
+    utils::{redeemer, validate_common, Validate, VaultActionId},
 };
 
 #[derive(Accounts)]
@@ -115,7 +121,7 @@ pub struct RedeemRequestFiat<'info> {
     /// CHECK:
     /// mMint underlying feed state account
     #[account(
-        address = m_mint_data_feed.underlying_feed 
+        address = m_mint_data_feed.underlying_feed
     )]
     pub m_mint_feed: AccountInfo<'info>,
 
@@ -135,7 +141,12 @@ pub struct RedeemRequestFiat<'info> {
 impl<'info> Validate<'info> for RedeemRequestFiat<'info> {
     /// Validate implementation for redeem request instruction
     fn validate(&self) -> Result<()> {
-        validate_common(&self.vault_common, &self.account_ac, &self.pause_inx_state, true)?;
+        validate_common(
+            &self.vault_common,
+            &self.account_ac,
+            &self.pause_inx_state,
+            true,
+        )?;
         Ok(())
     }
 }
@@ -144,15 +155,11 @@ impl<'info> Validate<'info> for RedeemRequestFiat<'info> {
 /// Vault admin reviews the request and decides whether to approve it or reject it.
 /// As fiat during approval should be transferred off-chain, green list is required
 /// for this instruction
-/// 
+///
 /// # Arguments
-/// 
-/// - `amount_m_token` - amount of mToken to redeem 
-pub fn handle(
-    ctx: Context<RedeemRequestFiat>,
-    amount_m_token: u64,
-) -> Result<()> {
-
+///
+/// - `amount_m_token` - amount of mToken to redeem
+pub fn handle(ctx: Context<RedeemRequestFiat>, amount_m_token: u64) -> Result<()> {
     redeemer::create_redeem_request(
         &ctx.accounts.signer,
         &mut ctx.accounts.vault_common,
@@ -171,7 +178,7 @@ pub fn handle(
         &ctx.accounts.m_mint_fee_receiver_ata,
         &mut ctx.accounts.redeem_request,
         amount_m_token.into(),
-        true
+        true,
     )?;
 
     Ok(())

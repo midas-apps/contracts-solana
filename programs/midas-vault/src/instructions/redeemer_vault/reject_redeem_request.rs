@@ -2,9 +2,9 @@ use access_control::{program::AccessControl, state::AccountAccessControlRoleStat
 use anchor_lang::prelude::*;
 
 use crate::{
-    constants::ac_roles, events::RedeemerVaultRequestRejectedEvent, state::{
-  RedeemerVaultRequestState, RedeemerVaultState, VaultCommonState
-    }
+    constants::ac_roles,
+    events::RedeemerVaultRequestRejectedEvent,
+    state::{RedeemerVaultRequestState, RedeemerVaultState, VaultCommonState},
 };
 
 #[derive(Accounts)]
@@ -16,7 +16,7 @@ pub struct RejectRedeemRequest<'info> {
 
     /// CHECK:
     /// request user account
-    #[account(mut, 
+    #[account(mut,
         address = redeem_request.user
     )]
     pub user_account: AccountInfo<'info>,
@@ -56,21 +56,15 @@ pub struct RejectRedeemRequest<'info> {
 
 /// Rejects redeem request, close request account and emits an event.
 /// Can only be called by the vault admin.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// - `request_id` - id of the request to reject
-pub fn handle(
-    ctx: Context<RejectRedeemRequest>,
-    request_id: u64
-) -> Result<()> {
-    
-    emit!(
-        RedeemerVaultRequestRejectedEvent {
-            common_vault: ctx.accounts.vault_common.key(),
-            request_id
-        }
-    );
-    
+pub fn handle(ctx: Context<RejectRedeemRequest>, request_id: u64) -> Result<()> {
+    emit!(RedeemerVaultRequestRejectedEvent {
+        common_vault: ctx.accounts.vault_common.key(),
+        request_id
+    });
+
     Ok(())
 }

@@ -1,12 +1,17 @@
-use access_control::{program::AccessControl, state::{AccessControlState, AccountAccessControlState}};
+use access_control::{
+    program::AccessControl,
+    state::{AccessControlState, AccountAccessControlState},
+};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use data_feed::state::FeedState;
 
 use crate::{
     state::{
-          PauseInxState, PaymentMintState, RedeemerVaultRequestState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState
-    }, utils::{redeemer, validate_common, Validate, VaultActionId}
+        PauseInxState, PaymentMintState, RedeemerVaultRequestState, RedeemerVaultState,
+        VaultCommonAccountState, VaultCommonState,
+    },
+    utils::{redeemer, validate_common, Validate, VaultActionId},
 };
 
 #[derive(Accounts)]
@@ -121,7 +126,7 @@ pub struct RedeemRequest<'info> {
     /// CHECK:
     /// mMint underlying feed state account
     #[account(
-        address = m_mint_data_feed.underlying_feed 
+        address = m_mint_data_feed.underlying_feed
     )]
     pub m_mint_feed: AccountInfo<'info>,
 
@@ -134,7 +139,7 @@ pub struct RedeemRequest<'info> {
     /// CHECK:
     /// Payment mint underlying feed state account
     #[account(
-        address = payment_mint_data_feed.underlying_feed 
+        address = payment_mint_data_feed.underlying_feed
     )]
     pub payment_mint_feed: AccountInfo<'info>,
 
@@ -156,7 +161,12 @@ pub struct RedeemRequest<'info> {
 impl<'info> Validate<'info> for RedeemRequest<'info> {
     /// validates implementation for MintRequest
     fn validate(&self) -> Result<()> {
-        validate_common(&self.vault_common, &self.account_ac, &self.pause_inx_state, false)?;
+        validate_common(
+            &self.vault_common,
+            &self.account_ac,
+            &self.pause_inx_state,
+            false,
+        )?;
         Ok(())
     }
 }
@@ -164,15 +174,11 @@ impl<'info> Validate<'info> for RedeemRequest<'info> {
 /// Takes mToken from user and creates a redeem request.
 /// Vault admin reviews the request and decides whether to approve it or reject it.
 /// Payment tokens are sent to the user's account if the request is approved.
-/// 
+///
 /// # Arguments
-/// 
-/// - `amount_m_token` - amount of mToken to redeem 
-pub fn handle(
-    ctx: Context<RedeemRequest>,
-    amount_m_token: u64,
-) -> Result<()> {
-
+///
+/// - `amount_m_token` - amount of mToken to redeem
+pub fn handle(ctx: Context<RedeemRequest>, amount_m_token: u64) -> Result<()> {
     redeemer::create_redeem_request(
         &ctx.accounts.signer,
         &mut ctx.accounts.vault_common,
@@ -180,7 +186,7 @@ pub fn handle(
         &mut ctx.accounts.redeemer_vault,
         &mut ctx.accounts.payment_mint_state,
         &ctx.accounts.payment_mint.key(),
-        Some(& ctx.accounts.payment_mint_data_feed),
+        Some(&ctx.accounts.payment_mint_data_feed),
         Some(&ctx.accounts.payment_mint_feed),
         &ctx.accounts.m_mint,
         &ctx.accounts.m_mint_token_program,
@@ -191,7 +197,7 @@ pub fn handle(
         &ctx.accounts.m_mint_fee_receiver_ata,
         &mut ctx.accounts.redeem_request,
         amount_m_token.into(),
-        false
+        false,
     )?;
 
     Ok(())

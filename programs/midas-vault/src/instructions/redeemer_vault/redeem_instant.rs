@@ -1,12 +1,23 @@
-use access_control::{program::AccessControl, state::{AccessControlState, AccountAccessControlState}};
+use access_control::{
+    program::AccessControl,
+    state::{AccessControlState, AccountAccessControlState},
+};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use data_feed::state::FeedState;
 
 use crate::{
-    errors::MidasVaultsError, events::RedeemerVaultInstantRedeemedEvent, state::{
-          PauseInxState, PaymentMintState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState
-    }, utils::{burn_mtoken, redeemer, require_and_update_allowance, require_and_update_limit, transfer_token, transfer_token_with_signer, truncate, validate_common, Validate, VaultActionId}
+    errors::MidasVaultsError,
+    events::RedeemerVaultInstantRedeemedEvent,
+    state::{
+        PauseInxState, PaymentMintState, RedeemerVaultState, VaultCommonAccountState,
+        VaultCommonState,
+    },
+    utils::{
+        burn_mtoken, redeemer, require_and_update_allowance, require_and_update_limit,
+        transfer_token, transfer_token_with_signer, truncate, validate_common, Validate,
+        VaultActionId,
+    },
 };
 
 #[derive(Accounts)]
@@ -37,7 +48,7 @@ pub struct RedeemInstant<'info> {
         bump
     )]
     pub redeemer_vault: Account<'info, RedeemerVaultState>,
-    
+
     /// AccessControlState account
     #[account(
         address = vault_common.ac,
@@ -120,7 +131,7 @@ pub struct RedeemInstant<'info> {
     /// CHECK:
     /// mMint underlying feed account
     #[account(
-        address = m_mint_data_feed.underlying_feed 
+        address = m_mint_data_feed.underlying_feed
     )]
     pub m_mint_feed: AccountInfo<'info>,
 
@@ -133,7 +144,7 @@ pub struct RedeemInstant<'info> {
     /// CHECK:
     /// payment mint underlying feed account
     #[account(
-        address = payment_mint_data_feed.underlying_feed 
+        address = payment_mint_data_feed.underlying_feed
     )]
     pub payment_mint_feed: AccountInfo<'info>,
 
@@ -155,77 +166,102 @@ pub struct RedeemInstant<'info> {
 impl<'info> Validate<'info> for RedeemInstant<'info> {
     /// Validate implementation for redeem instant instruction
     fn validate(&self) -> Result<()> {
-        validate_common(&self.vault_common, &self.account_ac, &self.pause_inx_state, false)?;
+        validate_common(
+            &self.vault_common,
+            &self.account_ac,
+            &self.pause_inx_state,
+            false,
+        )?;
         Ok(())
     }
 }
 
 /// Atomically burns mTokens from user and transfer payment tokens
 /// in exchange. Emits `RedeemerVaultInstantRedeemedEvent` event.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// - `amount_m_token` - Amount of mToken to redeem.
 /// - `min_receive_amount` - Minimum amount of payment tokens to receive.
 pub fn handle(
     ctx: Context<RedeemInstant>,
     amount_m_token: u64,
-    min_receive_amount: u64
+    min_receive_amount: u64,
 ) -> Result<()> {
-    let params= redeemer::calc_and_validate_redeem(
+    let params = redeemer::calc_and_validate_redeem(
         &mut ctx.accounts.payment_mint_state,
         &ctx.accounts.vault_common,
         &mut ctx.accounts.vault_common_signer,
         &mut ctx.accounts.redeemer_vault,
         amount_m_token.into(),
         true,
-        false
+        false,
     )?;
-
 
     require_and_update_limit(&mut ctx.accounts.vault_common, amount_m_token.into())?;
 
     let decimals = ctx.accounts.payment_mint.decimals;
 
-    let (amount_m_token_in_usd, m_token_rate) = redeemer::convert_m_token_to_usd(&ctx.accounts.m_mint_data_feed, &ctx.accounts.m_mint_feed, amount_m_token.into())?;
+    let (amount_m_token_in_usd, m_token_rate) = redeemer::convert_m_token_to_usd(
+        &ctx.accounts.m_mint_data_feed,
+        &ctx.accounts.m_mint_feed,
+        amount_m_token.into(),
+    )?;
 
-    let (amount_payment_token,payment_token_rate) = redeemer::convert_usd_to_payment_mint(&ctx.accounts.payment_mint_state, &ctx.accounts.payment_mint_data_feed, &ctx.accounts.payment_mint_feed, amount_m_token_in_usd)?;
+    let (amount_payment_token, payment_token_rate) = redeemer::convert_usd_to_payment_mint(
+        &ctx.accounts.payment_mint_state,
+        &ctx.accounts.payment_mint_data_feed,
+        &ctx.accounts.payment_mint_feed,
+        amount_m_token_in_usd,
+    )?;
 
     let amount_payment_token_wo_fee = truncate(
-        params.m_token_amount_wo_fee.checked_mul(m_token_rate).unwrap().checked_div(payment_token_rate).unwrap()
-        , decimals)?;
+        params
+            .m_token_amount_wo_fee
+            .checked_mul(m_token_rate)
+            .unwrap()
+            .checked_div(payment_token_rate)
+            .unwrap(),
+        decimals,
+    )?;
 
     require_gte!(
-        amount_payment_token_wo_fee, min_receive_amount as u128,
+        amount_payment_token_wo_fee,
+        min_receive_amount as u128,
         MidasVaultsError::LessThanMinReceiveAmount
     );
 
     require_and_update_allowance(&mut ctx.accounts.payment_mint_state, amount_payment_token)?;
 
-    burn_mtoken(&ctx.accounts.m_mint_token_program, &ctx.accounts.m_mint, &ctx.accounts.signer, &ctx.accounts.m_mint_signer_ata, params.m_token_amount_wo_fee)?;
+    burn_mtoken(
+        &ctx.accounts.m_mint_token_program,
+        &ctx.accounts.m_mint,
+        &ctx.accounts.signer,
+        &ctx.accounts.m_mint_signer_ata,
+        params.m_token_amount_wo_fee,
+    )?;
 
     if params.fee_amount > 0 {
         transfer_token(
             &ctx.accounts.m_mint_token_program,
-            &ctx.accounts.m_mint, 
-            &ctx.accounts.signer.to_account_info(), 
-            &ctx.accounts.m_mint_signer_ata, 
-            &ctx.accounts.m_mint_fee_receiver_ata, 
-            params.fee_amount
+            &ctx.accounts.m_mint,
+            &ctx.accounts.signer.to_account_info(),
+            &ctx.accounts.m_mint_signer_ata,
+            &ctx.accounts.m_mint_fee_receiver_ata,
+            params.fee_amount,
         )?;
     }
-    
+
     transfer_token_with_signer(
-        &ctx.accounts.vault_common.key(), 
+        &ctx.accounts.vault_common.key(),
         RedeemerVaultState::SEED,
         &ctx.accounts.payment_mint_token_program,
-        &ctx.accounts.payment_mint, 
-        &ctx.accounts.redeemer_vault.to_account_info(), 
-        &ctx.accounts.payment_mint_vault_ata, 
-        &ctx.accounts.payment_mint_signer_ata, 
-        amount_payment_token_wo_fee
+        &ctx.accounts.payment_mint,
+        &ctx.accounts.redeemer_vault.to_account_info(),
+        &ctx.accounts.payment_mint_vault_ata,
+        &ctx.accounts.payment_mint_signer_ata,
+        amount_payment_token_wo_fee,
     )?;
-
 
     emit!(RedeemerVaultInstantRedeemedEvent {
         common_vault: ctx.accounts.vault_common.key(),

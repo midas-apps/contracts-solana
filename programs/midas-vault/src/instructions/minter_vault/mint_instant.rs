@@ -1,13 +1,27 @@
-use access_control::{program::AccessControl, state::{AccessControlState, AccountAccessControlRoleState, AccountAccessControlState}};
+use access_control::{
+    program::AccessControl,
+    state::{AccessControlState, AccountAccessControlRoleState, AccountAccessControlState},
+};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use data_feed::{state::FeedState, utils::decimals_conversion};
-use token_authority::{constants::ac_roles as ac_roles_token_authority, program::TokenAuthority, state::TokenAuthorityState};
+use token_authority::{
+    constants::ac_roles as ac_roles_token_authority, program::TokenAuthority,
+    state::TokenAuthorityState,
+};
 
 use crate::{
-    errors::MidasVaultsError, events::MinterVaultInstantMintedEvent, state::{
-        MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState, VaultCommonState
-    }, utils::{mint_token, minter::{self}, require_and_update_limit, transfer_token, validate_common, Validate, VaultActionId}
+    errors::MidasVaultsError,
+    events::MinterVaultInstantMintedEvent,
+    state::{
+        MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState,
+        VaultCommonState,
+    },
+    utils::{
+        mint_token,
+        minter::{self},
+        require_and_update_limit, transfer_token, validate_common, Validate, VaultActionId,
+    },
 };
 
 #[derive(Accounts)]
@@ -137,7 +151,7 @@ pub struct MintInstant<'info> {
     /// CHECK:
     /// mMint underlying feed account
     #[account(
-        address = m_mint_data_feed.underlying_feed 
+        address = m_mint_data_feed.underlying_feed
     )]
     pub m_mint_feed: AccountInfo<'info>,
 
@@ -150,7 +164,7 @@ pub struct MintInstant<'info> {
     /// CHECK:
     /// payment mint underlying feed account
     #[account(
-        address = payment_mint_data_feed.underlying_feed 
+        address = payment_mint_data_feed.underlying_feed
     )]
     pub payment_mint_feed: AccountInfo<'info>,
 
@@ -174,7 +188,12 @@ pub struct MintInstant<'info> {
 impl<'info> Validate<'info> for MintInstant<'info> {
     /// validate implementation for MintInstant
     fn validate(&self) -> Result<()> {
-        validate_common(&self.vault_common, &self.account_ac, &self.pause_inx_state, false)?;
+        validate_common(
+            &self.vault_common,
+            &self.account_ac,
+            &self.pause_inx_state,
+            false,
+        )?;
         Ok(())
     }
 }
@@ -182,7 +201,7 @@ impl<'info> Validate<'info> for MintInstant<'info> {
 /// Atomically takes payment tokens from the user and mints mTokens in exchange.
 /// Emits `MinterVaultInstantMintedEvent` event.
 /// # Arguments
-/// 
+///
 /// - `amount_token` - amount of payment tokens to mint
 /// - `min_receive_amount` - minimum amount of mTokens to receive
 /// - `referrer_id` - referrer id (can be anything encoded into 32 bytes array)
@@ -192,9 +211,13 @@ pub fn handle(
     min_receive_amount: u64,
     referrer_id: [u8; 32],
 ) -> Result<()> {
-    let amount_token_base9 = decimals_conversion::convert_to_base_9(amount_token.into(), ctx.accounts.payment_mint.decimals).unwrap();
+    let amount_token_base9 = decimals_conversion::convert_to_base_9(
+        amount_token.into(),
+        ctx.accounts.payment_mint.decimals,
+    )
+    .unwrap();
 
-    let params= minter::calc_and_validate_deposit(
+    let params = minter::calc_and_validate_deposit(
         &ctx.accounts.payment_mint,
         &ctx.accounts.payment_mint_data_feed,
         &ctx.accounts.payment_mint_feed,
@@ -205,11 +228,12 @@ pub fn handle(
         &mut ctx.accounts.vault_common_signer,
         &mut ctx.accounts.minter_vault,
         amount_token_base9,
-        true
+        true,
     )?;
 
     require_gte!(
-        params.m_token_amount, min_receive_amount as u128,
+        params.m_token_amount,
+        min_receive_amount as u128,
         MidasVaultsError::LessThanMinReceiveAmount
     );
 
@@ -217,21 +241,21 @@ pub fn handle(
 
     transfer_token(
         &ctx.accounts.payment_mint_token_program,
-        &ctx.accounts.payment_mint, 
-        &ctx.accounts.signer.to_account_info(), 
-        &ctx.accounts.payment_mint_signer_ata, 
-        &ctx.accounts.payment_mint_tokens_receiver_ata, 
-        params.amount_token_wo_fee
+        &ctx.accounts.payment_mint,
+        &ctx.accounts.signer.to_account_info(),
+        &ctx.accounts.payment_mint_signer_ata,
+        &ctx.accounts.payment_mint_tokens_receiver_ata,
+        params.amount_token_wo_fee,
     )?;
 
-    if params.fee_token_amount > 0 { 
+    if params.fee_token_amount > 0 {
         transfer_token(
             &ctx.accounts.payment_mint_token_program,
-            &ctx.accounts.payment_mint, 
-            &ctx.accounts.signer.to_account_info(), 
-            &ctx.accounts.payment_mint_signer_ata, 
-            &ctx.accounts.payment_mint_fee_receiver_ata, 
-            params.fee_token_amount
+            &ctx.accounts.payment_mint,
+            &ctx.accounts.signer.to_account_info(),
+            &ctx.accounts.payment_mint_signer_ata,
+            &ctx.accounts.payment_mint_fee_receiver_ata,
+            params.fee_token_amount,
         )?;
     }
 
@@ -246,18 +270,16 @@ pub fn handle(
         &ctx.accounts.m_mint_token_program.to_account_info(),
         &ctx.accounts.system_program.to_account_info(),
         &ctx.accounts.token_authority_program.to_account_info(),
-        params.m_token_amount.try_into().unwrap()
+        params.m_token_amount.try_into().unwrap(),
     )?;
 
-    emit!(
-        MinterVaultInstantMintedEvent {
-            common_vault: ctx.accounts.vault_common.key(),
-            payment_mint: ctx.accounts.payment_mint.key(),
-            signer: ctx.accounts.signer.key(),
-            payment_amount: amount_token_base9.try_into().unwrap(),
-            calculated: params,
-            referrer_id
-        }
-    );
+    emit!(MinterVaultInstantMintedEvent {
+        common_vault: ctx.accounts.vault_common.key(),
+        payment_mint: ctx.accounts.payment_mint.key(),
+        signer: ctx.accounts.signer.key(),
+        payment_amount: amount_token_base9.try_into().unwrap(),
+        calculated: params,
+        referrer_id
+    });
     Ok(())
 }

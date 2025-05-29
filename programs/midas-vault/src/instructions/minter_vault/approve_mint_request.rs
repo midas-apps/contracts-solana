@@ -1,12 +1,16 @@
 use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
-use token_authority::{constants::ac_roles as ac_roles_token_authority, program::TokenAuthority, state::TokenAuthorityState};
+use token_authority::{
+    constants::ac_roles as ac_roles_token_authority, program::TokenAuthority,
+    state::TokenAuthorityState,
+};
 
 use crate::{
-    constants::{ac_roles, ONE}, events::MinterVaultRequestApprovedEvent, state::{
-        MintVaultRequestState, MinterVaultState, VaultCommonState
-    }, utils::{close_account, mint_token, require_variation_tolerance, Closable}
+    constants::{ac_roles, ONE},
+    events::MinterVaultRequestApprovedEvent,
+    state::{MintVaultRequestState, MinterVaultState, VaultCommonState},
+    utils::{close_account, mint_token, require_variation_tolerance, Closable},
 };
 
 #[derive(Accounts)]
@@ -19,7 +23,7 @@ pub struct ApproveMintRequest<'info> {
     /// CHECK:
     /// request user account
     #[account(
-        mut, 
+        mut,
         address = mint_request.user
     )]
     pub user_account: AccountInfo<'info>,
@@ -43,7 +47,7 @@ pub struct ApproveMintRequest<'info> {
         bump,
     )]
     pub vault_minter_role: Account<'info, AccountAccessControlRoleState>,
-    
+
     /// Minter vault state account
     #[account(
         mut,
@@ -94,10 +98,14 @@ pub struct ApproveMintRequest<'info> {
 }
 
 impl<'info> Closable for ApproveMintRequest<'info> {
-    /// close implementation for closing mint request 
+    /// close implementation for closing mint request
     /// after it was processed
     fn close(&mut self) -> Result<()> {
-        close_account(&mut self.mint_request.to_account_info(), &mut self.user_account, &self.system_program)?;
+        close_account(
+            &mut self.mint_request.to_account_info(),
+            &mut self.user_account,
+            &self.system_program,
+        )?;
 
         Ok(())
     }
@@ -106,11 +114,11 @@ impl<'info> Closable for ApproveMintRequest<'info> {
 /// Approves mint request, mints tokens to user account and emits an event.
 /// Will close mint request account after processing.
 /// Can only be called by the vault admin.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// - `request_id` - id of the mint request
-/// - `new_out_rate` - new out rate for the mint request. 
+/// - `new_out_rate` - new out rate for the mint request.
 /// Using this value admin can correct the output mToken amount
 /// - `is_safe` - if true, will check variation tolerance before minting
 pub fn handle(
@@ -122,10 +130,18 @@ pub fn handle(
     let request = &ctx.accounts.mint_request;
 
     if is_safe {
-        require_variation_tolerance(&ctx.accounts.vault_common, request.m_mint_rate.into(), new_out_rate.into())?;
+        require_variation_tolerance(
+            &ctx.accounts.vault_common,
+            request.m_mint_rate.into(),
+            new_out_rate.into(),
+        )?;
     }
 
-    let amount_to_mint =(request.deposited_usd_wo_fees as u128).checked_mul(ONE.into()).unwrap().checked_div(new_out_rate.into()).unwrap();
+    let amount_to_mint = (request.deposited_usd_wo_fees as u128)
+        .checked_mul(ONE.into())
+        .unwrap()
+        .checked_div(new_out_rate.into())
+        .unwrap();
 
     mint_token(
         &ctx.accounts.vault_common.key(),
@@ -138,7 +154,7 @@ pub fn handle(
         &ctx.accounts.m_mint_token_program.to_account_info(),
         &ctx.accounts.system_program.to_account_info(),
         &ctx.accounts.token_authority_program.to_account_info(),
-        amount_to_mint.try_into().unwrap()
+        amount_to_mint.try_into().unwrap(),
     )?;
 
     ctx.accounts.close()?;

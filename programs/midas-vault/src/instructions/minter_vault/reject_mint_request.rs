@@ -2,9 +2,9 @@ use access_control::{program::AccessControl, state::AccountAccessControlRoleStat
 use anchor_lang::prelude::*;
 
 use crate::{
-    constants::ac_roles, events::MinterVaultRequestRejectedEvent, state::{
-          MintVaultRequestState, MinterVaultState, VaultCommonState
-    }
+    constants::ac_roles,
+    events::MinterVaultRequestRejectedEvent,
+    state::{MintVaultRequestState, MinterVaultState, VaultCommonState},
 };
 
 #[derive(Accounts)]
@@ -16,7 +16,7 @@ pub struct RejectMintRequest<'info> {
 
     /// CHECK:
     /// request user account
-    #[account(mut, 
+    #[account(mut,
         address = mint_request.user
     )]
     pub user_account: AccountInfo<'info>,
@@ -56,18 +56,15 @@ pub struct RejectMintRequest<'info> {
 
 /// Rejects mint request, close request account and emits an event.
 /// Can only be called by the vault admin.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// - `request_id` - id of the request to reject
-pub fn handle(
-    ctx: Context<RejectMintRequest>,
-    request_id: u64
-) -> Result<()> {
+pub fn handle(ctx: Context<RejectMintRequest>, request_id: u64) -> Result<()> {
     emit!(MinterVaultRequestRejectedEvent {
         common_vault: ctx.accounts.vault_common.key(),
         request_id
     });
-    
+
     Ok(())
 }
