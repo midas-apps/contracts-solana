@@ -6,7 +6,7 @@ use data_feed::state::FeedState;
 use crate::{
     errors::MidasVaultsError, events::RedeemerVaultInstantRedeemedEvent, state::{
           PauseInxState, PaymentMintState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState
-    }, utils::{burn_mtoken, redeemer, require_and_update_allowance, require_and_update_limit, transfer_token, truncate, validate_common, Validate, VaultActionId}
+    }, utils::{burn_mtoken, redeemer, require_and_update_allowance, require_and_update_limit, transfer_token, transfer_token_with_signer, truncate, validate_common, Validate, VaultActionId}
 };
 
 #[derive(Accounts)]
@@ -202,12 +202,10 @@ pub fn handle(
 
     require_and_update_allowance(&mut ctx.accounts.payment_mint_state, amount_payment_token)?;
 
-    burn_mtoken(&ctx.accounts.vault_common.key(), &ctx.accounts.m_mint_token_program, &ctx.accounts.m_mint, &ctx.accounts.signer, &ctx.accounts.m_mint_signer_ata, params.m_token_amount_wo_fee)?;
+    burn_mtoken(&ctx.accounts.m_mint_token_program, &ctx.accounts.m_mint, &ctx.accounts.signer, &ctx.accounts.m_mint_signer_ata, params.m_token_amount_wo_fee)?;
 
     if params.fee_amount > 0 {
         transfer_token(
-            &ctx.accounts.vault_common.key(), 
-            RedeemerVaultState::SEED,
             &ctx.accounts.m_mint_token_program,
             &ctx.accounts.m_mint, 
             &ctx.accounts.signer.to_account_info(), 
@@ -217,7 +215,7 @@ pub fn handle(
         )?;
     }
     
-    transfer_token(
+    transfer_token_with_signer(
         &ctx.accounts.vault_common.key(), 
         RedeemerVaultState::SEED,
         &ctx.accounts.payment_mint_token_program,

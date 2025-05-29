@@ -181,8 +181,6 @@ pub fn handle(
     )?;
 
     transfer_token(
-        &ctx.accounts.vault_common.key(), 
-        MinterVaultState::SEED,
         &ctx.accounts.payment_mint_token_program,
         &ctx.accounts.payment_mint, 
         &ctx.accounts.signer.to_account_info(), 
@@ -193,8 +191,6 @@ pub fn handle(
 
     if params.fee_token_amount > 0 { 
         transfer_token(
-            &ctx.accounts.vault_common.key(), 
-            MinterVaultState::SEED,
             &ctx.accounts.payment_mint_token_program,
             &ctx.accounts.payment_mint, 
             &ctx.accounts.signer.to_account_info(), 

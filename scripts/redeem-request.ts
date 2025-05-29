@@ -222,13 +222,6 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   }
 
   tx2.add(
-    approveMintInstruction(
-      commonState.mMint,
-      payer,
-      getRedeemerVaultPda(vaultCommon),
-      config.amount,
-      TOKEN_2022_PROGRAM_ID
-    ),
     await vaultsProgram.methods
       .redeemRequest(toBN(config.amount))
       .accountsPartial({
@@ -246,8 +239,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
         paymentMintTokenProgram: config.tokenProgram,
         accountAc: getAccountAcStatePda(commonState.ac, payer.publicKey),
       })
-      .instruction(),
-    revokeMintInstruction(commonState.mMint, payer, TOKEN_2022_PROGRAM_ID)
+      .instruction()
   );
 
   const txRes = await sendAndConfirmTransaction(

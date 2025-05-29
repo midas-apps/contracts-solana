@@ -395,15 +395,6 @@ export const redeemInstant = async (
       paymentMintTokenProgram: TOKEN_PROGRAM_ID,
       accountAc: getAccountAcStatePda(baseAccounts.ac, from.publicKey),
     })
-    .preInstructions([
-      approveMintInstruction(
-        stateBefore.commonVaultState.mMint,
-        from,
-        getRedeemerVaultPda(baseAccounts.vaultCommon),
-        amountMToken,
-        TOKEN_2022_PROGRAM_ID
-      ),
-    ])
     .transaction();
 
   if (opt?.revertedWith !== undefined) {
@@ -638,15 +629,6 @@ export const redeemRequest = async (
           mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
           accountAc: getAccountAcStatePda(baseAccounts.ac, from.publicKey),
         })
-        .preInstructions([
-          approveMintInstruction(
-            stateBefore.commonVaultState.mMint,
-            from,
-            getRedeemerVaultPda(baseAccounts.vaultCommon),
-            amountMToken,
-            TOKEN_2022_PROGRAM_ID
-          ),
-        ])
         .transaction()
     : await vaultsProgram.methods
         .redeemRequest(toBN(amountMToken))
@@ -668,15 +650,6 @@ export const redeemRequest = async (
           mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
           accountAc: getAccountAcStatePda(baseAccounts.ac, from.publicKey),
         })
-        .preInstructions([
-          approveMintInstruction(
-            stateBefore.commonVaultState.mMint,
-            from,
-            getRedeemerVaultPda(baseAccounts.vaultCommon),
-            amountMToken,
-            TOKEN_2022_PROGRAM_ID
-          ),
-        ])
         .transaction();
 
   if (opt?.revertedWith !== undefined) {
