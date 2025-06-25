@@ -18,7 +18,7 @@ cluster = "devnet"
 wallet = "~/.config/solana/midas_id.json"
 
 [scripts]
-script = "yarn run ts-node"
+script = "yarn ts-node -- scripts/execute.ts"
 
 test = "RUST_LOG= yarn jest --maxWorkers=1 --testTimeout=1000000"
 test-cargo = "cargo test-sbf"

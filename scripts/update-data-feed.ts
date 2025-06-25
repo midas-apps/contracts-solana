@@ -6,7 +6,7 @@ import {
 } from "@solana/web3.js";
 import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
 
-import { executeAnchorScript } from "../common/utils";
+import { DeployFunction } from "../common/utils";
 import { MAX_U128 } from "@/test/constants/common.constants";
 import {
   createAtaIfNotExistsInx,
@@ -34,22 +34,22 @@ import { getSwitchboardPullInx } from "./deploy/common/switchboard";
 
 // TODO: change config before execution
 const config = {
-  dataFeed: addresses["devnet"].mTBILL.mTokenDataFeed,
-  newUnderlyingFeed: new PublicKey(
-    "782zyJs63RQmYVHjUiNsP1xVxVtTkj12ZZcPobCRstkX"
-  ),
+  dataFeed: addresses["devnet"].feeds.usdc.dataFeed,
+  // newUnderlyingFeed: new PublicKey(
+  //   "782zyJs63RQmYVHjUiNsP1xVxVtTkj12ZZcPobCRstkX"
+  // ),
+  newMaxStaleness: 5 * 60,
 } as {
+  newMaxStaleness: number | null;
   dataFeed: PublicKey;
   newUnderlyingFeed: PublicKey | null;
   newMode?: keyof typeof DataFeedMode;
 };
 
-async function main(provider: AnchorProvider, payer: Keypair) {
+const func: DeployFunction = async (provider, payer, _) => {
   const feedProgram = getDataFeedProgram(provider);
   const acProgram = getAcProgram(provider);
-
   const state = await fetchDataFeedState(feedProgram, config.dataFeed);
-
   const tx = new Transaction().add(
     // // TODO: move to role grant
     // await acProgram.methods
@@ -73,11 +73,11 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     await feedProgram.methods
       .updateFeed(
         null,
-        config.newUnderlyingFeed,
+        config.newUnderlyingFeed ?? null,
         config.newMode ? DataFeedMode[config.newMode] : null,
         null,
         null,
-        null
+        config.newMaxStaleness ?? null
       )
       .accountsPartial({
         authority: payer.publicKey,
@@ -91,7 +91,6 @@ async function main(provider: AnchorProvider, payer: Keypair) {
       })
       .instruction()
   );
-
   const txRes = await sendAndConfirmTransaction(
     provider.connection,
     tx,
@@ -100,8 +99,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
       commitment: "finalized",
     }
   );
-
   console.log({ txRes });
-}
+};
 
-executeAnchorScript(main);
+export default func;
