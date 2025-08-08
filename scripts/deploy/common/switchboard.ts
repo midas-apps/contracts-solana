@@ -15,7 +15,7 @@ import {
   getDefaultDevnetQueue,
   asV0Tx,
 } from "@switchboard-xyz/on-demand";
-import { CommonParams } from "./common";
+import { CommonParams } from "./data-feed";
 import { Address } from "viem";
 import * as sb from "@switchboard-xyz/on-demand";
 

@@ -6,7 +6,6 @@ import {
   Transaction,
 } from "@solana/web3.js";
 import * as VAULTS_IDL from "../../../target/idl/midas_vaults.json";
-import { CommonParams } from "./common";
 import {
   acRoleToBuffer,
   getAccountAcRoleStatePda,
@@ -32,12 +31,15 @@ import {
 } from "@/test/helpers/vaults.helpers";
 import { createAtaIfNotExistsInx, toBN } from "@/test/helpers/common.helpers";
 import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
+import { CommonParams } from "@/common/utils";
+import { MTokenName } from "@/common/tokens";
+import { getNetworkConfig } from "../configs/utils";
 
 export const getVaultsProgram = (provider: AnchorProvider) => {
   return new Program<MidasVaults>(VAULTS_IDL as any, provider);
 };
 
-export type DeployMinterVaultConfig = {
+type DeployMinterVaultInternalConfig = {
   acRole: PublicKey;
   ac: PublicKey;
   commonVault?: Keypair;
@@ -54,7 +56,20 @@ export type DeployMinterVaultConfig = {
   firstMintMinMTokens: bigint;
 };
 
-export type DeployRedeemerVaultConfig = {
+type DeployMinterVaultConfig = {
+  greenListEnforced: boolean;
+  tokensReceiver?: PublicKey;
+  feeReceiver?: PublicKey;
+  instantFee: bigint;
+  instantDailyLimit: bigint;
+  variationTolerance: bigint;
+  minAmount: bigint;
+  requestRedeemer?: PublicKey;
+  minFiatRedeemAmount: bigint;
+  fiatFlatFee: bigint;
+};
+
+type DeployRedeemerVaultInternalConfig = {
   acRole: PublicKey;
   ac: PublicKey;
   commonVault?: Keypair;
@@ -74,6 +89,23 @@ export type DeployRedeemerVaultConfig = {
 
 export const deployMinterVault = async (
   common: CommonParams,
+  mToken: MTokenName
+) => {
+  const config = getNetworkConfig(common.cluster, mToken, "minterVault");
+  const networkAddresses = addresses[common.cluster];
+  const mTokenAddresses = networkAddresses?.tokenAddresses?.[mToken];
+
+  const underlyingFeed = mTokenAddresses?.mTokenDataFeed?.underlyingFeed;
+
+  if (!underlyingFeed || !mTokenAddresses?.acRole) {
+    throw new Error("Missing required params for mtoken data feed deploy");
+  }
+
+  return deployMinterVaultInternal(common, config);
+};
+
+const deployMinterVaultInternal = async (
+  common: CommonParams,
   {
     acRole,
     commonVault,
@@ -89,7 +121,7 @@ export const deployMinterVault = async (
     minAmount,
     tokensReceiver,
     variationTolerance,
-  }: DeployMinterVaultConfig
+  }: DeployMinterVaultInternalConfig
 ) => {
   commonVault ??= Keypair.generate();
 

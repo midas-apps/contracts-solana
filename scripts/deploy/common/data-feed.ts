@@ -6,20 +6,26 @@ import {
   Transaction,
 } from "@solana/web3.js";
 import * as DATA_FEED_IDL from "../../../target/idl/data_feed.json";
-import { DataFeedMode } from "../../../test/helpers/ac.helpers";
 import { toBN } from "../../../test/helpers/common.helpers";
 import { DataFeed } from "../../../target/types/data_feed";
-
-export type CommonParams = {
-  provider: AnchorProvider;
-  payer: Keypair;
-};
+import { MTokenName } from "@/common/tokens";
+import { getNetworkConfig } from "../configs/utils";
+import { addresses, Cluster } from "@/common/addresses";
+import { DataFeedMode } from "@/test/helpers/data-feed.helpers";
+import { CommonParams } from "@/common/utils";
 
 export const getDataFeedProgram = (provider: AnchorProvider) => {
   return new Program<DataFeed>(DATA_FEED_IDL as any, provider);
 };
 
 export type DeployDataFeedConfig = {
+  mode?: keyof typeof DataFeedMode;
+  minPrice: bigint;
+  maxPrice: bigint;
+  maxStaleness: number;
+};
+
+type DeployDataFeedInternalConfig = {
   acRole: PublicKey;
   feed?: Keypair;
   mode: keyof typeof DataFeedMode;
@@ -29,17 +35,41 @@ export type DeployDataFeedConfig = {
   maxStaleness: number;
 };
 
-export const deployDataFeed = async (
+export const deployMTokenDataFeed = async (
+  common: CommonParams,
+  mToken: MTokenName
+) => {
+  const config = getNetworkConfig(common.cluster, mToken, "dataFeed");
+  const networkAddresses = addresses[common.cluster];
+  const mTokenAddresses = networkAddresses?.tokenAddresses?.[mToken];
+
+  const underlyingFeed = mTokenAddresses?.mTokenDataFeed?.underlyingFeed;
+
+  if (!underlyingFeed || !mTokenAddresses?.acRole) {
+    throw new Error("Missing required params for mtoken data feed deploy");
+  }
+
+  return await deployDataFeed(common, {
+    mode: underlyingFeed.mode,
+    maxPrice: config.maxPrice,
+    maxStaleness: config.maxStaleness,
+    minPrice: config.minPrice,
+    acRole: mTokenAddresses?.acRole,
+    underlyingFeed: underlyingFeed.pubkey,
+  });
+};
+
+const deployDataFeed = async (
   common: CommonParams,
   {
-    feed,
-    underlyingFeed,
     mode,
-    acRole,
     maxPrice,
     maxStaleness,
     minPrice,
-  }: DeployDataFeedConfig
+    acRole,
+    underlyingFeed,
+    feed,
+  }: DeployDataFeedInternalConfig
 ) => {
   feed ??= Keypair.generate();
 

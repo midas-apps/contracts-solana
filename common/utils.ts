@@ -9,10 +9,16 @@ import {
   PaymentTokenNameEnum,
 } from "./tokens";
 import path from "path";
+import { Cluster } from "./addresses";
+
+export type CommonParams = {
+  provider: AnchorProvider;
+  payer: Keypair;
+  cluster: Cluster;
+};
 
 export type DeployFunction = (
-  provider: AnchorProvider,
-  payer: Keypair,
+  common: CommonParams,
   flags: AppFlags
 ) => Promise<unknown>;
 
@@ -34,11 +40,11 @@ const flags = [
   },
 ];
 
-const clusterOptions = ["devnet", "mainnet", "localnet"] as const;
+const clusterOptions = ["devnet", "mainnet", "localnet"] as Cluster[];
 
 type AppFlags = {
-  cluster: (typeof clusterOptions)[number];
-  mToken?: string;
+  cluster: Cluster;
+  mToken?: MTokenName;
   paymentMint?: string;
 };
 
@@ -89,7 +95,7 @@ export const executeAnchorScript = async (scriptFn: DeployFunction) => {
   const payer = new Keypair((provider.wallet as any).payer._keypair);
   const flags = parseFlags();
 
-  await scriptFn(provider, payer, flags);
+  await scriptFn({ provider, payer, cluster: flags.cluster }, flags);
 };
 
 export const isMTokenName = (name: string): name is MTokenName => {

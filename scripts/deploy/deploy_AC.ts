@@ -1,22 +1,8 @@
-import { addresses } from "@/common/addresses";
-import { executeAnchorScript } from "../../common/utils";
-import {
-  deployAc,
-  DeployAcConfig,
-  deployAcRole,
-  DeployAcRoleConfig,
-} from "./common/ac";
+import { DeployFunction } from "../../common/utils";
+import { deployAcGlobal } from "./common/ac";
 
-const configs: Record<string, DeployAcConfig> = {
-  devnet: {
-    acRole: addresses["devnet"].acRoleGlobal,
-  },
+const func: DeployFunction = async (common, _flags) => {
+  return deployAcGlobal(common, {});
 };
 
-export const main = async () => {
-  await executeAnchorScript(async (provider, payer) => {
-    return deployAc({ provider, payer }, configs["devnet"]);
-  });
-};
-
-main();
+export default func;

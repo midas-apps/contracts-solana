@@ -22,7 +22,7 @@ import { fetchVaultCommonState } from "@/test/helpers/vaults.helpers";
 import { VAULT_AC_ROLES } from "@/test/constants/vaults.constants";
 import { addresses } from "@/common/addresses";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { getDataFeedProgram } from "./deploy/common/common";
+import { getDataFeedProgram } from "./deploy/common/data-feed";
 import { DATA_FEED_AC_ROLES } from "@/test/constants/data-feed.constants";
 import {
   DataFeedMode,

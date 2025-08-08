@@ -1,32 +1,48 @@
 import { AnchorProvider, Program } from "@coral-xyz/anchor";
-import {
-  Keypair,
-  PublicKey,
-  sendAndConfirmTransaction,
-  Transaction,
-} from "@solana/web3.js";
+import { Keypair, PublicKey, sendAndConfirmTransaction } from "@solana/web3.js";
 import * as AC_IDL from "../../../target/idl/access_control.json";
-import { CommonParams } from "./common";
 import { getAccountAcRoleStatePda } from "../../../test/helpers/ac.helpers";
 import { AC_ROLES } from "../../../test/constants/ac.constants";
 import { AccessControl } from "../../../target/types/access_control";
+import { CommonParams } from "@/common/utils";
+import { addresses } from "@/common/addresses";
 
 export const getAcProgram = (provider: AnchorProvider) => {
   return new Program<AccessControl>(AC_IDL as any, provider);
 };
 
-export type DeployAcConfig = {
+export type DeployAcGlobalConfig = {};
+
+export type DeployAcRoleGlobalConfig = {};
+
+type DeployAcInternalConfig = {
   acRole: PublicKey;
   ac?: Keypair;
 };
 
-export type DeployAcRoleConfig = {
+type DeployAcRoleInternalConfig = {
   acRole?: Keypair;
 };
 
-export const deployAc = async (
+export const deployAcGlobal = async (
   common: CommonParams,
-  { acRole, ac }: DeployAcConfig
+  _config: DeployAcGlobalConfig
+) => {
+  const networkAddresses = addresses[common.cluster];
+
+  return deployAc(common, { acRole: networkAddresses.acRoleGlobal });
+};
+
+export const deployAcRoleGlobal = async (
+  common: CommonParams,
+  _config: DeployAcRoleGlobalConfig
+) => {
+  return deployAcRole(common, {});
+};
+
+const deployAc = async (
+  common: CommonParams,
+  { acRole, ac }: DeployAcInternalConfig
 ) => {
   ac ??= Keypair.generate();
 
@@ -58,9 +74,9 @@ export const deployAc = async (
   return ac.publicKey;
 };
 
-export const deployAcRole = async (
+const deployAcRole = async (
   common: CommonParams,
-  { acRole }: DeployAcRoleConfig
+  { acRole }: DeployAcRoleInternalConfig
 ) => {
   acRole ??= Keypair.generate();
 

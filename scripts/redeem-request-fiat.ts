@@ -43,7 +43,7 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { fetchDataFeedState } from "@/test/helpers/data-feed.helpers";
-import { getDataFeedProgram } from "./deploy/common/common";
+import { getDataFeedProgram } from "./deploy/common/data-feed";
 import { TOKEN_AUTHORITY_ROLES } from "@/test/constants/token-authority.constants";
 import { getAcProgram } from "./deploy/common/ac";
 import { getSwitchboardPullInx } from "./deploy/common/switchboard";

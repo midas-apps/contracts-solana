@@ -1,5 +1,5 @@
 import { parseUnits } from "../../../test/helpers/common.helpers";
-import { deployDataFeed, DeployDataFeedConfig } from "../common/common";
+import { deployDataFeed, DeployDataFeedConfig } from "../common/data-feed";
 import { PublicKey } from "@solana/web3.js";
 import { executeAnchorScript } from "../../../common/utils";
 import { addresses } from "@/common/addresses";
