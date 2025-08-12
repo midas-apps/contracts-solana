@@ -1,8 +1,6 @@
 import { executeAnchorScript } from "../../../common/utils";
 import { addresses } from "@/common/addresses";
 import {
-  deployMinterVault,
-  DeployMinterVaultConfig,
   deployRedeemerVault,
   DeployRedeemerVaultConfig,
 } from "../common/vaults";
@@ -26,7 +24,7 @@ const configs: Record<string, DeployRedeemerVaultConfig> = {
 
 export const main = async () => {
   await executeAnchorScript(async (provider, payer) => {
-    return deployRedeemerVault({ provider, payer }, configs["devnet"]);
+    return deployRedeemerVault({ provider, payer }, "mTBILL", "rv");
   });
 };
 

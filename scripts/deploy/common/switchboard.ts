@@ -15,9 +15,11 @@ import {
   getDefaultDevnetQueue,
   asV0Tx,
 } from "@switchboard-xyz/on-demand";
-import { CommonParams } from "./common";
+import { CommonParams, getNetwork } from "./common";
 import { Address } from "viem";
 import * as sb from "@switchboard-xyz/on-demand";
+import { Network } from "@/common/types";
+import { switchboardConfigs } from "@/common/switchboard";
 
 export type DeploySwitchboardFeedParams = {
   ethDataFeed: Address;
@@ -25,10 +27,13 @@ export type DeploySwitchboardFeedParams = {
   env: "devnet" | "mainnet";
 };
 
-export const deploySwitchboardFeed = async (
-  { payer, provider }: CommonParams,
-  { ethDataFeed, ethRpc, env }: DeploySwitchboardFeedParams
-) => {
+export const deploySwitchboardFeed = async ({
+  payer,
+  provider,
+}: CommonParams) => {
+  const network = getNetwork(provider);
+  const { env, ethDataFeed, ethRpc } = getSwitchboardConfig(network);
+
   const jobs: OracleJob[] = [
     OracleJob.create({
       tasks: [
@@ -138,7 +143,7 @@ export const deploySwitchboardFeed = async (
   // Upload jobs to Crossbar, which pins valid feeds on ipfs
   const { feedHash } = await crossbarClient.store(
     queue.pubkey.toBase58(),
-    jobs
+    jobs,
   );
   const [pullFeed, feedKeypair] = PullFeed.generate(queue.program);
 
@@ -169,7 +174,7 @@ export const deploySwitchboardFeed = async (
     {
       commitment: "finalized",
       skipPreflight: true,
-    }
+    },
   );
 
   console.log(`Feed ${feedKeypair.publicKey} initialized: ${sig}`);
@@ -177,16 +182,24 @@ export const deploySwitchboardFeed = async (
   return feedKeypair.publicKey;
 };
 
+export const getSwitchboardConfig = (network: Network) => {
+  const config = switchboardConfigs[network];
+  if (!config) {
+    throw new Error(`Switchboard config for network ${network} not found`);
+  }
+  return config;
+};
+
 export const getSwitchboardPullInx = async (
   provider: AnchorProvider,
   feed: PublicKey,
-  env: "devnet" | "mainnet"
+  env: "devnet" | "mainnet",
 ) => {
   const idl = await Program.fetchIdl(
     env === "devnet"
       ? "Aio4gaXjXzJNVLtzwtNVmSqGKpANtXhybbkhtAC94ji2"
       : undefined, // FIXME
-    provider
+    provider,
   );
   const program = new Program(idl, provider);
 

@@ -11,7 +11,7 @@ const configs: Record<string, DeployDataFeedConfig> = {
     minPrice: parseUnits("0.1"),
     mode: "switchboard",
     underlyingFeed: new PublicKey(
-      "5GjQDcVcPwwMAzT6ZUjXgeVgRVM4UTvbpYieiBKuQi7f"
+      "5GjQDcVcPwwMAzT6ZUjXgeVgRVM4UTvbpYieiBKuQi7f",
     ),
     maxStaleness: 86400,
   },
@@ -19,7 +19,7 @@ const configs: Record<string, DeployDataFeedConfig> = {
 
 export const main = async () => {
   await executeAnchorScript(async (provider, payer) => {
-    return deployDataFeed({ provider, payer }, configs["devnet"]);
+    return deployDataFeed({ provider, payer }, "mTBILL");
   });
 };
 

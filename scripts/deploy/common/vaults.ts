@@ -6,7 +6,7 @@ import {
   Transaction,
 } from "@solana/web3.js";
 import * as VAULTS_IDL from "../../../target/idl/midas_vaults.json";
-import { CommonParams } from "./common";
+import { CommonParams, getNetwork } from "./common";
 import {
   acRoleToBuffer,
   getAccountAcRoleStatePda,
@@ -32,6 +32,9 @@ import {
 } from "@/test/helpers/vaults.helpers";
 import { createAtaIfNotExistsInx, toBN } from "@/test/helpers/common.helpers";
 import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
+import { MTokenName } from "@/common/types/tokens";
+import { getAddresses } from "@/common/addresses";
+import { getNetworkConfig } from "./utils";
 
 export const getVaultsProgram = (provider: AnchorProvider) => {
   return new Program<MidasVaults>(VAULTS_IDL as any, provider);
@@ -74,27 +77,41 @@ export type DeployRedeemerVaultConfig = {
 
 export const deployMinterVault = async (
   common: CommonParams,
-  {
-    acRole,
-    commonVault,
-    ac,
-    feeReceiver,
+  token: MTokenName,
+  type: "dv" | "dvUstb",
+) => {
+  const network = getNetwork(common.provider);
+  const addresses = getAddresses(network);
+  const tokenAddresses = addresses[token];
+
+  if (!tokenAddresses) {
+    throw new Error("Token config is not found");
+  }
+
+  const {
     mToken,
+    mTokenDataFeed: mTokenFeed,
+    acRole,
     tokenAuthority,
-    firstMintMinMTokens,
+  } = tokenAddresses;
+
+  let {
+    tokensReceiver,
+    feeReceiver,
     greenListEnforced,
     instantDailyLimit,
     instantFee,
-    mTokenFeed,
-    minAmount,
-    tokensReceiver,
     variationTolerance,
-  }: DeployMinterVaultConfig
-) => {
-  commonVault ??= Keypair.generate();
+    minAmount,
+    firstMintMinMTokens,
+  } = getNetworkConfig(network, token, type);
+
+  const commonVault = Keypair.generate();
 
   tokensReceiver ??= common.payer.publicKey;
   feeReceiver ??= common.payer.publicKey;
+
+  const ac = addresses.ac;
 
   const vaultsProgram = getVaultsProgram(common.provider);
   const acProgram = getAcProgram(common.provider);
@@ -109,12 +126,12 @@ export const deployMinterVault = async (
         authorityAcAdminRole: getAccountAcRoleStatePda(
           acRole,
           common.provider.publicKey,
-          AC_ROLES.ADMIN
+          AC_ROLES.ADMIN,
         ),
         accountAcRole: getAccountAcRoleStatePda(
           acRole,
           common.provider.publicKey,
-          VAULT_AC_ROLES.VAULT_ADMIN
+          VAULT_AC_ROLES.VAULT_ADMIN,
         ),
       })
       .instruction(),
@@ -127,12 +144,12 @@ export const deployMinterVault = async (
         authorityAcAdminRole: getAccountAcRoleStatePda(
           acRole,
           common.provider.publicKey,
-          AC_ROLES.ADMIN
+          AC_ROLES.ADMIN,
         ),
         accountAcRole: getAccountAcRoleStatePda(
           acRole,
           common.provider.publicKey,
-          VAULT_AC_ROLES.VAULT_PAUSER
+          VAULT_AC_ROLES.VAULT_PAUSER,
         ),
       })
       .instruction(),
@@ -145,12 +162,12 @@ export const deployMinterVault = async (
         authorityAcAdminRole: getAccountAcRoleStatePda(
           acRole,
           common.provider.publicKey,
-          AC_ROLES.ADMIN
+          AC_ROLES.ADMIN,
         ),
         accountAcRole: getAccountAcRoleStatePda(
           acRole,
           getMinterVaultPda(commonVault.publicKey),
-          TOKEN_AUTHORITY_ROLES.M_MINTER
+          TOKEN_AUTHORITY_ROLES.M_MINTER,
         ),
       })
       .instruction(),
@@ -166,7 +183,7 @@ export const deployMinterVault = async (
         toBN(instantFee),
         toBN(instantDailyLimit),
         toBN(variationTolerance),
-        toBN(minAmount)
+        toBN(minAmount),
       )
       .accountsPartial({
         vaultCommon: commonVault.publicKey,
@@ -182,7 +199,7 @@ export const deployMinterVault = async (
         authorityAcRole: getAccountAcRoleStatePda(
           acRole,
           common.payer.publicKey,
-          VAULT_AC_ROLES.VAULT_ADMIN
+          VAULT_AC_ROLES.VAULT_ADMIN,
         ),
       })
       .instruction(),
@@ -194,7 +211,7 @@ export const deployMinterVault = async (
         authorityAcRole: getAccountAcRoleStatePda(
           acRole,
           common.payer.publicKey,
-          VAULT_AC_ROLES.VAULT_PAUSER
+          VAULT_AC_ROLES.VAULT_PAUSER,
         ),
       })
       .instruction(),
@@ -206,10 +223,10 @@ export const deployMinterVault = async (
         authorityAcRole: getAccountAcRoleStatePda(
           acRole,
           common.payer.publicKey,
-          VAULT_AC_ROLES.VAULT_PAUSER
+          VAULT_AC_ROLES.VAULT_PAUSER,
         ),
       })
-      .instruction()
+      .instruction(),
   );
 
   const txRes = await sendAndConfirmTransaction(
@@ -218,7 +235,7 @@ export const deployMinterVault = async (
     [common.payer, commonVault],
     {
       commitment: "finalized",
-    }
+    },
   );
 
   console.log({
@@ -232,30 +249,39 @@ export const deployMinterVault = async (
 
 export const deployRedeemerVault = async (
   common: CommonParams,
-  {
-    acRole,
-    commonVault,
-    ac,
+  token: MTokenName,
+  type: "rv" | "rvBuidl" | "rvSwapper",
+) => {
+  const network = getNetwork(common.provider);
+  const addresses = getAddresses(network);
+  const tokenAddresses = addresses[token];
+
+  if (!tokenAddresses) {
+    throw new Error("Token config is not found");
+  }
+
+  const { mToken, mTokenDataFeed: mTokenFeed, acRole } = tokenAddresses;
+
+  let {
+    tokensReceiver,
     feeReceiver,
-    mToken,
+    requestRedeemer,
     greenListEnforced,
+    fiatFlatFee,
     instantDailyLimit,
     instantFee,
-    mTokenFeed,
-    minAmount,
-    tokensReceiver,
     variationTolerance,
-    fiatFlatFee,
+    minAmount,
     minFiatRedeemAmount,
-    requestRedeemer,
-  }: DeployRedeemerVaultConfig
-) => {
-  commonVault ??= Keypair.generate();
+  } = getNetworkConfig(network, token, type);
+
+  const commonVault = Keypair.generate();
 
   tokensReceiver ??= common.payer.publicKey;
   feeReceiver ??= common.payer.publicKey;
   requestRedeemer ??= common.payer.publicKey;
 
+  const ac = addresses.ac;
   const vaultsProgram = getVaultsProgram(common.provider);
 
   const ataVault = await createAtaIfNotExistsInx(
@@ -263,7 +289,7 @@ export const deployRedeemerVault = async (
     mToken,
     common.payer.publicKey,
     common.payer,
-    TOKEN_2022_PROGRAM_ID
+    TOKEN_2022_PROGRAM_ID,
   );
 
   const ataReceiver = await createAtaIfNotExistsInx(
@@ -271,7 +297,7 @@ export const deployRedeemerVault = async (
     mToken,
     tokensReceiver,
     common.payer,
-    TOKEN_2022_PROGRAM_ID
+    TOKEN_2022_PROGRAM_ID,
   );
 
   const ataFeeReceiver = feeReceiver.equals(tokensReceiver)
@@ -281,7 +307,7 @@ export const deployRedeemerVault = async (
         mToken,
         feeReceiver,
         common.payer,
-        TOKEN_2022_PROGRAM_ID
+        TOKEN_2022_PROGRAM_ID,
       );
 
   const tx = new Transaction().add(
@@ -297,7 +323,7 @@ export const deployRedeemerVault = async (
         toBN(instantFee),
         toBN(instantDailyLimit),
         toBN(variationTolerance),
-        toBN(minAmount)
+        toBN(minAmount),
       )
       .accountsPartial({
         vaultCommon: commonVault.publicKey,
@@ -308,7 +334,7 @@ export const deployRedeemerVault = async (
       .newRedeemerVault(
         requestRedeemer,
         toBN(minFiatRedeemAmount),
-        toBN(fiatFlatFee)
+        toBN(fiatFlatFee),
       )
       .accountsPartial({
         vaultCommon: commonVault.publicKey,
@@ -316,7 +342,7 @@ export const deployRedeemerVault = async (
         authorityAcRole: getAccountAcRoleStatePda(
           acRole,
           common.payer.publicKey,
-          VAULT_AC_ROLES.VAULT_ADMIN
+          VAULT_AC_ROLES.VAULT_ADMIN,
         ),
       })
       .instruction(),
@@ -328,7 +354,7 @@ export const deployRedeemerVault = async (
         authorityAcRole: getAccountAcRoleStatePda(
           acRole,
           common.payer.publicKey,
-          VAULT_AC_ROLES.VAULT_PAUSER
+          VAULT_AC_ROLES.VAULT_PAUSER,
         ),
       })
       .instruction(),
@@ -340,7 +366,7 @@ export const deployRedeemerVault = async (
         authorityAcRole: getAccountAcRoleStatePda(
           acRole,
           common.payer.publicKey,
-          VAULT_AC_ROLES.VAULT_PAUSER
+          VAULT_AC_ROLES.VAULT_PAUSER,
         ),
       })
       .instruction(),
@@ -352,10 +378,10 @@ export const deployRedeemerVault = async (
         authorityAcRole: getAccountAcRoleStatePda(
           acRole,
           common.payer.publicKey,
-          VAULT_AC_ROLES.VAULT_PAUSER
+          VAULT_AC_ROLES.VAULT_PAUSER,
         ),
       })
-      .instruction()
+      .instruction(),
   );
 
   if (ataVault) {
@@ -376,7 +402,7 @@ export const deployRedeemerVault = async (
     [common.payer, commonVault],
     {
       commitment: "finalized",
-    }
+    },
   );
 
   console.log({

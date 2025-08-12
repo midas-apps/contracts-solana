@@ -6,10 +6,11 @@ import {
   Transaction,
 } from "@solana/web3.js";
 import * as AC_IDL from "../../../target/idl/access_control.json";
-import { CommonParams } from "./common";
+import { CommonParams, getNetwork } from "./common";
 import { getAccountAcRoleStatePda } from "../../../test/helpers/ac.helpers";
 import { AC_ROLES } from "../../../test/constants/ac.constants";
 import { AccessControl } from "../../../target/types/access_control";
+import { getAddresses } from "@/common/addresses";
 
 export const getAcProgram = (provider: AnchorProvider) => {
   return new Program<AccessControl>(AC_IDL as any, provider);
@@ -24,11 +25,12 @@ export type DeployAcRoleConfig = {
   acRole?: Keypair;
 };
 
-export const deployAc = async (
-  common: CommonParams,
-  { acRole, ac }: DeployAcConfig
-) => {
-  ac ??= Keypair.generate();
+export const deployAc = async (common: CommonParams) => {
+  const network = getNetwork(common.provider);
+  const addresses = getAddresses(network);
+  const { acRoleGlobal: acRole } = addresses;
+
+  const ac = Keypair.generate();
 
   const acProgram = getAcProgram(common.provider);
 
@@ -47,7 +49,7 @@ export const deployAc = async (
     [common.payer, ac],
     {
       commitment: "finalized",
-    }
+    },
   );
 
   console.log({
@@ -58,11 +60,8 @@ export const deployAc = async (
   return ac.publicKey;
 };
 
-export const deployAcRole = async (
-  common: CommonParams,
-  { acRole }: DeployAcRoleConfig
-) => {
-  acRole ??= Keypair.generate();
+export const deployAcRole = async (common: CommonParams) => {
+  const acRole = Keypair.generate();
 
   const acProgram = getAcProgram(common.provider);
 
@@ -74,7 +73,7 @@ export const deployAcRole = async (
       accountAcRole: getAccountAcRoleStatePda(
         acRole.publicKey,
         common.payer.publicKey,
-        AC_ROLES.ADMIN
+        AC_ROLES.ADMIN,
       ),
     })
     .transaction();
@@ -85,7 +84,7 @@ export const deployAcRole = async (
     [common.payer, acRole],
     {
       commitment: "finalized",
-    }
+    },
   );
 
   console.log({

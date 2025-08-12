@@ -21,7 +21,7 @@ const configs: Record<string, DeployMinterVaultConfig> = {
 
 export const main = async () => {
   await executeAnchorScript(async (provider, payer) => {
-    return deployMinterVault({ provider, payer }, configs["devnet"]);
+    return deployMinterVault({ provider, payer }, "mTBILL", "dv");
   });
 };
 

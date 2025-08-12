@@ -7,7 +7,7 @@ const configs: Record<string, DeployAcRoleConfig> = {
 
 export const main = async () => {
   await executeAnchorScript(async (provider, payer) => {
-    return deployAcRole({ provider, payer }, configs["devnet"]);
+    return deployAcRole({ provider, payer });
   });
 };
 

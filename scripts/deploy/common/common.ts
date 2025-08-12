@@ -9,6 +9,10 @@ import * as DATA_FEED_IDL from "../../../target/idl/data_feed.json";
 import { DataFeedMode } from "../../../test/helpers/ac.helpers";
 import { toBN } from "../../../test/helpers/common.helpers";
 import { DataFeed } from "../../../target/types/data_feed";
+import { Network } from "@/common/types";
+import { MTokenName } from "@/common/types/tokens";
+import { getAddresses } from "@/common/addresses";
+import { getDeploymentGenericConfig } from "./utils";
 
 export type CommonParams = {
   provider: AnchorProvider;
@@ -31,17 +35,24 @@ export type DeployDataFeedConfig = {
 
 export const deployDataFeed = async (
   common: CommonParams,
-  {
-    feed,
-    underlyingFeed,
-    mode,
-    acRole,
-    maxPrice,
-    maxStaleness,
-    minPrice,
-  }: DeployDataFeedConfig
+  token: MTokenName,
 ) => {
-  feed ??= Keypair.generate();
+  const network = getNetwork(common.provider);
+  const addresses = getAddresses(network);
+  const tokenAddresses = addresses[token];
+
+  let { acRole } = tokenAddresses ?? {};
+
+  acRole ??= addresses.acRoleGlobal;
+
+  const { underlyingFeed } = addresses.feeds[token];
+
+  const { minPrice, maxPrice, maxStaleness, mode } = getDeploymentGenericConfig(
+    token,
+    "dataFeed",
+  );
+
+  const feed = Keypair.generate();
 
   const dataFeedProgram = getDataFeedProgram(common.provider);
 
@@ -53,13 +64,13 @@ export const deployDataFeed = async (
         DataFeedMode[mode],
         toBN(minPrice),
         toBN(maxPrice),
-        maxStaleness
+        maxStaleness,
       )
       .accounts({
         feed: feed.publicKey,
         payer: common.payer.publicKey,
       })
-      .instruction()
+      .instruction(),
   );
 
   const txRes = await sendAndConfirmTransaction(
@@ -68,7 +79,7 @@ export const deployDataFeed = async (
     [common.payer, feed],
     {
       commitment: "finalized",
-    }
+    },
   );
 
   console.log({
@@ -77,4 +88,15 @@ export const deployDataFeed = async (
   });
 
   return feed.publicKey;
+};
+
+export const getNetwork = (provider: AnchorProvider): Network => {
+  const rpcEndpoint = provider.connection.rpcEndpoint;
+
+  console.log("Rpc endpoint", rpcEndpoint);
+
+  if (rpcEndpoint.includes("devnet")) {
+    return "devnet";
+  }
+  return "mainnet";
 };
