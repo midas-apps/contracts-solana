@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "anchor:script": "anchor run script --",
+    "anchor:script": "TS_NODE_TRANSPILE_ONLY=true anchor run script --",
     "build": "anchor build",
     "test": "yarn test:anchor && yarn test:cargo",
     "test:cargo": "anchor run test-cargo",

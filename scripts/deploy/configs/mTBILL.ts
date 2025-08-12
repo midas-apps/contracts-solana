@@ -32,6 +32,7 @@ export const mTBILLDeploymentConfig: DeploymentConfig = {
       dvUstb: undefined,
       rvBuidl: undefined,
       rvSwapper: undefined,
+      postDeploy: {},
     },
     mainnet: undefined,
   },

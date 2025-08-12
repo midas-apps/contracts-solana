@@ -6,7 +6,7 @@ import {
   Transaction,
 } from '@solana/web3.js';
 import * as VAULTS_IDL from '../../../target/idl/midas_vaults.json';
-import { CommonParams, getNetwork } from './common';
+import { CommonParams } from './common';
 import {
   acRoleToBuffer,
   getAccountAcRoleStatePda,
@@ -25,9 +25,24 @@ import {
 } from '@/test/helpers/vaults.helpers';
 import { createAtaIfNotExistsInx, toBN } from '@/test/helpers/common.helpers';
 import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
-import { MTokenName } from '@/common/types/tokens';
-import { getAddresses } from '@/common/addresses';
+import { MTokenName, PaymentTokenName } from '@/common/types/tokens';
+import { getAddresses, VaultType } from '@/common/addresses';
 import { getNetworkConfig } from './utils';
+
+export type AddPaymentTokensConfig = {
+  vaults: {
+    type: VaultType;
+    paymentTokens: {
+      token: PaymentTokenName;
+      // default: true
+      isStable?: boolean;
+      // default: 0
+      fee?: bigint;
+      // default: infinite
+      allowance?: bigint;
+    }[];
+  }[];
+};
 
 export const getVaultsProgram = (provider: AnchorProvider) => {
   return new Program<MidasVaults>(VAULTS_IDL as any, provider);
@@ -73,8 +88,7 @@ export const deployMinterVault = async (
   token: MTokenName,
   type: 'dv' | 'dvUstb',
 ) => {
-  const network = getNetwork(common.provider);
-  const addresses = getAddresses(network);
+  const addresses = getAddresses(common.provider.network);
   const tokenAddresses = addresses[token];
 
   if (!tokenAddresses) {
@@ -97,7 +111,7 @@ export const deployMinterVault = async (
     variationTolerance,
     minAmount,
     firstMintMinMTokens,
-  } = getNetworkConfig(network, token, type);
+  } = getNetworkConfig(common.provider.network, token, type);
 
   const commonVault = Keypair.generate();
 
@@ -188,7 +202,7 @@ export const deployMinterVault = async (
       .accountsPartial({
         vaultCommon: commonVault.publicKey,
         authority: common.payer.publicKey,
-        tokenAuthority: tokenAuthority,
+        tokenAuthority: tokenAuthority.account,
         authorityAcRole: getAccountAcRoleStatePda(
           acRole,
           common.payer.publicKey,
@@ -245,8 +259,7 @@ export const deployRedeemerVault = async (
   token: MTokenName,
   type: 'rv' | 'rvBuidl' | 'rvSwapper',
 ) => {
-  const network = getNetwork(common.provider);
-  const addresses = getAddresses(network);
+  const addresses = getAddresses(common.provider.network);
   const tokenAddresses = addresses[token];
 
   if (!tokenAddresses) {
@@ -266,7 +279,7 @@ export const deployRedeemerVault = async (
     variationTolerance,
     minAmount,
     minFiatRedeemAmount,
-  } = getNetworkConfig(network, token, type);
+  } = getNetworkConfig(common.provider.network, token, type);
 
   const commonVault = Keypair.generate();
 

@@ -1,7 +1,8 @@
-import { Network } from "@/common/types";
-import { DeployRvConfigCommon } from "./rv";
-import { DeployDvConfigCommon } from "./dv";
-import { DataFeedMode } from "@/test/helpers/ac.helpers";
+import { Network } from '@/common/types';
+import { DeployRvConfigCommon } from './rv';
+import { DeployDvConfigCommon } from './dv';
+import { DataFeedMode } from '@/test/helpers/ac.helpers';
+import { AddPaymentTokensConfig } from './vaults';
 
 export type DeploymentConfig = {
   genericConfigs: {
@@ -23,7 +24,7 @@ export type DeploymentConfig = {
       rvBuidl?: DeployRvConfigCommon;
       rvSwapper?: DeployRvConfigCommon;
       postDeploy?: {
-        addPaymentTokens?: any;
+        addPaymentTokens?: AddPaymentTokensConfig;
         grantRoles?: any;
         setRoundData?: any;
         addFeeWaived?: any;

@@ -1,11 +1,21 @@
 import { AnchorProvider, Program } from '@coral-xyz/anchor';
-import { Keypair, PublicKey, sendAndConfirmTransaction } from '@solana/web3.js';
+import {
+  Keypair,
+  PublicKey,
+  sendAndConfirmTransaction,
+  Transaction,
+} from '@solana/web3.js';
 import * as AC_IDL from '../../../target/idl/access_control.json';
-import { CommonParams, getNetwork } from './common';
-import { getAccountAcRoleStatePda } from '../../../test/helpers/ac.helpers';
+import { CommonParams } from './common';
+import {
+  acRoleToBuffer,
+  getAccountAcRoleStatePda,
+} from '../../../test/helpers/ac.helpers';
 import { AC_ROLES } from '../../../test/constants/ac.constants';
 import { AccessControl } from '../../../target/types/access_control';
 import { getAddresses } from '@/common/addresses';
+import { MTokenName } from '@/common/types/tokens';
+import { VAULT_AC_ROLES } from '@/test/constants/vaults.constants';
 
 export const getAcProgram = (provider: AnchorProvider) => {
   return new Program<AccessControl>(AC_IDL as any, provider);
@@ -21,8 +31,7 @@ export type DeployAcRoleConfig = {
 };
 
 export const deployAc = async (common: CommonParams) => {
-  const network = getNetwork(common.provider);
-  const addresses = getAddresses(network);
+  const addresses = getAddresses(common.provider.network);
   const { acRoleGlobal: acRole } = addresses;
 
   const ac = Keypair.generate();
@@ -88,4 +97,46 @@ export const deployAcRole = async (common: CommonParams) => {
   });
 
   return acRole.publicKey;
+};
+
+export const grantRole = async (
+  { provider, payer }: CommonParams,
+  mToken: MTokenName,
+) => {
+  const acProgram = getAcProgram(provider);
+
+  const addresses = getAddresses(provider.network);
+  const acRoles = addresses[mToken].acRole;
+
+  const tx = new Transaction().add(
+    await acProgram.methods
+      .grantRole(acRoleToBuffer(VAULT_AC_ROLES.VAULT_PAUSER))
+      .accountsPartial({
+        account: payer.publicKey,
+        acRole: acRoles,
+        authority: payer.publicKey,
+        authorityAcAdminRole: getAccountAcRoleStatePda(
+          acRoles,
+          payer.publicKey,
+          AC_ROLES.ADMIN,
+        ),
+        accountAcRole: getAccountAcRoleStatePda(
+          acRoles,
+          payer.publicKey,
+          VAULT_AC_ROLES.VAULT_PAUSER,
+        ),
+      })
+      .instruction(),
+  );
+
+  const txRes = await sendAndConfirmTransaction(
+    provider.connection,
+    tx,
+    [payer],
+    {
+      commitment: 'finalized',
+    },
+  );
+
+  console.log({ txRes });
 };

@@ -11,7 +11,7 @@ import {
   getDefaultQueue,
   getDefaultDevnetQueue,
 } from '@switchboard-xyz/on-demand';
-import { CommonParams, getNetwork } from './common';
+import { CommonParams } from './common';
 import { Address } from 'viem';
 import * as sb from '@switchboard-xyz/on-demand';
 import { Network } from '@/common/types';
@@ -27,8 +27,7 @@ export const deploySwitchboardFeed = async ({
   payer,
   provider,
 }: CommonParams) => {
-  const network = getNetwork(provider);
-  const { env, ethDataFeed, ethRpc } = getSwitchboardConfig(network);
+  const { env, ethDataFeed, ethRpc } = getSwitchboardConfig(provider.network);
 
   const jobs: OracleJob[] = [
     OracleJob.create({

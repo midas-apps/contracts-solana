@@ -1,14 +1,23 @@
 import { AnchorProvider, Program } from '@coral-xyz/anchor';
-import { PublicKey, sendAndConfirmTransaction } from '@solana/web3.js';
+import {
+  PublicKey,
+  sendAndConfirmTransaction,
+  Transaction,
+} from '@solana/web3.js';
 import * as TOKEN_AUTHORITY_IDL from '../../../target/idl/token_authority.json';
-import { CommonParams, getNetwork } from './common';
+import { CommonParams } from './common';
 import { TokenAuthority } from '@/target/types/token_authority';
 import {
   getTokenAuthorityPda,
   mintAuthoritySeedToBuffer,
 } from '@/test/helpers/token-authority.helpers';
 import { MTokenName } from '@/common/types/tokens';
-import { getAddresses } from '@/common/addresses';
+import { getAddresses, getTokenAddresses } from '@/common/addresses';
+import {
+  AuthorityType,
+  createSetAuthorityInstruction,
+  TOKEN_2022_PROGRAM_ID,
+} from '@solana/spl-token';
 
 export const getTokenAuthorityProgram = (provider: AnchorProvider) => {
   return new Program<TokenAuthority>(TOKEN_AUTHORITY_IDL as any, provider);
@@ -23,8 +32,7 @@ export const deployTokenAuthority = async (
   common: CommonParams,
   token: MTokenName,
 ) => {
-  const network = getNetwork(common.provider);
-  const addresses = getAddresses(network);
+  const addresses = getAddresses(common.provider.network);
   const tokenAddresses = addresses[token];
 
   if (!tokenAddresses) {
@@ -65,4 +73,39 @@ export const deployTokenAuthority = async (
   });
 
   return authority;
+};
+
+export type TransferTokenAuthorityConfig = {
+  authorityType: AuthorityType;
+  currentAuthority?: PublicKey;
+};
+
+export const transferTokenAuthority = async (
+  { provider, payer }: CommonParams,
+  token: MTokenName,
+  { authorityType, currentAuthority }: TransferTokenAuthorityConfig,
+) => {
+  const tokenAddresses = getTokenAddresses(provider.network, token);
+
+  const { mToken: account, tokenProgram, tokenAuthority } = tokenAddresses;
+
+  const txRes = await sendAndConfirmTransaction(
+    provider.connection,
+    new Transaction().add(
+      createSetAuthorityInstruction(
+        account,
+        currentAuthority ?? payer.publicKey,
+        authorityType,
+        tokenAuthority.account ?? payer.publicKey,
+        undefined,
+        tokenProgram ?? TOKEN_2022_PROGRAM_ID,
+      ),
+    ),
+    [payer],
+    {
+      commitment: 'finalized',
+    },
+  );
+
+  console.log({ txRes });
 };
