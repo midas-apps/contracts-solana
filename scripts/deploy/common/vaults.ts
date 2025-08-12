@@ -26,7 +26,7 @@ import {
 import { createAtaIfNotExistsInx, toBN } from '@/test/helpers/common.helpers';
 import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import { MTokenName, PaymentTokenName } from '@/common/types/tokens';
-import { getAddresses, VaultType } from '@/common/addresses';
+import { getAddresses, NetworkAddresses, VaultType } from '@/common/addresses';
 import { getNetworkConfig } from './utils';
 
 export type AddPaymentTokensConfig = {
@@ -40,8 +40,28 @@ export type AddPaymentTokensConfig = {
       fee?: bigint;
       // default: infinite
       allowance?: bigint;
+      isFiat?: boolean;
     }[];
   }[];
+};
+
+export const mapVaultTypeToAddressKey = (
+  type: VaultType,
+): keyof Pick<NetworkAddresses['mTBILL'], 'redeemer' | 'minter'> => {
+  switch (type) {
+    case 'depositVault':
+      return 'redeemer';
+    case 'redemptionVault':
+      return 'redeemer';
+    case 'redemptionVaultBuidl':
+      return 'redeemer';
+    case 'redemptionVaultSwapper':
+      return 'redeemer';
+    case 'redemptionVaultUstb':
+      return 'redeemer';
+    default:
+      throw new Error(`Unknown vault type: ${type}`);
+  }
 };
 
 export const getVaultsProgram = (provider: AnchorProvider) => {

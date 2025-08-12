@@ -1,6 +1,6 @@
 import { PublicKey } from '@solana/web3.js';
 
-import { getPaymentAndMTokenOrThrow } from '../common/utils';
+import { getMTokenOrThrow } from '../common/utils';
 import { MAX_U128 } from '@/test/constants/common.constants';
 import { parsePercent } from '@/test/helpers/common.helpers';
 import { addresses } from '@/common/addresses';
@@ -31,8 +31,8 @@ const config = {
 
 export const main = async () => {
   await executeAnchorScript(async (provider, payer) => {
-    const { mToken, pToken } = getPaymentAndMTokenOrThrow(provider);
-    return addPaymentToken({ provider, payer }, mToken, pToken);
+    const mToken = getMTokenOrThrow(provider);
+    return addPaymentToken({ provider, payer }, mToken);
   });
 };
 main();

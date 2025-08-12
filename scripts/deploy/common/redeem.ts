@@ -35,7 +35,7 @@ export const redeemInstant = async (
 
   const { token: mint, tokenProgram } = addresses.feeds[pToken];
 
-  const vaultCommon = addresses[mToken].minter.commonVault;
+  const vaultCommon = addresses[mToken].redeemer.commonVault;
   const commonState = await fetchVaultCommonState(vaultsProgram, vaultCommon);
 
   const vaultState = await fetchRedeemerVaultState(
@@ -221,7 +221,7 @@ export const redeemRequestFiat = async (
 
   const { token: mint, tokenProgram } = addresses.feeds[pToken];
 
-  const vaultCommon = addresses[mToken].minter.commonVault;
+  const vaultCommon = addresses[mToken].redeemer.commonVault;
   const commonState = await fetchVaultCommonState(vaultsProgram, vaultCommon);
 
   const vaultState = await fetchRedeemerVaultState(
@@ -415,7 +415,7 @@ export const redeemRequest = async (
 
   const { token: mint, tokenProgram } = addresses.feeds[pToken];
 
-  const vaultCommon = addresses[mToken].minter.commonVault;
+  const vaultCommon = addresses[mToken].redeemer.commonVault;
   const commonState = await fetchVaultCommonState(vaultsProgram, vaultCommon);
 
   const vaultState = await fetchRedeemerVaultState(

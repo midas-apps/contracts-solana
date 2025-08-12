@@ -1,3 +1,4 @@
+import { MAX_U128 } from '@/test/constants/common.constants';
 import { DeploymentConfig } from '../common/types';
 import { parsePercent, parseUnits } from '@/test/helpers/common.helpers';
 
@@ -32,7 +33,24 @@ export const mTBILLDeploymentConfig: DeploymentConfig = {
       dvUstb: undefined,
       rvBuidl: undefined,
       rvSwapper: undefined,
-      postDeploy: {},
+      postDeploy: {
+        addPaymentTokens: {
+          vaults: [
+            {
+              paymentTokens: [
+                {
+                  token: 'usdc',
+                  isStable: true,
+                  fee: parsePercent(0.1),
+                  allowance: MAX_U128,
+                  isFiat: false,
+                },
+              ],
+              type: 'depositVault',
+            },
+          ],
+        },
+      },
     },
     mainnet: undefined,
   },

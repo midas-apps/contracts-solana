@@ -15,9 +15,13 @@ import { MTokenName } from '@/common/types/tokens';
 import { getAddresses, getTokenAddresses } from '@/common/addresses';
 import {
   AuthorityType,
+  createApproveInstruction,
   createSetAuthorityInstruction,
   TOKEN_2022_PROGRAM_ID,
+  TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
+import { findATA } from '@/test/helpers/common.helpers';
+import { MAX_U64 } from '@/test/constants/common.constants';
 
 export const getTokenAuthorityProgram = (provider: AnchorProvider) => {
   return new Program<TokenAuthority>(TOKEN_AUTHORITY_IDL as any, provider);
@@ -101,6 +105,40 @@ export const transferTokenAuthority = async (
         tokenProgram ?? TOKEN_2022_PROGRAM_ID,
       ),
     ),
+    [payer],
+    {
+      commitment: 'finalized',
+    },
+  );
+
+  console.log({ txRes });
+};
+
+export type DelegateTokenConfig = {
+  mint: PublicKey;
+};
+
+export const delegateToken = async (
+  { provider, payer }: CommonParams,
+  token: MTokenName,
+  { mint }: DelegateTokenConfig,
+) => {
+  const tokenAddresses = getTokenAddresses(provider.network, token);
+
+  const tx = new Transaction().add(
+    createApproveInstruction(
+      findATA(mint, payer.publicKey, TOKEN_PROGRAM_ID),
+      tokenAddresses.redeemer.account,
+      payer.publicKey,
+      MAX_U64,
+      undefined,
+      TOKEN_PROGRAM_ID,
+    ),
+  );
+
+  const txRes = await sendAndConfirmTransaction(
+    provider.connection,
+    tx,
     [payer],
     {
       commitment: 'finalized',
