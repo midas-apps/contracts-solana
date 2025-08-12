@@ -14,7 +14,7 @@
     "anchor:mint-instant": "anchor run scripts/deploy/helpers/mint-instant.ts",
     "anchor:update-data-feed": "anchor run scripts/deploy/helpers/update-data-feed.ts",
     "anchor:transfer-authority": "anchor run scripts/deploy/helpers/transfer-authority.ts",
-    "anchor:redeem-request": "anchor run scripts/deploy/helpers/redeem-request-fiat.ts",
+    "anchor:redeem-request": "anchor run scripts/deploy/helpers/redeem-request.ts",
     "anchor:redeem-request-fiat": "anchor run scripts/deploy/helpers/redeem-request-fiat.ts",
     "anchor:redeem-instant": "anchor run scripts/deploy/helpers/redeem-instant.ts",
     "build": "anchor build",
