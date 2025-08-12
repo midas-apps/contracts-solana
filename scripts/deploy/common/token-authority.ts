@@ -1,22 +1,14 @@
-import { AnchorProvider, Program } from "@coral-xyz/anchor";
-import {
-  Keypair,
-  PublicKey,
-  sendAndConfirmTransaction,
-  Transaction,
-} from "@solana/web3.js";
-import * as TOKEN_AUTHORITY_IDL from "../../../target/idl/token_authority.json";
-import { CommonParams, getNetwork } from "./common";
-import { getAccountAcRoleStatePda } from "../../../test/helpers/ac.helpers";
-import { AC_ROLES } from "../../../test/constants/ac.constants";
-import { AccessControl } from "../../../target/types/access_control";
-import { TokenAuthority } from "@/target/types/token_authority";
+import { AnchorProvider, Program } from '@coral-xyz/anchor';
+import { PublicKey, sendAndConfirmTransaction } from '@solana/web3.js';
+import * as TOKEN_AUTHORITY_IDL from '../../../target/idl/token_authority.json';
+import { CommonParams, getNetwork } from './common';
+import { TokenAuthority } from '@/target/types/token_authority';
 import {
   getTokenAuthorityPda,
   mintAuthoritySeedToBuffer,
-} from "@/test/helpers/token-authority.helpers";
-import { MTokenName } from "@/common/types/tokens";
-import { getAddresses } from "@/common/addresses";
+} from '@/test/helpers/token-authority.helpers';
+import { MTokenName } from '@/common/types/tokens';
+import { getAddresses } from '@/common/addresses';
 
 export const getTokenAuthorityProgram = (provider: AnchorProvider) => {
   return new Program<TokenAuthority>(TOKEN_AUTHORITY_IDL as any, provider);
@@ -36,7 +28,7 @@ export const deployTokenAuthority = async (
   const tokenAddresses = addresses[token];
 
   if (!tokenAddresses) {
-    throw new Error("Token config is not found");
+    throw new Error('Token config is not found');
   }
   const {
     tokenAuthority: { seed },
@@ -62,7 +54,7 @@ export const deployTokenAuthority = async (
     tx,
     [common.payer],
     {
-      commitment: "finalized",
+      commitment: 'finalized',
     },
   );
 

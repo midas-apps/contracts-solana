@@ -3,26 +3,21 @@ import {
   PublicKey,
   sendAndConfirmTransaction,
   Transaction,
-} from "@solana/web3.js";
-import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
+} from '@solana/web3.js';
+import { AnchorProvider } from '@coral-xyz/anchor';
 
-import { executeAnchorScript } from "../common/utils";
-import { MAX_U128 } from "@/test/constants/common.constants";
+import { executeAnchorScript } from '../common/utils';
 import {
-  approveMintInstruction,
   createAtaIfNotExistsInx,
-  fromBN,
-  parsePercent,
   parseUnits,
-  revokeMintInstruction,
   toBN,
-} from "@/test/helpers/common.helpers";
-import { getVaultsProgram } from "./deploy/common/vaults";
+} from '@/test/helpers/common.helpers';
+import { getVaultsProgram } from './deploy/common/vaults';
 import {
   fetchAccountAcState,
   getAccountAcRoleStatePda,
   getAccountAcStatePda,
-} from "@/test/helpers/ac.helpers";
+} from '@/test/helpers/ac.helpers';
 import {
   fetchMinterVaultState,
   fetchPaymentMintState,
@@ -30,32 +25,26 @@ import {
   fetchVaultCommonState,
   getCommonVaultAccountStatePda,
   getMinterVaultPda,
-  getMinterVaultRequestPda,
   getPaymentMintStatePda,
-} from "@/test/helpers/vaults.helpers";
-import { VAULT_AC_ROLES } from "@/test/constants/vaults.constants";
-import { addresses } from "@/common/addresses";
-import {
-  createRevokeInstruction,
-  TOKEN_2022_PROGRAM_ID,
-  TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
-import { fetchDataFeedState } from "@/test/helpers/data-feed.helpers";
-import { getDataFeedProgram } from "./deploy/common/common";
-import { TOKEN_AUTHORITY_ROLES } from "@/test/constants/token-authority.constants";
-import { getAcProgram } from "./deploy/common/ac";
-import { getSwitchboardPullInx } from "./deploy/common/switchboard";
+} from '@/test/helpers/vaults.helpers';
+import { addresses } from '@/common/addresses';
+import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
+import { fetchDataFeedState } from '@/test/helpers/data-feed.helpers';
+import { getDataFeedProgram } from './deploy/common/common';
+import { TOKEN_AUTHORITY_ROLES } from '@/test/constants/token-authority.constants';
+import { getAcProgram } from './deploy/common/ac';
+import { getSwitchboardPullInx } from './deploy/common/switchboard';
 
 // TODO: change config before execution
 const config = {
-  product: "mTBILL",
-  mint: addresses["devnet"].feeds["usdc"].token,
-  tokenProgram: addresses["devnet"].feeds["usdc"].tokenProgram,
-  amount: parseUnits("100", 6),
-  env: "devnet",
+  product: 'mTBILL',
+  mint: addresses['devnet'].feeds['usdc'].token,
+  tokenProgram: addresses['devnet'].feeds['usdc'].tokenProgram,
+  amount: parseUnits('100', 6),
+  env: 'devnet',
 } as {
-  product: "mTBILL";
-  env: "devnet" | "mainnet";
+  product: 'mTBILL';
+  env: 'devnet' | 'mainnet';
   mint: PublicKey;
   amount: bigint;
   tokenProgram?: PublicKey;
@@ -72,26 +61,26 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 
   const vaultState = await fetchMinterVaultState(
     vaultsProgram,
-    getMinterVaultPda(vaultCommon)
+    getMinterVaultPda(vaultCommon),
   );
 
   const mFeed = await fetchDataFeedState(feedProgram, commonState.mMintFeed);
   const payment = await fetchPaymentMintState(
     vaultsProgram,
-    getPaymentMintStatePda(vaultCommon, config.mint)
+    getPaymentMintStatePda(vaultCommon, config.mint),
   );
   const paymentFeed = await fetchDataFeedState(feedProgram, payment.dataFeed);
 
   const acUser = await fetchAccountAcState(
     acProgram,
     getAccountAcStatePda(commonState.ac, payer.publicKey),
-    true
+    true,
   );
 
   const commonUser = await fetchVaultCommonAccountState(
     vaultsProgram,
     getCommonVaultAccountStatePda(vaultCommon, payer.publicKey),
-    true
+    true,
   );
 
   const ata = await createAtaIfNotExistsInx(
@@ -99,13 +88,13 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     commonState.mMint,
     payer.publicKey,
     payer,
-    TOKEN_2022_PROGRAM_ID
+    TOKEN_2022_PROGRAM_ID,
   );
 
   const tx1 = new Transaction();
 
   tx1.add(
-    await getSwitchboardPullInx(provider, mFeed.underlyingFeed, config.env)
+    await getSwitchboardPullInx(provider, mFeed.underlyingFeed, config.env),
   );
 
   const txRes1 = await sendAndConfirmTransaction(
@@ -113,8 +102,8 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     tx1,
     [payer],
     {
-      commitment: "finalized",
-    }
+      commitment: 'finalized',
+    },
   );
 
   console.log({ txRes1 });
@@ -122,12 +111,12 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const tx2 = new Transaction();
 
   if (ata) {
-    console.log("ata");
+    console.log('ata');
     tx2.add(ata);
   }
 
   if (!acUser) {
-    console.log("acUser");
+    console.log('acUser');
     tx2.add(
       await acProgram.methods
         .newAccountAc()
@@ -137,12 +126,12 @@ async function main(provider: AnchorProvider, payer: Keypair) {
           accountAc: getAccountAcStatePda(commonState.ac, payer.publicKey),
           signer: payer.publicKey,
         })
-        .instruction()
+        .instruction(),
     );
   }
 
   if (!commonUser) {
-    console.log("commonUser");
+    console.log('commonUser');
     tx2.add(
       await vaultsProgram.methods
         .newCommonVaultAccount()
@@ -151,11 +140,11 @@ async function main(provider: AnchorProvider, payer: Keypair) {
           vaultCommon,
           vaultCommonAccount: getCommonVaultAccountStatePda(
             vaultCommon,
-            payer.publicKey
+            payer.publicKey,
           ),
           signer: payer.publicKey,
         })
-        .instruction()
+        .instruction(),
     );
   }
 
@@ -179,10 +168,10 @@ async function main(provider: AnchorProvider, payer: Keypair) {
         vaultMinterRole: getAccountAcRoleStatePda(
           commonState.acRole,
           getMinterVaultPda(vaultCommon),
-          TOKEN_AUTHORITY_ROLES.M_MINTER
+          TOKEN_AUTHORITY_ROLES.M_MINTER,
         ),
       })
-      .instruction()
+      .instruction(),
   );
 
   const txRes = await sendAndConfirmTransaction(
@@ -190,8 +179,8 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     tx2,
     [payer],
     {
-      commitment: "finalized",
-    }
+      commitment: 'finalized',
+    },
   );
 
   console.log({ txRes });

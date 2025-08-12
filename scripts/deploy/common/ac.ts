@@ -1,16 +1,11 @@
-import { AnchorProvider, Program } from "@coral-xyz/anchor";
-import {
-  Keypair,
-  PublicKey,
-  sendAndConfirmTransaction,
-  Transaction,
-} from "@solana/web3.js";
-import * as AC_IDL from "../../../target/idl/access_control.json";
-import { CommonParams, getNetwork } from "./common";
-import { getAccountAcRoleStatePda } from "../../../test/helpers/ac.helpers";
-import { AC_ROLES } from "../../../test/constants/ac.constants";
-import { AccessControl } from "../../../target/types/access_control";
-import { getAddresses } from "@/common/addresses";
+import { AnchorProvider, Program } from '@coral-xyz/anchor';
+import { Keypair, PublicKey, sendAndConfirmTransaction } from '@solana/web3.js';
+import * as AC_IDL from '../../../target/idl/access_control.json';
+import { CommonParams, getNetwork } from './common';
+import { getAccountAcRoleStatePda } from '../../../test/helpers/ac.helpers';
+import { AC_ROLES } from '../../../test/constants/ac.constants';
+import { AccessControl } from '../../../target/types/access_control';
+import { getAddresses } from '@/common/addresses';
 
 export const getAcProgram = (provider: AnchorProvider) => {
   return new Program<AccessControl>(AC_IDL as any, provider);
@@ -48,7 +43,7 @@ export const deployAc = async (common: CommonParams) => {
     tx,
     [common.payer, ac],
     {
-      commitment: "finalized",
+      commitment: 'finalized',
     },
   );
 
@@ -83,7 +78,7 @@ export const deployAcRole = async (common: CommonParams) => {
     tx,
     [common.payer, acRole],
     {
-      commitment: "finalized",
+      commitment: 'finalized',
     },
   );
 

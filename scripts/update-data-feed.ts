@@ -3,40 +3,25 @@ import {
   PublicKey,
   sendAndConfirmTransaction,
   Transaction,
-} from "@solana/web3.js";
-import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
+} from '@solana/web3.js';
+import { AnchorProvider } from '@coral-xyz/anchor';
 
-import { executeAnchorScript } from "../common/utils";
-import { MAX_U128 } from "@/test/constants/common.constants";
-import {
-  createAtaIfNotExistsInx,
-  parsePercent,
-  toBN,
-} from "@/test/helpers/common.helpers";
-import { getVaultsProgram } from "./deploy/common/vaults";
-import {
-  acRoleToBuffer,
-  getAccountAcRoleStatePda,
-} from "@/test/helpers/ac.helpers";
-import { fetchVaultCommonState } from "@/test/helpers/vaults.helpers";
-import { VAULT_AC_ROLES } from "@/test/constants/vaults.constants";
-import { addresses } from "@/common/addresses";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { getDataFeedProgram } from "./deploy/common/common";
-import { DATA_FEED_AC_ROLES } from "@/test/constants/data-feed.constants";
+import { executeAnchorScript } from '../common/utils';
+import { getAccountAcRoleStatePda } from '@/test/helpers/ac.helpers';
+import { addresses } from '@/common/addresses';
+import { getDataFeedProgram } from './deploy/common/common';
+import { DATA_FEED_AC_ROLES } from '@/test/constants/data-feed.constants';
 import {
   DataFeedMode,
   fetchDataFeedState,
-} from "@/test/helpers/data-feed.helpers";
-import { getAcProgram } from "./deploy/common/ac";
-import { AC_ROLES } from "@/test/constants/ac.constants";
-import { getSwitchboardPullInx } from "./deploy/common/switchboard";
+} from '@/test/helpers/data-feed.helpers';
+import { getAcProgram } from './deploy/common/ac';
 
 // TODO: change config before execution
 const config = {
-  dataFeed: addresses["devnet"].mTBILL.mTokenDataFeed,
+  dataFeed: addresses['devnet'].mTBILL.mTokenDataFeed,
   newUnderlyingFeed: new PublicKey(
-    "782zyJs63RQmYVHjUiNsP1xVxVtTkj12ZZcPobCRstkX"
+    '782zyJs63RQmYVHjUiNsP1xVxVtTkj12ZZcPobCRstkX',
   ),
 } as {
   dataFeed: PublicKey;
@@ -77,7 +62,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
         config.newMode ? DataFeedMode[config.newMode] : null,
         null,
         null,
-        null
+        null,
       )
       .accountsPartial({
         authority: payer.publicKey,
@@ -86,10 +71,10 @@ async function main(provider: AnchorProvider, payer: Keypair) {
         authorityAcRole: getAccountAcRoleStatePda(
           state.acRole,
           payer.publicKey,
-          DATA_FEED_AC_ROLES.FEED_ADMIN
+          DATA_FEED_AC_ROLES.FEED_ADMIN,
         ),
       })
-      .instruction()
+      .instruction(),
   );
 
   const txRes = await sendAndConfirmTransaction(
@@ -97,8 +82,8 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     tx,
     [payer],
     {
-      commitment: "finalized",
-    }
+      commitment: 'finalized',
+    },
   );
 
   console.log({ txRes });

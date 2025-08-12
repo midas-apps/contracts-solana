@@ -3,25 +3,24 @@ import {
   PublicKey,
   sendAndConfirmTransaction,
   Transaction,
-} from "@solana/web3.js";
-import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
+} from '@solana/web3.js';
+import { AnchorProvider } from '@coral-xyz/anchor';
 
-import { createMTokenMint } from "../common/create-mtoken-mint";
-import { executeAnchorScript } from "../common/utils";
+import { executeAnchorScript } from '../common/utils';
 import {
   AuthorityType,
   createSetAuthorityInstruction,
   TOKEN_2022_PROGRAM_ID,
-} from "@solana/spl-token";
-import { addresses } from "@/common/addresses";
+} from '@solana/spl-token';
+import { addresses } from '@/common/addresses';
 
 // TODO: change config before execution
 const config = {
   // currentAuthority: new PublicKey(
   //   "So11111111111111111111111111111111111111112"
   // ),
-  account: addresses["devnet"].mTBILL.mToken,
-  newAuthority: addresses["devnet"].mTBILL.tokenAuthority.account,
+  account: addresses['devnet'].mTBILL.mToken,
+  newAuthority: addresses['devnet'].mTBILL.tokenAuthority.account,
   authorityType: AuthorityType.FreezeAccount,
   programId: TOKEN_2022_PROGRAM_ID,
 } as {
@@ -42,13 +41,13 @@ async function main(provider: AnchorProvider, payer: Keypair) {
         config.authorityType,
         config.newAuthority ?? payer.publicKey,
         undefined,
-        config.programId ?? TOKEN_2022_PROGRAM_ID
-      )
+        config.programId ?? TOKEN_2022_PROGRAM_ID,
+      ),
     ),
     [payer],
     {
-      commitment: "finalized",
-    }
+      commitment: 'finalized',
+    },
   );
 
   console.log({ txRes });

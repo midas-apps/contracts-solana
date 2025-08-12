@@ -3,30 +3,30 @@ import {
   PublicKey,
   sendAndConfirmTransaction,
   Transaction,
-} from "@solana/web3.js";
-import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
+} from '@solana/web3.js';
+import { AnchorProvider } from '@coral-xyz/anchor';
 
-import { executeAnchorScript } from "../common/utils";
-import { MAX_U128 } from "@/test/constants/common.constants";
+import { executeAnchorScript } from '../common/utils';
+import { MAX_U128 } from '@/test/constants/common.constants';
 import {
   createAtaIfNotExistsInx,
   parsePercent,
   toBN,
-} from "@/test/helpers/common.helpers";
-import { getVaultsProgram } from "./deploy/common/vaults";
-import { getAccountAcRoleStatePda } from "@/test/helpers/ac.helpers";
-import { fetchVaultCommonState } from "@/test/helpers/vaults.helpers";
-import { VAULT_AC_ROLES } from "@/test/constants/vaults.constants";
-import { addresses } from "@/common/addresses";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+} from '@/test/helpers/common.helpers';
+import { getVaultsProgram } from './deploy/common/vaults';
+import { getAccountAcRoleStatePda } from '@/test/helpers/ac.helpers';
+import { fetchVaultCommonState } from '@/test/helpers/vaults.helpers';
+import { VAULT_AC_ROLES } from '@/test/constants/vaults.constants';
+import { addresses } from '@/common/addresses';
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 // TODO: change config before execution
 const config = {
-  vaultCommon: addresses["devnet"].mTBILL.redeemer.commonVault,
+  vaultCommon: addresses['devnet'].mTBILL.redeemer.commonVault,
   allowance: MAX_U128,
   fee: parsePercent(0.1),
-  feed: addresses["devnet"].feeds["usdc"].dataFeed,
-  mint: addresses["devnet"].feeds["usdc"].token,
+  feed: addresses['devnet'].feeds['usdc'].dataFeed,
+  mint: addresses['devnet'].feeds['usdc'].token,
   tokenProgram: TOKEN_PROGRAM_ID,
   stable: true,
   isFiat: false,
@@ -46,7 +46,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 
   const commonState = await fetchVaultCommonState(
     vaultsProgram,
-    config.vaultCommon
+    config.vaultCommon,
   );
 
   const tx = new Transaction().add(
@@ -59,7 +59,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
             authorityAcRole: getAccountAcRoleStatePda(
               commonState.acRole,
               payer.publicKey,
-              VAULT_AC_ROLES.VAULT_ADMIN
+              VAULT_AC_ROLES.VAULT_ADMIN,
             ),
           })
           .instruction()
@@ -67,7 +67,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
           .addPaymentToken(
             toBN(config.fee),
             toBN(config.allowance),
-            config.stable
+            config.stable,
           )
           .accountsPartial({
             authority: payer.publicKey,
@@ -78,10 +78,10 @@ async function main(provider: AnchorProvider, payer: Keypair) {
             authorityAcRole: getAccountAcRoleStatePda(
               commonState.acRole,
               payer.publicKey,
-              VAULT_AC_ROLES.VAULT_ADMIN
+              VAULT_AC_ROLES.VAULT_ADMIN,
             ),
           })
-          .instruction()
+          .instruction(),
   );
 
   if (!config.isFiat) {
@@ -90,11 +90,11 @@ async function main(provider: AnchorProvider, payer: Keypair) {
       config.mint,
       commonState.feeReceiver,
       payer,
-      config.tokenProgram
+      config.tokenProgram,
     );
 
     const tokensReceiverCreateAtaInx = commonState.tokensReceiver.equals(
-      commonState.feeReceiver
+      commonState.feeReceiver,
     )
       ? null
       : await createAtaIfNotExistsInx(
@@ -102,7 +102,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
           config.mint,
           commonState.tokensReceiver,
           payer,
-          config.tokenProgram
+          config.tokenProgram,
         );
 
     if (feeReceiverCreateAtaInx) {
@@ -118,8 +118,8 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     tx,
     [payer],
     {
-      commitment: "finalized",
-    }
+      commitment: 'finalized',
+    },
   );
 
   console.log({ txRes });

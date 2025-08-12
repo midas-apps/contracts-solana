@@ -1,40 +1,33 @@
-import { AnchorProvider, Program } from "@coral-xyz/anchor";
+import { AnchorProvider, Program } from '@coral-xyz/anchor';
 import {
   Keypair,
   PublicKey,
   sendAndConfirmTransaction,
   Transaction,
-} from "@solana/web3.js";
-import * as VAULTS_IDL from "../../../target/idl/midas_vaults.json";
-import { CommonParams, getNetwork } from "./common";
+} from '@solana/web3.js';
+import * as VAULTS_IDL from '../../../target/idl/midas_vaults.json';
+import { CommonParams, getNetwork } from './common';
 import {
   acRoleToBuffer,
   getAccountAcRoleStatePda,
-} from "../../../test/helpers/ac.helpers";
-import { AC_ROLES } from "../../../test/constants/ac.constants";
-import { AccessControl } from "../../../target/types/access_control";
-import {
-  getTokenAuthorityPda,
-  mintAuthoritySeedToBuffer,
-} from "@/test/helpers/token-authority.helpers";
-import { MidasVaults } from "@/target/types/midas_vaults";
-import { getAcProgram } from "./ac";
+} from '../../../test/helpers/ac.helpers';
+import { AC_ROLES } from '../../../test/constants/ac.constants';
+import { MidasVaults } from '@/target/types/midas_vaults';
+import { getAcProgram } from './ac';
 import {
   VAULT_AC_ROLES,
   VaultActionIds,
-} from "@/test/constants/vaults.constants";
-import { TOKEN_AUTHORITY_ROLES } from "@/test/constants/token-authority.constants";
+} from '@/test/constants/vaults.constants';
+import { TOKEN_AUTHORITY_ROLES } from '@/test/constants/token-authority.constants';
 import {
-  fetchRedeemerVaultState,
-  fetchVaultCommonState,
   getMinterVaultPda,
   getRedeemerVaultPda,
-} from "@/test/helpers/vaults.helpers";
-import { createAtaIfNotExistsInx, toBN } from "@/test/helpers/common.helpers";
-import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
-import { MTokenName } from "@/common/types/tokens";
-import { getAddresses } from "@/common/addresses";
-import { getNetworkConfig } from "./utils";
+} from '@/test/helpers/vaults.helpers';
+import { createAtaIfNotExistsInx, toBN } from '@/test/helpers/common.helpers';
+import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
+import { MTokenName } from '@/common/types/tokens';
+import { getAddresses } from '@/common/addresses';
+import { getNetworkConfig } from './utils';
 
 export const getVaultsProgram = (provider: AnchorProvider) => {
   return new Program<MidasVaults>(VAULTS_IDL as any, provider);
@@ -78,14 +71,14 @@ export type DeployRedeemerVaultConfig = {
 export const deployMinterVault = async (
   common: CommonParams,
   token: MTokenName,
-  type: "dv" | "dvUstb",
+  type: 'dv' | 'dvUstb',
 ) => {
   const network = getNetwork(common.provider);
   const addresses = getAddresses(network);
   const tokenAddresses = addresses[token];
 
   if (!tokenAddresses) {
-    throw new Error("Token config is not found");
+    throw new Error('Token config is not found');
   }
 
   const {
@@ -234,7 +227,7 @@ export const deployMinterVault = async (
     tx,
     [common.payer, commonVault],
     {
-      commitment: "finalized",
+      commitment: 'finalized',
     },
   );
 
@@ -250,14 +243,14 @@ export const deployMinterVault = async (
 export const deployRedeemerVault = async (
   common: CommonParams,
   token: MTokenName,
-  type: "rv" | "rvBuidl" | "rvSwapper",
+  type: 'rv' | 'rvBuidl' | 'rvSwapper',
 ) => {
   const network = getNetwork(common.provider);
   const addresses = getAddresses(network);
   const tokenAddresses = addresses[token];
 
   if (!tokenAddresses) {
-    throw new Error("Token config is not found");
+    throw new Error('Token config is not found');
   }
 
   const { mToken, mTokenDataFeed: mTokenFeed, acRole } = tokenAddresses;
@@ -401,7 +394,7 @@ export const deployRedeemerVault = async (
     tx,
     [common.payer, commonVault],
     {
-      commitment: "finalized",
+      commitment: 'finalized',
     },
   );
 
