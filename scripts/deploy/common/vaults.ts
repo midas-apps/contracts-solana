@@ -50,7 +50,7 @@ export const mapVaultTypeToAddressKey = (
 ): keyof Pick<NetworkAddresses['mTBILL'], 'redeemer' | 'minter'> => {
   switch (type) {
     case 'depositVault':
-      return 'redeemer';
+      return 'minter';
     case 'redemptionVault':
       return 'redeemer';
     case 'redemptionVaultBuidl':

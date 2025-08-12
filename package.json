@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "anchor:script": "TS_NODE_TRANSPILE_ONLY=true anchor run script --",
+    "anchor:script": "anchor run script --",
     "anchor:deploy:ac": "anchor run scripts/deploy/deploy_AC.ts",
     "anchor:deploy:ac-role": "anchor run scripts/deploy/deploy_ACRole.ts",
     "anchor:deploy:data-feed": "anchor run scripts/deploy/mTBILL/deploy_DataFeed.ts",
