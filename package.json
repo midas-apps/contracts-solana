@@ -1,7 +1,7 @@
 {
   "scripts": {
     "anchor:script": "anchor run script --",
-    "build": "anchor build",
+    "build": "RUSTUP_TOOLCHAIN=\"nightly-2024-05-09\" anchor build",
     "test": "yarn test:anchor && yarn test:cargo",
     "test:cargo": "anchor run test-cargo",
     "test:anchor": "anchor run test",

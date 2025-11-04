@@ -10,6 +10,7 @@ import { AC_PROGRAM_ID, AC_SEEDS } from "../constants/ac.constants";
 export const DataFeedMode = {
   manual: { manual: {} },
   switchboard: { switchboard: {} },
+  chainlink: { chainlink: {} },
 };
 export const generateAcAccount = () => {
   return Keypair.generate();
