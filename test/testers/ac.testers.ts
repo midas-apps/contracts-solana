@@ -1,5 +1,7 @@
-import { Keypair, PublicKey } from "@solana/web3.js";
-import { AccessControlFixtureReturnType } from "../fixture/ac.fixture";
+import { Keypair, PublicKey } from '@solana/web3.js';
+
+import { AC_ROLES } from '../constants/ac.constants';
+import { AccessControlFixtureReturnType } from '../fixture/ac.fixture';
 import {
   acRoleToBuffer,
   fetchAccountAcRoleState,
@@ -10,13 +12,12 @@ import {
   generateAcRoleAccount,
   getAccountAcRoleStatePda,
   getAccountAcStatePda,
-} from "../helpers/ac.helpers";
+} from '../helpers/ac.helpers';
 import {
   expectTxNotReverted,
   expectTxReverted,
   OptionalCommonParams,
-} from "../helpers/common.helpers";
-import { AC_ROLES } from "../constants/ac.constants";
+} from '../helpers/common.helpers';
 
 type CommonAcParams = AccessControlFixtureReturnType;
 
@@ -30,7 +31,7 @@ export const newAccountAc = async (
   accounts?: {
     ac?: PublicKey;
   },
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
   const { acProgram, authority: owner, context } = fixture;
   const from = opt?.from ?? owner;
@@ -45,7 +46,7 @@ export const newAccountAc = async (
     const accountAcState = await fetchAccountAcState(
       acProgram,
       getAccountAcStatePda(baseAccounts.ac, account),
-      true
+      true,
     );
 
     return {
@@ -93,7 +94,7 @@ export const updateAccountAc = async (
     greenListed?: boolean;
     blackListed?: boolean;
   },
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
   const { acProgram, authority: owner, context, ac: acKeypair } = fixture;
   const from = opt?.from ?? owner;
@@ -108,7 +109,7 @@ export const updateAccountAc = async (
     const accountAcState = await fetchAccountAcState(
       acProgram,
       getAccountAcStatePda(ac, account),
-      true
+      true,
     );
     const acState = await fetchAcState(acProgram, ac);
 
@@ -130,7 +131,7 @@ export const updateAccountAc = async (
       authorityAcRole: getAccountAcRoleStatePda(
         stateBefore.acState.acRole,
         account,
-        AC_ROLES.UPDATE_ACCOUNT_AC
+        AC_ROLES.UPDATE_ACCOUNT_AC,
       ),
     })
     .transaction();
@@ -160,7 +161,7 @@ export const newAcRole = async (
   }: {
     acRole?: Keypair;
   },
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
   const { acProgram, authority: owner, context } = fixture;
   const from = opt?.from ?? owner;
@@ -168,19 +169,11 @@ export const newAcRole = async (
   acRole ??= generateAcRoleAccount();
 
   const fetchState = async () => {
-    const acRoleState = await fetchAcRoleState(
-      acProgram,
-      acRole.publicKey,
-      true
-    );
+    const acRoleState = await fetchAcRoleState(acProgram, acRole.publicKey, true);
     const accountAcRoleState = await fetchAccountAcRoleState(
       acProgram,
-      getAccountAcRoleStatePda(
-        acRole.publicKey,
-        from.publicKey,
-        AC_ROLES.ADMIN
-      ),
-      true
+      getAccountAcRoleStatePda(acRole.publicKey, from.publicKey, AC_ROLES.ADMIN),
+      true,
     );
 
     return {
@@ -196,11 +189,7 @@ export const newAcRole = async (
     .accountsPartial({
       acRole: acRole.publicKey,
       authority: from.publicKey,
-      accountAcRole: getAccountAcRoleStatePda(
-        acRole.publicKey,
-        from.publicKey,
-        AC_ROLES.ADMIN
-      ),
+      accountAcRole: getAccountAcRoleStatePda(acRole.publicKey, from.publicKey, AC_ROLES.ADMIN),
     })
     .transaction();
 
@@ -229,7 +218,7 @@ export const newAc = async (
     acRole?: PublicKey;
     ac?: Keypair;
   },
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
   const { acProgram, authority: owner, context } = fixture;
   const from = opt?.from ?? owner;
@@ -283,7 +272,7 @@ export const grantRole = async (
     acRole?: PublicKey;
     role?: string;
   },
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
   const { acProgram, authority: owner, context, acRoleGlobal } = fixture;
   const from = opt?.from ?? owner;
@@ -296,7 +285,7 @@ export const grantRole = async (
     const accountAcRoleState = await fetchAccountAcRoleState(
       acProgram,
       getAccountAcRoleStatePda(acRole, account, role),
-      true
+      true,
     );
 
     return {
@@ -312,11 +301,7 @@ export const grantRole = async (
       authority: from.publicKey,
       account: account,
       accountAcRole: getAccountAcRoleStatePda(acRole, account, role),
-      authorityAcAdminRole: getAccountAcRoleStatePda(
-        acRole,
-        from.publicKey,
-        AC_ROLES.ADMIN
-      ),
+      authorityAcAdminRole: getAccountAcRoleStatePda(acRole, from.publicKey, AC_ROLES.ADMIN),
       acRole,
     })
     .transaction();
@@ -346,7 +331,7 @@ export const revokeRole = async (
     acRole?: PublicKey;
     role?: string;
   },
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
   const { acProgram, authority: owner, context, acRoleGlobal } = fixture;
   const from = opt?.from ?? owner;
@@ -359,7 +344,7 @@ export const revokeRole = async (
     const accountAcRoleState = await fetchAccountAcRoleState(
       acProgram,
       getAccountAcRoleStatePda(acRole, account, role),
-      true
+      true,
     );
 
     return {
@@ -375,11 +360,7 @@ export const revokeRole = async (
       authority: from.publicKey,
       account: account,
       accountAcRole: getAccountAcRoleStatePda(acRole, account, role),
-      authorityAcAdminRole: getAccountAcRoleStatePda(
-        acRole,
-        from.publicKey,
-        AC_ROLES.ADMIN
-      ),
+      authorityAcAdminRole: getAccountAcRoleStatePda(acRole, from.publicKey, AC_ROLES.ADMIN),
       acRole,
     })
     .transaction();

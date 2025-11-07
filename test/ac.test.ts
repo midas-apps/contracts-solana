@@ -1,3 +1,6 @@
+import { AcError } from './constants/ac.constants';
+import { CommonError } from './constants/common.constants';
+import { acFixture } from './fixture/ac.fixture';
 import {
   grantRole,
   newAc,
@@ -5,45 +8,42 @@ import {
   newAcRole,
   revokeRole,
   updateAccountAc,
-} from "./testers/ac.testers";
-import { CommonError } from "./constants/common.constants";
-import { acFixture } from "./fixture/ac.fixture";
-import { AcError } from "./constants/ac.constants";
+} from './testers/ac.testers';
 
-describe("access-control", () => {
-  describe("new_ac_role", () => {
-    it("call with default params", async () => {
+describe('access-control', () => {
+  describe('new_ac_role', () => {
+    it('call with default params', async () => {
       const fixture = await acFixture();
 
       await newAcRole(fixture, {});
     });
   });
 
-  describe("new_ac", () => {
-    it("call with default params", async () => {
+  describe('new_ac', () => {
+    it('call with default params', async () => {
       const fixture = await acFixture();
 
       await newAc(fixture, {});
     });
   });
 
-  describe("new_account_ac", () => {
-    it("call with default params", async () => {
+  describe('new_account_ac', () => {
+    it('call with default params', async () => {
       const fixture = await acFixture();
 
       await newAccountAc(fixture, {});
     });
   });
 
-  describe("update_account_ac", () => {
-    it("call with default params", async () => {
+  describe('update_account_ac', () => {
+    it('call with default params', async () => {
       const fixture = await acFixture();
 
       await newAccountAc(fixture, {});
       await updateAccountAc(fixture, {});
     });
 
-    it("update greenlist: false -> true", async () => {
+    it('update greenlist: false -> true', async () => {
       const fixture = await acFixture();
 
       await newAccountAc(fixture, {});
@@ -52,7 +52,7 @@ describe("access-control", () => {
       });
     });
 
-    it("update blacklist: false -> true", async () => {
+    it('update blacklist: false -> true', async () => {
       const fixture = await acFixture();
 
       await newAccountAc(fixture, {});
@@ -61,7 +61,7 @@ describe("access-control", () => {
       });
     });
 
-    it("should fail: call from non-admin account", async () => {
+    it('should fail: call from non-admin account', async () => {
       const fixture = await acFixture();
       await newAccountAc(fixture, {});
 
@@ -71,11 +71,11 @@ describe("access-control", () => {
         {
           from: fixture.regularAccounts[1],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
 
-    it("should fail: blacklist and greenlist at the same time", async () => {
+    it('should fail: blacklist and greenlist at the same time', async () => {
       const fixture = await acFixture();
       await newAccountAc(fixture, {});
 
@@ -87,13 +87,13 @@ describe("access-control", () => {
         },
         {
           revertedWith: AcError.BothBlacklistedAndWhitelisted,
-        }
+        },
       );
     });
   });
 
-  describe("grant_role", () => {
-    it("call with default params", async () => {
+  describe('grant_role', () => {
+    it('call with default params', async () => {
       const fixture = await acFixture();
 
       await grantRole(fixture, {
@@ -101,7 +101,7 @@ describe("access-control", () => {
       });
     });
 
-    it("should fail: call when already have a role", async () => {
+    it('should fail: call when already have a role', async () => {
       const fixture = await acFixture();
 
       await grantRole(fixture, {
@@ -115,11 +115,11 @@ describe("access-control", () => {
         },
         {
           revertedWith: CommonError.AccountIsAlreadyInitialized,
-        }
+        },
       );
     });
 
-    it("should fail: call from non-admin account", async () => {
+    it('should fail: call from non-admin account', async () => {
       const fixture = await acFixture();
 
       await grantRole(
@@ -130,13 +130,13 @@ describe("access-control", () => {
         {
           from: fixture.regularAccounts[1],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
   });
 
-  describe("revoke_role", () => {
-    it("call with default params", async () => {
+  describe('revoke_role', () => {
+    it('call with default params', async () => {
       const fixture = await acFixture();
 
       await grantRole(fixture, {
@@ -148,7 +148,7 @@ describe("access-control", () => {
       });
     });
 
-    it("should fail: call when dont have a role", async () => {
+    it('should fail: call when dont have a role', async () => {
       const fixture = await acFixture();
 
       await revokeRole(
@@ -158,11 +158,11 @@ describe("access-control", () => {
         },
         {
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
 
-    it("should fail: call from non-admin account", async () => {
+    it('should fail: call from non-admin account', async () => {
       const fixture = await acFixture();
 
       await revokeRole(
@@ -173,7 +173,7 @@ describe("access-control", () => {
         {
           from: fixture.regularAccounts[1],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
   });

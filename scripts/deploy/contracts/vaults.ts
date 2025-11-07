@@ -1,43 +1,26 @@
-import { AnchorProvider, Program } from "@coral-xyz/anchor";
-import {
-  Keypair,
-  PublicKey,
-  sendAndConfirmTransaction,
-  Transaction,
-} from "@solana/web3.js";
-import * as VAULTS_IDL from "../../../target/idl/midas_vaults.json";
-import { CommonParams } from "./common";
-import {
-  acRoleToBuffer,
-  getAccountAcRoleStatePda,
-} from "../../../test/helpers/ac.helpers";
-import { AC_ROLES } from "../../../test/constants/ac.constants";
-import { AccessControl } from "../../../target/types/access_control";
-import {
-  getTokenAuthorityPda,
-  mintAuthoritySeedToBuffer,
-} from "@/test/helpers/token-authority.helpers";
-import { MidasVaults } from "@/target/types/midas_vaults";
-import { getAcProgram } from "./ac";
-import {
-  VAULT_AC_ROLES,
-  VaultActionIds,
-} from "@/test/constants/vaults.constants";
-import { TOKEN_AUTHORITY_ROLES } from "@/test/constants/token-authority.constants";
-import {
-  fetchRedeemerVaultState,
-  fetchVaultCommonState,
-  getMinterVaultPda,
-  getRedeemerVaultPda,
-} from "@/test/helpers/vaults.helpers";
-import { createAtaIfNotExistsInx, toBN } from "@/test/helpers/common.helpers";
-import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
+import { AnchorProvider, Program } from '@coral-xyz/anchor';
+import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
+import { Keypair, PublicKey, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
+
+import { MidasVaults } from '@/target/types/midas_vaults';
+import { TOKEN_AUTHORITY_ROLES } from '@/test/constants/token-authority.constants';
+import { VAULT_AC_ROLES, VaultActionIds } from '@/test/constants/vaults.constants';
+import { createAtaIfNotExistsInx, toBN } from '@/test/helpers/common.helpers';
+import { getMinterVaultPda } from '@/test/helpers/vaults.helpers';
+
+import * as VAULTS_IDL from '../../../target/idl/midas_vaults.json';
+import { AC_ROLES } from '../../../test/constants/ac.constants';
+import { acRoleToBuffer, getAccountAcRoleStatePda } from '../../../test/helpers/ac.helpers';
+
+import { getAcProgram } from './ac';
+import { CommonParams } from './dataFeed';
 
 export const getVaultsProgram = (provider: AnchorProvider) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return new Program<MidasVaults>(VAULTS_IDL as any, provider);
 };
 
-export type DeployMinterVaultConfig = {
+export interface DeployMinterVaultConfig {
   acRole: PublicKey;
   ac: PublicKey;
   commonVault?: Keypair;
@@ -52,9 +35,9 @@ export type DeployMinterVaultConfig = {
   minAmount: bigint;
   tokenAuthority: PublicKey;
   firstMintMinMTokens: bigint;
-};
+}
 
-export type DeployRedeemerVaultConfig = {
+export interface DeployRedeemerVaultConfig {
   acRole: PublicKey;
   ac: PublicKey;
   commonVault?: Keypair;
@@ -70,7 +53,7 @@ export type DeployRedeemerVaultConfig = {
   requestRedeemer?: PublicKey;
   minFiatRedeemAmount: bigint;
   fiatFlatFee: bigint;
-};
+}
 
 export const deployMinterVault = async (
   common: CommonParams,
@@ -89,7 +72,7 @@ export const deployMinterVault = async (
     minAmount,
     tokensReceiver,
     variationTolerance,
-  }: DeployMinterVaultConfig
+  }: DeployMinterVaultConfig,
 ) => {
   commonVault ??= Keypair.generate();
 
@@ -109,12 +92,12 @@ export const deployMinterVault = async (
         authorityAcAdminRole: getAccountAcRoleStatePda(
           acRole,
           common.provider.publicKey,
-          AC_ROLES.ADMIN
+          AC_ROLES.ADMIN,
         ),
         accountAcRole: getAccountAcRoleStatePda(
           acRole,
           common.provider.publicKey,
-          VAULT_AC_ROLES.VAULT_ADMIN
+          VAULT_AC_ROLES.VAULT_ADMIN,
         ),
       })
       .instruction(),
@@ -127,12 +110,12 @@ export const deployMinterVault = async (
         authorityAcAdminRole: getAccountAcRoleStatePda(
           acRole,
           common.provider.publicKey,
-          AC_ROLES.ADMIN
+          AC_ROLES.ADMIN,
         ),
         accountAcRole: getAccountAcRoleStatePda(
           acRole,
           common.provider.publicKey,
-          VAULT_AC_ROLES.VAULT_PAUSER
+          VAULT_AC_ROLES.VAULT_PAUSER,
         ),
       })
       .instruction(),
@@ -145,12 +128,12 @@ export const deployMinterVault = async (
         authorityAcAdminRole: getAccountAcRoleStatePda(
           acRole,
           common.provider.publicKey,
-          AC_ROLES.ADMIN
+          AC_ROLES.ADMIN,
         ),
         accountAcRole: getAccountAcRoleStatePda(
           acRole,
           getMinterVaultPda(commonVault.publicKey),
-          TOKEN_AUTHORITY_ROLES.M_MINTER
+          TOKEN_AUTHORITY_ROLES.M_MINTER,
         ),
       })
       .instruction(),
@@ -166,7 +149,7 @@ export const deployMinterVault = async (
         toBN(instantFee),
         toBN(instantDailyLimit),
         toBN(variationTolerance),
-        toBN(minAmount)
+        toBN(minAmount),
       )
       .accountsPartial({
         vaultCommon: commonVault.publicKey,
@@ -182,7 +165,7 @@ export const deployMinterVault = async (
         authorityAcRole: getAccountAcRoleStatePda(
           acRole,
           common.payer.publicKey,
-          VAULT_AC_ROLES.VAULT_ADMIN
+          VAULT_AC_ROLES.VAULT_ADMIN,
         ),
       })
       .instruction(),
@@ -194,7 +177,7 @@ export const deployMinterVault = async (
         authorityAcRole: getAccountAcRoleStatePda(
           acRole,
           common.payer.publicKey,
-          VAULT_AC_ROLES.VAULT_PAUSER
+          VAULT_AC_ROLES.VAULT_PAUSER,
         ),
       })
       .instruction(),
@@ -206,25 +189,14 @@ export const deployMinterVault = async (
         authorityAcRole: getAccountAcRoleStatePda(
           acRole,
           common.payer.publicKey,
-          VAULT_AC_ROLES.VAULT_PAUSER
+          VAULT_AC_ROLES.VAULT_PAUSER,
         ),
       })
-      .instruction()
+      .instruction(),
   );
 
-  const txRes = await sendAndConfirmTransaction(
-    common.provider.connection,
-    tx,
-    [common.payer, commonVault],
-    {
-      commitment: "finalized",
-    }
-  );
-
-  console.log({
-    txRes,
-    commonVault: commonVault.publicKey,
-    minterVault: getMinterVaultPda(commonVault.publicKey),
+  await sendAndConfirmTransaction(common.provider.connection, tx, [common.payer, commonVault], {
+    commitment: 'finalized',
   });
 
   return commonVault.publicKey;
@@ -248,7 +220,7 @@ export const deployRedeemerVault = async (
     fiatFlatFee,
     minFiatRedeemAmount,
     requestRedeemer,
-  }: DeployRedeemerVaultConfig
+  }: DeployRedeemerVaultConfig,
 ) => {
   commonVault ??= Keypair.generate();
 
@@ -263,26 +235,32 @@ export const deployRedeemerVault = async (
     mToken,
     common.payer.publicKey,
     common.payer,
-    TOKEN_2022_PROGRAM_ID
+    TOKEN_2022_PROGRAM_ID,
   );
 
-  const ataReceiver = await createAtaIfNotExistsInx(
-    common.provider.connection,
-    mToken,
-    tokensReceiver,
-    common.payer,
-    TOKEN_2022_PROGRAM_ID
-  );
-
-  const ataFeeReceiver = feeReceiver.equals(tokensReceiver)
+  // Only create ataReceiver if tokensReceiver is different from payer
+  // (to avoid creating duplicate ATAs for the same owner)
+  const ataReceiver = tokensReceiver.equals(common.payer.publicKey)
     ? null
     : await createAtaIfNotExistsInx(
         common.provider.connection,
         mToken,
-        feeReceiver,
+        tokensReceiver,
         common.payer,
-        TOKEN_2022_PROGRAM_ID
+        TOKEN_2022_PROGRAM_ID,
       );
+
+  // Only create ataFeeReceiver if feeReceiver is different from tokensReceiver and payer
+  const ataFeeReceiver =
+    feeReceiver.equals(tokensReceiver) || feeReceiver.equals(common.payer.publicKey)
+      ? null
+      : await createAtaIfNotExistsInx(
+          common.provider.connection,
+          mToken,
+          feeReceiver,
+          common.payer,
+          TOKEN_2022_PROGRAM_ID,
+        );
 
   const tx = new Transaction().add(
     await vaultsProgram.methods
@@ -297,7 +275,7 @@ export const deployRedeemerVault = async (
         toBN(instantFee),
         toBN(instantDailyLimit),
         toBN(variationTolerance),
-        toBN(minAmount)
+        toBN(minAmount),
       )
       .accountsPartial({
         vaultCommon: commonVault.publicKey,
@@ -305,18 +283,14 @@ export const deployRedeemerVault = async (
       })
       .instruction(),
     await vaultsProgram.methods
-      .newRedeemerVault(
-        requestRedeemer,
-        toBN(minFiatRedeemAmount),
-        toBN(fiatFlatFee)
-      )
+      .newRedeemerVault(requestRedeemer, toBN(minFiatRedeemAmount), toBN(fiatFlatFee))
       .accountsPartial({
         vaultCommon: commonVault.publicKey,
         authority: common.payer.publicKey,
         authorityAcRole: getAccountAcRoleStatePda(
           acRole,
           common.payer.publicKey,
-          VAULT_AC_ROLES.VAULT_ADMIN
+          VAULT_AC_ROLES.VAULT_ADMIN,
         ),
       })
       .instruction(),
@@ -328,7 +302,7 @@ export const deployRedeemerVault = async (
         authorityAcRole: getAccountAcRoleStatePda(
           acRole,
           common.payer.publicKey,
-          VAULT_AC_ROLES.VAULT_PAUSER
+          VAULT_AC_ROLES.VAULT_PAUSER,
         ),
       })
       .instruction(),
@@ -340,7 +314,7 @@ export const deployRedeemerVault = async (
         authorityAcRole: getAccountAcRoleStatePda(
           acRole,
           common.payer.publicKey,
-          VAULT_AC_ROLES.VAULT_PAUSER
+          VAULT_AC_ROLES.VAULT_PAUSER,
         ),
       })
       .instruction(),
@@ -352,10 +326,10 @@ export const deployRedeemerVault = async (
         authorityAcRole: getAccountAcRoleStatePda(
           acRole,
           common.payer.publicKey,
-          VAULT_AC_ROLES.VAULT_PAUSER
+          VAULT_AC_ROLES.VAULT_PAUSER,
         ),
       })
-      .instruction()
+      .instruction(),
   );
 
   if (ataVault) {
@@ -370,19 +344,8 @@ export const deployRedeemerVault = async (
     tx.add(ataReceiver);
   }
 
-  const txRes = await sendAndConfirmTransaction(
-    common.provider.connection,
-    tx,
-    [common.payer, commonVault],
-    {
-      commitment: "finalized",
-    }
-  );
-
-  console.log({
-    txRes,
-    commonVault: commonVault.publicKey,
-    redeemerVault: getRedeemerVaultPda(commonVault.publicKey),
+  await sendAndConfirmTransaction(common.provider.connection, tx, [common.payer, commonVault], {
+    commitment: 'finalized',
   });
 
   return commonVault.publicKey;

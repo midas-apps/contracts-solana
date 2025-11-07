@@ -2,6 +2,17 @@
 .DS_Store
 target
 node_modules
+target
 dist
 build
+*.lock
+*.log
+*.so
+*.bin
+*.tar.*
+*.sst
+Cargo.lock
+yarn.lock
 test-ledger
+rocksdb
+snapshot

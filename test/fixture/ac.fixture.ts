@@ -1,23 +1,20 @@
-import { initBankrun, processTransaction } from "../helpers/common.helpers";
+import { Program } from '@coral-xyz/anchor';
+import { Transaction } from '@solana/web3.js';
 
-import { Program } from "@coral-xyz/anchor";
+import { AccessControl } from 'target/types/access_control';
 
-import * as ACCESS_CONTROL_IDL from "../../target/idl/access_control.json";
-
-import { Transaction } from "@solana/web3.js";
-import { acRoleToBuffer, generateAcRoleAccount } from "../helpers/ac.helpers";
-import { generateAcAccount } from "../helpers/vaults.helpers";
-import { AC_ROLES } from "../constants/ac.constants";
-import { AccessControl } from "target/types/access_control";
+import * as ACCESS_CONTROL_IDL from '../../target/idl/access_control.json';
+import { AC_ROLES } from '../constants/ac.constants';
+import { acRoleToBuffer, generateAcRoleAccount } from '../helpers/ac.helpers';
+import { initBankrun, processTransaction } from '../helpers/common.helpers';
+import { generateAcAccount } from '../helpers/vaults.helpers';
 
 export const acFixture = async (initSlot?: bigint) => {
   const { provider, context, accounts } = await initBankrun(10, initSlot);
   const [authority, ...regularAccounts] = accounts;
 
-  const acProgram = new Program<AccessControl>(
-    ACCESS_CONTROL_IDL as any,
-    provider
-  );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const acProgram = new Program<AccessControl>(ACCESS_CONTROL_IDL as any, provider);
 
   const ac = generateAcAccount();
 
@@ -54,15 +51,10 @@ export const acFixture = async (initSlot?: bigint) => {
         authority: authority.publicKey,
         account: authority.publicKey,
       })
-      .instruction()
+      .instruction(),
   );
 
-  await processTransaction(context, createFeedTx, [
-    authority,
-    acRoleGlobal,
-    acRoleMTbill,
-    ac,
-  ]);
+  await processTransaction(context, createFeedTx, [authority, acRoleGlobal, acRoleMTbill, ac]);
 
   return {
     acProgram,
@@ -77,6 +69,4 @@ export const acFixture = async (initSlot?: bigint) => {
   };
 };
 
-export type AccessControlFixtureReturnType = Awaited<
-  ReturnType<typeof acFixture>
->;
+export type AccessControlFixtureReturnType = Awaited<ReturnType<typeof acFixture>>;

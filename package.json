@@ -1,11 +1,24 @@
 {
+  "type": "module",
   "scripts": {
     "anchor:script": "anchor run script --",
     "build": "RUSTUP_TOOLCHAIN=\"nightly-2024-05-09\" anchor build",
     "test": "yarn test:anchor && yarn test:cargo",
     "test:cargo": "anchor run test-cargo",
     "test:anchor": "anchor run test",
-    "docgen": "cargo doc"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "docgen": "cargo doc",
+    "deploy:all": "ts-node -r tsconfig-paths/register scripts/tasks/deploy/deploy-all.ts",
+    "deploy:network": "ts-node -r tsconfig-paths/register scripts/tasks/deploy/deploy-network.ts",
+    "deploy:token-core": "ts-node -r tsconfig-paths/register scripts/tasks/deploy/deploy-token-core.ts",
+    "deploy:token-datafeed": "ts-node -r tsconfig-paths/register scripts/tasks/deploy/deploy-token-datafeed.ts",
+    "deploy:token-vaults": "ts-node -r tsconfig-paths/register scripts/tasks/deploy/deploy-token-vaults.ts",
+    "add:payment-token": "ts-node -r tsconfig-paths/register scripts/tasks/manage/add-payment-token.ts",
+    "verify:deployment": "ts-node -r tsconfig-paths/register scripts/tasks/verify/verify-deployment.ts",
+    "export:addresses": "ts-node -r tsconfig-paths/register scripts/tasks/verify/export-addresses.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "0.30.1",
@@ -23,15 +36,27 @@
     "keccak256": "1.0.6",
     "solana-bankrun": "0.4.0",
     "ts-jest": "29.2.5",
-    "viem": "2.21.48"
+    "viem": "2.21.48",
+    "yargs": "18.0.0",
+    "zod": "4.1.12"
   },
   "devDependencies": {
+    "@eslint/js": "9.39.1",
     "@types/chai": "5.0.1",
     "@types/jest": "29.5.14",
     "@types/node": "22.9.0",
+    "@types/yargs": "17.0.34",
+    "eslint": "9.39.1",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-import-resolver-typescript": "4.4.4",
+    "eslint-plugin-import-x": "4.16.1",
+    "eslint-plugin-prettier": "5.5.4",
+    "globals": "16.5.0",
+    "prettier": "3.6.2",
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
-    "typescript": "5.6.3"
+    "typescript": "5.6.3",
+    "typescript-eslint": "8.46.3"
   },
   "packageManager": "yarn@4.10.3"
 }

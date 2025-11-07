@@ -1,61 +1,32 @@
-import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
-import { DataFeedFixtureReturnType } from "../fixture/dafa-feed.fixture";
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { Keypair, PublicKey } from '@solana/web3.js';
+
+import { DEFAULT_PUBKEY, MAX_U128 } from '../constants/common.constants';
+import { VAULT_AC_ROLES, VaultActionIds, VAULTS_SEEDS } from '../constants/vaults.constants';
+import { VaultsFixtureReturnType } from '../fixture/vaults.fixture';
+import { getAccountAcRoleStatePda } from '../helpers/ac.helpers';
 import {
-  DataFeedMode,
-  fetchDataFeedState,
-  fetchManualFeedState,
-  generateFeedAcccount,
-  getManualFeedStatePda,
-} from "../helpers/data-feed.helpers";
-import {
-  approveMint,
-  approveMintInstruction,
   expectTxNotReverted,
   expectTxReverted,
-  findATA,
-  formatUnits,
   fromBN,
   getBalance,
-  getOrCreateAta,
   OptionalCommonParams,
   parsePercent,
   parseUnits,
-  processTransaction,
   toBN,
   toBNNullable,
-} from "../helpers/common.helpers";
-import { SYSTEM_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/native/system";
-import { VaultsFixtureReturnType } from "../fixture/vaults.fixture";
+} from '../helpers/common.helpers';
 import {
-  fetchMinterVaultRequestState,
-  fetchMinterVaultState,
   fetchPauseInxState,
   fetchPaymentMintState,
-  fetchRedeemerVaultRequestState,
-  fetchRedeemerVaultState,
   fetchVaultCommonAccountState,
   fetchVaultCommonState,
   generateCommonVaultAccount,
   getCommonVaultAccountStatePda,
-  getMinterVaultPda,
-  getMinterVaultRequestPda,
   getPauseInxStatePda,
   getPaymentMintStatePda,
   getVaultPda,
-} from "../helpers/vaults.helpers";
-import {
-  createMintToInstruction,
-  getAssociatedTokenAddressSync,
-  TOKEN_2022_PROGRAM_ID,
-  TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
-import { DEFAULT_PUBKEY, MAX_U128 } from "../constants/common.constants";
-import { getAccountAcRoleStatePda } from "../helpers/ac.helpers";
-import {
-  VAULT_AC_ROLES,
-  VaultActionIds,
-  VAULTS_SEEDS,
-} from "../constants/vaults.constants";
+} from '../helpers/vaults.helpers';
 
 type CommonVaultsParams = VaultsFixtureReturnType;
 
@@ -89,9 +60,9 @@ export const newVaultCommon = async (
     minAmount?: bigint;
   },
 
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
-  const { dataFeedProgram, vaultsProgram, authority: owner, context } = fixture;
+  const { vaultsProgram, authority: owner, context } = fixture;
   const from = opt?.from ?? owner;
 
   ac ??= fixture.ac.publicKey;
@@ -109,11 +80,7 @@ export const newVaultCommon = async (
   greenlistEnforced ??= false;
 
   const fetchState = async () => {
-    const common = await fetchVaultCommonState(
-      vaultsProgram,
-      vaultCommon.publicKey,
-      true
-    );
+    const common = await fetchVaultCommonState(vaultsProgram, vaultCommon.publicKey, true);
 
     return {
       common,
@@ -132,7 +99,7 @@ export const newVaultCommon = async (
       toBN(instantFee),
       toBN(instantDailyLimit),
       toBN(variationTolerance),
-      toBN(minAmount)
+      toBN(minAmount),
     )
     .accounts({
       signer: from.publicKey,
@@ -193,9 +160,9 @@ export const updateVaultCommon = async (
     minAmount?: bigint;
   },
 
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
-  const { dataFeedProgram, vaultsProgram, authority: owner, context } = fixture;
+  const { vaultsProgram, authority: owner, context } = fixture;
   const from = opt?.from ?? owner;
 
   acRole ??= null;
@@ -227,7 +194,7 @@ export const updateVaultCommon = async (
       toBNNullable(instantFee),
       toBNNullable(instantDailyLimit),
       toBNNullable(variationTolerance),
-      toBNNullable(minAmount)
+      toBNNullable(minAmount),
     )
     .accountsPartial({
       authority: from.publicKey,
@@ -235,7 +202,7 @@ export const updateVaultCommon = async (
       authorityAcRole: getAccountAcRoleStatePda(
         stateBefore.common.acRole,
         from.publicKey,
-        VAULT_AC_ROLES.VAULT_ADMIN
+        VAULT_AC_ROLES.VAULT_ADMIN,
       ),
     })
     .transaction();
@@ -270,9 +237,7 @@ export const updateVaultCommon = async (
   }
 
   if (variationTolerance !== null) {
-    expect(fromBN(stateAfter.common.variationTolerance)).toBe(
-      variationTolerance
-    );
+    expect(fromBN(stateAfter.common.variationTolerance)).toBe(variationTolerance);
   }
 
   if (minAmount !== null) {
@@ -290,9 +255,9 @@ export const newVaultCommonAccount = async (
   accounts?: {
     commonVault?: PublicKey;
   },
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
-  const { dataFeedProgram, vaultsProgram, authority: owner, context } = fixture;
+  const { vaultsProgram, authority: owner, context } = fixture;
   const from = opt?.from ?? owner;
 
   account ??= from.publicKey;
@@ -305,7 +270,7 @@ export const newVaultCommonAccount = async (
     const vaultCommonAccount = await fetchVaultCommonAccountState(
       vaultsProgram,
       getCommonVaultAccountStatePda(baseAccounts.vaultCommon, account),
-      true
+      true,
     );
 
     return {
@@ -356,7 +321,7 @@ export const updateVaultCommonAccount = async (
   accounts?: {
     commonVault?: PublicKey;
   },
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
   const { vaultsProgram, authority: owner, context } = fixture;
   const from = opt?.from ?? owner;
@@ -374,13 +339,10 @@ export const updateVaultCommonAccount = async (
   const fetchState = async () => {
     const vaultCommonAccount = await fetchVaultCommonAccountState(
       vaultsProgram,
-      getCommonVaultAccountStatePda(baseAccounts.vaultCommon, account)
+      getCommonVaultAccountStatePda(baseAccounts.vaultCommon, account),
     );
 
-    const vaultCommonState = await fetchVaultCommonState(
-      vaultsProgram,
-      baseAccounts.vaultCommon
-    );
+    const vaultCommonState = await fetchVaultCommonState(vaultsProgram, baseAccounts.vaultCommon);
 
     return {
       vaultCommonAccount,
@@ -391,23 +353,16 @@ export const updateVaultCommonAccount = async (
   const stateBefore = await fetchState();
 
   const tx = await vaultsProgram.methods
-    .updateCommonVaultAccount(
-      freeFromMinAmount,
-      freeFromMinFirstMint,
-      waivedFee
-    )
+    .updateCommonVaultAccount(freeFromMinAmount, freeFromMinFirstMint, waivedFee)
     .accountsPartial({
       ...baseAccounts,
       account,
       authority: from.publicKey,
-      vaultCommonAccount: getCommonVaultAccountStatePda(
-        baseAccounts.vaultCommon,
-        account
-      ),
+      vaultCommonAccount: getCommonVaultAccountStatePda(baseAccounts.vaultCommon, account),
       authorityAcRole: getAccountAcRoleStatePda(
         stateBefore.vaultCommonState.acRole,
         account,
-        VAULT_AC_ROLES.VAULT_ADMIN
+        VAULT_AC_ROLES.VAULT_ADMIN,
       ),
     })
     .transaction();
@@ -424,15 +379,11 @@ export const updateVaultCommonAccount = async (
   expect(stateAfter.vaultCommonAccount).not.toEqual(null);
 
   if (freeFromMinAmount !== null) {
-    expect(stateAfter.vaultCommonAccount.freeFromMinAmount).toBe(
-      freeFromMinAmount
-    );
+    expect(stateAfter.vaultCommonAccount.freeFromMinAmount).toBe(freeFromMinAmount);
   }
 
   if (freeFromMinFirstMint !== null) {
-    expect(stateAfter.vaultCommonAccount.freeFromMinFirstMint).toBe(
-      freeFromMinFirstMint
-    );
+    expect(stateAfter.vaultCommonAccount.freeFromMinFirstMint).toBe(freeFromMinFirstMint);
   }
 
   if (waivedFee !== null) {
@@ -459,18 +410,12 @@ export const addPaymentToken = async (
     tokenProgram?: PublicKey;
     commonVault?: PublicKey;
   },
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
-  const {
-    dataFeedProgram,
-    vaultsProgram,
-    authority: owner,
-    context,
-    provider,
-  } = fixture;
+  const { vaultsProgram, authority: owner, context } = fixture;
 
   allowance ??= MAX_U128;
-  fee ??= parseUnits("1", 2);
+  fee ??= parseUnits('1', 2);
   stable ??= true;
   dataFeed ??= fixture.paymentMints.usdc.feed.publicKey;
   mint ??= fixture.paymentMints.usdc.mint;
@@ -484,13 +429,10 @@ export const addPaymentToken = async (
     const paymentTokenState = await fetchPaymentMintState(
       vaultsProgram,
       getPaymentMintStatePda(baseAccounts.vaultCommon, mint),
-      true
+      true,
     );
 
-    const commonState = await fetchVaultCommonState(
-      vaultsProgram,
-      baseAccounts.vaultCommon
-    );
+    const commonState = await fetchVaultCommonState(vaultsProgram, baseAccounts.vaultCommon);
 
     return {
       paymentTokenState,
@@ -513,7 +455,7 @@ export const addPaymentToken = async (
           authorityAcRole: getAccountAcRoleStatePda(
             stateBefore.commonState.acRole,
             from.publicKey,
-            VAULT_AC_ROLES.VAULT_ADMIN
+            VAULT_AC_ROLES.VAULT_ADMIN,
           ),
         })
         .transaction()
@@ -527,7 +469,7 @@ export const addPaymentToken = async (
           authorityAcRole: getAccountAcRoleStatePda(
             stateBefore.commonState.acRole,
             from.publicKey,
-            VAULT_AC_ROLES.VAULT_ADMIN
+            VAULT_AC_ROLES.VAULT_ADMIN,
           ),
         })
         .transaction();
@@ -544,11 +486,9 @@ export const addPaymentToken = async (
   expect(stateAfter).not.toEqual(null);
   expect(stateAfter.paymentTokenState.allowance.eq(toBN(allowance))).toBe(true);
   expect(stateAfter.paymentTokenState.fee.eq(toBN(fee))).toBe(true);
-  expect(
-    stateAfter.paymentTokenState.dataFeed.equals(
-      isFiat ? DEFAULT_PUBKEY : dataFeed
-    )
-  ).toBe(true);
+  expect(stateAfter.paymentTokenState.dataFeed.equals(isFiat ? DEFAULT_PUBKEY : dataFeed)).toBe(
+    true,
+  );
   expect(stateAfter.paymentTokenState.stable).toBe(isFiat ? false : stable);
 };
 
@@ -563,15 +503,9 @@ export const removePaymentToken = async (
     tokenProgram?: PublicKey;
     commonVault?: PublicKey;
   },
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
-  const {
-    dataFeedProgram,
-    vaultsProgram,
-    authority: owner,
-    context,
-    provider,
-  } = fixture;
+  const { vaultsProgram, authority: owner, context } = fixture;
 
   mint ??= fixture.paymentMints.usdc.mint;
 
@@ -584,13 +518,10 @@ export const removePaymentToken = async (
     const paymentTokenState = await fetchPaymentMintState(
       vaultsProgram,
       getPaymentMintStatePda(baseAccounts.vaultCommon, mint),
-      true
+      true,
     );
 
-    const commonState = await fetchVaultCommonState(
-      vaultsProgram,
-      baseAccounts.vaultCommon
-    );
+    const commonState = await fetchVaultCommonState(vaultsProgram, baseAccounts.vaultCommon);
 
     return {
       paymentTokenState,
@@ -602,8 +533,6 @@ export const removePaymentToken = async (
 
   const from = opt?.from ?? owner;
 
-  const isFiat = mint.equals(DEFAULT_PUBKEY);
-
   const tx = await vaultsProgram.methods
     .removePaymentToken(mint)
     .accountsPartial({
@@ -612,7 +541,7 @@ export const removePaymentToken = async (
       authorityAcRole: getAccountAcRoleStatePda(
         stateBefore.commonState.acRole,
         from.publicKey,
-        VAULT_AC_ROLES.VAULT_ADMIN
+        VAULT_AC_ROLES.VAULT_ADMIN,
       ),
       paymentMintState: getPaymentMintStatePda(accounts.commonVault, mint),
     })
@@ -649,7 +578,7 @@ export const updatePaymentToken = async (
     tokenProgram?: PublicKey;
     commonVault?: PublicKey;
   },
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
   const { vaultsProgram, authority: owner, context } = fixture;
 
@@ -667,13 +596,10 @@ export const updatePaymentToken = async (
   const fetchState = async () => {
     const paymentTokenState = await fetchPaymentMintState(
       vaultsProgram,
-      getPaymentMintStatePda(baseAccounts.vaultCommon, mint)
+      getPaymentMintStatePda(baseAccounts.vaultCommon, mint),
     );
 
-    const commonState = await fetchVaultCommonState(
-      vaultsProgram,
-      baseAccounts.vaultCommon
-    );
+    const commonState = await fetchVaultCommonState(vaultsProgram, baseAccounts.vaultCommon);
 
     return {
       paymentTokenState,
@@ -694,7 +620,7 @@ export const updatePaymentToken = async (
       authorityAcRole: getAccountAcRoleStatePda(
         stateBefore.commonState.acRole,
         from.publicKey,
-        VAULT_AC_ROLES.VAULT_ADMIN
+        VAULT_AC_ROLES.VAULT_ADMIN,
       ),
       paymentMintState: getPaymentMintStatePda(baseAccounts.vaultCommon, mint),
     })
@@ -712,9 +638,7 @@ export const updatePaymentToken = async (
   expect(stateAfter).not.toEqual(null);
 
   if (allowance !== null) {
-    expect(stateAfter.paymentTokenState.allowance.eq(toBN(allowance))).toBe(
-      true
-    );
+    expect(stateAfter.paymentTokenState.allowance.eq(toBN(allowance))).toBe(true);
   }
 
   if (fee !== null) {
@@ -740,7 +664,7 @@ export const newPauseInx = async (
   accounts?: {
     commonVault?: PublicKey;
   },
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
   const { vaultsProgram, authority: owner, context } = fixture;
 
@@ -754,13 +678,10 @@ export const newPauseInx = async (
     const pauseInxState = await fetchPauseInxState(
       vaultsProgram,
       getPauseInxStatePda(baseAccounts.vaultCommon, fnId),
-      true
+      true,
     );
 
-    const commonState = await fetchVaultCommonState(
-      vaultsProgram,
-      baseAccounts.vaultCommon
-    );
+    const commonState = await fetchVaultCommonState(vaultsProgram, baseAccounts.vaultCommon);
 
     return {
       pauseInxState,
@@ -780,7 +701,7 @@ export const newPauseInx = async (
       authorityAcRole: getAccountAcRoleStatePda(
         stateBefore.commonState.acRole,
         from.publicKey,
-        VAULT_AC_ROLES.VAULT_PAUSER
+        VAULT_AC_ROLES.VAULT_PAUSER,
       ),
       pauseInxState: getPauseInxStatePda(baseAccounts.vaultCommon, fnId),
     })
@@ -811,7 +732,7 @@ export const updatePauseInx = async (
   accounts?: {
     commonVault?: PublicKey;
   },
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
   const { vaultsProgram, authority: owner, context } = fixture;
 
@@ -825,13 +746,10 @@ export const updatePauseInx = async (
   const fetchState = async () => {
     const pauseInxState = await fetchPauseInxState(
       vaultsProgram,
-      getPauseInxStatePda(baseAccounts.vaultCommon, fnId)
+      getPauseInxStatePda(baseAccounts.vaultCommon, fnId),
     );
 
-    const commonState = await fetchVaultCommonState(
-      vaultsProgram,
-      baseAccounts.vaultCommon
-    );
+    const commonState = await fetchVaultCommonState(vaultsProgram, baseAccounts.vaultCommon);
 
     return {
       pauseInxState,
@@ -851,7 +769,7 @@ export const updatePauseInx = async (
       authorityAcRole: getAccountAcRoleStatePda(
         stateBefore.commonState.acRole,
         from.publicKey,
-        VAULT_AC_ROLES.VAULT_PAUSER
+        VAULT_AC_ROLES.VAULT_PAUSER,
       ),
       pauseInxState: getPauseInxStatePda(baseAccounts.vaultCommon, fnId),
     })
@@ -879,7 +797,7 @@ export const updatePause = async (
   accounts?: {
     commonVault?: PublicKey;
   },
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
   const { vaultsProgram, authority: owner, context } = fixture;
 
@@ -890,10 +808,7 @@ export const updatePause = async (
   };
 
   const fetchState = async () => {
-    const commonState = await fetchVaultCommonState(
-      vaultsProgram,
-      baseAccounts.vaultCommon
-    );
+    const commonState = await fetchVaultCommonState(vaultsProgram, baseAccounts.vaultCommon);
 
     return {
       commonState,
@@ -912,7 +827,7 @@ export const updatePause = async (
       authorityAcRole: getAccountAcRoleStatePda(
         stateBefore.commonState.acRole,
         from.publicKey,
-        VAULT_AC_ROLES.VAULT_PAUSER
+        VAULT_AC_ROLES.VAULT_PAUSER,
       ),
     })
     .transaction();
@@ -948,18 +863,12 @@ export const withdrawTokens = async (
     tokenProgram?: PublicKey;
     commonVault?: PublicKey;
   },
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
-  const {
-    dataFeedProgram,
-    vaultsProgram,
-    authority: owner,
-    context,
-    provider,
-  } = fixture;
+  const { vaultsProgram, authority: owner, context } = fixture;
 
   receiver ??= owner.publicKey;
-  amount ??= parseUnits("10", fixture.paymentMints.usdc.decimals);
+  amount ??= parseUnits('10', fixture.paymentMints.usdc.decimals);
   mint ??= fixture.paymentMints.usdc.mint;
   vaultSeed ??= Buffer.from(VAULTS_SEEDS.MINTER_VAULT);
   vaultSeedParam ??= vaultSeed;
@@ -988,22 +897,19 @@ export const withdrawTokens = async (
   // );
 
   const fetchState = async () => {
-    const commonState = await fetchVaultCommonState(
-      vaultsProgram,
-      baseAccounts.vaultCommon
-    );
+    const commonState = await fetchVaultCommonState(vaultsProgram, baseAccounts.vaultCommon);
     const balanceReceiver = await getBalance(
       fixture.connection,
       receiver,
       mint,
-      baseAccounts.tokenProgram
+      baseAccounts.tokenProgram,
     );
 
     const balanceVault = await getBalance(
       fixture.connection,
       getVaultPda(baseAccounts.vaultCommon, vaultSeed),
       mint,
-      baseAccounts.tokenProgram
+      baseAccounts.tokenProgram,
     );
 
     return {
@@ -1025,7 +931,7 @@ export const withdrawTokens = async (
       authorityAdminRole: getAccountAcRoleStatePda(
         stateBefore.commonState.acRole,
         from.publicKey,
-        VAULT_AC_ROLES.VAULT_ADMIN
+        VAULT_AC_ROLES.VAULT_ADMIN,
       ),
       vault: getVaultPda(baseAccounts.vaultCommon, vaultSeed),
       // mintVaultAta: ataVault,
@@ -1042,8 +948,6 @@ export const withdrawTokens = async (
 
   const stateAfter = await fetchState();
 
-  expect(stateAfter.balanceReceiver).toEqual(
-    stateBefore.balanceReceiver + amount
-  );
+  expect(stateAfter.balanceReceiver).toEqual(stateBefore.balanceReceiver + amount);
   expect(stateAfter.balanceVault).toEqual(stateBefore.balanceVault - amount);
 };

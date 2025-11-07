@@ -1,26 +1,15 @@
-import { Connection, Keypair, PublicKey, Transaction } from "@solana/web3.js";
+import { BN } from '@coral-xyz/anchor';
+import { Keypair, PublicKey } from '@solana/web3.js';
 
-import {
-  DataFeedProgram,
-  fetchAccountNullable,
-  findPDA,
-  toBN,
-  TokenAuthorityProgram,
-  VaultsProgram,
-} from "./common.helpers";
-import {
-  DATA_FEED_PROGRAM_ID,
-  DATA_FEED_SEEDS,
-} from "../constants/data-feed.constants";
-import { VAULTS_PROGRAM_ID, VAULTS_SEEDS } from "../constants/vaults.constants";
-import { BN } from "@coral-xyz/anchor";
-import keccak256 from "keccak256";
+import { VAULTS_PROGRAM_ID, VAULTS_SEEDS } from '../constants/vaults.constants';
 
-export type PaymentMint = {
+import { fetchAccountNullable, findPDA, toBN, VaultsProgram } from './common.helpers';
+
+export interface PaymentMint {
   mint: PublicKey;
   feed: Keypair;
   decimals: number;
-};
+}
 
 export const generateAcAccount = () => {
   return Keypair.generate();
@@ -37,171 +26,118 @@ export const generateMinterVaultAccount = () => {
 export const fetchVaultCommonState = async (
   program: VaultsProgram,
   vault: PublicKey,
-  allowNull = false
+  allowNull = false,
 ) => {
-  return fetchAccountNullable(
-    vault,
-    program.account.vaultCommonState,
-    allowNull
-  );
+  return fetchAccountNullable(vault, program.account.vaultCommonState, allowNull);
 };
 
 export const fetchVaultCommonAccountState = async (
   program: VaultsProgram,
   commonAccount: PublicKey,
-  allowNull = false
+  allowNull = false,
 ) => {
-  return fetchAccountNullable(
-    commonAccount,
-    program.account.vaultCommonAccountState,
-    allowNull
-  );
+  return fetchAccountNullable(commonAccount, program.account.vaultCommonAccountState, allowNull);
 };
 
 export const fetchMinterVaultState = async (
   program: VaultsProgram,
   vault: PublicKey,
-  allowNull = false
+  allowNull = false,
 ) => {
-  return fetchAccountNullable(
-    vault,
-    program.account.minterVaultState,
-    allowNull
-  );
+  return fetchAccountNullable(vault, program.account.minterVaultState, allowNull);
 };
 
 export const fetchRedeemerVaultState = async (
   program: VaultsProgram,
   vault: PublicKey,
-  allowNull = false
+  allowNull = false,
 ) => {
-  return fetchAccountNullable(
-    vault,
-    program.account.redeemerVaultState,
-    allowNull
-  );
+  return fetchAccountNullable(vault, program.account.redeemerVaultState, allowNull);
 };
 
 export const fetchMinterVaultRequestState = async (
   program: VaultsProgram,
   request: PublicKey,
-  allowNull = false
+  allowNull = false,
 ) => {
-  return fetchAccountNullable(
-    request,
-    program.account.mintVaultRequestState,
-    allowNull
-  );
+  return fetchAccountNullable(request, program.account.mintVaultRequestState, allowNull);
 };
 
 export const fetchRedeemerVaultRequestState = async (
   program: VaultsProgram,
   request: PublicKey,
-  allowNull = false
+  allowNull = false,
 ) => {
-  return fetchAccountNullable(
-    request,
-    program.account.redeemerVaultRequestState,
-    allowNull
-  );
+  return fetchAccountNullable(request, program.account.redeemerVaultRequestState, allowNull);
 };
 
 export const fetchPaymentMintState = async (
   program: VaultsProgram,
   mintState: PublicKey,
-  allowNull = false
+  allowNull = false,
 ) => {
-  return fetchAccountNullable(
-    mintState,
-    program.account.paymentMintState,
-    allowNull
-  );
+  return fetchAccountNullable(mintState, program.account.paymentMintState, allowNull);
 };
 
 export const fetchPauseInxState = async (
   program: VaultsProgram,
   pauseInxState: PublicKey,
-  allowNull = false
+  allowNull = false,
 ) => {
-  return fetchAccountNullable(
-    pauseInxState,
-    program.account.pauseInxState,
-    allowNull
-  );
+  return fetchAccountNullable(pauseInxState, program.account.pauseInxState, allowNull);
 };
 
 export const getMinterVaultPda = (commonVault: PublicKey) => {
-  const [pda] = findPDA(
-    [VAULTS_SEEDS.MINTER_VAULT, commonVault],
-    VAULTS_PROGRAM_ID
-  );
+  const [pda] = findPDA([VAULTS_SEEDS.MINTER_VAULT, commonVault], VAULTS_PROGRAM_ID);
   return pda;
 };
 
 export const getRedeemerVaultPda = (commonVault: PublicKey) => {
-  const [pda] = findPDA(
-    [VAULTS_SEEDS.REDEEMER_VAULT, commonVault],
-    VAULTS_PROGRAM_ID
-  );
+  const [pda] = findPDA([VAULTS_SEEDS.REDEEMER_VAULT, commonVault], VAULTS_PROGRAM_ID);
   return pda;
 };
 
-export const getMinterVaultRequestPda = (
-  vault: PublicKey,
-  request_id: bigint
-) => {
+export const getMinterVaultRequestPda = (vault: PublicKey, request_id: bigint) => {
   const [pda] = findPDA(
     [
       VAULTS_SEEDS.MINTER_VAULT_REQUEST,
       vault,
-      new BN(request_id.toString()).toArrayLike(Buffer, "le", 8),
+      new BN(request_id.toString()).toArrayLike(Buffer, 'le', 8),
     ],
-    VAULTS_PROGRAM_ID
+    VAULTS_PROGRAM_ID,
   );
   return pda;
 };
 
-export const getRedeemerVaultRequestPda = (
-  vault: PublicKey,
-  request_id: bigint
-) => {
+export const getRedeemerVaultRequestPda = (vault: PublicKey, request_id: bigint) => {
   const [pda] = findPDA(
     [
       VAULTS_SEEDS.REDEEMER_VAULT_REQUEST,
       vault,
-      new BN(request_id.toString()).toArrayLike(Buffer, "le", 8),
+      new BN(request_id.toString()).toArrayLike(Buffer, 'le', 8),
     ],
-    VAULTS_PROGRAM_ID
+    VAULTS_PROGRAM_ID,
   );
   return pda;
 };
 
 export const getPauseInxStatePda = (commonVault: PublicKey, inxId: number) => {
   const [pda] = findPDA(
-    [VAULTS_SEEDS.PAUSE_INX, commonVault, toBN(inxId).toBuffer("le")],
-    VAULTS_PROGRAM_ID
+    [VAULTS_SEEDS.PAUSE_INX, commonVault, toBN(inxId).toBuffer('le')],
+    VAULTS_PROGRAM_ID,
   );
   return pda;
 };
 
-export const getPaymentMintStatePda = (
-  commonVault: PublicKey,
-  mint: PublicKey
-) => {
-  const [pda] = findPDA(
-    [VAULTS_SEEDS.PAYMENT_MINT, commonVault, mint],
-    VAULTS_PROGRAM_ID
-  );
+export const getPaymentMintStatePda = (commonVault: PublicKey, mint: PublicKey) => {
+  const [pda] = findPDA([VAULTS_SEEDS.PAYMENT_MINT, commonVault, mint], VAULTS_PROGRAM_ID);
   return pda;
 };
 
-export const getCommonVaultAccountStatePda = (
-  commonVault: PublicKey,
-  account: PublicKey
-) => {
+export const getCommonVaultAccountStatePda = (commonVault: PublicKey, account: PublicKey) => {
   const [pda] = findPDA(
     [VAULTS_SEEDS.VAULT_COMMON_ACCOUNT, commonVault, account],
-    VAULTS_PROGRAM_ID
+    VAULTS_PROGRAM_ID,
   );
   return pda;
 };

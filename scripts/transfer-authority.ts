@@ -1,27 +1,23 @@
-import {
-  Keypair,
-  PublicKey,
-  sendAndConfirmTransaction,
-  Transaction,
-} from "@solana/web3.js";
-import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
-
-import { createMTokenMint } from "../common/create-mtoken-mint";
-import { executeAnchorScript } from "../common/utils";
+import { AnchorProvider } from '@coral-xyz/anchor';
 import {
   AuthorityType,
   createSetAuthorityInstruction,
   TOKEN_2022_PROGRAM_ID,
-} from "@solana/spl-token";
-import { addresses } from "@/common/addresses";
+} from '@solana/spl-token';
+import { Keypair, PublicKey, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
+
+import { addresses } from '@/common/addresses';
+import { MProduct } from '@/common/tokenTypes';
+
+import { executeAnchorScript } from '../common/utils';
 
 // TODO: change config before execution
 const config = {
   // currentAuthority: new PublicKey(
   //   "So11111111111111111111111111111111111111112"
   // ),
-  account: addresses["devnet"].mTBILL.mToken,
-  newAuthority: addresses["devnet"].mTBILL.tokenAuthority.account,
+  account: addresses['devnet'].tokens[MProduct.MTBILL].mToken,
+  newAuthority: addresses['devnet'].tokens[MProduct.MTBILL].tokenAuthority.account,
   authorityType: AuthorityType.FreezeAccount,
   programId: TOKEN_2022_PROGRAM_ID,
 } as {
@@ -42,13 +38,13 @@ async function main(provider: AnchorProvider, payer: Keypair) {
         config.authorityType,
         config.newAuthority ?? payer.publicKey,
         undefined,
-        config.programId ?? TOKEN_2022_PROGRAM_ID
-      )
+        config.programId ?? TOKEN_2022_PROGRAM_ID,
+      ),
     ),
     [payer],
     {
-      commitment: "finalized",
-    }
+      commitment: 'finalized',
+    },
   );
 
   console.log({ txRes });

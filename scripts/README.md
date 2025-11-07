@@ -1,0 +1,735 @@
+# Deployment Scripts Documentation
+
+This directory contains a clean, configurable deployment system for Solana smart contracts.
+
+## Architecture Overview
+
+```
+scripts/
+├── configs/              # Configuration validation and loading
+│   ├── types.ts         # Zod schemas for type-safe configs
+│   ├── loadTokenConfig.ts
+│   └── validateConfig.ts
+├── deploy/              # Deployment orchestrators
+│   └── orchestrators/
+│       ├── deployNetworkInfrastructure.ts
+│       ├── deployTokenCore.ts
+│       ├── deployToken.ts (full deployment)
+│       ├── deployDataFeed.ts
+│       ├── deployMinterVault.ts
+│       ├── deployRedeemerVault.ts
+│       └── deployTokenAuthority.ts
+├── tasks/               # CLI entry points
+│   ├── deploy-all.ts
+│   ├── deploy-network-infrastructure.ts
+│   ├── deploy-token.ts (core token only)
+│   ├── deploy-datafeed.ts
+│   ├── deploy-vaults.ts
+│   ├── add-payment-token.ts
+│   ├── verify-deployment.ts
+│   └── export-addresses.ts
+└── utils/               # Utility functions
+    ├── argumentParser.ts
+    ├── deploymentState.ts
+    ├── addressManager.ts
+    ├── networkResolver.ts
+    └── dependencyChecker.ts
+```
+
+## Deployment Flow
+
+The deployment system follows a **two-level hierarchy**:
+
+### Level 1: Network Infrastructure (once per network)
+
+- **AC Role Global** - Shared role for the entire network
+- **AC (Access Control)** - Global access control contract
+- Deployed once per network, shared across all tokens
+
+### Level 2: Token Components (per token)
+
+- **Core Token** - AC Role, mToken, Token Authority
+- **Data Feed** - Price feed for the token
+- **Vaults** - Minter Vault and Redeemer Vault
+
+## Quick Start
+
+```bash
+anchor deploy --provider.cluster localnet
+```
+
+### Deploy Everything (Recommended)
+
+```bash
+yarn deploy:all --mtoken mTBILL --network devnet
+```
+
+This single command:
+
+1. ✅ Deploys network infrastructure (if needed)
+2. ✅ Deploys core token (AC Role, mToken, Token Authority)
+3. ✅ Deploys data feed
+4. ✅ Deploys vaults (Minter + Redeemer)
+
+### Incremental Deployment
+
+If you prefer to deploy components separately:
+
+```bash
+# 1. Deploy network infrastructure (once per network)
+yarn deploy:network --network devnet
+
+# 2. Deploy core token
+yarn deploy:token --mtoken mTBILL --network devnet
+
+# 3. Deploy data feed
+yarn deploy:feed --mtoken mTBILL --network devnet
+
+# 4. Deploy vaults
+yarn deploy:vaults --mtoken mTBILL --network devnet
+```
+
+## Deployment Commands
+
+### `deploy:all` - Deploy Everything
+
+Deploys network infrastructure + full token in one command.
+
+```bash
+yarn deploy:all --mtoken mTBILL --network devnet
+```
+
+**What it does:**
+
+- Checks if network infrastructure exists, deploys if missing
+- Deploys core token (AC Role, mToken, Token Authority)
+- Deploys data feed
+- Deploys vaults (Minter + Redeemer)
+
+**Use when:** You want to deploy a complete token from scratch.
+
+### `deploy:network` - Network Infrastructure
+
+Deploys AC + AC Role Global (once per network).
+
+```bash
+yarn deploy:network --network devnet
+```
+
+**What it does:**
+
+- Deploys AC Role Global
+- Deploys AC (Access Control)
+- Registers addresses in `common/addresses.ts`
+
+**Use when:** Setting up a new network or ensuring infrastructure exists.
+
+**Note:** This is automatically done by `deploy:all` if needed. You typically don't need to run this separately.
+
+### `deploy:token` - Core Token Components
+
+Deploys core token components: AC Role, mToken, and Token Authority.
+
+```bash
+yarn deploy:token --mtoken mTBILL --network devnet
+```
+
+**What it does:**
+
+- Deploys token-specific AC Role
+- Deploys mToken (SPL Token 2022 mint)
+- Deploys Token Authority
+
+**Use when:** You want to deploy core token components separately, then deploy feed/vaults later.
+
+**Prerequisites:** Network infrastructure must exist.
+
+### `deploy:feed` - Data Feed
+
+Deploys the price data feed for the token.
+
+```bash
+yarn deploy:feed --mtoken mTBILL --network devnet
+```
+
+**What it does:**
+
+- Deploys data feed (Switchboard/Chainlink/Pyth/Manual)
+- Configures price bounds and staleness limits
+
+**Use when:** Deploying data feed separately or updating feed configuration.
+
+**Prerequisites:** Network infrastructure + core token must exist.
+
+### `deploy:vaults` - Vaults
+
+Deploys Minter Vault and Redeemer Vault.
+
+```bash
+yarn deploy:vaults --mtoken mTBILL --network devnet
+```
+
+**What it does:**
+
+- Deploys Minter Vault (for minting tokens)
+- Deploys Redeemer Vault (for redeeming tokens)
+
+**Use when:** Deploying vaults separately or after core token + feed are deployed.
+
+**Prerequisites:** Network infrastructure + core token + data feed must exist.
+
+## Deployment Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    deploy:all                               │
+│              (One command for everything)                   │
+└─────────────────────────────────────────────────────────────┘
+                          │
+                          ├─────────────────┐
+                          │                 │
+                          ▼                 ▼
+        ┌─────────────────────────┐  ┌──────────────────────┐
+        │  Network Infrastructure │  │   Full Token        │
+        │  (auto-deployed if      │  │                      │
+        │   missing)              │  │  ┌────────────────┐ │
+        │                         │  │  │ Core Token     │ │
+        │  • AC Role Global       │  │  │ • AC Role      │ │
+        │  • AC                   │  │  │ • mToken       │ │
+        └─────────────────────────┘  │  │ • Token Auth   │ │
+                                     │  └────────────────┘ │
+                                     │  ┌────────────────┐ │
+                                     │  │ Data Feed      │ │
+                                     │  └────────────────┘ │
+                                     │  ┌────────────────┐ │
+                                     │  │ Vaults         │ │
+                                     │  │ • Minter       │ │
+                                     │  │ • Redeemer     │ │
+                                     │  └────────────────┘ │
+                                     └──────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│              Incremental Deployment Flow                   │
+└─────────────────────────────────────────────────────────────┘
+
+Step 1: yarn deploy:network --network devnet
+        └─> Deploys: AC Role Global + AC
+
+Step 2: yarn deploy:token --mtoken mTBILL --network devnet
+        └─> Deploys: AC Role + mToken + Token Authority
+
+Step 3: yarn deploy:feed --mtoken mTBILL --network devnet
+        └─> Deploys: Data Feed
+
+Step 4: yarn deploy:vaults --mtoken mTBILL --network devnet
+        └─> Deploys: Minter Vault + Redeemer Vault
+```
+
+## Dependency Verification
+
+All scripts automatically verify dependencies before deployment:
+
+- ✅ `deploy:all` → Checks network infrastructure (deploys if missing)
+- ✅ `deploy:token` → Verifies network infrastructure exists
+- ✅ `deploy:feed` → Verifies network infrastructure exists
+- ✅ `deploy:vaults` → Verifies network infrastructure + core token + data feed exist
+
+If dependencies are missing, you'll get a clear error message:
+
+```
+Network infrastructure not found for devnet. Missing: AC Role Global, AC
+Please run: yarn deploy:network --network devnet
+```
+
+## Multiple Tokens on Same Network
+
+To deploy multiple tokens on the same network:
+
+```bash
+# Deploy first token (includes network infrastructure)
+yarn deploy:all --mtoken mTBILL --network devnet
+
+# Deploy second token (reuses network infrastructure)
+yarn deploy:all --mtoken mTREASURY --network devnet
+
+# Deploy third token
+yarn deploy:all --mtoken mBOND --network devnet
+```
+
+Each token gets its own:
+
+- AC Role (token-specific)
+- mToken
+- Token Authority
+- Data Feed
+- Minter Vault
+- Redeemer Vault
+
+But they all share:
+
+- AC Role Global (network-level)
+- AC (network-level)
+
+## Configuration System
+
+### Token Configuration
+
+Token configs live in [`configs/tokens/`](../configs/tokens/) and define deployment parameters for all networks. The configuration uses a **base + networks** structure where:
+
+- **Shared values** (metadata, tokenAuthority) are defined at the root level
+- **Network-specific values** (dataFeed, minter, redeemer, paymentTokens) are defined per network
+
+```typescript
+// configs/tokens/mTBILL.ts
+import { TokenConfigWithNetworks } from '@/scripts/configs/types';
+
+export const mTBILLConfig: TokenConfigWithNetworks = {
+  // Shared configuration (same across all networks)
+  metadata: {
+    name: 'Midas US Treasury Bill Token',
+    symbol: 'mTBILL',
+    decimals: 9,
+    uri: 'https://...',
+  },
+  tokenAuthority: {
+    seed: 'mtbill-token-authority',
+  },
+  // Network-specific configurations
+  networks: {
+    devnet: {
+      dataFeed: {
+        mode: 'switchboard',
+        minPrice: '0.1',
+        maxPrice: '100000',
+        maxStaleness: 86400,
+        switchboard: {
+          env: 'devnet',
+          ethRpc: 'https://ethereum-sepolia-rpc.publicnode.com',
+          ethDataFeed: '0x4E677F7FE252DE44682a913f609EA3eb6F29DC3E',
+        },
+      },
+      minter: {
+        instantFee: '1',
+        instantDailyLimit: '10000',
+        variationTolerance: '1',
+        minAmount: '1',
+        firstMintMinMTokens: '10',
+        greenListEnforced: false,
+      },
+      redeemer: {
+        instantFee: '1',
+        instantDailyLimit: '10000',
+        variationTolerance: '1',
+        minAmount: '1',
+        minFiatRedeemAmount: '10',
+        fiatFlatFee: '1',
+        greenListEnforced: false,
+      },
+      paymentTokens: [
+        /* optional */
+      ],
+    },
+    // Add more networks as needed
+    // mainnet: { /* ... */ },
+  },
+};
+```
+
+**Key Benefits:**
+
+- ✅ Single source of truth for all network configs
+- ✅ Shared values defined once (no duplication)
+- ✅ Easy to add new networks (just add a new key)
+- ✅ Type-safe with Zod validation
+
+### Address Management
+
+Deployed addresses are stored in [`common/addresses.ts`](../common/addresses.ts):
+
+```typescript
+export const addresses: Record<string, NetworkAddresses> = {
+  devnet: {
+    acRoleGlobal: new PublicKey('...'),
+    ac: new PublicKey('...'),
+    tokens: {
+      mTBILL: {
+        acRole: new PublicKey('...'),
+        mToken: new PublicKey('...'),
+        tokenAuthority: { account: new PublicKey('...'), seed: '...' },
+        mTokenDataFeed: new PublicKey('...'),
+        minter: {
+          commonVault: new PublicKey('...'),
+          account: new PublicKey('...'),
+        },
+        redeemer: {
+          commonVault: new PublicKey('...'),
+          account: new PublicKey('...'),
+        },
+      },
+    },
+    feeds: {
+      usdc: { feed: new PublicKey('...') },
+    },
+  },
+};
+```
+
+**Important**: `addresses.ts` is the source of truth for deployed contracts. Update it manually after successful deployments.
+
+**Localnet Support**: The `localnet` network is initialized with placeholder addresses. During deployment, addresses are registered in runtime memory via `registerAddress()`. For persistence, manually update `addresses.ts` after deployment or use `export:addresses` to save to a JSON file.
+
+## Validation Strategy
+
+The system uses a **two-phase validation approach**:
+
+### Phase 1: Schema + Business Rules (Pre-deployment)
+
+```typescript
+loadTokenConfig(tokenSymbol, network);
+// ✓ Validates structure and types (Zod schema)
+// ✓ Validates business rules (fees, ranges, etc.)
+// ✓ Merges base config with network-specific config
+// ✗ Does NOT check if addresses exist
+```
+
+Safe to use during initial deployment when addresses don't exist yet.
+
+### Phase 2: Cross-Reference Validation (Runtime)
+
+```typescript
+loadTokenConfigWithReferences(tokenSymbol, network);
+// ✓ Validates payment token feeds exist in addresses.ts
+// ✓ Checks required addresses are deployed
+```
+
+Use this when adding payment tokens or validating against existing deployments.
+
+## Additional Commands
+
+### Add Payment Token
+
+```bash
+yarn add:payment-token \
+  --mtoken mTBILL \
+  --network devnet \
+  --payment-token USDC \
+  --fee 0.1 \
+  --allowance 1000000 \
+  --stable true
+```
+
+**Prerequisites:**
+
+- Token vaults must be deployed
+- Payment token mint and feed must exist in `addresses.ts`
+
+**Configuration:**
+
+- Can use CLI args (shown above)
+- Or define in token config `paymentTokens` array
+- CLI args override config values
+
+### Verify Deployment
+
+```bash
+yarn verify:deployment --mtoken mTBILL --network devnet
+```
+
+Checks:
+
+- All required accounts exist on-chain
+- Account data matches expected values
+- Proper authority relationships
+
+### Export Addresses
+
+```bash
+yarn export:addresses --network devnet --output addresses-devnet.json
+```
+
+Useful for:
+
+- Backup of deployed addresses
+- Sharing addresses with frontend
+- Documentation
+
+## Deployment State Management
+
+Deployments are stateful and resumable:
+
+```typescript
+// Deployment state stored in .deployment-state/
+{
+  "token": "mTBILL",
+  "network": "devnet",
+  "timestamp": 1234567890,
+  "completed": ["acRole", "mToken"],
+  "pending": ["tokenAuthority", "dataFeed", "minterVault", "redeemerVault"],
+  "addresses": {
+    "acRole": "...",
+    "mToken": "..."
+  },
+  "errors": [],
+  "transactions": []
+}
+```
+
+**Resume a failed deployment:**
+
+```bash
+yarn deploy:all --mtoken mTBILL --network devnet --resume
+```
+
+Skips completed components and continues from where it failed.
+
+## CLI Arguments Reference
+
+### Common Arguments
+
+All scripts support:
+
+- `--mtoken, -m`: Token symbol (e.g., mTBILL)
+- `--network, -n`: Network (localnet, devnet, testnet, mainnet)
+
+### deploy:all
+
+```bash
+yarn deploy:all \
+  --mtoken <SYMBOL> \
+  --network <NETWORK> \
+  [--skip-components acRole,mToken] \
+  [--resume]
+```
+
+Options:
+
+- `--skip-components`: Comma-separated list of components to skip
+- `--resume`: Resume from previous deployment state
+
+### add:payment-token
+
+```bash
+yarn add:payment-token \
+  --mtoken <SYMBOL> \
+  --network <NETWORK> \
+  --payment-token <SYMBOL> \
+  [--fee <PERCENT>] \
+  [--allowance <AMOUNT>] \
+  [--stable] \
+  [--is-fiat]
+```
+
+Options:
+
+- `--fee`: Fee percentage (e.g., "0.1" for 0.1%)
+- `--allowance`: Max allowance amount
+- `--stable`: Use 1:1 rate (for stablecoins)
+- `--is-fiat`: Fiat payment token flag
+
+### export:addresses
+
+```bash
+yarn export:addresses \
+  --network <NETWORK> \
+  [--output <FILE_PATH>]
+```
+
+Options:
+
+- `--output`: Output file path (default: `addresses-{network}.json`)
+
+## Error Handling
+
+### Configuration Errors
+
+```
+❌ Configuration validation failed:
+  - Data feed minPrice (10) must be less than maxPrice (5)
+  - Minter instantFee (150%) should be between 0 and 100
+```
+
+**Fix**: Update token config file with valid values.
+
+### Missing Dependencies
+
+```
+❌ Network infrastructure not found for devnet. Missing: AC Role Global, AC
+Please run: yarn deploy:network --network devnet
+```
+
+**Fix**: Run the suggested command to deploy missing dependencies.
+
+### Missing Addresses
+
+```
+❌ AC Role not found for token mTBILL on devnet
+```
+
+**Fix**: Deploy missing component first or update `addresses.ts`.
+
+## Best Practices
+
+### 1. Use `deploy:all` for New Deployments
+
+For most cases, use the all-in-one command:
+
+```bash
+yarn deploy:all --mtoken mTBILL --network devnet
+```
+
+It handles network infrastructure automatically and deploys everything in the correct order.
+
+### 2. Update addresses.ts After Deployment
+
+After successful deployment, immediately update `common/addresses.ts`:
+
+```typescript
+devnet: {
+  // ...existing addresses
+  tokens: {
+    mTBILL: {
+      acRole: new PublicKey("7eKV..."),
+      mToken: new PublicKey("7MnC..."),
+      // ... add all deployed addresses
+    },
+  },
+},
+```
+
+### 3. Test on Localnet First
+
+For rapid iteration and testing, deploy to a local Solana validator:
+
+**Prerequisites:**
+
+- Solana CLI installed (`solana --version`)
+- Anchor CLI installed (`anchor --version`)
+
+**Setup:**
+
+1. **Start local validator** (in a separate terminal):
+
+```bash
+solana-test-validator
+```
+
+This starts a local Solana node on `http://127.0.0.1:8899`.
+
+2. **Build and deploy programs** (in another terminal):
+
+```bash
+# Build programs
+anchor build
+
+# Deploy programs to localnet
+anchor deploy --provider.cluster localnet
+```
+
+Program addresses are defined in `Anchor.toml` under `[programs.localnet]`.
+
+3. **Deploy token infrastructure**:
+
+```bash
+# Deploy complete token infrastructure to localnet
+yarn deploy:all --mtoken mTBILL --network localnet
+```
+
+4. **Verify deployment**:
+
+```bash
+yarn verify:deployment --mtoken mTBILL --network localnet
+```
+
+**Notes:**
+
+- Localnet addresses are initialized in `common/addresses.ts` with placeholder values
+- **Network infrastructure is automatically deployed** on first token deployment if missing
+- Token-specific addresses will be populated during deployment via `registerAddress`
+- After deployment, update `common/addresses.ts` manually if you want to persist them
+- Local validator resets on restart, so addresses will be different each time
+
+**Benefits:**
+
+- ✅ Fast iteration (no network latency)
+- ✅ Free (no SOL costs)
+- ✅ Isolated testing environment
+- ✅ Easy to reset and start fresh
+
+### 4. Test on Devnet Before Mainnet
+
+Always test full deployment workflow on devnet before mainnet:
+
+```bash
+# 1. Deploy on devnet
+yarn deploy:all --mtoken mTBILL --network devnet
+
+# 2. Verify deployment
+yarn verify:deployment --mtoken mTBILL --network devnet
+
+# 3. Add payment tokens
+yarn add:payment-token --mtoken mTBILL --network devnet --payment-token USDC
+
+# 4. Export addresses for records
+yarn export:addresses --network devnet
+
+# 5. Run integration tests
+yarn test
+```
+
+### 5. Version Control addresses.ts
+
+Always commit `addresses.ts` changes with deployment details:
+
+```bash
+git add common/addresses.ts
+git commit -m "deploy: add mTBILL devnet addresses"
+```
+
+## Troubleshooting
+
+### Q: Deployment failed midway, how do I resume?
+
+```bash
+yarn deploy:all --mtoken mTBILL --network devnet --resume
+```
+
+### Q: How do I skip already-deployed components?
+
+```bash
+yarn deploy:all --mtoken mTBILL --network devnet --skip-components acRole,mToken
+```
+
+### Q: Where are deployment logs?
+
+Check `.deployment-state/mTBILL-devnet.json` for deployment progress.
+
+### Q: How do I redeploy a component?
+
+Remove it from `addresses.ts` and run deployment again. The system will deploy missing components.
+
+### Q: Can I use the same config for multiple networks?
+
+Yes! Token configs support multiple networks in a single file. Shared values (metadata, tokenAuthority) are defined once, and network-specific values (dataFeed, minter, redeemer) are defined per network in the `networks` object.
+
+### Q: What's the difference between `deploy:all` and `deploy:token`?
+
+- `deploy:all` → Deploys network infrastructure + full token (everything)
+- `deploy:token` → Deploys only core token components (AC Role, mToken, Token Authority)
+
+Use `deploy:all` for complete deployments, use `deploy:token` if you want to deploy components incrementally.
+
+## Contributing
+
+When adding new deployment functionality:
+
+1. **Add orchestrator function** in `scripts/deploy/orchestrators/`
+2. **Add CLI task** in `scripts/tasks/`
+3. **Update package.json** with new script
+4. **Add types/validation** in `scripts/configs/types.ts`
+5. **Update this README**
+
+## Related Files
+
+- [`configs/tokens/`](../configs/tokens/) - Token configurations (includes network-specific configs)
+- [`common/addresses.ts`](../common/addresses.ts) - Deployed addresses
+- [`package.json`](../package.json) - Deployment scripts

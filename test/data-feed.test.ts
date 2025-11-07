@@ -1,42 +1,34 @@
-import * as anchor from "@coral-xyz/anchor";
-import { dataFeedFixture } from "./fixture/dafa-feed.fixture";
-import {
-  DATA_FEED_PROGRAM_ID,
-  DataFeedError,
-} from "./constants/data-feed.constants";
-import { DataFeedMode, fetchDataFeedState } from "./helpers/data-feed.helpers";
+import { CommonError, DEFAULT_PUBKEY } from './constants/common.constants';
+import { DATA_FEED_PROGRAM_ID, DataFeedError } from './constants/data-feed.constants';
+import { dataFeedFixture } from './fixture/dafa-feed.fixture';
+import { vaultsFixture } from './fixture/vaults.fixture';
+import { parseUnits, setClockTime } from './helpers/common.helpers';
+import { updatePaymentToken } from './testers/common-vaults.testers';
 import {
   createDefaultDataFeed,
   createNewFeed,
   createNewManualFeed,
   updateFeed,
   updateManualFeed,
-} from "./testers/data-feed.testers";
-import { CommonError, DEFAULT_PUBKEY } from "./constants/common.constants";
-import { parseUnits, setClockTime } from "./helpers/common.helpers";
-import { updatePaymentToken } from "./testers/common-vaults.testers";
-import { vaultsFixture } from "./fixture/vaults.fixture";
-import {
-  mintInstant,
-  prepareCommonMintTest,
-} from "./testers/minter-vault.testers";
+} from './testers/data-feed.testers';
+import { mintInstant, prepareCommonMintTest } from './testers/minter-vault.testers';
 
-describe("data-feed", () => {
-  describe("initializing", () => {
-    it("Should deploy program", async () => {
+describe('data-feed', () => {
+  describe('initializing', () => {
+    it('Should deploy program', async () => {
       const { dataFeedProgram } = await dataFeedFixture();
       expect(dataFeedProgram.programId.equals(DATA_FEED_PROGRAM_ID)).toBe(true);
     });
   });
 
-  describe("new_feed", () => {
-    it("create new feed with default parameters", async () => {
+  describe('new_feed', () => {
+    it('create new feed with default parameters', async () => {
       const fixture = await dataFeedFixture();
 
       await createNewFeed(fixture, {});
     });
 
-    it("should fail: when min price is > max price", async () => {
+    it('should fail: when min price is > max price', async () => {
       const fixture = await dataFeedFixture();
 
       await createNewFeed(
@@ -47,11 +39,11 @@ describe("data-feed", () => {
         },
         {
           revertedWith: DataFeedError.InvalidMinPrice,
-        }
+        },
       );
     });
 
-    it("should fail: when max price is 0", async () => {
+    it('should fail: when max price is 0', async () => {
       const fixture = await dataFeedFixture();
 
       await createNewFeed(
@@ -61,11 +53,11 @@ describe("data-feed", () => {
         },
         {
           revertedWith: DataFeedError.InvalidMaxPrice,
-        }
+        },
       );
     });
 
-    it("should fail: when min price is 0", async () => {
+    it('should fail: when min price is 0', async () => {
       const fixture = await dataFeedFixture();
 
       await createNewFeed(
@@ -75,11 +67,11 @@ describe("data-feed", () => {
         },
         {
           revertedWith: DataFeedError.InvalidMinPrice,
-        }
+        },
       );
     });
 
-    it("should fail: when max_staleness is 0", async () => {
+    it('should fail: when max_staleness is 0', async () => {
       const fixture = await dataFeedFixture();
 
       await createNewFeed(
@@ -89,11 +81,11 @@ describe("data-feed", () => {
         },
         {
           revertedWith: DataFeedError.InvalidStaleness,
-        }
+        },
       );
     });
 
-    it("should fail: when underlying feed is default pubkey", async () => {
+    it('should fail: when underlying feed is default pubkey', async () => {
       const fixture = await dataFeedFixture();
 
       await createNewFeed(
@@ -103,13 +95,13 @@ describe("data-feed", () => {
         },
         {
           revertedWith: DataFeedError.InvalidUnderlyingFeed,
-        }
+        },
       );
     });
   });
 
-  describe("new_manual_feed", () => {
-    it("create new manual feed with default parameters", async () => {
+  describe('new_manual_feed', () => {
+    it('create new manual feed with default parameters', async () => {
       const fixture = await dataFeedFixture();
 
       const feed = await createNewFeed(fixture, {});
@@ -119,7 +111,7 @@ describe("data-feed", () => {
       });
     });
 
-    it("should fail: call from non-authority", async () => {
+    it('should fail: call from non-authority', async () => {
       const fixture = await dataFeedFixture();
 
       const feed = await createNewFeed(fixture, {});
@@ -132,13 +124,13 @@ describe("data-feed", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
   });
 
-  describe("update_feed", () => {
-    it("update max staleness", async () => {
+  describe('update_feed', () => {
+    it('update max staleness', async () => {
       const fixture = await dataFeedFixture();
 
       const feed = await createDefaultDataFeed(fixture);
@@ -149,7 +141,7 @@ describe("data-feed", () => {
       });
     });
 
-    it("update min price", async () => {
+    it('update min price', async () => {
       const fixture = await dataFeedFixture();
 
       const feed = await createDefaultDataFeed(fixture);
@@ -160,29 +152,18 @@ describe("data-feed", () => {
       });
     });
 
-    it("update max price", async () => {
+    it('update max price', async () => {
       const fixture = await dataFeedFixture();
 
       const feed = await createDefaultDataFeed(fixture);
 
       await updateFeed(fixture, {
         feed,
-        maxPrice: parseUnits("100"),
+        maxPrice: parseUnits('100'),
       });
     });
 
-    it("update ac_role", async () => {
-      const fixture = await dataFeedFixture();
-
-      const feed = await createDefaultDataFeed(fixture);
-
-      await updateFeed(fixture, {
-        feed,
-        acRole: fixture.acRoleMTbill.publicKey,
-      });
-    });
-
-    it("update authority and call update mode", async () => {
+    it('update ac_role', async () => {
       const fixture = await dataFeedFixture();
 
       const feed = await createDefaultDataFeed(fixture);
@@ -191,14 +172,25 @@ describe("data-feed", () => {
         feed,
         acRole: fixture.acRoleMTbill.publicKey,
       });
+    });
+
+    it('update authority and call update mode', async () => {
+      const fixture = await dataFeedFixture();
+
+      const feed = await createDefaultDataFeed(fixture);
 
       await updateFeed(fixture, {
         feed,
-        mode: "switchboard",
+        acRole: fixture.acRoleMTbill.publicKey,
+      });
+
+      await updateFeed(fixture, {
+        feed,
+        mode: 'switchboard',
       });
     });
 
-    it("update underlying feed", async () => {
+    it('update underlying feed', async () => {
       const fixture = await dataFeedFixture();
 
       const feed = await createDefaultDataFeed(fixture);
@@ -209,18 +201,18 @@ describe("data-feed", () => {
       });
     });
 
-    it("update mode", async () => {
+    it('update mode', async () => {
       const fixture = await dataFeedFixture();
 
       const feed = await createDefaultDataFeed(fixture);
 
       await updateFeed(fixture, {
         feed,
-        mode: "manual",
+        mode: 'manual',
       });
     });
 
-    it("should fail: update from non-authority", async () => {
+    it('should fail: update from non-authority', async () => {
       const fixture = await dataFeedFixture();
 
       const feed = await createDefaultDataFeed(fixture);
@@ -229,16 +221,16 @@ describe("data-feed", () => {
         fixture,
         {
           feed,
-          mode: "switchboard",
+          mode: 'switchboard',
         },
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
 
-    it("should fail: update underlying feed to default pubkey", async () => {
+    it('should fail: update underlying feed to default pubkey', async () => {
       const fixture = await dataFeedFixture();
 
       const feed = await createDefaultDataFeed(fixture);
@@ -249,11 +241,11 @@ describe("data-feed", () => {
           feed,
           underlyingFeed: DEFAULT_PUBKEY,
         },
-        { revertedWith: DataFeedError.InvalidUnderlyingFeed }
+        { revertedWith: DataFeedError.InvalidUnderlyingFeed },
       );
     });
 
-    it("should fail: update max_staleness when value is 0 and mode is manual", async () => {
+    it('should fail: update max_staleness when value is 0 and mode is manual', async () => {
       const fixture = await dataFeedFixture();
 
       const feed = await createDefaultDataFeed(fixture);
@@ -264,11 +256,11 @@ describe("data-feed", () => {
           feed,
           maxStaleness: 0,
         },
-        { revertedWith: DataFeedError.InvalidStaleness }
+        { revertedWith: DataFeedError.InvalidStaleness },
       );
     });
 
-    it("should fail: update max_staleness when value is 0 and mode is manual", async () => {
+    it('should fail: update max_staleness when value is 0 and mode is manual', async () => {
       const fixture = await dataFeedFixture();
 
       const feed = await createDefaultDataFeed(fixture);
@@ -279,52 +271,52 @@ describe("data-feed", () => {
           feed,
           maxStaleness: 1 + 365 * 86400,
         },
-        { revertedWith: DataFeedError.ExceedsMaxStaleness }
+        { revertedWith: DataFeedError.ExceedsMaxStaleness },
       );
     });
 
-    it("should fail: update max_staleness when value is 0 and mode is pyth", async () => {
+    it('should fail: update max_staleness when value is 0 and mode is pyth', async () => {
       const fixture = await dataFeedFixture();
 
       await updateFeed(
         fixture,
         {
-          mode: "pyth",
+          mode: 'pyth',
           underlyingFeed: fixture.mockedFeeds.pyth.account,
           maxStaleness: 1 + 5 * 60,
         },
-        { revertedWith: DataFeedError.ExceedsMaxStaleness }
+        { revertedWith: DataFeedError.ExceedsMaxStaleness },
       );
     });
 
-    it("should fail: update max_staleness when value is 0 and mode is switchboard", async () => {
+    it('should fail: update max_staleness when value is 0 and mode is switchboard', async () => {
       const fixture = await dataFeedFixture();
 
       await updateFeed(
         fixture,
         {
-          mode: "switchboard",
+          mode: 'switchboard',
           underlyingFeed: fixture.mockedFeeds.switchboard.account,
           maxStaleness: 1 + 216000,
         },
-        { revertedWith: DataFeedError.ExceedsMaxStaleness }
+        { revertedWith: DataFeedError.ExceedsMaxStaleness },
       );
     });
   });
 
-  describe("update_manual_feed", () => {
-    it("update price", async () => {
+  describe('update_manual_feed', () => {
+    it('update price', async () => {
       const fixture = await dataFeedFixture();
 
       const baseFeed = await createDefaultDataFeed(fixture);
 
       await updateManualFeed(fixture, {
         baseFeed,
-        price: parseUnits("1"),
+        price: parseUnits('1'),
       });
     });
 
-    it("update decimals", async () => {
+    it('update decimals', async () => {
       const fixture = await dataFeedFixture();
 
       const baseFeed = await createDefaultDataFeed(fixture);
@@ -335,7 +327,7 @@ describe("data-feed", () => {
       });
     });
 
-    it("should fail: update from non-authority", async () => {
+    it('should fail: update from non-authority', async () => {
       const fixture = await dataFeedFixture();
 
       const baseFeed = await createDefaultDataFeed(fixture);
@@ -348,23 +340,23 @@ describe("data-feed", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
   });
 
-  describe("PYTH underlying ", () => {
-    it("when underlying PYTH feed is valid", async () => {
+  describe('PYTH underlying ', () => {
+    it('when underlying PYTH feed is valid', async () => {
       const fixture = await vaultsFixture();
 
       const feed = await createNewFeed(fixture, {
-        mode: "pyth",
+        mode: 'pyth',
         underlyingFeed: fixture.mockedFeeds.pyth.account,
         maxPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()),
       });
 
       await updateFeed(fixture, {
-        mode: "pyth",
+        mode: 'pyth',
         underlyingFeed: fixture.mockedFeeds.pyth.account,
         maxPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()),
         maxStaleness: 5 * 60,
@@ -376,10 +368,7 @@ describe("data-feed", () => {
         dataFeed: feed.publicKey,
       });
 
-      await setClockTime(
-        fixture.context,
-        BigInt(fixture.mockedFeeds.pyth.lastUpdatedAtTs)
-      );
+      await setClockTime(fixture.context, BigInt(fixture.mockedFeeds.pyth.lastUpdatedAtTs));
 
       await mintInstant(
         fixture,
@@ -387,16 +376,16 @@ describe("data-feed", () => {
         {},
         {
           fee: 0.1,
-          tokensMinted: parseUnits("0.044523197"),
-        }
+          tokensMinted: parseUnits('0.044523197'),
+        },
       );
     });
 
-    it("should fail: when underlying PYTH feed is stale", async () => {
+    it('should fail: when underlying PYTH feed is stale', async () => {
       const fixture = await vaultsFixture();
 
       const feed = await createNewFeed(fixture, {
-        mode: "pyth",
+        mode: 'pyth',
         underlyingFeed: fixture.mockedFeeds.pyth.account,
         maxPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()),
       });
@@ -413,19 +402,19 @@ describe("data-feed", () => {
         {},
         {
           fee: 0.1,
-          tokensMinted: parseUnits("0.044523197"),
+          tokensMinted: parseUnits('0.044523197'),
         },
         {
           revertedWith: CommonError.GenericError,
-        }
+        },
       );
     });
 
-    it("should fail: when price is > max price", async () => {
+    it('should fail: when price is > max price', async () => {
       const fixture = await vaultsFixture();
 
       const feed = await createNewFeed(fixture, {
-        mode: "pyth",
+        mode: 'pyth',
         underlyingFeed: fixture.mockedFeeds.pyth.account,
         maxPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()) - 1n,
       });
@@ -436,10 +425,7 @@ describe("data-feed", () => {
         dataFeed: feed.publicKey,
       });
 
-      await setClockTime(
-        fixture.context,
-        BigInt(fixture.mockedFeeds.pyth.lastUpdatedAtTs)
-      );
+      await setClockTime(fixture.context, BigInt(fixture.mockedFeeds.pyth.lastUpdatedAtTs));
 
       await mintInstant(
         fixture,
@@ -447,19 +433,19 @@ describe("data-feed", () => {
         {},
         {
           fee: 0.1,
-          tokensMinted: parseUnits("0.044523197"),
+          tokensMinted: parseUnits('0.044523197'),
         },
         {
           revertedWith: CommonError.GenericError,
-        }
+        },
       );
     });
 
-    it("should fail: when price is < min price", async () => {
+    it('should fail: when price is < min price', async () => {
       const fixture = await vaultsFixture();
 
       const feed = await createNewFeed(fixture, {
-        mode: "pyth",
+        mode: 'pyth',
         underlyingFeed: fixture.mockedFeeds.pyth.account,
         maxPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()) + 2n,
         minPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()) + 1n,
@@ -471,10 +457,7 @@ describe("data-feed", () => {
         dataFeed: feed.publicKey,
       });
 
-      await setClockTime(
-        fixture.context,
-        BigInt(fixture.mockedFeeds.pyth.lastUpdatedAtTs)
-      );
+      await setClockTime(fixture.context, BigInt(fixture.mockedFeeds.pyth.lastUpdatedAtTs));
 
       await mintInstant(
         fixture,
@@ -482,30 +465,30 @@ describe("data-feed", () => {
         {},
         {
           fee: 0.1,
-          tokensMinted: parseUnits("0.044523197"),
+          tokensMinted: parseUnits('0.044523197'),
         },
         {
           revertedWith: CommonError.GenericError,
-        }
+        },
       );
     });
   });
 
-  describe("Switchboard underlying ", () => {
+  describe('Switchboard underlying ', () => {
     const feedUpdatedAtSlot = 348058928n;
 
-    it("when underlying Switchboard feed is valid", async () => {
+    it('when underlying Switchboard feed is valid', async () => {
       const fixture = await vaultsFixture(feedUpdatedAtSlot);
 
       const feed = await createNewFeed(fixture, {
-        mode: "switchboard",
+        mode: 'switchboard',
         underlyingFeed: fixture.mockedFeeds.switchboard.account,
         maxPrice: parseUnits(fixture.mockedFeeds.switchboard.price.toString()),
         maxStaleness: 216000, // max allowed staleness for switchboard feed,
       });
 
       await updateFeed(fixture, {
-        mode: "switchboard",
+        mode: 'switchboard',
         underlyingFeed: fixture.mockedFeeds.switchboard.account,
         maxPrice: parseUnits(fixture.mockedFeeds.switchboard.price.toString()),
         maxStaleness: 216000, // max allowed staleness for switchboard feed,
@@ -523,22 +506,22 @@ describe("data-feed", () => {
         {},
         {
           fee: 0.1,
-          tokensMinted: parseUnits("9.782628705"),
-        }
+          tokensMinted: parseUnits('9.782628705'),
+        },
       );
     });
 
-    it("should fail: when underlying Switchboard feed is stale", async () => {
+    it('should fail: when underlying Switchboard feed is stale', async () => {
       const fixture = await vaultsFixture(feedUpdatedAtSlot + 150n);
 
       const feed = await createNewFeed(fixture, {
-        mode: "switchboard",
+        mode: 'switchboard',
         underlyingFeed: fixture.mockedFeeds.switchboard.account,
         maxPrice: parseUnits(fixture.mockedFeeds.switchboard.price.toString()),
       });
 
       await updateFeed(fixture, {
-        mode: "switchboard",
+        mode: 'switchboard',
         underlyingFeed: fixture.mockedFeeds.switchboard.account,
         maxPrice: parseUnits(fixture.mockedFeeds.switchboard.price.toString()),
       });
@@ -555,26 +538,25 @@ describe("data-feed", () => {
         {},
         {
           fee: 0.1,
-          tokensMinted: parseUnits("9.782628705"),
+          tokensMinted: parseUnits('9.782628705'),
         },
         {
           revertedWith: CommonError.GenericError,
-        }
+        },
       );
     });
 
-    it("should fail: when price is > max price", async () => {
+    it('should fail: when price is > max price', async () => {
       const fixture = await vaultsFixture(feedUpdatedAtSlot);
 
       const feed = await createNewFeed(fixture, {
-        mode: "switchboard",
+        mode: 'switchboard',
         underlyingFeed: fixture.mockedFeeds.switchboard.account,
-        maxPrice:
-          parseUnits(fixture.mockedFeeds.switchboard.price.toString()) - 1n,
+        maxPrice: parseUnits(fixture.mockedFeeds.switchboard.price.toString()) - 1n,
       });
 
       await updateFeed(fixture, {
-        mode: "switchboard",
+        mode: 'switchboard',
         underlyingFeed: fixture.mockedFeeds.switchboard.account,
         maxPrice: parseUnits(fixture.mockedFeeds.switchboard.price.toString()),
       });
@@ -591,28 +573,26 @@ describe("data-feed", () => {
         {},
         {
           fee: 0.1,
-          tokensMinted: parseUnits("9.782628705"),
+          tokensMinted: parseUnits('9.782628705'),
         },
         {
           revertedWith: CommonError.GenericError,
-        }
+        },
       );
     });
 
-    it("should fail: when price is < min price", async () => {
+    it('should fail: when price is < min price', async () => {
       const fixture = await vaultsFixture(feedUpdatedAtSlot);
 
       const feed = await createNewFeed(fixture, {
-        mode: "switchboard",
+        mode: 'switchboard',
         underlyingFeed: fixture.mockedFeeds.switchboard.account,
-        maxPrice:
-          parseUnits(fixture.mockedFeeds.switchboard.price.toString()) + 2n,
-        minPrice:
-          parseUnits(fixture.mockedFeeds.switchboard.price.toString()) + 1n,
+        maxPrice: parseUnits(fixture.mockedFeeds.switchboard.price.toString()) + 2n,
+        minPrice: parseUnits(fixture.mockedFeeds.switchboard.price.toString()) + 1n,
       });
 
       await updateFeed(fixture, {
-        mode: "switchboard",
+        mode: 'switchboard',
         underlyingFeed: fixture.mockedFeeds.switchboard.account,
         maxPrice: parseUnits(fixture.mockedFeeds.switchboard.price.toString()),
       });
@@ -629,28 +609,28 @@ describe("data-feed", () => {
         {},
         {
           fee: 0.1,
-          tokensMinted: parseUnits("9.782628705"),
+          tokensMinted: parseUnits('9.782628705'),
         },
         {
           revertedWith: CommonError.GenericError,
-        }
+        },
       );
     });
   });
 
-  describe("Chainlink underlying ", () => {
-    it("when underlying Chainlink feed is valid", async () => {
+  describe('Chainlink underlying ', () => {
+    it('when underlying Chainlink feed is valid', async () => {
       const fixture = await vaultsFixture();
 
       const feed = await createNewFeed(fixture, {
-        mode: "chainlink",
+        mode: 'chainlink',
         underlyingFeed: fixture.mockedFeeds.chainlink.account,
         maxPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()),
         maxStaleness: 5 * 60,
       });
 
       await updateFeed(fixture, {
-        mode: "chainlink",
+        mode: 'chainlink',
         underlyingFeed: fixture.mockedFeeds.chainlink.account,
         maxPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()),
         maxStaleness: 5 * 60,
@@ -663,25 +643,22 @@ describe("data-feed", () => {
       });
 
       // align clock with embedded chainlink timestamp to avoid staleness
-      await setClockTime(
-        fixture.context,
-        BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs)
-      );
+      await setClockTime(fixture.context, BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs));
 
       await mintInstant(
         fixture,
         { minReceiveAmount: 0n },
         {},
         // do not assert exact minted amount; just ensure success
-        undefined
+        undefined,
       );
     });
 
-    it("should fail: when underlying Chainlink feed is stale", async () => {
+    it('should fail: when underlying Chainlink feed is stale', async () => {
       const fixture = await vaultsFixture();
 
       const feed = await createNewFeed(fixture, {
-        mode: "chainlink",
+        mode: 'chainlink',
         underlyingFeed: fixture.mockedFeeds.chainlink.account,
         maxPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()),
         maxStaleness: 5 * 60,
@@ -696,7 +673,7 @@ describe("data-feed", () => {
       // move clock beyond maxStaleness
       await setClockTime(
         fixture.context,
-        BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs + 301)
+        BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs + 301),
       );
 
       await mintInstant(fixture, { minReceiveAmount: 0n }, {}, undefined, {
@@ -704,14 +681,13 @@ describe("data-feed", () => {
       });
     });
 
-    it("should fail: when price is > max price", async () => {
+    it('should fail: when price is > max price', async () => {
       const fixture = await vaultsFixture();
 
       const feed = await createNewFeed(fixture, {
-        mode: "chainlink",
+        mode: 'chainlink',
         underlyingFeed: fixture.mockedFeeds.chainlink.account,
-        maxPrice:
-          parseUnits(fixture.mockedFeeds.chainlink.price.toString()) - 1n,
+        maxPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()) - 1n,
         maxStaleness: 5 * 60,
       });
 
@@ -721,26 +697,21 @@ describe("data-feed", () => {
         dataFeed: feed.publicKey,
       });
 
-      await setClockTime(
-        fixture.context,
-        BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs)
-      );
+      await setClockTime(fixture.context, BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs));
 
       await mintInstant(fixture, { minReceiveAmount: 0n }, {}, undefined, {
         revertedWith: CommonError.GenericError,
       });
     });
 
-    it("should fail: when price is < min price", async () => {
+    it('should fail: when price is < min price', async () => {
       const fixture = await vaultsFixture();
 
       const feed = await createNewFeed(fixture, {
-        mode: "chainlink",
+        mode: 'chainlink',
         underlyingFeed: fixture.mockedFeeds.chainlink.account,
-        maxPrice:
-          parseUnits(fixture.mockedFeeds.chainlink.price.toString()) + 2n,
-        minPrice:
-          parseUnits(fixture.mockedFeeds.chainlink.price.toString()) + 1n,
+        maxPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()) + 2n,
+        minPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()) + 1n,
         maxStaleness: 5 * 60,
       });
 
@@ -750,10 +721,7 @@ describe("data-feed", () => {
         dataFeed: feed.publicKey,
       });
 
-      await setClockTime(
-        fixture.context,
-        BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs)
-      );
+      await setClockTime(fixture.context, BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs));
 
       await mintInstant(fixture, { minReceiveAmount: 0n }, {}, undefined, {
         revertedWith: CommonError.GenericError,

@@ -1,32 +1,26 @@
-import {
-  Keypair,
-  PublicKey,
-  sendAndConfirmTransaction,
-  Transaction,
-} from "@solana/web3.js";
-import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
+import { AnchorProvider } from '@coral-xyz/anchor';
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { Keypair, PublicKey, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
 
-import { executeAnchorScript } from "../common/utils";
-import { MAX_U128 } from "@/test/constants/common.constants";
-import {
-  createAtaIfNotExistsInx,
-  parsePercent,
-  toBN,
-} from "@/test/helpers/common.helpers";
-import { getVaultsProgram } from "./deploy/common/vaults";
-import { getAccountAcRoleStatePda } from "@/test/helpers/ac.helpers";
-import { fetchVaultCommonState } from "@/test/helpers/vaults.helpers";
-import { VAULT_AC_ROLES } from "@/test/constants/vaults.constants";
-import { addresses } from "@/common/addresses";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { addresses } from '@/common/addresses';
+import { MProduct } from '@/common/tokenTypes';
+import { MAX_U128 } from '@/test/constants/common.constants';
+import { VAULT_AC_ROLES } from '@/test/constants/vaults.constants';
+import { getAccountAcRoleStatePda } from '@/test/helpers/ac.helpers';
+import { createAtaIfNotExistsInx, parsePercent, toBN } from '@/test/helpers/common.helpers';
+import { fetchVaultCommonState } from '@/test/helpers/vaults.helpers';
+
+import { executeAnchorScript } from '../common/utils';
+
+import { getVaultsProgram } from './deploy/contracts/vaults';
 
 // TODO: change config before execution
 const config = {
-  vaultCommon: addresses["devnet"].mTBILL.redeemer.commonVault,
+  vaultCommon: addresses['devnet'].tokens[MProduct.MTBILL].redeemer.commonVault,
   allowance: MAX_U128,
   fee: parsePercent(0.1),
-  feed: addresses["devnet"].feeds["usdc"].dataFeed,
-  mint: addresses["devnet"].feeds["usdc"].token,
+  feed: addresses['devnet'].feeds['usdc'].dataFeed,
+  mint: addresses['devnet'].feeds['usdc'].token,
   tokenProgram: TOKEN_PROGRAM_ID,
   stable: true,
   isFiat: false,
@@ -44,10 +38,7 @@ const config = {
 async function main(provider: AnchorProvider, payer: Keypair) {
   const vaultsProgram = getVaultsProgram(provider);
 
-  const commonState = await fetchVaultCommonState(
-    vaultsProgram,
-    config.vaultCommon
-  );
+  const commonState = await fetchVaultCommonState(vaultsProgram, config.vaultCommon);
 
   const tx = new Transaction().add(
     config.isFiat
@@ -59,16 +50,12 @@ async function main(provider: AnchorProvider, payer: Keypair) {
             authorityAcRole: getAccountAcRoleStatePda(
               commonState.acRole,
               payer.publicKey,
-              VAULT_AC_ROLES.VAULT_ADMIN
+              VAULT_AC_ROLES.VAULT_ADMIN,
             ),
           })
           .instruction()
       : await vaultsProgram.methods
-          .addPaymentToken(
-            toBN(config.fee),
-            toBN(config.allowance),
-            config.stable
-          )
+          .addPaymentToken(toBN(config.fee), toBN(config.allowance), config.stable)
           .accountsPartial({
             authority: payer.publicKey,
             tokenProgram: config.tokenProgram,
@@ -78,10 +65,10 @@ async function main(provider: AnchorProvider, payer: Keypair) {
             authorityAcRole: getAccountAcRoleStatePda(
               commonState.acRole,
               payer.publicKey,
-              VAULT_AC_ROLES.VAULT_ADMIN
+              VAULT_AC_ROLES.VAULT_ADMIN,
             ),
           })
-          .instruction()
+          .instruction(),
   );
 
   if (!config.isFiat) {
@@ -90,19 +77,17 @@ async function main(provider: AnchorProvider, payer: Keypair) {
       config.mint,
       commonState.feeReceiver,
       payer,
-      config.tokenProgram
+      config.tokenProgram,
     );
 
-    const tokensReceiverCreateAtaInx = commonState.tokensReceiver.equals(
-      commonState.feeReceiver
-    )
+    const tokensReceiverCreateAtaInx = commonState.tokensReceiver.equals(commonState.feeReceiver)
       ? null
       : await createAtaIfNotExistsInx(
           provider.connection,
           config.mint,
           commonState.tokensReceiver,
           payer,
-          config.tokenProgram
+          config.tokenProgram,
         );
 
     if (feeReceiverCreateAtaInx) {
@@ -113,14 +98,9 @@ async function main(provider: AnchorProvider, payer: Keypair) {
       tx.add(tokensReceiverCreateAtaInx);
     }
   }
-  const txRes = await sendAndConfirmTransaction(
-    provider.connection,
-    tx,
-    [payer],
-    {
-      commitment: "finalized",
-    }
-  );
+  const txRes = await sendAndConfirmTransaction(provider.connection, tx, [payer], {
+    commitment: 'finalized',
+  });
 
   console.log({ txRes });
 }
