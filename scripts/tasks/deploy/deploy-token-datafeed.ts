@@ -3,10 +3,10 @@ import { Keypair } from '@solana/web3.js';
 
 import { executeNetworkScript } from '@/common/utils';
 
-import { loadTokenConfig, convertPublicKeysInConfig } from '../../configs/loadTokenConfig';
+import { loadTokenConfig } from '../../configs/loadTokenConfig';
 import { deployDataFeedFromConfig } from '../../deploy/orchestrators/deployDataFeed';
 import { getMtoken, getNetwork } from '../../utils/argumentParser';
-import { verifyNetworkInfrastructure, verifyDataFeedOnChain } from '../../utils/dependencyChecker';
+import { verifyDependencies, verifyDataFeedOnChain } from '../../utils/dependencyChecker';
 
 async function main(provider: AnchorProvider, payer: Keypair) {
   const mtoken = getMtoken();
@@ -21,7 +21,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   console.log(`Deployer: ${payer.publicKey.toString()}`);
   console.log('');
 
-  verifyNetworkInfrastructure(network);
+  verifyDependencies(network, mtoken, ['acRole', 'mToken', 'tokenAuthority']);
 
   const verification = await verifyDataFeedOnChain(provider, network, mtoken);
   if (verification.exists && verification.address) {
@@ -36,10 +36,8 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const config = loadTokenConfig(mtoken, network);
   console.log('✓ Configuration loaded and validated');
 
-  const finalConfig = convertPublicKeysInConfig(config);
-
   console.log('Deploying Data Feed...');
-  const dataFeed = await deployDataFeedFromConfig(provider, payer, finalConfig, network, mtoken);
+  const dataFeed = await deployDataFeedFromConfig(provider, payer, config, network, mtoken);
 
   console.log('\n' + '='.repeat(50));
   console.log('✅ Data feed deployed successfully!');

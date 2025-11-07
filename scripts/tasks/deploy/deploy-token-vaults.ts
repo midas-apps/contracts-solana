@@ -3,7 +3,7 @@ import { Keypair } from '@solana/web3.js';
 
 import { executeNetworkScript } from '@/common/utils';
 
-import { loadTokenConfig, convertPublicKeysInConfig } from '../../configs/loadTokenConfig';
+import { loadTokenConfig } from '../../configs/loadTokenConfig';
 import { deployMinterVaultFromConfig } from '../../deploy/orchestrators/deployMinterVault';
 import { deployRedeemerVaultFromConfig } from '../../deploy/orchestrators/deployRedeemerVault';
 import { registerAddress } from '../../utils/addressManager';
@@ -31,8 +31,6 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const config = loadTokenConfig(mtoken, network);
   console.log('✓ Configuration loaded and validated');
 
-  const finalConfig = convertPublicKeysInConfig(config);
-
   let minterVaultResult;
   if (verification.minter.exists && verification.minter.address) {
     console.log('\n[1/2] Minter Vault...');
@@ -46,13 +44,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     }
   } else {
     console.log('\n[1/2] Deploying Minter Vault...');
-    minterVaultResult = await deployMinterVaultFromConfig(
-      provider,
-      payer,
-      finalConfig,
-      network,
-      mtoken,
-    );
+    minterVaultResult = await deployMinterVaultFromConfig(provider, payer, config, network, mtoken);
     registerAddress(network, mtoken, 'minter', minterVaultResult);
     console.log(`  ✓ Deployed: ${minterVaultResult.commonVault.toString()}`);
   }
@@ -73,7 +65,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     redeemerVaultResult = await deployRedeemerVaultFromConfig(
       provider,
       payer,
-      finalConfig,
+      config,
       network,
       mtoken,
     );

@@ -3,7 +3,7 @@ import { Keypair } from '@solana/web3.js';
 
 import { executeNetworkScript } from '@/common/utils';
 
-import { loadTokenConfig, convertPublicKeysInConfig } from '../../configs/loadTokenConfig';
+import { loadTokenConfig } from '../../configs/loadTokenConfig';
 import { deployNetworkInfrastructure } from '../../deploy/orchestrators/deployNetworkInfrastructure';
 import { deployTokenFull } from '../../deploy/orchestrators/deployToken';
 import { getMtoken, getNetwork } from '../../utils/argumentParser';
@@ -24,9 +24,8 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 
   console.log('\nStep 2/2: Token Deployment');
   const config = loadTokenConfig(mtoken, network);
-  const finalConfig = convertPublicKeysInConfig(config);
 
-  await deployTokenFull(provider, payer, finalConfig, network, mtoken);
+  await deployTokenFull(provider, payer, config, network, mtoken);
 
   console.log('\n✅ Deployment completed successfully!');
 }

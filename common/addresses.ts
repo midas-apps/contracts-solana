@@ -70,29 +70,7 @@ export const addresses: Record<string, NetworkAddresses> = {
   // Localnet addresses - populated during deployment
   // Programs are deployed to addresses defined in Anchor.toml [programs.localnet]
   // Note: Addresses may change when local validator is reset
-  localnet: {
-    acRoleGlobal: new PublicKey('5hNx9o1mKbwEK87gqeRT1bah4f3K1smvBfAfY1d2uAGs'),
-    ac: new PublicKey('2d5AR4UKfCiKhhtUXTZT51Ym3LLBNHaqbes1zSFXQKRk'),
-    tokens: {
-      [MProduct.MTBILL]: {
-        acRole: new PublicKey('J2nWcztC7dEqdwHACKnRgKZdLdJwAVQYHy6eNrGsEXgh'),
-        mToken: new PublicKey('6wPSPGv5ur55n2BZVoroDvAVANxuEK62BXfCYQWiewaQ'),
-        tokenAuthority: {
-          account: new PublicKey('7MBptg8vBUprgYstb4wF1UduVbjUcD1JMdS8o5CkAgiT'),
-          seed: 'mtbill-token-authority',
-        },
-        mTokenDataFeed: new PublicKey('3rxccdZzpW7vrt8ixAPeg5XJtN8552mhAk8xsNWh3Pu6'),
-        minter: {
-          commonVault: new PublicKey('GmdzEQyMf3KBGe2hRkad87JTzNXq7kcxjh4Qq7ESQWMg'),
-          account: new PublicKey('CqoxmgZhmzmNk36aXKtS7XKayasthaiqPKVTVMoZHB6o'),
-        },
-        redeemer: {
-          commonVault: new PublicKey('HrFXRth9raunK6q9UadN6WiKkyfsiQv1pfrMETEuCmMy'),
-          account: new PublicKey('CFWo7cqvbwAZ7cAcXGwh1rcNBXe3kg8vVQLfGUVwKtKC'),
-        },
-      },
-    },
-  },
+  localnet: {},
 };
 
 // Helper function to get token addresses
