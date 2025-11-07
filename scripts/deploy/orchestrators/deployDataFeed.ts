@@ -11,7 +11,7 @@ import { getTokenAcRoleAddress, getAcRoleGlobalAddress } from '../../utils/netwo
 import { deployChainlinkFeed } from '../contracts/feeds/chainlink';
 import { deployManualFeed } from '../contracts/feeds/manual';
 import { deployPythFeed } from '../contracts/feeds/pyth';
-import { deploySwitchboardFeed } from '../contracts/feeds/switchboard';
+import { deploySwitchboardFeed, verifySwitchboardFeed } from '../contracts/feeds/switchboard';
 
 function resolveAcRole(network: string, tokenSymbol: MProduct): PublicKey {
   const tokenAcRole = getTokenAcRoleAddress(network, tokenSymbol);
@@ -83,16 +83,30 @@ export async function deployDataFeedFromConfig(
     case 'switchboard': {
       const { env, ethRpc, ethDataFeed, feedName } = tokenConfig.dataFeed.switchboard;
 
-      // Step 1: Deploy the Switchboard PullFeed
-      const switchboardFeed = await deploySwitchboardFeed(
-        { provider, payer },
-        {
-          env,
-          feedName,
-          ethRpc,
-          ethDataFeed: getAddress(ethDataFeed),
-        },
-      );
+      // Step 1: Check if underlyingFeed is provided, otherwise deploy a new Switchboard PullFeed
+      let switchboardFeed: PublicKey;
+      if (underlyingFeed) {
+        // Verify the provided feed exists on-chain
+        const feedExists = await verifySwitchboardFeed(provider, underlyingFeed, env);
+        if (!feedExists) {
+          throw new Error(
+            `Switchboard feed at ${underlyingFeed.toString()} does not exist on-chain`,
+          );
+        }
+        console.log(`    ✓ Using existing Switchboard feed: ${underlyingFeed.toString()}`);
+        switchboardFeed = underlyingFeed;
+      } else {
+        // Deploy a new Switchboard PullFeed
+        switchboardFeed = await deploySwitchboardFeed(
+          { provider, payer },
+          {
+            env,
+            feedName,
+            ethRpc,
+            ethDataFeed: getAddress(ethDataFeed),
+          },
+        );
+      }
 
       // Step 2: Create the FeedState account that wraps the Switchboard feed
       const { deployDataFeed } = await import('../contracts/dataFeed');

@@ -47,20 +47,9 @@ export const dataFeedConfigSchema = z
       path: ['switchboard'],
     },
   )
-  .refine(
-    (data) => {
-      // Switchboard mode: underlyingFeed should not be provided (it's created during deployment)
-      if (data.mode === 'switchboard') {
-        return data.underlyingFeed === undefined;
-      }
-      return true;
-    },
-    {
-      message:
-        'underlyingFeed should not be provided for switchboard mode (it is created during deployment)',
-      path: ['underlyingFeed'],
-    },
-  )
+  // Note: underlyingFeed is optional for switchboard mode
+  // If provided, it will be used instead of deploying a new feed
+  // If not provided, a new Switchboard feed will be deployed based on ethDataFeed
   .refine(
     (data) => {
       // Pyth and Chainlink modes: underlyingFeed is required and cannot be a placeholder

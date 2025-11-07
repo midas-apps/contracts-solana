@@ -174,6 +174,39 @@ const SWITCHBOARD_PROGRAM_IDS = {
   mainnet: 'SBondMDrcV3K4kxZR1HNVT7osZxAHVHgYXL5Ze1oMUv',
 } as const;
 
+/** Verifies if a Switchboard feed exists on-chain */
+export const verifySwitchboardFeed = async (
+  provider: AnchorProvider,
+  feed: PublicKey,
+  env: 'devnet' | 'mainnet',
+): Promise<boolean> => {
+  try {
+    const programId = new PublicKey(SWITCHBOARD_PROGRAM_IDS[env]);
+
+    const idl = await Program.fetchIdl(programId, provider);
+    if (!idl) {
+      return false;
+    }
+
+    const program = new Program(idl, provider);
+    const feedAccount = new sb.PullFeed(program, feed);
+
+    // Try to load the feed account to verify it exists
+    await feedAccount.loadData();
+    return true;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (
+      errorMessage.includes('Account does not exist') ||
+      errorMessage.includes('InvalidAccountData') ||
+      errorMessage.includes('failed to get account')
+    ) {
+      return false;
+    }
+    throw error;
+  }
+};
+
 export const getSwitchboardPullInx = async (
   provider: AnchorProvider,
   feed: PublicKey,
