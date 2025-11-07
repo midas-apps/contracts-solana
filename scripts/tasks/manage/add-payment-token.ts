@@ -2,7 +2,6 @@ import { AnchorProvider } from '@coral-xyz/anchor';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { Keypair, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
 
-import { PaymentToken, isPaymentToken } from '@/common/tokenTypes';
 import { executeNetworkScript } from '@/common/utils';
 import { MAX_U128 } from '@/test/constants/common.constants';
 import { VAULT_AC_ROLES } from '@/test/constants/vaults.constants';
@@ -18,67 +17,73 @@ import { fetchVaultCommonState } from '@/test/helpers/vaults.helpers';
 import { loadTokenConfig } from '../../configs/loadTokenConfig';
 import { getVaultsProgram } from '../../deploy/contracts/vaults';
 import { getFeedAddresses, getTokenAddresses } from '../../utils/addressManager';
-import { parsePaymentTokenArgs } from '../../utils/argumentParser';
+import {
+  getMtoken,
+  getNetwork,
+  getPaymentToken,
+  getOptionalArg,
+  getOptionalBoolean,
+} from '../../utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Keypair) {
-  const args = parsePaymentTokenArgs();
+  const mtoken = getMtoken();
+  const network = getNetwork();
+  const paymentToken = getPaymentToken();
+  const fee = getOptionalArg('fee');
+  const allowance = getOptionalArg('allowance');
+  const stable = getOptionalBoolean('stable');
+  const isFiat = getOptionalBoolean('is-fiat');
 
   console.log(`╔════════════════════════════════════════════════╗`);
   console.log(`║        Add Payment Token Script               ║`);
   console.log(`╚════════════════════════════════════════════════╝`);
-  console.log(`Token: ${args.mtoken}`);
-  console.log(`Payment Token: ${args.paymentToken}`);
-  console.log(`Network: ${args.network}`);
+  console.log(`Token: ${mtoken}`);
+  console.log(`Payment Token: ${paymentToken}`);
+  console.log(`Network: ${network}`);
   console.log(`Deployer: ${payer.publicKey.toString()}`);
   console.log('');
 
   // Load configuration (with cross-reference validation for payment tokens)
   console.log('Loading configuration...');
-  const config = loadTokenConfig(args.mtoken, args.network);
+  const config = loadTokenConfig(mtoken, network);
   console.log('✓ Configuration loaded');
 
   // Get token addresses
-  const tokenAddrs = getTokenAddresses(args.network, args.mtoken);
+  const tokenAddrs = getTokenAddresses(network, mtoken);
   if (!tokenAddrs?.redeemer?.commonVault) {
-    throw new Error(`Redeemer vault not found for ${args.mtoken} on ${args.network}`);
+    throw new Error(`Redeemer vault not found for ${mtoken} on ${network}`);
   }
 
   // Get payment token feed address
-  if (!isPaymentToken(args.paymentToken)) {
-    throw new Error(
-      `Invalid payment token '${
-        args.paymentToken
-      }'. Must be one of: ${Object.values(PaymentToken).join(', ')}`,
-    );
-  }
-  const feedAddr = getFeedAddresses(args.network, args.paymentToken);
+  const feedAddr = getFeedAddresses(network, paymentToken);
   if (!feedAddr?.dataFeed) {
-    throw new Error(`Feed not found for payment token ${args.paymentToken} on ${args.network}`);
+    throw new Error(`Feed not found for payment token ${paymentToken} on ${network}`);
   }
 
   if (!feedAddr.token) {
-    throw new Error(
-      `Token mint not found for payment token ${args.paymentToken} on ${args.network}`,
-    );
+    throw new Error(`Token mint not found for payment token ${paymentToken} on ${network}`);
   }
 
   // Get payment token config from token config or use CLI args
   const paymentTokenConfig = config.paymentTokens?.find(
-    (pt) => pt.symbol.toLowerCase() === args.paymentToken.toLowerCase(),
+    (pt) => pt.symbol.toLowerCase() === paymentToken.toLowerCase(),
   );
 
-  const fee = args.fee || paymentTokenConfig?.fee || '0.1';
-  const allowance = args.allowance || paymentTokenConfig?.allowance || MAX_U128.toString();
-  const stable = args.stable !== undefined ? args.stable : paymentTokenConfig?.stable || false;
-  const isFiat = args.isFiat !== undefined ? args.isFiat : paymentTokenConfig?.isFiat || false;
+  const finalFee = fee || paymentTokenConfig?.fee || '0.1';
+  const finalAllowance = allowance || paymentTokenConfig?.allowance || MAX_U128.toString();
+  const finalStable = stable !== undefined ? stable : paymentTokenConfig?.stable || false;
+  const finalIsFiat = isFiat !== undefined ? isFiat : paymentTokenConfig?.isFiat || false;
 
   const vaultsProgram = getVaultsProgram(provider);
   const commonState = await fetchVaultCommonState(vaultsProgram, tokenAddrs.redeemer.commonVault);
 
   const tx = new Transaction().add(
-    isFiat
+    finalIsFiat
       ? await vaultsProgram.methods
-          .addPaymentTokenFiat(toBN(parsePercent(parseFloat(fee))), toBN(parseUnits(allowance)))
+          .addPaymentTokenFiat(
+            toBN(parsePercent(parseFloat(finalFee))),
+            toBN(parseUnits(finalAllowance)),
+          )
           .accountsPartial({
             authority: payer.publicKey,
             vaultCommon: tokenAddrs.redeemer.commonVault,
@@ -90,7 +95,11 @@ async function main(provider: AnchorProvider, payer: Keypair) {
           })
           .instruction()
       : await vaultsProgram.methods
-          .addPaymentToken(toBN(parsePercent(parseFloat(fee))), toBN(parseUnits(allowance)), stable)
+          .addPaymentToken(
+            toBN(parsePercent(parseFloat(finalFee))),
+            toBN(parseUnits(finalAllowance)),
+            finalStable,
+          )
           .accountsPartial({
             authority: payer.publicKey,
             tokenProgram: feedAddr.tokenProgram || TOKEN_PROGRAM_ID,
@@ -106,7 +115,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
           .instruction(),
   );
 
-  if (!isFiat) {
+  if (!finalIsFiat) {
     const feeReceiverCreateAtaInx = await createAtaIfNotExistsInx(
       provider.connection,
       feedAddr.token,
@@ -138,9 +147,9 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     commitment: 'finalized',
   });
 
-  console.log(`✅ Payment token ${args.paymentToken} added successfully!`);
+  console.log(`✅ Payment token ${paymentToken} added successfully!`);
   console.log(`Transaction: ${txRes}`);
 }
 
-const args = parsePaymentTokenArgs();
-executeNetworkScript(args.network, main);
+const network = getNetwork();
+executeNetworkScript(network, main);

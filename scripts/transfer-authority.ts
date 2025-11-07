@@ -6,39 +6,62 @@ import {
 } from '@solana/spl-token';
 import { Keypair, PublicKey, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
 
-import { addresses } from '@/common/addresses';
-import { MProduct } from '@/common/tokenTypes';
+import { executeNetworkScript } from '@/common/utils';
 
-import { executeAnchorScript } from '../common/utils';
-
-// TODO: change config before execution
-const config = {
-  // currentAuthority: new PublicKey(
-  //   "So11111111111111111111111111111111111111112"
-  // ),
-  account: addresses['devnet'].tokens[MProduct.MTBILL].mToken,
-  newAuthority: addresses['devnet'].tokens[MProduct.MTBILL].tokenAuthority.account,
-  authorityType: AuthorityType.FreezeAccount,
-  programId: TOKEN_2022_PROGRAM_ID,
-} as {
-  currentAuthority?: PublicKey;
-  account: PublicKey;
-  newAuthority?: PublicKey;
-  authorityType: AuthorityType;
-  programId?: PublicKey;
-};
+import { getTokenAddresses } from './utils/addressManager';
+import { getMtoken, getNetwork, getAuthorityType, getOptionalArg } from './utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Keypair) {
+  const mtoken = getMtoken();
+  const network = getNetwork();
+  const authorityType = getAuthorityType();
+  const currentAuthority = getOptionalArg('current-authority');
+  const newAuthority = getOptionalArg('new-authority');
+
+  console.log(`╔════════════════════════════════════════════════╗`);
+  console.log(`║        Transfer Authority Script              ║`);
+  console.log(`╚════════════════════════════════════════════════╝`);
+  console.log(`Token: ${mtoken}`);
+  console.log(`Authority Type: ${authorityType}`);
+  console.log(`Network: ${network}`);
+  console.log(`Deployer: ${payer.publicKey.toString()}`);
+  console.log('');
+
+  // Get token addresses
+  const tokenAddrs = getTokenAddresses(network, mtoken);
+  if (!tokenAddrs?.mToken) {
+    throw new Error(`mToken not found for ${mtoken} on ${network}`);
+  }
+
+  // Map authority type string to AuthorityType enum
+  const authorityTypeMap: Record<string, AuthorityType> = {
+    MintTokens: AuthorityType.MintTokens,
+    FreezeAccount: AuthorityType.FreezeAccount,
+    AccountOwner: AuthorityType.AccountOwner,
+    CloseAccount: AuthorityType.CloseAccount,
+  };
+
+  const authorityTypeEnum = authorityTypeMap[authorityType];
+  if (!authorityTypeEnum) {
+    throw new Error(`Invalid authority type: ${authorityType}`);
+  }
+
+  const account = tokenAddrs.mToken;
+  const currentAuthorityPubkey = currentAuthority
+    ? new PublicKey(currentAuthority)
+    : payer.publicKey;
+  const newAuthorityPubkey = newAuthority ? new PublicKey(newAuthority) : payer.publicKey;
+
   const txRes = await sendAndConfirmTransaction(
     provider.connection,
     new Transaction().add(
       createSetAuthorityInstruction(
-        config.account,
-        config.currentAuthority ?? payer.publicKey,
-        config.authorityType,
-        config.newAuthority ?? payer.publicKey,
+        account,
+        currentAuthorityPubkey,
+        authorityTypeEnum,
+        newAuthorityPubkey,
         undefined,
-        config.programId ?? TOKEN_2022_PROGRAM_ID,
+        TOKEN_2022_PROGRAM_ID,
       ),
     ),
     [payer],
@@ -47,7 +70,9 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     },
   );
 
-  console.log({ txRes });
+  console.log(`✅ Authority transferred successfully!`);
+  console.log(`Transaction: ${txRes}`);
 }
 
-executeAnchorScript(main);
+const network = getNetwork();
+executeNetworkScript(network, main);

@@ -538,6 +538,184 @@ Options:
 
 - `--output`: Output file path (default: `addresses-{network}.json`)
 
+## Management Scripts
+
+All management scripts now support CLI arguments for `--mtoken`, `--network`, and other script-specific options.
+
+### Mint Scripts
+
+#### mint-instant
+
+Mint tokens instantly using a payment token.
+
+```bash
+ts-node -r tsconfig-paths/register scripts/mint-instant.ts \
+  --mtoken mTBILL \
+  --network devnet \
+  --payment-token USDC \
+  --amount 100
+```
+
+**Arguments:**
+
+- `--mtoken, -m`: Token symbol (required)
+- `--network, -n`: Network (required, default: devnet)
+- `--payment-token, -p`: Payment token symbol (required, e.g., USDC)
+- `--amount, -a`: Amount to mint in payment token units (required, e.g., "100")
+
+**Note:** Amount is parsed with 6 decimals (standard for USDC/USDT).
+
+#### mint-request
+
+Create a mint request (requires approval).
+
+```bash
+ts-node -r tsconfig-paths/register scripts/mint-request.ts \
+  --mtoken mTBILL \
+  --network devnet \
+  --payment-token USDC \
+  --amount 100
+```
+
+**Arguments:** Same as `mint-instant`
+
+### Redeem Scripts
+
+#### redeem-instant
+
+Redeem tokens instantly for a payment token.
+
+```bash
+ts-node -r tsconfig-paths/register scripts/redeem-instant.ts \
+  --mtoken mTBILL \
+  --network devnet \
+  --payment-token USDC \
+  --amount 10
+```
+
+**Arguments:**
+
+- `--mtoken, -m`: Token symbol (required)
+- `--network, -n`: Network (required, default: devnet)
+- `--payment-token, -p`: Payment token symbol (required)
+- `--amount, -a`: Amount to redeem in mToken units (required, e.g., "10")
+
+**Note:** Amount is parsed with 9 decimals (standard for mTokens).
+
+#### redeem-request
+
+Create a redeem request (requires approval).
+
+```bash
+ts-node -r tsconfig-paths/register scripts/redeem-request.ts \
+  --mtoken mTBILL \
+  --network devnet \
+  --payment-token USDC \
+  --amount 10
+```
+
+**Arguments:** Same as `redeem-instant`
+
+#### redeem-request-fiat
+
+Create a fiat redeem request (no payment token required).
+
+```bash
+ts-node -r tsconfig-paths/register scripts/redeem-request-fiat.ts \
+  --mtoken mTBILL \
+  --network devnet \
+  --amount 10
+```
+
+**Arguments:**
+
+- `--mtoken, -m`: Token symbol (required)
+- `--network, -n`: Network (required, default: devnet)
+- `--amount, -a`: Amount to redeem in mToken units (required)
+
+### Management Scripts
+
+#### grant-role
+
+Grant an access control role to an account.
+
+```bash
+ts-node -r tsconfig-paths/register scripts/grant-role.ts \
+  --mtoken mTBILL \
+  --network devnet \
+  --role vault_admin_role
+```
+
+**Arguments:**
+
+- `--mtoken, -m`: Token symbol (required)
+- `--network, -n`: Network (required, default: devnet)
+- `--role, -r`: Role to grant (required, e.g., `vault_admin_role`, `vault_pauser_role`, `admin_role`)
+
+**Available Roles:**
+
+- `vault_admin_role`: Vault administrator
+- `vault_pauser_role`: Vault pauser
+- `admin_role`: Access control admin
+- `data_feed_admin`: Data feed administrator
+
+#### transfer-authority
+
+Transfer token authority (mint, freeze, etc.).
+
+```bash
+ts-node -r tsconfig-paths/register scripts/transfer-authority.ts \
+  --mtoken mTBILL \
+  --network devnet \
+  --authority-type FreezeAccount \
+  [--current-authority <PUBKEY>] \
+  [--new-authority <PUBKEY>]
+```
+
+**Arguments:**
+
+- `--mtoken, -m`: Token symbol (required)
+- `--network, -n`: Network (required, default: devnet)
+- `--authority-type`: Authority type (required, one of: `MintTokens`, `FreezeAccount`, `AccountOwner`, `CloseAccount`)
+- `--current-authority`: Current authority address (optional, defaults to payer)
+- `--new-authority`: New authority address (optional, defaults to payer)
+
+#### update-data-feed
+
+Update data feed configuration.
+
+```bash
+ts-node -r tsconfig-paths/register scripts/update-data-feed.ts \
+  --mtoken mTBILL \
+  --network devnet \
+  [--new-underlying-feed <PUBKEY>] \
+  [--new-mode manual|switchboard|pyth|chainlink]
+```
+
+**Arguments:**
+
+- `--mtoken, -m`: Token symbol (required)
+- `--network, -n`: Network (required, default: devnet)
+- `--new-underlying-feed`: New underlying feed address (optional)
+- `--new-mode`: New feed mode (optional, one of: `manual`, `switchboard`, `pyth`, `chainlink`)
+
+#### delegate
+
+Delegate payment token allowance to redeemer vault.
+
+```bash
+ts-node -r tsconfig-paths/register scripts/delegate.ts \
+  --mtoken mTBILL \
+  --network devnet \
+  --payment-token USDC
+```
+
+**Arguments:**
+
+- `--mtoken, -m`: Token symbol (required)
+- `--network, -n`: Network (required, default: devnet)
+- `--payment-token, -p`: Payment token symbol (required)
+
 ## Error Handling
 
 ### Configuration Errors

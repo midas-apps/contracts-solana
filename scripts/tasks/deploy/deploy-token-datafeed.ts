@@ -6,27 +6,28 @@ import { executeNetworkScript } from '@/common/utils';
 import { loadTokenConfig, convertPublicKeysInConfig } from '../../configs/loadTokenConfig';
 import { deployDataFeedFromConfig } from '../../deploy/orchestrators/deployDataFeed';
 import { registerAddress } from '../../utils/addressManager';
-import { parseTokenDeploymentArgs } from '../../utils/argumentParser';
+import { getMtoken, getNetwork } from '../../utils/argumentParser';
 import { verifyNetworkInfrastructure } from '../../utils/dependencyChecker';
 
 async function main(provider: AnchorProvider, payer: Keypair) {
-  const args = parseTokenDeploymentArgs();
+  const mtoken = getMtoken();
+  const network = getNetwork();
 
   console.log(`╔══════════════════════════════════════════════╗`);
   console.log(`║          Data Feed Deployment Script         ║`);
   console.log(`╚══════════════════════════════════════════════╝`);
-  console.log(`Token: ${args.mtoken}`);
-  console.log(`Network: ${args.network}`);
+  console.log(`Token: ${mtoken}`);
+  console.log(`Network: ${network}`);
   console.log(`RPC URL: ${provider.connection.rpcEndpoint}`);
   console.log(`Deployer: ${payer.publicKey.toString()}`);
   console.log('');
 
   // Verify network infrastructure exists
-  verifyNetworkInfrastructure(args.network);
+  verifyNetworkInfrastructure(network);
 
   // Load configuration
   console.log('Loading configuration...');
-  const config = loadTokenConfig(args.mtoken, args.network);
+  const config = loadTokenConfig(mtoken, network);
   console.log('✓ Configuration loaded and validated');
 
   // Convert string PublicKeys to PublicKey objects
@@ -34,14 +35,8 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 
   // Deploy data feed
   console.log('Deploying Data Feed...');
-  const dataFeed = await deployDataFeedFromConfig(
-    provider,
-    payer,
-    finalConfig,
-    args.network,
-    args.mtoken,
-  );
-  registerAddress(args.network, args.mtoken, 'mTokenDataFeed', dataFeed);
+  const dataFeed = await deployDataFeedFromConfig(provider, payer, finalConfig, network, mtoken);
+  registerAddress(network, mtoken, 'mTokenDataFeed', dataFeed);
 
   console.log('\n' + '='.repeat(50));
   console.log('✅ Data feed deployed successfully!');
@@ -49,5 +44,5 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   console.log('='.repeat(50));
 }
 
-const args = parseTokenDeploymentArgs();
-executeNetworkScript(args.network, main);
+const network = getNetwork();
+executeNetworkScript(network, main);

@@ -1,8 +1,8 @@
 import { AnchorProvider } from '@coral-xyz/anchor';
 import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
-import { Keypair, PublicKey, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
+import { Keypair, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
 
-import { addresses } from '@/common/addresses';
+import { executeNetworkScript } from '@/common/utils';
 import { TOKEN_AUTHORITY_ROLES } from '@/test/constants/token-authority.constants';
 import {
   fetchAccountAcState,
@@ -21,34 +21,53 @@ import {
   getPaymentMintStatePda,
 } from '@/test/helpers/vaults.helpers';
 
-import { executeAnchorScript } from '../common/utils';
-
 import { getAcProgram } from './deploy/contracts/ac';
 import { getDataFeedProgram } from './deploy/contracts/dataFeed';
 import { getSwitchboardPullInx } from './deploy/contracts/feeds/switchboard';
 import { getVaultsProgram } from './deploy/contracts/vaults';
-
-// TODO: change config before execution
-const config = {
-  product: 'mTBILL',
-  mint: addresses['devnet'].feeds['usdc'].token,
-  tokenProgram: addresses['devnet'].feeds['usdc'].tokenProgram,
-  amount: parseUnits('100', 6),
-  env: 'devnet',
-} as {
-  product: 'mTBILL';
-  env: 'devnet' | 'mainnet';
-  mint: PublicKey;
-  amount: bigint;
-  tokenProgram?: PublicKey;
-};
+import { getFeedAddresses, getTokenAddresses } from './utils/addressManager';
+import { getMtoken, getNetwork, getPaymentToken, getAmount } from './utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Keypair) {
+  const mtoken = getMtoken();
+  const network = getNetwork();
+  const paymentToken = getPaymentToken();
+  const amountStr = getAmount();
+
+  console.log(`╔════════════════════════════════════════════════╗`);
+  console.log(`║           Mint Instant Script                ║`);
+  console.log(`╚════════════════════════════════════════════════╝`);
+  console.log(`Token: ${mtoken}`);
+  console.log(`Payment Token: ${paymentToken}`);
+  console.log(`Amount: ${amountStr}`);
+  console.log(`Network: ${network}`);
+  console.log(`Deployer: ${payer.publicKey.toString()}`);
+  console.log('');
+
+  // Get token addresses
+  const tokenAddrs = getTokenAddresses(network, mtoken);
+  if (!tokenAddrs?.minter?.commonVault) {
+    throw new Error(`Minter vault not found for ${mtoken} on ${network}`);
+  }
+
+  // Get payment token feed address
+  const feedAddr = getFeedAddresses(network, paymentToken);
+  if (!feedAddr?.token) {
+    throw new Error(`Payment token mint not found for ${paymentToken} on ${network}`);
+  }
+  if (!feedAddr?.dataFeed) {
+    throw new Error(`Feed not found for payment token ${paymentToken} on ${network}`);
+  }
+
+  // Parse amount - payment tokens typically have 6 decimals (USDC, USDT)
+  const paymentTokenDecimals = 6; // USDC/USDT standard
+  const amount = parseUnits(amountStr, paymentTokenDecimals);
+
   const vaultsProgram = getVaultsProgram(provider);
   const feedProgram = getDataFeedProgram(provider);
   const acProgram = getAcProgram(provider);
 
-  const vaultCommon = addresses[config.env][config.product].minter.commonVault;
+  const vaultCommon = tokenAddrs.minter.commonVault;
 
   const commonState = await fetchVaultCommonState(vaultsProgram, vaultCommon);
 
@@ -57,7 +76,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const mFeed = await fetchDataFeedState(feedProgram, commonState.mMintFeed);
   const payment = await fetchPaymentMintState(
     vaultsProgram,
-    getPaymentMintStatePda(vaultCommon, config.mint),
+    getPaymentMintStatePda(vaultCommon, feedAddr.token),
   );
   const paymentFeed = await fetchDataFeedState(feedProgram, payment.dataFeed);
 
@@ -83,7 +102,13 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 
   const tx1 = new Transaction();
 
-  tx1.add(await getSwitchboardPullInx(provider, mFeed.underlyingFeed, config.env));
+  tx1.add(
+    await getSwitchboardPullInx(
+      provider,
+      mFeed.underlyingFeed,
+      network === 'mainnet' ? 'mainnet' : 'devnet',
+    ),
+  );
 
   const txRes1 = await sendAndConfirmTransaction(provider.connection, tx1, [payer], {
     commitment: 'finalized',
@@ -130,7 +155,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 
   tx2.add(
     await vaultsProgram.methods
-      .mintInstant(toBN(config.amount), toBN(0), new Array(32).fill(0))
+      .mintInstant(toBN(amount), toBN(0), new Array(32).fill(0))
       .accountsPartial({
         vaultCommon: vaultCommon,
         ac: commonState.ac,
@@ -139,10 +164,10 @@ async function main(provider: AnchorProvider, payer: Keypair) {
         mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
         mMintDataFeed: commonState.mMintFeed,
         signer: payer.publicKey,
-        paymentMint: config.mint,
+        paymentMint: feedAddr.token,
         paymentMintDataFeed: payment.dataFeed,
         paymentMintFeed: paymentFeed.underlyingFeed,
-        paymentMintTokenProgram: config.tokenProgram,
+        paymentMintTokenProgram: feedAddr.tokenProgram,
         tokenAuthority: vaultState.mintAuthorityPda,
         accountAc: getAccountAcStatePda(commonState.ac, payer.publicKey),
         vaultMinterRole: getAccountAcRoleStatePda(
@@ -158,7 +183,9 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     commitment: 'finalized',
   });
 
-  console.log({ txRes });
+  console.log(`✅ Mint instant completed successfully!`);
+  console.log(`Transaction: ${txRes}`);
 }
 
-executeAnchorScript(main);
+const network = getNetwork();
+executeNetworkScript(network, main);

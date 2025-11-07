@@ -6,29 +6,30 @@ import { executeNetworkScript } from '@/common/utils';
 import { loadTokenConfig, convertPublicKeysInConfig } from '../../configs/loadTokenConfig';
 import { deployNetworkInfrastructure } from '../../deploy/orchestrators/deployNetworkInfrastructure';
 import { deployTokenFull } from '../../deploy/orchestrators/deployToken';
-import { parseTokenDeploymentArgs } from '../../utils/argumentParser';
+import { getMtoken, getNetwork } from '../../utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Keypair) {
-  const args = parseTokenDeploymentArgs();
+  const mtoken = getMtoken();
+  const network = getNetwork();
 
-  console.log(`Deploying ${args.mtoken} on ${args.network}`);
+  console.log(`Deploying ${mtoken} on ${network}`);
   console.log(`RPC: ${provider.connection.rpcEndpoint}`);
   console.log(`Deployer: ${payer.publicKey.toString()}\n`);
 
   // Step 1: Deploy network infrastructure (idempotent - checks if already deployed)
   console.log('Step 1/2: Network Infrastructure');
-  await deployNetworkInfrastructure(provider, payer, args.network);
+  await deployNetworkInfrastructure(provider, payer, network);
 
   // Step 2: Deploy full token
   console.log('\nStep 2/2: Token Deployment');
-  const config = loadTokenConfig(args.mtoken, args.network);
+  const config = loadTokenConfig(mtoken, network);
   const finalConfig = convertPublicKeysInConfig(config);
 
-  await deployTokenFull(provider, payer, finalConfig, args.network, args.mtoken);
+  await deployTokenFull(provider, payer, finalConfig, network, mtoken);
 
   console.log('\n✅ Deployment completed successfully!');
 }
 
 // Parse args first to get network, then create provider for that network
-const args = parseTokenDeploymentArgs();
-executeNetworkScript(args.network, main);
+const network = getNetwork();
+executeNetworkScript(network, main);

@@ -1,25 +1,52 @@
 import { AnchorProvider } from '@coral-xyz/anchor';
 import { createApproveInstruction, TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { Keypair, PublicKey, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
+import { Keypair, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
 
-import { addresses } from '@/common/addresses';
-import { MProduct } from '@/common/tokenTypes';
+import { executeNetworkScript } from '@/common/utils';
 import { MAX_U64 } from '@/test/constants/common.constants';
 import { findATA } from '@/test/helpers/common.helpers';
 
-import { executeAnchorScript } from '../common/utils';
+import { getFeedAddresses, getTokenAddresses } from './utils/addressManager';
+import { getMtoken, getNetwork, getPaymentToken } from './utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Keypair) {
-  const mint = new PublicKey('FTRTWir5jXSekX1FDgXhg74Veoz3xq7MKX3pXKJt4y3e');
+  const mtoken = getMtoken();
+  const network = getNetwork();
+  const paymentToken = getPaymentToken();
+
+  console.log(`╔════════════════════════════════════════════════╗`);
+  console.log(`║            Delegate Script                   ║`);
+  console.log(`╚════════════════════════════════════════════════╝`);
+  console.log(`Token: ${mtoken}`);
+  console.log(`Payment Token: ${paymentToken}`);
+  console.log(`Network: ${network}`);
+  console.log(`Deployer: ${payer.publicKey.toString()}`);
+  console.log('');
+
+  // Get token addresses
+  const tokenAddrs = getTokenAddresses(network, mtoken);
+  if (!tokenAddrs?.redeemer?.account) {
+    throw new Error(`Redeemer vault account not found for ${mtoken} on ${network}`);
+  }
+
+  // Get payment token feed address
+  const feedAddr = getFeedAddresses(network, paymentToken);
+  if (!feedAddr?.token) {
+    throw new Error(`Payment token mint not found for ${paymentToken} on ${network}`);
+  }
+
+  const mint = feedAddr.token;
+  const redeemerAccount = tokenAddrs.redeemer.account;
+  const tokenProgram = feedAddr.tokenProgram || TOKEN_PROGRAM_ID;
 
   const tx = new Transaction().add(
     createApproveInstruction(
-      findATA(mint, payer.publicKey, TOKEN_PROGRAM_ID),
-      addresses['devnet'].tokens[MProduct.MTBILL].redeemer.account,
+      findATA(mint, payer.publicKey, tokenProgram),
+      redeemerAccount,
       payer.publicKey,
       MAX_U64,
       undefined,
-      TOKEN_PROGRAM_ID,
+      tokenProgram,
     ),
   );
 
@@ -27,7 +54,9 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     commitment: 'finalized',
   });
 
-  console.log({ txRes });
+  console.log(`✅ Delegation completed successfully!`);
+  console.log(`Transaction: ${txRes}`);
 }
 
-executeAnchorScript(main);
+const network = getNetwork();
+executeNetworkScript(network, main);

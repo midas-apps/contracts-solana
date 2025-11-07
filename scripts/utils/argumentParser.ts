@@ -2,121 +2,54 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { MProduct, isMProduct, PaymentToken, isPaymentToken } from '@/common/tokenTypes';
-import { tokenConfigs } from '@/scripts/configs/tokens';
 
-import { tokenConfigWithNetworksSchema } from '../configs/types';
+import { getAvailableNetworks } from './configUtils';
 
-/**
- * Get available token symbols from config files
- */
-export function getAvailableTokens(): MProduct[] {
-  return Object.keys(tokenConfigs).filter((key): key is MProduct => isMProduct(key));
-}
+/** Simple cached parser - parses all args once */
+let parsedArgs: Record<string, unknown> | null = null;
 
-/**
- * Get available networks from token configs
- * Derives networks from the first token config
- */
-export function getAvailableNetworks(): string[] {
-  for (const config of Object.values(tokenConfigs)) {
-    const parseResult = tokenConfigWithNetworksSchema.safeParse(config);
-    if (parseResult.success) {
-      return Object.keys(parseResult.data.networks);
-    }
+function getParsedArgs(): Record<string, unknown> {
+  if (!parsedArgs) {
+    parsedArgs = yargs(hideBin(process.argv)).help().parseSync() as Record<string, unknown>;
   }
-  return [];
+  return parsedArgs;
 }
 
-/**
- * Create base yargs instance with common options
- */
-function createBaseYargs() {
-  const availableTokens = getAvailableTokens();
+/** Get mtoken from arguments */
+export function getMtoken(): MProduct {
+  const argv = getParsedArgs();
+  const mtoken = (argv.mtoken || argv.m) as string | undefined;
+  if (!mtoken) {
+    throw new Error('mtoken is required. Use --mtoken or -m');
+  }
+  if (!isMProduct(mtoken)) {
+    throw new Error(
+      `Invalid token '${mtoken}'. Must be one of: ${Object.values(MProduct).join(', ')}`,
+    );
+  }
+  return mtoken;
+}
+
+/** Get network from arguments */
+export function getNetwork(): string {
+  const argv = getParsedArgs();
+  const network = (argv.network || argv.n || 'devnet') as string;
   const availableNetworks = getAvailableNetworks();
-
-  return yargs(hideBin(process.argv))
-    .option('mtoken', {
-      alias: 'm',
-      type: 'string',
-      demandOption: true,
-      describe: 'Token symbol to deploy (e.g., mTBILL)',
-      choices: availableTokens.length > 0 ? availableTokens.map((t) => t.toString()) : undefined,
-    })
-    .option('network', {
-      alias: 'n',
-      type: 'string',
-      default: 'devnet',
-      describe: 'Network to deploy to',
-      choices: availableNetworks,
-    });
-}
-
-export interface TokenDeploymentArgs {
-  mtoken: MProduct;
-  network: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
-}
-
-export function parseTokenDeploymentArgs(): TokenDeploymentArgs {
-  const argv = createBaseYargs().help().parseSync();
-
-  const mtoken = argv.mtoken as string;
-  if (!isMProduct(mtoken)) {
+  if (availableNetworks.length > 0 && !availableNetworks.includes(network)) {
     throw new Error(
-      `Invalid token '${mtoken}'. Must be one of: ${Object.values(MProduct).join(', ')}`,
+      `Invalid network '${network}'. Must be one of: ${availableNetworks.join(', ')}`,
     );
   }
-
-  return {
-    ...argv,
-    mtoken,
-  } as TokenDeploymentArgs;
+  return network;
 }
 
-export interface PaymentTokenArgs extends TokenDeploymentArgs {
-  paymentToken: PaymentToken;
-  fee?: string;
-  allowance?: string;
-  stable?: boolean;
-  isFiat?: boolean;
-}
-
-export function parsePaymentTokenArgs(): PaymentTokenArgs {
-  const argv = createBaseYargs()
-    .option('payment-token', {
-      alias: 'p',
-      type: 'string',
-      demandOption: true,
-      describe: 'Payment token symbol (e.g., USDC)',
-    })
-    .option('fee', {
-      type: 'string',
-      describe: "Fee percentage (e.g., '0.1' for 0.1%)",
-    })
-    .option('allowance', {
-      type: 'string',
-      describe: 'Allowance amount',
-    })
-    .option('stable', {
-      type: 'boolean',
-      describe: 'Whether this is a stablecoin (uses 1:1 rate)',
-    })
-    .option('is-fiat', {
-      type: 'boolean',
-      describe: 'Whether this is a fiat payment token',
-    })
-    .help()
-    .parseSync();
-
-  const mtoken = argv.mtoken as string;
-  if (!isMProduct(mtoken)) {
-    throw new Error(
-      `Invalid token '${mtoken}'. Must be one of: ${Object.values(MProduct).join(', ')}`,
-    );
+/** Get payment token from arguments (optional) */
+export function getPaymentToken(): PaymentToken {
+  const argv = getParsedArgs();
+  const paymentToken = (argv['payment-token'] || argv.p) as string | undefined;
+  if (!paymentToken) {
+    throw new Error('Payment token is required. Use --payment-token or -p');
   }
-
-  const paymentToken = argv['payment-token'] as string;
   if (!isPaymentToken(paymentToken)) {
     throw new Error(
       `Invalid payment token '${paymentToken}'. Must be one of: ${Object.values(PaymentToken).join(
@@ -124,55 +57,58 @@ export function parsePaymentTokenArgs(): PaymentTokenArgs {
       )}`,
     );
   }
-
-  return {
-    mtoken,
-    network: argv.network as string,
-    paymentToken,
-    fee: argv.fee as string | undefined,
-    allowance: argv.allowance as string | undefined,
-    stable: argv.stable as boolean | undefined,
-    isFiat: argv['is-fiat'] as boolean | undefined,
-  };
+  return paymentToken;
 }
 
-export interface NetworkArgs {
-  network: string;
+/** Get amount from arguments (optional) */
+export function getAmount(): string {
+  const argv = getParsedArgs();
+  const amount = (argv.amount || argv.a) as string | undefined;
+  if (!amount) {
+    throw new Error('Amount is required. Use --amount or -a');
+  }
+  return amount;
 }
 
-export function parseNetworkArgs(): NetworkArgs {
-  const availableNetworks = getAvailableNetworks();
-
-  const argv = yargs(hideBin(process.argv))
-    .option('network', {
-      alias: 'n',
-      type: 'string',
-      default: 'devnet',
-      describe: 'Network to deploy to',
-      choices: availableNetworks,
-    })
-    .help()
-    .parseSync();
-
-  return {
-    network: argv.network as string,
-  };
+/** Get role from arguments (optional) */
+export function getRole(): string {
+  const argv = getParsedArgs();
+  const role = (argv.role || argv.r) as string | undefined;
+  if (!role) {
+    throw new Error('Role is required. Use --role or -r');
+  }
+  return role;
 }
 
-export function validateTokenExists(tokenSymbol: MProduct): void {
-  const availableTokens = getAvailableTokens();
-  if (!availableTokens.includes(tokenSymbol)) {
+/** Get authority type from arguments (optional) */
+export function getAuthorityType():
+  | 'MintTokens'
+  | 'FreezeAccount'
+  | 'AccountOwner'
+  | 'CloseAccount' {
+  const argv = getParsedArgs();
+  const authorityType = argv['authority-type'] as string | undefined;
+  if (!authorityType) {
+    throw new Error('Authority type is required. Use --authority-type');
+  }
+  if (!['MintTokens', 'FreezeAccount', 'AccountOwner', 'CloseAccount'].includes(authorityType)) {
     throw new Error(
-      `Token '${tokenSymbol}' not found. Available tokens: ${availableTokens.join(', ')}`,
+      `Invalid authority type '${authorityType}'. Must be one of: MintTokens, FreezeAccount, AccountOwner, CloseAccount`,
     );
   }
+  return authorityType as 'MintTokens' | 'FreezeAccount' | 'AccountOwner' | 'CloseAccount';
 }
 
-export function validateNetworkExists(network: string): void {
-  const availableNetworks = getAvailableNetworks();
-  if (!availableNetworks.includes(network)) {
-    throw new Error(
-      `Network '${network}' not found. Available networks: ${availableNetworks.join(', ')}`,
-    );
-  }
+/** Get optional string argument */
+export function getOptionalArg(key: string): string | undefined {
+  const argv = getParsedArgs();
+  return argv[key] as string | undefined;
+}
+
+/** Get optional boolean argument */
+export function getOptionalBoolean(key: string): boolean | undefined {
+  const argv = getParsedArgs();
+  const value = argv[key];
+  if (value === undefined) return undefined;
+  return Boolean(value);
 }

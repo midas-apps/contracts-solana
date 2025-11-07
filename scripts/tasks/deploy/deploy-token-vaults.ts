@@ -7,27 +7,28 @@ import { loadTokenConfig, convertPublicKeysInConfig } from '../../configs/loadTo
 import { deployMinterVaultFromConfig } from '../../deploy/orchestrators/deployMinterVault';
 import { deployRedeemerVaultFromConfig } from '../../deploy/orchestrators/deployRedeemerVault';
 import { registerAddress } from '../../utils/addressManager';
-import { parseTokenDeploymentArgs } from '../../utils/argumentParser';
+import { getMtoken, getNetwork } from '../../utils/argumentParser';
 import { verifyDependencies } from '../../utils/dependencyChecker';
 
 async function main(provider: AnchorProvider, payer: Keypair) {
-  const args = parseTokenDeploymentArgs();
+  const mtoken = getMtoken();
+  const network = getNetwork();
 
   console.log(`╔══════════════════════════════════════════════╗`);
   console.log(`║           Vaults Deployment Script             ║`);
   console.log(`╚══════════════════════════════════════════════╝`);
-  console.log(`Token: ${args.mtoken}`);
-  console.log(`Network: ${args.network}`);
+  console.log(`Token: ${mtoken}`);
+  console.log(`Network: ${network}`);
   console.log(`RPC URL: ${provider.connection.rpcEndpoint}`);
   console.log(`Deployer: ${payer.publicKey.toString()}`);
   console.log('');
 
   // Verify dependencies: network infrastructure + required token components
-  verifyDependencies(args.network, args.mtoken, ['mToken', 'tokenAuthority', 'mTokenDataFeed']);
+  verifyDependencies(network, mtoken, ['mToken', 'tokenAuthority', 'mTokenDataFeed']);
 
   // Load configuration
   console.log('Loading configuration...');
-  const config = loadTokenConfig(args.mtoken, args.network);
+  const config = loadTokenConfig(mtoken, network);
   console.log('✓ Configuration loaded and validated');
 
   // Convert string PublicKeys to PublicKey objects
@@ -39,10 +40,10 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     provider,
     payer,
     finalConfig,
-    args.network,
-    args.mtoken,
+    network,
+    mtoken,
   );
-  registerAddress(args.network, args.mtoken, 'minter', minterVaultResult);
+  registerAddress(network, mtoken, 'minter', minterVaultResult);
   console.log(`✓ Minter Vault deployed: ${minterVaultResult.commonVault.toString()}`);
 
   // Deploy redeemer vault
@@ -51,10 +52,10 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     provider,
     payer,
     finalConfig,
-    args.network,
-    args.mtoken,
+    network,
+    mtoken,
   );
-  registerAddress(args.network, args.mtoken, 'redeemer', redeemerVaultResult);
+  registerAddress(network, mtoken, 'redeemer', redeemerVaultResult);
   console.log(`✓ Redeemer Vault deployed: ${redeemerVaultResult.commonVault.toString()}`);
 
   console.log('\n' + '='.repeat(50));
@@ -64,5 +65,5 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   console.log('='.repeat(50));
 }
 
-const args = parseTokenDeploymentArgs();
-executeNetworkScript(args.network, main);
+const network = getNetwork();
+executeNetworkScript(network, main);

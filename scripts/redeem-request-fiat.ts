@@ -1,8 +1,8 @@
 import { AnchorProvider } from '@coral-xyz/anchor';
 import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
-import { Keypair, PublicKey, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
+import { Keypair, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
 
-import { addresses } from '@/common/addresses';
+import { executeNetworkScript } from '@/common/utils';
 import { fetchAccountAcState, getAccountAcStatePda } from '@/test/helpers/ac.helpers';
 import { createAtaIfNotExistsInx, parseUnits, toBN } from '@/test/helpers/common.helpers';
 import { fetchDataFeedState } from '@/test/helpers/data-feed.helpers';
@@ -13,33 +13,41 @@ import {
   getRedeemerVaultPda,
 } from '@/test/helpers/vaults.helpers';
 
-import { executeAnchorScript } from '../common/utils';
-
 import { getAcProgram } from './deploy/contracts/ac';
 import { getDataFeedProgram } from './deploy/contracts/dataFeed';
 import { getVaultsProgram } from './deploy/contracts/vaults';
-
-// TODO: change config before execution
-const config = {
-  product: 'mTBILL',
-  mint: addresses['devnet'].feeds['usdc'].token,
-  tokenProgram: addresses['devnet'].feeds['usdc'].tokenProgram,
-  amount: parseUnits('10', 9),
-  env: 'devnet',
-} as {
-  product: 'mTBILL';
-  env: 'devnet' | 'mainnet';
-  mint: PublicKey;
-  amount: bigint;
-  tokenProgram?: PublicKey;
-};
+import { getTokenAddresses } from './utils/addressManager';
+import { getMtoken, getNetwork, getAmount } from './utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Keypair) {
+  const mtoken = getMtoken();
+  const network = getNetwork();
+  const amountStr = getAmount();
+
+  console.log(`╔════════════════════════════════════════════════╗`);
+  console.log(`║        Redeem Request Fiat Script             ║`);
+  console.log(`╚════════════════════════════════════════════════╝`);
+  console.log(`Token: ${mtoken}`);
+  console.log(`Amount: ${amountStr}`);
+  console.log(`Network: ${network}`);
+  console.log(`Deployer: ${payer.publicKey.toString()}`);
+  console.log('');
+
+  // Get token addresses
+  const tokenAddrs = getTokenAddresses(network, mtoken);
+  if (!tokenAddrs?.redeemer?.commonVault) {
+    throw new Error(`Redeemer vault not found for ${mtoken} on ${network}`);
+  }
+
+  // Parse amount - mToken amounts use 9 decimals
+  const mTokenDecimals = 9;
+  const amount = parseUnits(amountStr, mTokenDecimals);
+
   const vaultsProgram = getVaultsProgram(provider);
   const feedProgram = getDataFeedProgram(provider);
   const acProgram = getAcProgram(provider);
 
-  const vaultCommon = addresses[config.env][config.product].redeemer.commonVault;
+  const vaultCommon = tokenAddrs.redeemer.commonVault;
 
   const commonState = await fetchVaultCommonState(vaultsProgram, vaultCommon);
 
@@ -71,14 +79,6 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     commonState.tokensReceiver,
     payer,
     TOKEN_2022_PROGRAM_ID,
-  );
-
-  const vaultCreateAtaInx = await createAtaIfNotExistsInx(
-    provider.connection,
-    config.mint,
-    getRedeemerVaultPda(vaultCommon),
-    payer,
-    config.tokenProgram,
   );
 
   const vaultCreateMMinAtaInx = await createAtaIfNotExistsInx(
@@ -130,10 +130,6 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     tx2.add(ataFeeReceiver);
   }
 
-  if (vaultCreateAtaInx) {
-    tx2.add(vaultCreateAtaInx);
-  }
-
   if (vaultCreateMMinAtaInx) {
     tx2.add(vaultCreateMMinAtaInx);
   }
@@ -170,7 +166,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 
   tx2.add(
     await vaultsProgram.methods
-      .redeemRequestFiat(toBN(config.amount))
+      .redeemRequestFiat(toBN(amount))
       .accountsPartial({
         vaultCommon: vaultCommon,
         redeemerVault: getRedeemerVaultPda(vaultCommon),
@@ -189,7 +185,9 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     commitment: 'finalized',
   });
 
-  console.log({ txRes });
+  console.log(`✅ Redeem request fiat completed successfully!`);
+  console.log(`Transaction: ${txRes}`);
 }
 
-executeAnchorScript(main);
+const network = getNetwork();
+executeNetworkScript(network, main);

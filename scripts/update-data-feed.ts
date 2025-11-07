@@ -1,63 +1,66 @@
 import { AnchorProvider } from '@coral-xyz/anchor';
 import { Keypair, PublicKey, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
 
-import { addresses } from '@/common/addresses';
-import { MProduct } from '@/common/tokenTypes';
+import { executeNetworkScript } from '@/common/utils';
 import { DATA_FEED_AC_ROLES } from '@/test/constants/data-feed.constants';
 import { getAccountAcRoleStatePda } from '@/test/helpers/ac.helpers';
 import { DataFeedMode, fetchDataFeedState } from '@/test/helpers/data-feed.helpers';
 
-import { executeAnchorScript } from '../common/utils';
-
 import { getDataFeedProgram } from './deploy/contracts/dataFeed';
-
-// TODO: change config before execution
-const config = {
-  dataFeed: addresses['devnet'].tokens[MProduct.MTBILL].mTokenDataFeed,
-  newUnderlyingFeed: new PublicKey('782zyJs63RQmYVHjUiNsP1xVxVtTkj12ZZcPobCRstkX'),
-} as {
-  dataFeed: PublicKey;
-  newUnderlyingFeed: PublicKey | null;
-  newMode?: keyof typeof DataFeedMode;
-};
+import { getTokenAddresses } from './utils/addressManager';
+import { getMtoken, getNetwork, getOptionalArg } from './utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Keypair) {
-  const feedProgram = getDataFeedProgram(provider);
+  const mtoken = getMtoken();
+  const network = getNetwork();
+  const newUnderlyingFeed = getOptionalArg('new-underlying-feed');
+  const newMode = getOptionalArg('new-mode') as
+    | 'manual'
+    | 'switchboard'
+    | 'pyth'
+    | 'chainlink'
+    | undefined;
 
-  const state = await fetchDataFeedState(feedProgram, config.dataFeed);
+  console.log(`╔════════════════════════════════════════════════╗`);
+  console.log(`║         Update Data Feed Script                ║`);
+  console.log(`╚════════════════════════════════════════════════╝`);
+  console.log(`Token: ${mtoken}`);
+  console.log(`Network: ${network}`);
+  if (newUnderlyingFeed) {
+    console.log(`New Underlying Feed: ${newUnderlyingFeed}`);
+  }
+  if (newMode) {
+    console.log(`New Mode: ${newMode}`);
+  }
+  console.log(`Deployer: ${payer.publicKey.toString()}`);
+  console.log('');
+
+  // Get token addresses
+  const tokenAddrs = getTokenAddresses(network, mtoken);
+  if (!tokenAddrs?.mTokenDataFeed) {
+    throw new Error(`Data feed not found for ${mtoken} on ${network}`);
+  }
+
+  const feedProgram = getDataFeedProgram(provider);
+  const state = await fetchDataFeedState(feedProgram, tokenAddrs.mTokenDataFeed);
+
+  // Map mode string to DataFeedMode object
+  const modeMap: Record<string, (typeof DataFeedMode)[keyof typeof DataFeedMode]> = {
+    manual: DataFeedMode.manual,
+    switchboard: DataFeedMode.switchboard,
+    pyth: DataFeedMode.pyth,
+    chainlink: DataFeedMode.chainlink,
+  };
+
+  const newModeEnum = newMode ? modeMap[newMode] : null;
+  const newUnderlyingFeedPubkey = newUnderlyingFeed ? new PublicKey(newUnderlyingFeed) : null;
 
   const tx = new Transaction().add(
-    // // TODO: move to role grant
-    // await acProgram.methods
-    //   .grantRole(acRoleToBuffer(DATA_FEED_AC_ROLES.FEED_ADMIN))
-    //   .accountsPartial({
-    //     account: payer.publicKey,
-    //     acRole: state.acRole,
-    //     authority: payer.publicKey,
-    //     authorityAcAdminRole: getAccountAcRoleStatePda(
-    //       state.acRole,
-    //       payer.publicKey,
-    //       AC_ROLES.ADMIN
-    //     ),
-    //     accountAcRole: getAccountAcRoleStatePda(
-    //       state.acRole,
-    //       payer.publicKey,
-    //       DATA_FEED_AC_ROLES.FEED_ADMIN
-    //     ),
-    //   })
-    //   .instruction(),
     await feedProgram.methods
-      .updateFeed(
-        null,
-        config.newUnderlyingFeed,
-        config.newMode ? DataFeedMode[config.newMode] : null,
-        null,
-        null,
-        null,
-      )
+      .updateFeed(null, newUnderlyingFeedPubkey, newModeEnum, null, null, null)
       .accountsPartial({
         authority: payer.publicKey,
-        feed: config.dataFeed,
+        feed: tokenAddrs.mTokenDataFeed,
         acRole: state.acRole,
         authorityAcRole: getAccountAcRoleStatePda(
           state.acRole,
@@ -72,7 +75,9 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     commitment: 'finalized',
   });
 
-  console.log({ txRes });
+  console.log(`✅ Data feed updated successfully!`);
+  console.log(`Transaction: ${txRes}`);
 }
 
-executeAnchorScript(main);
+const network = getNetwork();
+executeNetworkScript(network, main);

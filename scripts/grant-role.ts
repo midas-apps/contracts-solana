@@ -1,34 +1,46 @@
 import { AnchorProvider } from '@coral-xyz/anchor';
 import { Keypair, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
 
-import { addresses } from '@/common/addresses';
-import { MProduct } from '@/common/tokenTypes';
+import { executeNetworkScript } from '@/common/utils';
 import { AC_ROLES } from '@/test/constants/ac.constants';
-import { VAULT_AC_ROLES } from '@/test/constants/vaults.constants';
 import { acRoleToBuffer, getAccountAcRoleStatePda } from '@/test/helpers/ac.helpers';
 
-import { executeAnchorScript } from '../common/utils';
-
 import { getAcProgram } from './deploy/contracts/ac';
+import { getTokenAddresses } from './utils/addressManager';
+import { getMtoken, getNetwork, getRole } from './utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Keypair) {
-  const acProgram = getAcProgram(provider);
+  const mtoken = getMtoken();
+  const network = getNetwork();
+  const role = getRole();
 
-  const acRoles = addresses['devnet'].tokens[MProduct.MTBILL].acRole;
+  console.log(`╔════════════════════════════════════════════════╗`);
+  console.log(`║            Grant Role Script                   ║`);
+  console.log(`╚════════════════════════════════════════════════╝`);
+  console.log(`Token: ${mtoken}`);
+  console.log(`Role: ${role}`);
+  console.log(`Network: ${network}`);
+  console.log(`Deployer: ${payer.publicKey.toString()}`);
+  console.log('');
+
+  // Get token addresses
+  const tokenAddrs = getTokenAddresses(network, mtoken);
+  if (!tokenAddrs?.acRole) {
+    throw new Error(`AC Role not found for ${mtoken} on ${network}`);
+  }
+
+  const acProgram = getAcProgram(provider);
+  const acRoles = tokenAddrs.acRole;
 
   const tx = new Transaction().add(
     await acProgram.methods
-      .grantRole(acRoleToBuffer(VAULT_AC_ROLES.VAULT_PAUSER))
+      .grantRole(acRoleToBuffer(role))
       .accountsPartial({
         account: payer.publicKey,
         acRole: acRoles,
         authority: payer.publicKey,
         authorityAcAdminRole: getAccountAcRoleStatePda(acRoles, payer.publicKey, AC_ROLES.ADMIN),
-        accountAcRole: getAccountAcRoleStatePda(
-          acRoles,
-          payer.publicKey,
-          VAULT_AC_ROLES.VAULT_PAUSER,
-        ),
+        accountAcRole: getAccountAcRoleStatePda(acRoles, payer.publicKey, role),
       })
       .instruction(),
   );
@@ -37,7 +49,9 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     commitment: 'finalized',
   });
 
-  console.log({ txRes });
+  console.log(`✅ Role ${role} granted successfully!`);
+  console.log(`Transaction: ${txRes}`);
 }
 
-executeAnchorScript(main);
+const network = getNetwork();
+executeNetworkScript(network, main);
