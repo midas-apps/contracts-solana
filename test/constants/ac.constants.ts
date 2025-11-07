@@ -1,6 +1,6 @@
 import { PublicKey } from '@solana/web3.js';
 
-import * as ACCESS_CONTROL_IDL from '../../target/idl/access_control.json';
+import ACCESS_CONTROL_IDL from '../../target/idl/access_control.json' with { type: 'json' };
 
 export const AC_PROGRAM_ID = new PublicKey(ACCESS_CONTROL_IDL.address);
 

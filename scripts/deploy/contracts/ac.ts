@@ -1,7 +1,7 @@
 import { AnchorProvider, Program } from '@coral-xyz/anchor';
 import { Keypair, PublicKey, sendAndConfirmTransaction } from '@solana/web3.js';
 
-import * as AC_IDL from '../../../target/idl/access_control.json';
+import AC_IDL from '../../../target/idl/access_control.json' with { type: 'json' };
 import { AccessControl } from '../../../target/types/access_control';
 import { AC_ROLES } from '../../../test/constants/ac.constants';
 import { getAccountAcRoleStatePda } from '../../../test/helpers/ac.helpers';

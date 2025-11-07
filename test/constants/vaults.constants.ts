@@ -1,6 +1,6 @@
 import { PublicKey } from '@solana/web3.js';
 
-import * as MIDAS_VAULTS_IDL from '../../target/idl/midas_vaults.json';
+import MIDAS_VAULTS_IDL from '../../target/idl/midas_vaults.json' with { type: 'json' };
 
 export const VAULTS_PROGRAM_ID = new PublicKey(MIDAS_VAULTS_IDL.address);
 

@@ -7,7 +7,7 @@ import {
   mintAuthoritySeedToBuffer,
 } from '@/test/helpers/token-authority.helpers';
 
-import * as TOKEN_AUTHORITY_IDL from '../../../target/idl/token_authority.json';
+import TOKEN_AUTHORITY_IDL from '../../../target/idl/token_authority.json' with { type: 'json' };
 
 import { CommonParams } from './dataFeed';
 
@@ -26,13 +26,34 @@ export const deployTokenAuthority = async (
   { acRole, seed }: DeployTokenAuthorityConfig,
 ) => {
   const tokenAuthorityProgram = getTokenAuthorityProgram(common.provider);
-
   const authority = getTokenAuthorityPda(seed);
+
+  try {
+    const existingAuthority =
+      await tokenAuthorityProgram.account.tokenAuthorityState.fetch(authority);
+    if (!existingAuthority.acRole.equals(acRole)) {
+      console.warn(
+        `⚠️  Token authority already exists with different acRole: ${existingAuthority.acRole.toString()} (expected: ${acRole.toString()}). Reusing existing authority.`,
+      );
+    }
+    return authority;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (
+      errorMessage.includes('Account does not exist') ||
+      errorMessage.includes('InvalidAccountData')
+    ) {
+      // Account doesn't exist, proceed with initialization
+    } else {
+      throw error;
+    }
+  }
+
   const tx = await tokenAuthorityProgram.methods
     .newTokenAuthority(Array.from(Uint8Array.from(mintAuthoritySeedToBuffer(seed))), acRole)
     .accountsPartial({
       signer: common.payer.publicKey,
-      tokenAuthority: getTokenAuthorityPda(seed),
+      tokenAuthority: authority,
     })
     .transaction();
 

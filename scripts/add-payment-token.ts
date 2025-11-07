@@ -10,32 +10,34 @@ import { getAccountAcRoleStatePda } from '@/test/helpers/ac.helpers';
 import { createAtaIfNotExistsInx, parsePercent, toBN } from '@/test/helpers/common.helpers';
 import { fetchVaultCommonState } from '@/test/helpers/vaults.helpers';
 
-import { executeAnchorScript } from '../common/utils';
+import { executeNetworkScript } from '../common/utils';
 
 import { getVaultsProgram } from './deploy/contracts/vaults';
-
-// TODO: change config before execution
-const config = {
-  vaultCommon: addresses['devnet'].tokens[MProduct.MTBILL].redeemer.commonVault,
-  allowance: MAX_U128,
-  fee: parsePercent(0.1),
-  feed: addresses['devnet'].feeds['usdc'].dataFeed,
-  mint: addresses['devnet'].feeds['usdc'].token,
-  tokenProgram: TOKEN_PROGRAM_ID,
-  stable: true,
-  isFiat: false,
-} as {
-  mint: PublicKey;
-  vaultCommon: PublicKey;
-  feed: PublicKey;
-  tokenProgram?: PublicKey;
-  fee: bigint;
-  allowance: bigint;
-  stable: boolean;
-  isFiat?: boolean;
-};
+import { getNetwork } from './utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Keypair) {
+  const network = getNetwork();
+
+  // TODO: change config before execution
+  const config = {
+    vaultCommon: addresses[network].tokens[MProduct.MTBILL].redeemer.commonVault,
+    allowance: MAX_U128,
+    fee: parsePercent(0.1),
+    feed: addresses[network].feeds['usdc'].dataFeed,
+    mint: addresses[network].feeds['usdc'].token,
+    tokenProgram: TOKEN_PROGRAM_ID,
+    stable: true,
+    isFiat: false,
+  } as {
+    mint: PublicKey;
+    vaultCommon: PublicKey;
+    feed: PublicKey;
+    tokenProgram?: PublicKey;
+    fee: bigint;
+    allowance: bigint;
+    stable: boolean;
+    isFiat?: boolean;
+  };
   const vaultsProgram = getVaultsProgram(provider);
 
   const commonState = await fetchVaultCommonState(vaultsProgram, config.vaultCommon);
@@ -105,4 +107,5 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   console.log({ txRes });
 }
 
-executeAnchorScript(main);
+const network = getNetwork();
+executeNetworkScript(network, main);

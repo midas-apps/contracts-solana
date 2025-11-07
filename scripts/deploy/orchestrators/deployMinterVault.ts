@@ -7,6 +7,7 @@ import { getMinterVaultPda } from '@/test/helpers/vaults.helpers';
 
 import { TokenConfig } from '../../configs/types';
 import { getTokenAddresses } from '../../utils/addressManager';
+import { verifyDependencies } from '../../utils/dependencyChecker';
 import { getTokenAcRoleAddress, getAcAddress } from '../../utils/networkResolver';
 import { deployMinterVault, DeployMinterVaultConfig } from '../contracts/vaults';
 
@@ -22,34 +23,23 @@ export async function deployMinterVaultFromConfig(
   network: string,
   tokenSymbol: MProduct,
 ): Promise<MinterVaultResult> {
-  // Get required addresses (from addresses.ts only)
-  const ac = getAcAddress(network);
-  const acRole = getTokenAcRoleAddress(network, tokenSymbol);
+  verifyDependencies(network, tokenSymbol, [
+    'mToken',
+    'tokenAuthority',
+    'mTokenDataFeed',
+    'acRole',
+  ]);
 
-  if (!ac) {
-    throw new Error(`AC not found for network ${network}`);
-  }
-  if (!acRole) {
-    throw new Error(`AC Role not found for token ${tokenSymbol} on ${network}`);
-  }
-
-  const tokenAddrs = getTokenAddresses(network, tokenSymbol);
-  if (!tokenAddrs?.mToken) {
-    throw new Error(`Token mint not found for ${tokenSymbol} on ${network}`);
-  }
-  if (!tokenAddrs?.mTokenDataFeed) {
-    throw new Error(`Token data feed not found for ${tokenSymbol} on ${network}`);
-  }
-  if (!tokenAddrs?.tokenAuthority?.account) {
-    throw new Error(`Token authority not found for ${tokenSymbol} on ${network}`);
-  }
+  const ac = getAcAddress(network)!;
+  const acRole = getTokenAcRoleAddress(network, tokenSymbol)!;
+  const tokenAddrs = getTokenAddresses(network, tokenSymbol)!;
 
   const config: DeployMinterVaultConfig = {
     acRole,
     ac,
-    mToken: tokenAddrs.mToken,
-    mTokenFeed: tokenAddrs.mTokenDataFeed,
-    tokenAuthority: tokenAddrs.tokenAuthority.account,
+    mToken: tokenAddrs.mToken!,
+    mTokenFeed: tokenAddrs.mTokenDataFeed!,
+    tokenAuthority: tokenAddrs.tokenAuthority!.account,
     instantFee: parsePercent(parseFloat(tokenConfig.minter.instantFee)),
     instantDailyLimit: parseUnits(tokenConfig.minter.instantDailyLimit),
     variationTolerance: parsePercent(parseFloat(tokenConfig.minter.variationTolerance)),

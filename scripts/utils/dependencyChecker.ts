@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+import { AnchorProvider } from '@coral-xyz/anchor';
 import { Connection, PublicKey } from '@solana/web3.js';
 
 import { MProduct } from '@/common/tokenTypes';
@@ -10,10 +11,13 @@ import { getAcAddress, getAcRoleGlobalAddress } from './networkResolver';
 
 export type RequiredComponent = 'mToken' | 'tokenAuthority' | 'mTokenDataFeed' | 'acRole';
 
-/**
- * Verify that network infrastructure (AC + AC Role Global) is deployed
- * Throws an error with helpful message if missing
- */
+const COMPONENT_DISPLAY_NAMES: Record<RequiredComponent, string> = {
+  mToken: 'mToken',
+  tokenAuthority: 'Token Authority',
+  mTokenDataFeed: 'Data Feed',
+  acRole: 'AC Role',
+};
+
 export function verifyNetworkInfrastructure(network: string): void {
   try {
     const ac = getAcAddress(network);
@@ -30,22 +34,16 @@ export function verifyNetworkInfrastructure(network: string): void {
       );
     }
   } catch (error) {
-    // If network doesn't exist or addresses are missing, provide helpful error
     if (error instanceof Error && error.message.includes('Network addresses not found')) {
       throw new Error(
         `Network '${network}' not found or network infrastructure not deployed.\n` +
           `Please run: yarn deploy:network --network ${network}`,
       );
     }
-    // Re-throw if it's already our formatted error
     throw error;
   }
 }
 
-/**
- * Verify that required token components are deployed
- * Throws an error with helpful message if any are missing
- */
 export function verifyTokenComponents(
   network: string,
   tokenSymbol: MProduct,
@@ -63,27 +61,14 @@ export function verifyTokenComponents(
   const missing: string[] = [];
 
   for (const component of requiredComponents) {
-    switch (component) {
-      case 'mToken':
-        if (!tokenAddrs.mToken) {
-          missing.push('mToken');
-        }
-        break;
-      case 'tokenAuthority':
-        if (!tokenAddrs.tokenAuthority) {
-          missing.push('Token Authority');
-        }
-        break;
-      case 'mTokenDataFeed':
-        if (!tokenAddrs.mTokenDataFeed) {
-          missing.push('Data Feed');
-        }
-        break;
-      case 'acRole':
-        if (!tokenAddrs.acRole) {
-          missing.push('AC Role');
-        }
-        break;
+    const displayName = COMPONENT_DISPLAY_NAMES[component];
+    if (
+      (component === 'mToken' && !tokenAddrs.mToken) ||
+      (component === 'tokenAuthority' && !tokenAddrs.tokenAuthority) ||
+      (component === 'mTokenDataFeed' && !tokenAddrs.mTokenDataFeed) ||
+      (component === 'acRole' && !tokenAddrs.acRole)
+    ) {
+      missing.push(displayName);
     }
   }
 
@@ -97,9 +82,6 @@ export function verifyTokenComponents(
   }
 }
 
-/**
- * Verify both network infrastructure and token components
- */
 export function verifyDependencies(
   network: string,
   tokenSymbol: MProduct,
@@ -109,9 +91,65 @@ export function verifyDependencies(
   verifyTokenComponents(network, tokenSymbol, requiredComponents);
 }
 
-/**
- * Get program ID from IDL file
- */
+export function getDeployedTokenComponents(network: string, tokenSymbol: MProduct): string[] {
+  const tokenAddrs = getTokenAddresses(network, tokenSymbol);
+  if (!tokenAddrs) {
+    return [];
+  }
+
+  const deployed: string[] = [];
+  if (tokenAddrs.acRole) deployed.push('AC Role');
+  if (tokenAddrs.mToken) deployed.push('mToken');
+  if (tokenAddrs.tokenAuthority) deployed.push('Token Authority');
+  if (tokenAddrs.mTokenDataFeed) deployed.push('Data Feed');
+  if (tokenAddrs.minter) deployed.push('Minter Vault');
+  if (tokenAddrs.redeemer) deployed.push('Redeemer Vault');
+
+  return deployed;
+}
+
+export function verifyNoTokenComponentsDeployed(network: string, tokenSymbol: MProduct): void {
+  const deployed = getDeployedTokenComponents(network, tokenSymbol);
+  if (deployed.length === 0) {
+    return;
+  }
+
+  const deployedList = deployed.join(', ');
+  const tokenAddrs = getTokenAddresses(network, tokenSymbol);
+  const missing: string[] = [];
+  const steps: string[] = [];
+
+  if (!tokenAddrs?.mTokenDataFeed) {
+    missing.push('data feed');
+    steps.push(`yarn deploy:token-datafeed --mtoken ${tokenSymbol} --network ${network}`);
+  }
+
+  if (!tokenAddrs?.minter || !tokenAddrs?.redeemer) {
+    if (!tokenAddrs?.minter && !tokenAddrs?.redeemer) {
+      missing.push('vaults');
+    } else if (!tokenAddrs?.minter) {
+      missing.push('minter vault');
+    } else {
+      missing.push('redeemer vault');
+    }
+    steps.push(`yarn deploy:token-vaults --mtoken ${tokenSymbol} --network ${network}`);
+  }
+
+  const suggestions =
+    missing.length > 0
+      ? `\n   Use incremental deployment instead:\n\n` +
+        steps.map((s, i) => `   ${i + 1}. ${s}`).join('\n')
+      : '';
+
+  throw new Error(
+    `❌ Token components already deployed for ${tokenSymbol} on ${network}.\n` +
+      `   Deployed components: ${deployedList}\n\n` +
+      `   deploy:all should only be used for fresh deployments.` +
+      suggestions +
+      `\n\n   Or remove deployed components from addresses.ts if you want to redeploy.`,
+  );
+}
+
 export function getProgramIdFromIdl(programName: string): string | null {
   try {
     const idlPath = path.join(process.cwd(), 'target/idl', `${programName}.json`);
@@ -121,12 +159,11 @@ export function getProgramIdFromIdl(programName: string): string | null {
       return idl.address;
     }
   } catch {
-    // Ignore errors, return null
+    // Ignore errors
   }
   return null;
 }
 
-/** Get program IDs from IDL files */
 export function getProgramIds(): Record<string, string> | null {
   const accessControlId = getProgramIdFromIdl('access_control');
   const dataFeedId = getProgramIdFromIdl('data_feed');
@@ -145,10 +182,6 @@ export function getProgramIds(): Record<string, string> | null {
   return null;
 }
 
-/**
- * Verify that Solana programs are deployed on the network
- * Throws an error with helpful message if any programs are missing
- */
 export async function verifyProgramsDeployed(
   connection: Connection,
   network: string,
@@ -156,8 +189,6 @@ export async function verifyProgramsDeployed(
   const programIds = getProgramIds();
 
   if (!programIds) {
-    // For unknown networks or if IDL files are not available, skip program verification
-    // (they might use different addresses or programs might not be built yet)
     console.log(`⚠️  Skipping program verification for ${network} (program IDs not available)`);
     return;
   }
@@ -170,15 +201,12 @@ export async function verifyProgramsDeployed(
       const programId = new PublicKey(programIdStr);
       const accountInfo = await connection.getAccountInfo(programId);
 
-      if (!accountInfo) {
-        missingPrograms.push({ name: programName, id: programIdStr });
-      } else if (!accountInfo.executable) {
+      if (!accountInfo || !accountInfo.executable) {
         missingPrograms.push({ name: programName, id: programIdStr });
       } else {
         verifiedPrograms.push(programName);
       }
     } catch {
-      // If we can't parse the address or fetch it, consider it missing
       missingPrograms.push({ name: programName, id: programIdStr });
     }
   }
@@ -198,4 +226,162 @@ export async function verifyProgramsDeployed(
         `Note: For localnet, make sure solana-test-validator is running.`,
     );
   }
+}
+
+/**
+ * Verify if an account exists on-chain
+ * Returns true if account exists, false otherwise
+ */
+export async function verifyAccountExistsOnChain(
+  connection: Connection,
+  address: PublicKey,
+): Promise<boolean> {
+  try {
+    const accountInfo = await connection.getAccountInfo(address);
+    return accountInfo !== null;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Verify if an Anchor account exists on-chain by attempting to fetch it
+ * Returns true if account exists and is valid, false otherwise
+ */
+export async function verifyAnchorAccountExistsOnChain<T>(
+  accountFetcher: (address: PublicKey) => Promise<T>,
+  address: PublicKey,
+): Promise<boolean> {
+  try {
+    await accountFetcher(address);
+    return true;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (
+      errorMessage.includes('Account does not exist') ||
+      errorMessage.includes('InvalidAccountData')
+    ) {
+      return false;
+    }
+    // Re-throw unexpected errors
+    throw error;
+  }
+}
+
+/**
+ * Verify token core components exist on-chain
+ * Returns object with verification results for each component
+ */
+export async function verifyTokenCoreOnChain(
+  provider: AnchorProvider,
+  network: string,
+  tokenSymbol: MProduct,
+): Promise<{
+  acRole: { exists: boolean; address?: PublicKey };
+  mToken: { exists: boolean; address?: PublicKey };
+  tokenAuthority: { exists: boolean; address?: PublicKey };
+}> {
+  const tokenAddrs = getTokenAddresses(network, tokenSymbol);
+  const results = {
+    acRole: { exists: false, address: undefined as PublicKey | undefined },
+    mToken: { exists: false, address: undefined as PublicKey | undefined },
+    tokenAuthority: { exists: false, address: undefined as PublicKey | undefined },
+  };
+
+  // Verify AC Role
+  if (tokenAddrs?.acRole) {
+    results.acRole.address = tokenAddrs.acRole;
+    const { getAcProgram } = await import('../deploy/contracts/ac');
+    const acProgram = getAcProgram(provider);
+    results.acRole.exists = await verifyAnchorAccountExistsOnChain(
+      (addr) => acProgram.account.accessControlRoleState.fetch(addr),
+      tokenAddrs.acRole,
+    );
+  }
+
+  // Verify mToken
+  if (tokenAddrs?.mToken) {
+    results.mToken.address = tokenAddrs.mToken;
+    results.mToken.exists = await verifyAccountExistsOnChain(
+      provider.connection,
+      tokenAddrs.mToken,
+    );
+  }
+
+  // Verify Token Authority
+  if (tokenAddrs?.tokenAuthority) {
+    results.tokenAuthority.address = tokenAddrs.tokenAuthority.account;
+    const { getTokenAuthorityProgram } = await import('../deploy/contracts/token-authority');
+    const tokenAuthorityProgram = getTokenAuthorityProgram(provider);
+    results.tokenAuthority.exists = await verifyAnchorAccountExistsOnChain(
+      (addr) => tokenAuthorityProgram.account.tokenAuthorityState.fetch(addr),
+      tokenAddrs.tokenAuthority.account,
+    );
+  }
+
+  return results;
+}
+
+/**
+ * Verify data feed exists on-chain
+ */
+export async function verifyDataFeedOnChain(
+  provider: AnchorProvider,
+  network: string,
+  tokenSymbol: MProduct,
+): Promise<{ exists: boolean; address?: PublicKey }> {
+  const tokenAddrs = getTokenAddresses(network, tokenSymbol);
+  if (!tokenAddrs?.mTokenDataFeed) {
+    return { exists: false };
+  }
+
+  const { getDataFeedProgram } = await import('../deploy/contracts/dataFeed');
+  const dataFeedProgram = getDataFeedProgram(provider);
+  const exists = await verifyAnchorAccountExistsOnChain(
+    (addr) => dataFeedProgram.account.feedState.fetch(addr),
+    tokenAddrs.mTokenDataFeed,
+  );
+
+  return { exists, address: tokenAddrs.mTokenDataFeed };
+}
+
+/**
+ * Verify vaults exist on-chain
+ */
+export async function verifyVaultsOnChain(
+  provider: AnchorProvider,
+  network: string,
+  tokenSymbol: MProduct,
+): Promise<{
+  minter: { exists: boolean; address?: PublicKey };
+  redeemer: { exists: boolean; address?: PublicKey };
+}> {
+  const tokenAddrs = getTokenAddresses(network, tokenSymbol);
+  const results = {
+    minter: { exists: false, address: undefined as PublicKey | undefined },
+    redeemer: { exists: false, address: undefined as PublicKey | undefined },
+  };
+
+  const { getVaultsProgram } = await import('../deploy/contracts/vaults');
+  const vaultsProgram = getVaultsProgram(provider);
+
+  // Verify Minter Vault
+  if (tokenAddrs?.minter?.commonVault) {
+    results.minter.address = tokenAddrs.minter.commonVault;
+    results.minter.exists = await verifyAnchorAccountExistsOnChain(
+      (addr) => vaultsProgram.account.vaultCommonState.fetch(addr),
+      tokenAddrs.minter.commonVault,
+    );
+  }
+
+  // Verify Redeemer Vault
+  if (tokenAddrs?.redeemer?.commonVault) {
+    results.redeemer.address = tokenAddrs.redeemer.commonVault;
+    results.redeemer.exists = await verifyAnchorAccountExistsOnChain(
+      (addr) => vaultsProgram.account.vaultCommonState.fetch(addr),
+      tokenAddrs.redeemer.commonVault,
+    );
+  }
+
+  return results;
 }

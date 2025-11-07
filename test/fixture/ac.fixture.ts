@@ -3,7 +3,7 @@ import { Transaction } from '@solana/web3.js';
 
 import { AccessControl } from 'target/types/access_control';
 
-import * as ACCESS_CONTROL_IDL from '../../target/idl/access_control.json';
+import ACCESS_CONTROL_IDL from '../../target/idl/access_control.json' with { type: 'json' };
 import { AC_ROLES } from '../constants/ac.constants';
 import { acRoleToBuffer, generateAcRoleAccount } from '../helpers/ac.helpers';
 import { initBankrun, processTransaction } from '../helpers/common.helpers';

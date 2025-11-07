@@ -11,7 +11,7 @@ import { Transaction } from '@solana/web3.js';
 import { MidasVaults } from 'target/types/midas_vaults';
 
 import { createMTokenMint } from '../../common/create-mtoken-mint';
-import * as MIDAS_VAULTS_IDL from '../../target/idl/midas_vaults.json';
+import MIDAS_VAULTS_IDL from '../../target/idl/midas_vaults.json' with { type: 'json' };
 import { AC_ROLES } from '../constants/ac.constants';
 import { MAX_U128 } from '../constants/common.constants';
 import { TOKEN_AUTHORITY_ROLES } from '../constants/token-authority.constants';

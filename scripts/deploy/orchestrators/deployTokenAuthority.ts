@@ -4,6 +4,7 @@ import { Keypair, PublicKey } from '@solana/web3.js';
 import { MProduct } from '@/common/tokenTypes';
 
 import { TokenConfig } from '../../configs/types';
+import { verifyNetworkInfrastructure } from '../../utils/dependencyChecker';
 import { getTokenAcRoleAddress, getAcRoleGlobalAddress } from '../../utils/networkResolver';
 import { deployTokenAuthority, DeployTokenAuthorityConfig } from '../contracts/token-authority';
 
@@ -19,11 +20,10 @@ export async function deployTokenAuthorityFromConfig(
   network: string,
   tokenSymbol: MProduct,
 ): Promise<TokenAuthorityResult> {
-  // Get AC Role (try token-specific first, then global)
-  let acRole: PublicKey | undefined = getTokenAcRoleAddress(network, tokenSymbol);
+  verifyNetworkInfrastructure(network);
 
+  let acRole: PublicKey | undefined = getTokenAcRoleAddress(network, tokenSymbol);
   if (!acRole) {
-    // Use global AC Role if token-specific doesn't exist yet
     acRole = getAcRoleGlobalAddress(network);
   }
 

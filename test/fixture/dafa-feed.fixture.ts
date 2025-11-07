@@ -4,7 +4,7 @@ import { ProgramTestContext } from 'solana-bankrun';
 
 import { DataFeed } from 'target/types/data_feed';
 
-import * as DATA_FEED_IDL from '../../target/idl/data_feed.json';
+import DATA_FEED_IDL from '../../target/idl/data_feed.json' with { type: 'json' };
 import { AC_ROLES } from '../constants/ac.constants';
 import { DATA_FEED_AC_ROLES } from '../constants/data-feed.constants';
 import { acRoleToBuffer, getAccountAcRoleStatePda } from '../helpers/ac.helpers';

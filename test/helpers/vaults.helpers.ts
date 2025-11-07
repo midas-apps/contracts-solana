@@ -1,5 +1,5 @@
-import { BN } from '@coral-xyz/anchor';
 import { Keypair, PublicKey } from '@solana/web3.js';
+import BN from 'bn.js';
 
 import { VAULTS_PROGRAM_ID, VAULTS_SEEDS } from '../constants/vaults.constants';
 

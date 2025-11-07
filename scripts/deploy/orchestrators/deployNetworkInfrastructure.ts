@@ -11,6 +11,7 @@ import { deployAcRole, deployAc, DeployAcRoleConfig, DeployAcConfig } from '../c
 export interface NetworkInfrastructureResult {
   acRoleGlobal: PublicKey;
   ac: PublicKey;
+  alreadyDeployed: boolean;
 }
 
 /**
@@ -46,8 +47,10 @@ export async function deployNetworkInfrastructure(
       const ac = getAcAddress(network);
 
       if (acRoleGlobal && ac) {
-        console.log('  Network infrastructure already deployed');
-        return { acRoleGlobal, ac };
+        console.log('  ✓ Network infrastructure already deployed');
+        console.log(`    AC Role Global: ${acRoleGlobal.toString()}`);
+        console.log(`    AC: ${ac.toString()}`);
+        return { acRoleGlobal, ac, alreadyDeployed: true };
       }
     } catch {
       // If network doesn't exist or addresses are missing, proceed with deployment
@@ -74,5 +77,9 @@ export async function deployNetworkInfrastructure(
   // Register global addresses
   registerGlobalAddresses(network, acRoleGlobal, ac);
 
-  return { acRoleGlobal, ac };
+  // Auto-save addresses to file
+  const { saveAddressesToFile } = await import('../../utils/addressManager');
+  await saveAddressesToFile();
+
+  return { acRoleGlobal, ac, alreadyDeployed: false };
 }

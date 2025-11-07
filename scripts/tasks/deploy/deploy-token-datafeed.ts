@@ -5,9 +5,8 @@ import { executeNetworkScript } from '@/common/utils';
 
 import { loadTokenConfig, convertPublicKeysInConfig } from '../../configs/loadTokenConfig';
 import { deployDataFeedFromConfig } from '../../deploy/orchestrators/deployDataFeed';
-import { registerAddress } from '../../utils/addressManager';
 import { getMtoken, getNetwork } from '../../utils/argumentParser';
-import { verifyNetworkInfrastructure } from '../../utils/dependencyChecker';
+import { verifyNetworkInfrastructure, verifyDataFeedOnChain } from '../../utils/dependencyChecker';
 
 async function main(provider: AnchorProvider, payer: Keypair) {
   const mtoken = getMtoken();
@@ -22,21 +21,25 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   console.log(`Deployer: ${payer.publicKey.toString()}`);
   console.log('');
 
-  // Verify network infrastructure exists
   verifyNetworkInfrastructure(network);
 
-  // Load configuration
+  const verification = await verifyDataFeedOnChain(provider, network, mtoken);
+  if (verification.exists && verification.address) {
+    console.log('\n' + '='.repeat(50));
+    console.log('ℹ️  Data feed already exists on-chain');
+    console.log(`Data Feed: ${verification.address.toString()}`);
+    console.log('='.repeat(50));
+    return;
+  }
+
   console.log('Loading configuration...');
   const config = loadTokenConfig(mtoken, network);
   console.log('✓ Configuration loaded and validated');
 
-  // Convert string PublicKeys to PublicKey objects
   const finalConfig = convertPublicKeysInConfig(config);
 
-  // Deploy data feed
   console.log('Deploying Data Feed...');
   const dataFeed = await deployDataFeedFromConfig(provider, payer, finalConfig, network, mtoken);
-  registerAddress(network, mtoken, 'mTokenDataFeed', dataFeed);
 
   console.log('\n' + '='.repeat(50));
   console.log('✅ Data feed deployed successfully!');

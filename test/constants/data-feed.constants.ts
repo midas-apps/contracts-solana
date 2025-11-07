@@ -1,6 +1,6 @@
 import { PublicKey } from '@solana/web3.js';
 
-import * as DATA_FEED_IDL from '../../target/idl/data_feed.json';
+import DATA_FEED_IDL from '../../target/idl/data_feed.json' with { type: 'json' };
 
 export const DATA_FEED_PROGRAM_ID = new PublicKey(DATA_FEED_IDL.address);
 

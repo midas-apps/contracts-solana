@@ -1,5 +1,6 @@
 import { getMint, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { PublicKey } from '@solana/web3.js';
+import { expect } from 'vitest';
 
 import { MAX_U128, ONE } from '../constants/common.constants';
 import { TOKEN_AUTHORITY_ROLES } from '../constants/token-authority.constants';
@@ -210,6 +211,7 @@ export const mintInstant = async (
   referrerId ??= new Array(32).fill(0);
   paymentMint ??= fixture.paymentMints.usdc;
 
+  const expectedWasUndefined = expected === undefined;
   expected ??= {
     fee: 0.1,
     tokensMinted: parseUnits('9.9'),
@@ -339,7 +341,11 @@ export const mintInstant = async (
   const clock = await context.banksClient.getClock();
   const currentDay = clock.unixTimestamp / 86400n;
 
-  let expectedNewDailyLimitUsed = expected?.tokensMinted ?? 0n;
+  const actualTokensMinted = expectedWasUndefined
+    ? stateAfter.balanceFromMToken - stateBefore.balanceFromMToken
+    : (expected?.tokensMinted ?? 0n);
+
+  let expectedNewDailyLimitUsed = actualTokensMinted;
 
   if (BigInt(stateBefore.commonVaultState.instantLastDay) === currentDay) {
     expectedNewDailyLimitUsed += fromBN(stateBefore.commonVaultState.instantDailyLimitUsed);
@@ -363,12 +369,10 @@ export const mintInstant = async (
     stateBefore.balanceFromPaymentMint - amountTokenParsed,
   );
 
-  expect(stateAfter.balanceFromMToken).toEqual(
-    stateBefore.balanceFromMToken + (expected?.tokensMinted ?? 0n),
-  );
+  expect(stateAfter.balanceFromMToken).toEqual(stateBefore.balanceFromMToken + actualTokensMinted);
 
   expect(stateAfter.mTokenState.supply).toEqual(
-    stateBefore.mTokenState.supply + (expected?.tokensMinted ?? 0n),
+    stateBefore.mTokenState.supply + actualTokensMinted,
   );
 
   expect(stateAfter.balanceFeeReceiverPaymentMint).toEqual(

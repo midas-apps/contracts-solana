@@ -1,5 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
 
 import { PublicKey } from '@solana/web3.js';
 
@@ -18,9 +20,6 @@ export interface DeploymentState {
   }[];
 }
 
-/**
- * Valid component names for deployment
- */
 export const VALID_COMPONENTS = [
   'acRole',
   'mToken',
@@ -32,28 +31,20 @@ export const VALID_COMPONENTS = [
 
 export type ComponentName = (typeof VALID_COMPONENTS)[number];
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const STATE_DIR = path.join(__dirname, '../../../.deployment-state');
 
-/**
- * Ensure state directory exists
- */
 function ensureStateDir(): void {
   if (!fs.existsSync(STATE_DIR)) {
     fs.mkdirSync(STATE_DIR, { recursive: true });
   }
 }
 
-/**
- * Get state file path for a token and network
- */
 function getStateFilePath(token: string, network: string): string {
   ensureStateDir();
   return path.join(STATE_DIR, `${token}-${network}.json`);
 }
 
-/**
- * Load deployment state
- */
 export function loadDeploymentState(token: string, network: string): DeploymentState | null {
   const statePath = getStateFilePath(token, network);
   if (!fs.existsSync(statePath)) {
@@ -69,9 +60,6 @@ export function loadDeploymentState(token: string, network: string): DeploymentS
   }
 }
 
-/**
- * Create new deployment state
- */
 export function createDeploymentState(
   token: string,
   network: string,
@@ -89,17 +77,11 @@ export function createDeploymentState(
   };
 }
 
-/**
- * Save deployment state
- */
 export function saveDeploymentState(state: DeploymentState): void {
   const statePath = getStateFilePath(state.token, state.network);
   fs.writeFileSync(statePath, JSON.stringify(state, null, 2), 'utf-8');
 }
 
-/**
- * Validate component name against expected values
- */
 function validateComponentName(component: string): void {
   if (!VALID_COMPONENTS.includes(component as ComponentName)) {
     throw new Error(
@@ -110,19 +92,14 @@ function validateComponentName(component: string): void {
   }
 }
 
-/**
- * Mark a component as completed
- */
 export function markComponentCompleted(
   state: DeploymentState,
   component: string,
   address: PublicKey,
   transactionSignature?: string,
 ): void {
-  // Validate component name
   validateComponentName(component);
 
-  // Prevent duplicate entries
   if (state.completed.includes(component)) {
     console.warn(
       `Component '${component}' is already marked as completed. Skipping duplicate entry.`,
@@ -130,18 +107,13 @@ export function markComponentCompleted(
     return;
   }
 
-  // Add to completed array
   state.completed.push(component);
-
-  // Only remove from pending if it exists there (optimization)
   if (state.pending.includes(component)) {
     state.pending = state.pending.filter((c) => c !== component);
   }
 
-  // Store address
   state.addresses[component] = address.toString();
 
-  // Record transaction if provided
   if (transactionSignature) {
     state.transactions.push({
       component,
@@ -153,9 +125,6 @@ export function markComponentCompleted(
   saveDeploymentState(state);
 }
 
-/**
- * Record an error for a component
- */
 export function recordComponentError(
   state: DeploymentState,
   component: string,
@@ -169,9 +138,6 @@ export function recordComponentError(
   saveDeploymentState(state);
 }
 
-/**
- * Get deployment progress
- */
 export function getDeploymentProgress(state: DeploymentState): {
   completed: number;
   total: number;
@@ -186,16 +152,10 @@ export function getDeploymentProgress(state: DeploymentState): {
   };
 }
 
-/**
- * Check if deployment can be resumed
- */
 export function canResumeDeployment(state: DeploymentState): boolean {
   return state.pending.length > 0 && state.errors.length === 0;
 }
 
-/**
- * Clear deployment state
- */
 export function clearDeploymentState(token: string, network: string): void {
   const statePath = getStateFilePath(token, network);
   if (fs.existsSync(statePath)) {
@@ -203,9 +163,6 @@ export function clearDeploymentState(token: string, network: string): void {
   }
 }
 
-/**
- * List all deployment states
- */
 export function listDeploymentStates(): {
   token: string;
   network: string;
@@ -236,9 +193,6 @@ export function listDeploymentStates(): {
   return states;
 }
 
-/**
- * Generate rollback instructions
- */
 export function generateRollbackInstructions(state: DeploymentState): string {
   const instructions: string[] = [
     `Rollback instructions for ${state.token} on ${state.network}:`,

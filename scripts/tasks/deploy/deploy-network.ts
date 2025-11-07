@@ -20,17 +20,21 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   console.log('These are shared across all tokens on this network.');
   console.log('');
 
-  await deployNetworkInfrastructure(provider, payer, network);
+  const result = await deployNetworkInfrastructure(provider, payer, network);
 
   console.log('\n' + '='.repeat(50));
-  console.log('✅ Network infrastructure deployed successfully!');
+  if (result.alreadyDeployed) {
+    console.log('ℹ️  Network infrastructure already deployed');
+    console.log('   No deployment was needed.');
+  } else {
+    console.log('✅ Network infrastructure deployed successfully!');
+  }
   console.log('='.repeat(50));
   console.log('\nNext steps:');
-  console.log(
-    `You can now deploy tokens: yarn deploy:token-core --mtoken <token> --network ${network}`,
-  );
+  console.log('You can now deploy tokens using either:');
+  console.log(`  1. Full deployment: yarn deploy:all --mtoken <token> --network ${network}`);
+  console.log(`  2. Step-by-step: yarn deploy:token-core --mtoken <token> --network ${network}`);
 }
 
-// Parse args first to get network, then create provider for that network
 const network = getNetwork();
 executeNetworkScript(network, main);

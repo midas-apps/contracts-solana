@@ -31,10 +31,8 @@ export async function deployTokenFull(
   network: string,
   tokenSymbol: MProduct,
 ): Promise<TokenFullResult> {
-  // Deploy core token components first
   const coreResult = await deployTokenCore(provider, payer, tokenConfig, network, tokenSymbol);
 
-  // Deploy Data Feed
   console.log('  [4/6] Deploying Data Feed...');
   const dataFeed = await deployDataFeedFromConfig(
     provider,
@@ -43,10 +41,8 @@ export async function deployTokenFull(
     network,
     tokenSymbol,
   );
-  registerAddress(network, tokenSymbol, 'mTokenDataFeed', dataFeed);
   console.log(`    Data Feed: ${dataFeed.toString()}`);
 
-  // Deploy Minter Vault
   console.log('  [5/6] Deploying Minter Vault...');
   const minterVaultResult = await deployMinterVaultFromConfig(
     provider,
@@ -58,7 +54,6 @@ export async function deployTokenFull(
   registerAddress(network, tokenSymbol, 'minter', minterVaultResult);
   console.log(`    Minter Vault: ${minterVaultResult.commonVault.toString()}`);
 
-  // Deploy Redeemer Vault
   console.log('  [6/6] Deploying Redeemer Vault...');
   const redeemerVaultResult = await deployRedeemerVaultFromConfig(
     provider,
@@ -69,6 +64,9 @@ export async function deployTokenFull(
   );
   registerAddress(network, tokenSymbol, 'redeemer', redeemerVaultResult);
   console.log(`    Redeemer Vault: ${redeemerVaultResult.commonVault.toString()}`);
+
+  const { saveAddressesToFile } = await import('../../utils/addressManager');
+  await saveAddressesToFile();
 
   return {
     acRole: coreResult.acRole,

@@ -24,6 +24,7 @@ export const mTBILLConfig: TokenConfigWithNetworks = {
           env: 'devnet',
           ethRpc: 'https://ethereum-sepolia-rpc.publicnode.com',
           ethDataFeed: '0x4E677F7FE252DE44682a913f609EA3eb6F29DC3E',
+          feedName: 'mTBILL/USD',
         },
       },
       minter: {

@@ -3,7 +3,7 @@ import { Transaction } from '@solana/web3.js';
 
 import { TokenAuthority } from 'target/types/token_authority';
 
-import * as TOKEN_AUTHORITY_IDL from '../../target/idl/token_authority.json';
+import TOKEN_AUTHORITY_IDL from '../../target/idl/token_authority.json' with { type: 'json' };
 import { AC_ROLES } from '../constants/ac.constants';
 import { TOKEN_AUTHORITY_ROLES } from '../constants/token-authority.constants';
 import { acRoleToBuffer, getAccountAcRoleStatePda } from '../helpers/ac.helpers';

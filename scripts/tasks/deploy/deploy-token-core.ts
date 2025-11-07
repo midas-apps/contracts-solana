@@ -6,6 +6,7 @@ import { executeNetworkScript } from '@/common/utils';
 import { loadTokenConfig, convertPublicKeysInConfig } from '../../configs/loadTokenConfig';
 import { deployTokenCore } from '../../deploy/orchestrators/deployTokenCore';
 import { getMtoken, getNetwork } from '../../utils/argumentParser';
+import { verifyNetworkInfrastructure } from '../../utils/dependencyChecker';
 
 async function main(provider: AnchorProvider, payer: Keypair) {
   const mtoken = getMtoken();
@@ -20,15 +21,14 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   console.log(`Deployer: ${payer.publicKey.toString()}`);
   console.log('');
 
-  // Load and validate configuration
+  verifyNetworkInfrastructure(network);
+
   console.log('Loading configuration...');
   const config = loadTokenConfig(mtoken, network);
   console.log('✓ Configuration loaded and validated');
 
-  // Convert string PublicKeys to PublicKey objects
   const finalConfig = convertPublicKeysInConfig(config);
 
-  // Deploy core token components (AC Role, mToken, Token Authority)
   await deployTokenCore(provider, payer, finalConfig, network, mtoken);
 
   console.log('\n' + '='.repeat(50));
@@ -39,10 +39,8 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     `1. Deploy data feed: yarn deploy:token-datafeed --mtoken ${mtoken} --network ${network}`,
   );
   console.log(`2. Deploy vaults: yarn deploy:token-vaults --mtoken ${mtoken} --network ${network}`);
-  console.log(`   OR deploy everything: yarn deploy:all --mtoken ${mtoken} --network ${network}`);
   console.log('='.repeat(50));
 }
 
-// Parse args first to get network, then create provider for that network
 const network = getNetwork();
 executeNetworkScript(network, main);

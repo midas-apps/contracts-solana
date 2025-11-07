@@ -19,12 +19,12 @@ export interface DataFeed {
 
 export interface TokenAddresses {
   acRole?: PublicKey;
-  mTokenDataFeed?: PublicKey;
   mToken?: PublicKey;
   tokenAuthority?: {
     seed: string;
     account: PublicKey;
   };
+  mTokenDataFeed?: PublicKey;
   minter?: {
     commonVault: PublicKey;
     account: PublicKey;
@@ -37,25 +37,17 @@ export interface TokenAddresses {
 
 export const addresses: Record<string, NetworkAddresses> = {
   devnet: {
-    feeds: {
-      [PaymentToken.USDC]: {
-        dataFeed: new PublicKey('Hj8C7ZG8XxpmpivtQ2GzKcgAxgy8MX58krNWCmYYLLcF'),
-        token: new PublicKey('FTRTWir5jXSekX1FDgXhg74Veoz3xq7MKX3pXKJt4y3e'),
-        underlyingFeed: new PublicKey('DHB2Ph8CK7PmR3xswqcmDkgQeucnwSZtfnMpnc7mQgkb'),
-        tokenProgram: TOKEN_PROGRAM_ID,
-      },
-    },
     acRoleGlobal: new PublicKey('2XbEsVBKUPfs74jEHKXgChgpTp7jLWyXDQG26Tbe3NWt'),
     ac: new PublicKey('3UgrPzUH33EaVkW1Xvw4pw9FnrptzzELnvCfLLPGZq2y'),
     tokens: {
       [MProduct.MTBILL]: {
         acRole: new PublicKey('7eKVoZusavoMKDnmEPiXTZekAhDBhEXAhqPw3xfw28Ai'),
-        mTokenDataFeed: new PublicKey('86Xest1Zo3ZJ8NNfyGJvD62nFw7gUPg7jAZVkBNSbCEw'),
+        mToken: new PublicKey('7MnCPtnhcyNNsKJnZhu9joyEiQCGLBLYULsrXXiUxxWG'),
         tokenAuthority: {
           account: new PublicKey('Bb6qPwVHuKxkx2U1TbbfXJTwXjKJPfrbvombSEt1mYLm'),
           seed: 'mtbill-token-authority',
         },
-        mToken: new PublicKey('7MnCPtnhcyNNsKJnZhu9joyEiQCGLBLYULsrXXiUxxWG'),
+        mTokenDataFeed: new PublicKey('86Xest1Zo3ZJ8NNfyGJvD62nFw7gUPg7jAZVkBNSbCEw'),
         minter: {
           commonVault: new PublicKey('2XKR94FbetbtVAg94KPSrXCXAh7vZP9mSfwiRkioPovN'),
           account: new PublicKey('CbCHN1eEmuH5z7MqsJ3bUHQsJrKawrGeLyNxbNRjWNJw'),
@@ -66,13 +58,40 @@ export const addresses: Record<string, NetworkAddresses> = {
         },
       },
     },
+    feeds: {
+      [PaymentToken.USDC]: {
+        token: new PublicKey('FTRTWir5jXSekX1FDgXhg74Veoz3xq7MKX3pXKJt4y3e'),
+        tokenProgram: TOKEN_PROGRAM_ID,
+        dataFeed: new PublicKey('Hj8C7ZG8XxpmpivtQ2GzKcgAxgy8MX58krNWCmYYLLcF'),
+        underlyingFeed: new PublicKey('DHB2Ph8CK7PmR3xswqcmDkgQeucnwSZtfnMpnc7mQgkb'),
+      },
+    },
   },
-  // Localnet addresses - initialized empty, will be populated during deployment
+  // Localnet addresses - populated during deployment
   // Programs are deployed to addresses defined in Anchor.toml [programs.localnet]
-  // AC and AC Role Global will be automatically deployed on first token deployment
+  // Note: Addresses may change when local validator is reset
   localnet: {
-    tokens: {} as Partial<Record<MProduct, TokenAddresses>>,
-    feeds: {} as Partial<Record<PaymentToken, DataFeed>>,
+    acRoleGlobal: new PublicKey('5hNx9o1mKbwEK87gqeRT1bah4f3K1smvBfAfY1d2uAGs'),
+    ac: new PublicKey('2d5AR4UKfCiKhhtUXTZT51Ym3LLBNHaqbes1zSFXQKRk'),
+    tokens: {
+      [MProduct.MTBILL]: {
+        acRole: new PublicKey('J2nWcztC7dEqdwHACKnRgKZdLdJwAVQYHy6eNrGsEXgh'),
+        mToken: new PublicKey('6wPSPGv5ur55n2BZVoroDvAVANxuEK62BXfCYQWiewaQ'),
+        tokenAuthority: {
+          account: new PublicKey('7MBptg8vBUprgYstb4wF1UduVbjUcD1JMdS8o5CkAgiT'),
+          seed: 'mtbill-token-authority',
+        },
+        mTokenDataFeed: new PublicKey('3rxccdZzpW7vrt8ixAPeg5XJtN8552mhAk8xsNWh3Pu6'),
+        minter: {
+          commonVault: new PublicKey('GmdzEQyMf3KBGe2hRkad87JTzNXq7kcxjh4Qq7ESQWMg'),
+          account: new PublicKey('CqoxmgZhmzmNk36aXKtS7XKayasthaiqPKVTVMoZHB6o'),
+        },
+        redeemer: {
+          commonVault: new PublicKey('HrFXRth9raunK6q9UadN6WiKkyfsiQv1pfrMETEuCmMy'),
+          account: new PublicKey('CFWo7cqvbwAZ7cAcXGwh1rcNBXe3kg8vVQLfGUVwKtKC'),
+        },
+      },
+    },
   },
 };
 
