@@ -1,6 +1,8 @@
 import { PublicKey } from '@solana/web3.js';
 
-export const VAULTS_PROGRAM_ID = new PublicKey('6eFgYZCZZFTe61T4YxWsiHHAunCLTh9V7TAjj8DxuZwm');
+import * as MIDAS_VAULTS_IDL from '../../target/idl/midas_vaults.json';
+
+export const VAULTS_PROGRAM_ID = new PublicKey(MIDAS_VAULTS_IDL.address);
 
 export enum VaultActionIds {
   MINT_INSTANT = 0,

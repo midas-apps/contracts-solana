@@ -1,6 +1,8 @@
 import { PublicKey } from '@solana/web3.js';
 
-export const DATA_FEED_PROGRAM_ID = new PublicKey('7dTNTpTqbHCLxc1FtpCRAq5d4u1Y6WVqrAc1znVGQDxV');
+import * as DATA_FEED_IDL from '../../target/idl/data_feed.json';
+
+export const DATA_FEED_PROGRAM_ID = new PublicKey(DATA_FEED_IDL.address);
 
 export const DATA_FEED_SEEDS = {
   MANUAL_FEED_STATE_SEED: 'manual_feed_state',

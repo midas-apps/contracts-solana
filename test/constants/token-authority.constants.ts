@@ -1,8 +1,8 @@
 import { PublicKey } from '@solana/web3.js';
 
-export const TOKEN_AUTHORITY_PROGRAM_ID = new PublicKey(
-  '6XqSwGFEuadyqXC9vBLYGJhvQsEVjPdCrtvN6inAb4z3',
-);
+import * as TOKEN_AUTHORITY_IDL from '../../target/idl/token_authority.json';
+
+export const TOKEN_AUTHORITY_PROGRAM_ID = new PublicKey(TOKEN_AUTHORITY_IDL.address);
 
 export const TOKEN_AUTHORITY_SEEDS = {
   MINT_AUTHORITY: 'token_authority',
