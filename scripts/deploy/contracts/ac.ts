@@ -22,10 +22,7 @@ export interface DeployAcRoleConfig {
   acRole?: Keypair;
 }
 
-export const deployAc = async (
-  common: CommonParams & { network?: string },
-  { acRole, ac }: DeployAcConfig,
-) => {
+export const deployAc = async (common: CommonParams, { acRole, ac }: DeployAcConfig) => {
   ac ??= Keypair.generate();
 
   const acProgram = getAcProgram(common.provider);
@@ -46,10 +43,7 @@ export const deployAc = async (
   return ac.publicKey;
 };
 
-export const deployAcRole = async (
-  common: CommonParams & { network?: string },
-  { acRole }: DeployAcRoleConfig,
-) => {
+export const deployAcRole = async (common: CommonParams, { acRole }: DeployAcRoleConfig) => {
   acRole ??= Keypair.generate();
 
   const acProgram = getAcProgram(common.provider);

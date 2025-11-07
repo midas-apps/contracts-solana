@@ -59,7 +59,7 @@ export async function deployNetworkInfrastructure(
 
   console.log('  [1/2] Deploying AC Role Global...');
   const acRoleGlobalConfig: DeployAcRoleConfig = {};
-  const acRoleGlobal = await deployAcRole({ provider, payer, network }, acRoleGlobalConfig);
+  const acRoleGlobal = await deployAcRole({ provider, payer }, acRoleGlobalConfig);
   console.log(`    AC Role Global: ${acRoleGlobal.toString()}`);
 
   // Verify the account is properly initialized
@@ -71,7 +71,7 @@ export async function deployNetworkInfrastructure(
   const acConfig: DeployAcConfig = {
     acRole: acRoleGlobal,
   };
-  const ac = await deployAc({ provider, payer, network }, acConfig);
+  const ac = await deployAc({ provider, payer }, acConfig);
   console.log(`    AC: ${ac.toString()}`);
 
   // Register global addresses

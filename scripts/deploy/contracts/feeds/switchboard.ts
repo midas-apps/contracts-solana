@@ -1,5 +1,10 @@
 import { AnchorProvider, Program } from '@coral-xyz/anchor';
-import { PublicKey, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
+import {
+  PublicKey,
+  TransactionInstruction,
+  sendAndConfirmTransaction,
+  Transaction,
+} from '@solana/web3.js';
 import {
   PullFeed,
   CrossbarClient,
@@ -22,7 +27,7 @@ export interface DeploySwitchboardFeedParams {
 export const deploySwitchboardFeed = async (
   { payer, provider }: CommonParams,
   { ethDataFeed, ethRpc, env, feedName }: DeploySwitchboardFeedParams,
-) => {
+): Promise<PublicKey> => {
   const jobs: OracleJob[] = [
     OracleJob.create({
       tasks: [
@@ -173,7 +178,7 @@ export const getSwitchboardPullInx = async (
   provider: AnchorProvider,
   feed: PublicKey,
   env: 'devnet' | 'mainnet',
-) => {
+): Promise<TransactionInstruction> => {
   const programId = new PublicKey(SWITCHBOARD_PROGRAM_IDS[env]);
 
   const idl = await Program.fetchIdl(programId, provider);

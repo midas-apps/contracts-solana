@@ -83,13 +83,28 @@ export async function deployDataFeedFromConfig(
     case 'switchboard': {
       const { env, ethRpc, ethDataFeed, feedName } = tokenConfig.dataFeed.switchboard;
 
-      dataFeed = await deploySwitchboardFeed(
+      // Step 1: Deploy the Switchboard PullFeed
+      const switchboardFeed = await deploySwitchboardFeed(
         { provider, payer },
         {
           env,
           feedName,
           ethRpc,
           ethDataFeed: getAddress(ethDataFeed),
+        },
+      );
+
+      // Step 2: Create the FeedState account that wraps the Switchboard feed
+      const { deployDataFeed } = await import('../contracts/dataFeed');
+      dataFeed = await deployDataFeed(
+        { provider, payer },
+        {
+          acRole,
+          mode: 'switchboard',
+          underlyingFeed: switchboardFeed,
+          minPrice: priceToBigInt(tokenConfig.dataFeed.minPrice),
+          maxPrice: priceToBigInt(tokenConfig.dataFeed.maxPrice),
+          maxStaleness: tokenConfig.dataFeed.maxStaleness,
         },
       );
       break;

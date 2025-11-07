@@ -154,6 +154,32 @@ yarn deploy:token-datafeed --mtoken mTBILL --network devnet
 
 - Deploys data feed (Switchboard/Chainlink/Pyth/Manual)
 - Configures price bounds and staleness limits
+- Creates a `FeedState` account that wraps the underlying feed
+
+**Data Feed Deployment Details:**
+
+The deployment process creates different accounts depending on the feed mode:
+
+1. **Manual Feed** (`mode: 'manual'`):
+   - Creates a `FeedState` account
+   - Creates a `ManualFeedState` PDA account (derived from FeedState)
+   - Grants `FEED_ADMIN` role to the payer
+   - Sets initial price from `minPrice` config
+
+2. **Switchboard Feed** (`mode: 'switchboard'`):
+   - Creates a Switchboard `PullFeed` account (via Switchboard SDK)
+   - Creates a `FeedState` account that wraps the Switchboard feed
+   - Uses the Switchboard feed address as `underlyingFeed` in FeedState
+
+3. **Pyth Feed** (`mode: 'pyth'`):
+   - Requires an existing Pyth feed address in config (`underlyingFeed`)
+   - Creates a `FeedState` account that references the Pyth feed
+   - Validates that `underlyingFeed` is provided and not a placeholder
+
+4. **Chainlink Feed** (`mode: 'chainlink'`):
+   - Requires an existing Chainlink OCR2 feed address in config (`underlyingFeed`)
+   - Creates a `FeedState` account that references the Chainlink feed
+   - Validates that `underlyingFeed` is provided and not a placeholder
 
 **Use when:** Deploying data feed separately or updating feed configuration.
 
