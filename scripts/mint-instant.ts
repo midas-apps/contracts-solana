@@ -34,13 +34,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const paymentToken = getPaymentToken();
   const amountStr = getAmount();
 
-  console.log('=== Mint Instant Script ===');
-  console.log(`Token: ${mtoken}`);
-  console.log(`Payment Token: ${paymentToken}`);
-  console.log(`Amount: ${amountStr}`);
-  console.log(`Network: ${network}`);
-  console.log(`Deployer: ${payer.publicKey.toString()}`);
-  console.log('');
+  console.log(`Minting ${amountStr} ${mtoken} tokens instantly with ${paymentToken}`);
 
   // Get token addresses
   const vaultCommon = requireMinterVault(network, mtoken);
@@ -170,7 +164,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     commitment: 'finalized',
   });
 
-  console.log(`✅ Mint instant completed successfully!`);
+  console.log(`✅ Mint instant completed successfully`);
   console.log(`Transaction: ${txRes}`);
 }
 

@@ -27,13 +27,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const paymentToken = getPaymentToken();
   const amountStr = getAmount();
 
-  console.log('=== Redeem Request Script ===');
-  console.log(`Token: ${mtoken}`);
-  console.log(`Payment Token: ${paymentToken}`);
-  console.log(`Amount: ${amountStr}`);
-  console.log(`Network: ${network}`);
-  console.log(`Deployer: ${payer.publicKey.toString()}`);
-  console.log('');
+  console.log(`Redeeming ${amountStr} ${mtoken} tokens for ${paymentToken}`);
 
   // Get token addresses
   const vaultCommon = requireRedeemerVault(network, mtoken);
@@ -206,7 +200,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     commitment: 'finalized',
   });
 
-  console.log(`✅ Redeem request completed successfully!`);
+  console.log(`✅ Redeem request completed successfully`);
   console.log(`Transaction: ${txRes}`);
 }
 

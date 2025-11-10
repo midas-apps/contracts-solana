@@ -24,12 +24,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const currentAuthority = getOptionalArg('current-authority');
   const newAuthority = getOptionalArg('new-authority');
 
-  console.log('=== Transfer Authority Script ===');
-  console.log(`Token: ${mtoken}`);
-  console.log(`Authority Type: ${authorityType}`);
-  console.log(`Network: ${network}`);
-  console.log(`Deployer: ${payer.publicKey.toString()}`);
-  console.log('');
+  console.log(`Transferring ${authorityType} authority for ${mtoken}`);
 
   // Get token addresses
   const tokenAddrs = getTokenAddresses(network, mtoken);

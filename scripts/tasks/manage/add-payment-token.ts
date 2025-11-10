@@ -35,12 +35,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const stable = getOptionalBoolean('stable');
   const isFiat = getOptionalBoolean('is-fiat');
 
-  console.log('=== Add Payment Token Script ===');
-  console.log(`Token: ${mtoken}`);
-  console.log(`Payment Token: ${paymentToken}`);
-  console.log(`Network: ${network}`);
-  console.log(`Deployer: ${payer.publicKey.toString()}`);
-  console.log('');
+  console.log(`Adding ${paymentToken} as payment token for ${mtoken}`);
 
   // Load configuration (with cross-reference validation for payment tokens)
   console.log('Loading configuration...');

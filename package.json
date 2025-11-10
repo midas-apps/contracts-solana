@@ -11,7 +11,6 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "docgen": "cargo doc",
-    "deploy:all": "tsx scripts/tasks/deploy/deploy-all.ts",
     "deploy:network": "tsx scripts/tasks/deploy/deploy-network.ts",
     "deploy:token-core": "tsx scripts/tasks/deploy/deploy-token-core.ts",
     "deploy:token-datafeed": "tsx scripts/tasks/deploy/deploy-token-datafeed.ts",

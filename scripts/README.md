@@ -24,22 +24,7 @@ The deployment system follows a **two-level hierarchy**:
 anchor deploy --provider.cluster localnet
 ```
 
-### Deploy Everything (Recommended)
-
-```bash
-yarn deploy:all --mtoken mTBILL --network devnet
-```
-
-This single command:
-
-1. ✅ Deploys network infrastructure (if needed)
-2. ✅ Deploys core token (AC Role, mToken, Token Authority)
-3. ✅ Deploys data feed
-4. ✅ Deploys vaults (Minter + Redeemer)
-
 ### Incremental Deployment
-
-If you prefer to deploy components separately:
 
 ```bash
 # 1. Deploy network infrastructure (once per network)

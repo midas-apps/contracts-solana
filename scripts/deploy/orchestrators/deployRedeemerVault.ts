@@ -7,7 +7,6 @@ import { getRedeemerVaultPda } from '@/test/helpers/vaults.helpers';
 
 import { TokenConfig } from '../../configs/types';
 import { getTokenAddresses, getTokenAcRoleAddress, getAcAddress } from '../../utils/addressQueries';
-import { verifyDependencies } from '../../utils/dependencyChecker';
 import { deployRedeemerVault, DeployRedeemerVaultConfig } from '../contracts/vaults';
 
 export interface RedeemerVaultResult {
@@ -22,8 +21,6 @@ export async function deployRedeemerVaultFromConfig(
   network: string,
   tokenSymbol: MProduct,
 ): Promise<RedeemerVaultResult> {
-  verifyDependencies(network, tokenSymbol, ['mToken', 'mTokenDataFeed', 'acRole']);
-
   const ac = getAcAddress(network)!;
   const acRole = getTokenAcRoleAddress(network, tokenSymbol)!;
   const tokenAddrs = getTokenAddresses(network, tokenSymbol)!;

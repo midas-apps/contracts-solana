@@ -7,7 +7,6 @@ import { getMinterVaultPda } from '@/test/helpers/vaults.helpers';
 
 import { TokenConfig } from '../../configs/types';
 import { getTokenAddresses, getTokenAcRoleAddress, getAcAddress } from '../../utils/addressQueries';
-import { verifyDependencies } from '../../utils/dependencyChecker';
 import { deployMinterVault, DeployMinterVaultConfig } from '../contracts/vaults';
 
 export interface MinterVaultResult {
@@ -22,13 +21,6 @@ export async function deployMinterVaultFromConfig(
   network: string,
   tokenSymbol: MProduct,
 ): Promise<MinterVaultResult> {
-  verifyDependencies(network, tokenSymbol, [
-    'mToken',
-    'tokenAuthority',
-    'mTokenDataFeed',
-    'acRole',
-  ]);
-
   const ac = getAcAddress(network)!;
   const acRole = getTokenAcRoleAddress(network, tokenSymbol)!;
   const tokenAddrs = getTokenAddresses(network, tokenSymbol)!;

@@ -22,17 +22,11 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     | 'chainlink'
     | undefined;
 
-  console.log('=== Update Data Feed Script ===');
-  console.log(`Token: ${mtoken}`);
-  console.log(`Network: ${network}`);
-  if (newUnderlyingFeed) {
-    console.log(`New Underlying Feed: ${newUnderlyingFeed}`);
-  }
-  if (newMode) {
-    console.log(`New Mode: ${newMode}`);
-  }
-  console.log(`Deployer: ${payer.publicKey.toString()}`);
-  console.log('');
+  const params = [];
+  if (newUnderlyingFeed) params.push(`feed: ${newUnderlyingFeed}`);
+  if (newMode) params.push(`mode: ${newMode}`);
+  const paramStr = params.length > 0 ? ` (${params.join(', ')})` : '';
+  console.log(`Updating data feed for ${mtoken}${paramStr}`);
 
   // Get token addresses
   const tokenAddrs = getTokenAddresses(network, mtoken);

@@ -17,12 +17,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const network = getNetwork();
   const paymentToken = getPaymentToken();
 
-  console.log('=== Delegate Script ===');
-  console.log(`Token: ${mtoken}`);
-  console.log(`Payment Token: ${paymentToken}`);
-  console.log(`Network: ${network}`);
-  console.log(`Deployer: ${payer.publicKey.toString()}`);
-  console.log('');
+  console.log(`Delegating ${paymentToken} for ${mtoken}`);
 
   // Get token addresses
   const redeemerAccount = requireRedeemerVaultAccount(network, mtoken);
@@ -48,7 +43,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     commitment: 'finalized',
   });
 
-  console.log(`✅ Delegation completed successfully!`);
+  console.log(`✅ Delegation completed successfully`);
   console.log(`Transaction: ${txRes}`);
 }
 

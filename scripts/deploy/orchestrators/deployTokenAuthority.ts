@@ -6,7 +6,6 @@ import { MProduct } from '@/common/tokenTypes';
 
 import { TokenConfig } from '../../configs/types';
 import { getTokenAcRoleAddress, getAcRoleGlobalAddress } from '../../utils/addressQueries';
-import { verifyNetworkInfrastructure } from '../../utils/dependencyChecker';
 import { deployTokenAuthority, DeployTokenAuthorityConfig } from '../contracts/token-authority';
 
 export interface TokenAuthorityResult {
@@ -21,8 +20,6 @@ export async function deployTokenAuthorityFromConfig(
   network: string,
   tokenSymbol: MProduct,
 ): Promise<TokenAuthorityResult> {
-  verifyNetworkInfrastructure(network);
-
   let acRole: PublicKey | undefined = getTokenAcRoleAddress(network, tokenSymbol);
   if (!acRole) {
     acRole = getAcRoleGlobalAddress(network);

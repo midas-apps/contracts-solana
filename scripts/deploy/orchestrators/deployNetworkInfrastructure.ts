@@ -7,7 +7,6 @@ import {
   getAcRoleGlobalAddress,
 } from '../../utils/addressQueries';
 import { registerGlobalAddresses } from '../../utils/addressRegistry';
-import { verifyProgramsDeployed } from '../../utils/dependencyChecker';
 import { deployAcRole, deployAc, DeployAcRoleConfig, DeployAcConfig } from '../contracts/ac';
 
 export interface NetworkInfrastructureResult {
@@ -30,9 +29,6 @@ export async function deployNetworkInfrastructure(
   payer: Keypair,
   network: string,
 ): Promise<NetworkInfrastructureResult> {
-  // Verify that programs are deployed before attempting to use them
-  await verifyProgramsDeployed(provider.connection, network);
-
   // Check if already deployed
   if (!needsGlobalAddressesDeployment(network)) {
     try {

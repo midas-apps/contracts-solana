@@ -9,7 +9,6 @@ import { getTokenAuthorityPda } from '@/test/helpers/token-authority.helpers';
 import { TokenConfig } from '../../configs/types';
 import { getTokenAddresses } from '../../utils/addressQueries';
 import { registerAddress } from '../../utils/addressRegistry';
-import { verifyNetworkInfrastructure } from '../../utils/dependencyChecker';
 import { deployAcRole, DeployAcRoleConfig, getAcProgram } from '../contracts/ac';
 import { getTokenAuthorityProgram } from '../contracts/token-authority';
 
@@ -32,8 +31,6 @@ export async function deployTokenCore(
   network: string,
   tokenSymbol: MProduct,
 ): Promise<TokenCoreResult> {
-  verifyNetworkInfrastructure(network);
-
   const existingAddresses = getTokenAddresses(network, tokenSymbol);
   let acRole: PublicKey;
   let mToken: PublicKey;

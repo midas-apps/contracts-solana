@@ -12,7 +12,6 @@ import {
   getAcRoleGlobalAddress,
 } from '../../utils/addressQueries';
 import { registerAddress } from '../../utils/addressRegistry';
-import { verifyNetworkInfrastructure } from '../../utils/dependencyChecker';
 import { getDataFeedProgram } from '../contracts/dataFeed';
 import { deployChainlinkFeed } from '../contracts/feeds/chainlink';
 import { deployManualFeed } from '../contracts/feeds/manual';
@@ -47,8 +46,6 @@ export async function deployDataFeedFromConfig(
   network: string,
   tokenSymbol: MProduct,
 ): Promise<PublicKey> {
-  verifyNetworkInfrastructure(network);
-
   const existingAddresses = getTokenAddresses(network, tokenSymbol);
   if (existingAddresses?.mTokenDataFeed) {
     const dataFeedProgram = getDataFeedProgram(provider);

@@ -19,12 +19,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const network = getNetwork();
   const role = getRole();
 
-  console.log('=== Grant Role Script ===');
-  console.log(`Token: ${mtoken}`);
-  console.log(`Role: ${role}`);
-  console.log(`Network: ${network}`);
-  console.log(`Deployer: ${payer.publicKey.toString()}`);
-  console.log('');
+  console.log(`Granting role: ${role} for token: ${mtoken}`);
 
   // Get token addresses
   const tokenAddrs = getTokenAddresses(network, mtoken);
@@ -64,7 +59,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     commitment: 'finalized',
   });
 
-  console.log(`✅ Role ${role} granted successfully!`);
+  console.log(`✅ Role ${role} granted successfully`);
   console.log(`Transaction: ${txRes}`);
 }
 

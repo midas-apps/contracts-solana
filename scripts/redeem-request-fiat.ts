@@ -24,12 +24,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const network = getNetwork();
   const amountStr = getAmount();
 
-  console.log('=== Redeem Request Fiat Script ===');
-  console.log(`Token: ${mtoken}`);
-  console.log(`Amount: ${amountStr}`);
-  console.log(`Network: ${network}`);
-  console.log(`Deployer: ${payer.publicKey.toString()}`);
-  console.log('');
+  console.log(`Redeeming ${amountStr} ${mtoken} tokens`);
 
   // Get token addresses
   const vaultCommon = requireRedeemerVault(network, mtoken);
@@ -178,7 +173,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     commitment: 'finalized',
   });
 
-  console.log(`✅ Redeem request fiat completed successfully!`);
+  console.log(`✅ Redeem request fiat completed successfully`);
   console.log(`Transaction: ${txRes}`);
 }
 
