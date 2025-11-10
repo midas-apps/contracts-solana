@@ -22,9 +22,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     | 'chainlink'
     | undefined;
 
-  console.log(`╔════════════════════════════════════════════════╗`);
-  console.log(`║         Update Data Feed Script                ║`);
-  console.log(`╚════════════════════════════════════════════════╝`);
+  console.log('=== Update Data Feed Script ===');
   console.log(`Token: ${mtoken}`);
   console.log(`Network: ${network}`);
   if (newUnderlyingFeed) {

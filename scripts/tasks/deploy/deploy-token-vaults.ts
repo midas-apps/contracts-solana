@@ -15,9 +15,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const mtoken = getMtoken();
   const network = getNetwork();
 
-  console.log(`╔═══════════════════════════════════════════════╗`);
-  console.log(`║           Vaults Deployment Script            ║`);
-  console.log(`╚═══════════════════════════════════════════════╝`);
+  console.log('=== Vaults Deployment Script ===');
   console.log(`Token: ${mtoken}`);
   console.log(`Network: ${network}`);
   console.log(`RPC URL: ${provider.connection.rpcEndpoint}`);

@@ -19,9 +19,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const network = getNetwork();
   const role = getRole();
 
-  console.log(`╔════════════════════════════════════════════════╗`);
-  console.log(`║            Grant Role Script                   ║`);
-  console.log(`╚════════════════════════════════════════════════╝`);
+  console.log('=== Grant Role Script ===');
   console.log(`Token: ${mtoken}`);
   console.log(`Role: ${role}`);
   console.log(`Network: ${network}`);

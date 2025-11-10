@@ -17,9 +17,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const network = getNetwork();
   const paymentToken = getPaymentToken();
 
-  console.log(`╔══════════════════════════════════════════╗`);
-  console.log(`║             Delegate Script              ║`);
-  console.log(`╚══════════════════════════════════════════╝`);
+  console.log('=== Delegate Script ===');
   console.log(`Token: ${mtoken}`);
   console.log(`Payment Token: ${paymentToken}`);
   console.log(`Network: ${network}`);

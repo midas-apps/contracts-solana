@@ -24,9 +24,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const currentAuthority = getOptionalArg('current-authority');
   const newAuthority = getOptionalArg('new-authority');
 
-  console.log(`╔════════════════════════════════════════════════╗`);
-  console.log(`║        Transfer Authority Script              ║`);
-  console.log(`╚════════════════════════════════════════════════╝`);
+  console.log('=== Transfer Authority Script ===');
   console.log(`Token: ${mtoken}`);
   console.log(`Authority Type: ${authorityType}`);
   console.log(`Network: ${network}`);

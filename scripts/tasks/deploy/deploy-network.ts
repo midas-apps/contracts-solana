@@ -9,9 +9,7 @@ import { getNetwork } from '../../utils/argumentParser';
 async function main(provider: AnchorProvider, payer: Keypair) {
   const network = getNetwork();
 
-  console.log(`╔══════════════════════════════════════════════╗`);
-  console.log(`║    Network Infrastructure Deployment         ║`);
-  console.log(`╚══════════════════════════════════════════════╝`);
+  console.log('=== Network Infrastructure Deployment ===');
   console.log(`Network: ${network}`);
   console.log(`RPC URL: ${provider.connection.rpcEndpoint}`);
   console.log(`Deployer: ${payer.publicKey.toString()}`);

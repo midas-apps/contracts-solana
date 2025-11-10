@@ -35,9 +35,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const stable = getOptionalBoolean('stable');
   const isFiat = getOptionalBoolean('is-fiat');
 
-  console.log(`╔══════════════════════════════════════════════╗`);
-  console.log(`║        Add Payment Token Script              ║`);
-  console.log(`╚══════════════════════════════════════════════╝`);
+  console.log('=== Add Payment Token Script ===');
   console.log(`Token: ${mtoken}`);
   console.log(`Payment Token: ${paymentToken}`);
   console.log(`Network: ${network}`);

@@ -24,9 +24,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const network = getNetwork();
   const amountStr = getAmount();
 
-  console.log(`╔════════════════════════════════════════════════╗`);
-  console.log(`║        Redeem Request Fiat Script              ║`);
-  console.log(`╚════════════════════════════════════════════════╝`);
+  console.log('=== Redeem Request Fiat Script ===');
   console.log(`Token: ${mtoken}`);
   console.log(`Amount: ${amountStr}`);
   console.log(`Network: ${network}`);

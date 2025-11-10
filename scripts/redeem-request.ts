@@ -27,9 +27,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const paymentToken = getPaymentToken();
   const amountStr = getAmount();
 
-  console.log(`╔══════════════════════════════════════════════╗`);
-  console.log(`║          Redeem Request Script               ║`);
-  console.log(`╚══════════════════════════════════════════════╝`);
+  console.log('=== Redeem Request Script ===');
   console.log(`Token: ${mtoken}`);
   console.log(`Payment Token: ${paymentToken}`);
   console.log(`Amount: ${amountStr}`);
