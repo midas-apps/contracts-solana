@@ -8,9 +8,9 @@ import { VAULT_AC_ROLES, VaultActionIds } from '@/test/constants/vaults.constant
 import { createAtaIfNotExistsInx, toBN } from '@/test/helpers/common.helpers';
 import { getMinterVaultPda } from '@/test/helpers/vaults.helpers';
 
-import VAULTS_IDL from '../../../target/idl/midas_vaults.json' with { type: 'json' };
-import { AC_ROLES } from '../../../test/constants/ac.constants';
-import { acRoleToBuffer, getAccountAcRoleStatePda } from '../../../test/helpers/ac.helpers';
+import VAULTS_IDL from '../../target/idl/midas_vaults.json' with { type: 'json' };
+import { AC_ROLES } from '../../test/constants/ac.constants';
+import { acRoleToBuffer, getAccountAcRoleStatePda } from '../../test/helpers/ac.helpers';
 
 import { getAcProgram } from './ac';
 import { CommonParams } from './dataFeed';

@@ -10,7 +10,7 @@ import {
   fetchAccountAcRoleState,
 } from '@/test/helpers/ac.helpers';
 
-import { getAcProgram } from '../../deploy/contracts/ac';
+import { getAcProgram } from '../../deploy/ac';
 import { getTokenAddresses } from '../../utils/addressQueries';
 import { getMtoken, getNetwork, getRole } from '../../utils/argumentParser';
 

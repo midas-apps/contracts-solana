@@ -21,10 +21,10 @@ import {
   getPaymentMintStatePda,
 } from '@/test/helpers/vaults.helpers';
 
-import { getAcProgram } from './deploy/contracts/ac';
-import { getDataFeedProgram } from './deploy/contracts/dataFeed';
-import { getSwitchboardPullInx } from './deploy/contracts/feeds/switchboard';
-import { getVaultsProgram } from './deploy/contracts/vaults';
+import { getAcProgram } from './deploy/ac';
+import { getDataFeedProgram } from './deploy/dataFeed';
+import { getSwitchboardPullInx } from './deploy/feeds/switchboard';
+import { getVaultsProgram } from './deploy/vaults';
 import { requireMinterVault, requirePaymentTokenFeed } from './utils/addressValidators';
 import { getMtoken, getNetwork, getPaymentToken, getAmount } from './utils/argumentParser';
 

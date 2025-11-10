@@ -5,7 +5,7 @@ import { DataFeed } from '@/target/types/data_feed';
 import { toBN } from '@/test/helpers/common.helpers';
 import { DataFeedMode } from '@/test/helpers/data-feed.helpers';
 
-import DATA_FEED_IDL from '../../../target/idl/data_feed.json' with { type: 'json' };
+import DATA_FEED_IDL from '../../target/idl/data_feed.json' with { type: 'json' };
 
 export interface CommonParams {
   provider: AnchorProvider;

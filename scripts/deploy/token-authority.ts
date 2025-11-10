@@ -8,7 +8,7 @@ import {
   mintAuthoritySeedToBuffer,
 } from '@/test/helpers/token-authority.helpers';
 
-import TOKEN_AUTHORITY_IDL from '../../../target/idl/token_authority.json' with { type: 'json' };
+import TOKEN_AUTHORITY_IDL from '../../target/idl/token_authority.json' with { type: 'json' };
 
 import { CommonParams } from './dataFeed';
 

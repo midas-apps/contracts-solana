@@ -7,7 +7,7 @@ import { DATA_FEED_AC_ROLES } from '@/test/constants/data-feed.constants';
 import { getAccountAcRoleStatePda } from '@/test/helpers/ac.helpers';
 import { DataFeedMode, fetchDataFeedState } from '@/test/helpers/data-feed.helpers';
 
-import { getDataFeedProgram } from '../../deploy/contracts/dataFeed';
+import { getDataFeedProgram } from '../../deploy/dataFeed';
 import { getTokenAddresses } from '../../utils/addressQueries';
 import { getMtoken, getNetwork, getOptionalArg } from '../../utils/argumentParser';
 

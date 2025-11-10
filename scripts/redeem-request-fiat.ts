@@ -13,9 +13,9 @@ import {
   getRedeemerVaultPda,
 } from '@/test/helpers/vaults.helpers';
 
-import { getAcProgram } from './deploy/contracts/ac';
-import { getDataFeedProgram } from './deploy/contracts/dataFeed';
-import { getVaultsProgram } from './deploy/contracts/vaults';
+import { getAcProgram } from './deploy/ac';
+import { getDataFeedProgram } from './deploy/dataFeed';
+import { getVaultsProgram } from './deploy/vaults';
 import { requireRedeemerVault } from './utils/addressValidators';
 import { getMtoken, getNetwork, getAmount } from './utils/argumentParser';
 

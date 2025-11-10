@@ -3,35 +3,60 @@ import { Keypair } from '@solana/web3.js';
 
 import { executeNetworkScript } from '@/common/scriptRunner';
 
-import { deployNetworkInfrastructure } from '../../deploy/orchestrators/deployNetworkInfrastructure';
+import {
+  deployAcRole,
+  deployAc,
+  DeployAcRoleConfig,
+  DeployAcConfig,
+  getAcProgram,
+} from '../../deploy/ac';
+import {
+  needsGlobalAddressesDeployment,
+  getAcAddress,
+  getAcRoleGlobalAddress,
+} from '../../utils/addressQueries';
+import { registerGlobalAddresses } from '../../utils/addressRegistry';
+import { saveAddressesToFile } from '../../utils/addressStorage';
 import { getNetwork } from '../../utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Keypair) {
   const network = getNetwork();
 
-  console.log('=== Network Infrastructure Deployment ===');
-  console.log(`Network: ${network}`);
-  console.log(`RPC URL: ${provider.connection.rpcEndpoint}`);
-  console.log(`Deployer: ${payer.publicKey.toString()}`);
-  console.log('');
-  console.log('This will deploy AC and AC Role Global for the network.');
-  console.log('These are shared across all tokens on this network.');
-  console.log('');
+  console.log(`Deploying network infrastructure for: ${network}`);
 
-  const result = await deployNetworkInfrastructure(provider, payer, network);
+  if (!needsGlobalAddressesDeployment(network)) {
+    try {
+      const acRoleGlobal = getAcRoleGlobalAddress(network);
+      const ac = getAcAddress(network);
 
-  console.log('\n' + '='.repeat(50));
-  if (result.alreadyDeployed) {
-    console.log('ℹ️  Network infrastructure already deployed');
-    console.log('   No deployment was needed.');
-  } else {
-    console.log('✅ Network infrastructure deployed successfully!');
+      if (acRoleGlobal && ac) {
+        console.log('✓ Network infrastructure already deployed');
+        console.log(`AC Role Global: ${acRoleGlobal.toString()}`);
+        console.log(`AC: ${ac.toString()}`);
+        return;
+      }
+    } catch {
+      // Proceed with deployment
+    }
   }
-  console.log('='.repeat(50));
-  console.log('\nNext steps:');
-  console.log('You can now deploy tokens using either:');
-  console.log(`  1. Full deployment: yarn deploy:all --mtoken <token> --network ${network}`);
-  console.log(`  2. Step-by-step: yarn deploy:token-core --mtoken <token> --network ${network}`);
+
+  const acRoleGlobalConfig: DeployAcRoleConfig = {};
+  const acRoleGlobal = await deployAcRole({ provider, payer }, acRoleGlobalConfig);
+
+  const acProgram = getAcProgram(provider);
+  await acProgram.account.accessControlRoleState.fetch(acRoleGlobal);
+
+  const acConfig: DeployAcConfig = {
+    acRole: acRoleGlobal,
+  };
+  const ac = await deployAc({ provider, payer }, acConfig);
+
+  registerGlobalAddresses(network, acRoleGlobal, ac);
+  await saveAddressesToFile();
+
+  console.log('✅ Network infrastructure deployed successfully');
+  console.log(`AC Role Global: ${acRoleGlobal.toString()}`);
+  console.log(`AC: ${ac.toString()}`);
 }
 
 const network = getNetwork();

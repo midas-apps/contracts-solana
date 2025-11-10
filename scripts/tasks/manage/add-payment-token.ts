@@ -15,7 +15,7 @@ import {
 import { fetchVaultCommonState } from '@/test/helpers/vaults.helpers';
 
 import { loadTokenConfig } from '../../configs/loadTokenConfig';
-import { getVaultsProgram } from '../../deploy/contracts/vaults';
+import { getVaultsProgram } from '../../deploy/vaults';
 import { getTokenAddresses } from '../../utils/addressQueries';
 import { requireRedeemerVault, requirePaymentTokenFeed } from '../../utils/addressValidators';
 import {
