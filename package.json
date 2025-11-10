@@ -17,6 +17,10 @@
     "deploy:token-datafeed": "tsx scripts/tasks/deploy/deploy-token-datafeed.ts",
     "deploy:token-vaults": "tsx scripts/tasks/deploy/deploy-token-vaults.ts",
     "add:payment-token": "tsx scripts/tasks/manage/add-payment-token.ts",
+    "grant:role": "tsx scripts/tasks/manage/grant-role.ts",
+    "transfer:authority": "tsx scripts/tasks/manage/transfer-authority.ts",
+    "update:data-feed": "tsx scripts/tasks/manage/update-data-feed.ts",
+    "delegate": "tsx scripts/tasks/manage/delegate.ts",
     "verify:deployment": "tsx scripts/tasks/verify/verify-deployment.ts",
     "export:addresses": "tsx scripts/tasks/verify/export-addresses.ts"
   },

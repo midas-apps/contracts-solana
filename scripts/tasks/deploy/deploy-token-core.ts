@@ -1,7 +1,7 @@
 import { AnchorProvider } from '@coral-xyz/anchor';
 import { Keypair } from '@solana/web3.js';
 
-import { executeNetworkScript } from '@/common/utils';
+import { executeNetworkScript } from '@/common/scriptRunner';
 
 import { loadTokenConfig } from '../../configs/loadTokenConfig';
 import { deployTokenCore } from '../../deploy/orchestrators/deployTokenCore';
@@ -13,7 +13,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const network = getNetwork();
 
   console.log(`╔══════════════════════════════════════════════╗`);
-  console.log(`║       Core Token Deployment Script            ║`);
+  console.log(`║       Core Token Deployment Script           ║`);
   console.log(`╚══════════════════════════════════════════════╝`);
   console.log(`Token: ${mtoken}`);
   console.log(`Network: ${network}`);

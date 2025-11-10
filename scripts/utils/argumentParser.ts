@@ -1,6 +1,7 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
+import { createUserError } from '@/common/errorHandler';
 import { MProduct, isMProduct, PaymentToken, isPaymentToken } from '@/common/tokenTypes';
 
 import { getAvailableNetworks } from './configUtils';
@@ -20,12 +21,12 @@ export function getMtoken(): MProduct {
   const argv = getParsedArgs();
   const mtoken = (argv.mtoken || argv.m) as string | undefined;
   if (!mtoken) {
-    throw new Error('mtoken is required. Use --mtoken or -m');
+    throw createUserError('mtoken is required', ['Use --mtoken or -m to specify the token']);
   }
   if (!isMProduct(mtoken)) {
-    throw new Error(
-      `Invalid token '${mtoken}'. Must be one of: ${Object.values(MProduct).join(', ')}`,
-    );
+    throw createUserError(`Invalid token '${mtoken}'`, [
+      `Must be one of: ${Object.values(MProduct).join(', ')}`,
+    ]);
   }
   return mtoken;
 }
@@ -36,9 +37,9 @@ export function getNetwork(): string {
   const network = (argv.network || argv.n || 'devnet') as string;
   const availableNetworks = getAvailableNetworks();
   if (availableNetworks.length > 0 && !availableNetworks.includes(network)) {
-    throw new Error(
-      `Invalid network '${network}'. Must be one of: ${availableNetworks.join(', ')}`,
-    );
+    throw createUserError(`Invalid network '${network}'`, [
+      `Must be one of: ${availableNetworks.join(', ')}`,
+    ]);
   }
   return network;
 }
@@ -48,14 +49,12 @@ export function getPaymentToken(): PaymentToken {
   const argv = getParsedArgs();
   const paymentToken = (argv['payment-token'] || argv.p) as string | undefined;
   if (!paymentToken) {
-    throw new Error('Payment token is required. Use --payment-token or -p');
+    throw createUserError('Payment token is required', ['Use --payment-token or -p to specify']);
   }
   if (!isPaymentToken(paymentToken)) {
-    throw new Error(
-      `Invalid payment token '${paymentToken}'. Must be one of: ${Object.values(PaymentToken).join(
-        ', ',
-      )}`,
-    );
+    throw createUserError(`Invalid payment token '${paymentToken}'`, [
+      `Must be one of: ${Object.values(PaymentToken).join(', ')}`,
+    ]);
   }
   return paymentToken;
 }
@@ -65,7 +64,7 @@ export function getAmount(): string {
   const argv = getParsedArgs();
   const amount = (argv.amount || argv.a) as string | undefined;
   if (!amount) {
-    throw new Error('Amount is required. Use --amount or -a');
+    throw createUserError('Amount is required', ['Use --amount or -a to specify']);
   }
   return amount;
 }
@@ -75,7 +74,7 @@ export function getRole(): string {
   const argv = getParsedArgs();
   const role = (argv.role || argv.r) as string | undefined;
   if (!role) {
-    throw new Error('Role is required. Use --role or -r');
+    throw createUserError('Role is required', ['Use --role or -r to specify']);
   }
   return role;
 }
@@ -89,12 +88,12 @@ export function getAuthorityType():
   const argv = getParsedArgs();
   const authorityType = argv['authority-type'] as string | undefined;
   if (!authorityType) {
-    throw new Error('Authority type is required. Use --authority-type');
+    throw createUserError('Authority type is required', ['Use --authority-type to specify']);
   }
   if (!['MintTokens', 'FreezeAccount', 'AccountOwner', 'CloseAccount'].includes(authorityType)) {
-    throw new Error(
-      `Invalid authority type '${authorityType}'. Must be one of: MintTokens, FreezeAccount, AccountOwner, CloseAccount`,
-    );
+    throw createUserError(`Invalid authority type '${authorityType}'`, [
+      'Must be one of: MintTokens, FreezeAccount, AccountOwner, CloseAccount',
+    ]);
   }
   return authorityType as 'MintTokens' | 'FreezeAccount' | 'AccountOwner' | 'CloseAccount';
 }

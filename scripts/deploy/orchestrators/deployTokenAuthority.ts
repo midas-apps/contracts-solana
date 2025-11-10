@@ -1,11 +1,12 @@
 import { AnchorProvider } from '@coral-xyz/anchor';
 import { Keypair, PublicKey } from '@solana/web3.js';
 
+import { createUserError } from '@/common/errorHandler';
 import { MProduct } from '@/common/tokenTypes';
 
 import { TokenConfig } from '../../configs/types';
+import { getTokenAcRoleAddress, getAcRoleGlobalAddress } from '../../utils/addressQueries';
 import { verifyNetworkInfrastructure } from '../../utils/dependencyChecker';
-import { getTokenAcRoleAddress, getAcRoleGlobalAddress } from '../../utils/networkResolver';
 import { deployTokenAuthority, DeployTokenAuthorityConfig } from '../contracts/token-authority';
 
 export interface TokenAuthorityResult {
@@ -28,7 +29,9 @@ export async function deployTokenAuthorityFromConfig(
   }
 
   if (!acRole) {
-    throw new Error(`AC Role not found for token ${tokenSymbol} on ${network}`);
+    throw createUserError(`AC Role not found for token ${tokenSymbol} on ${network}`, [
+      `Run: yarn deploy:token-core --mtoken ${tokenSymbol} --network ${network}`,
+    ]);
   }
 
   const config: DeployTokenAuthorityConfig = {

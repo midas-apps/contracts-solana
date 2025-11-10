@@ -1,3 +1,4 @@
+import { createUserError } from '@/common/errorHandler';
 import { MProduct, isMProduct } from '@/common/tokenTypes';
 import { tokenConfigs } from '@/scripts/configs/tokens';
 
@@ -27,17 +28,17 @@ export function getAvailableNetworks(): string[] {
 export function validateTokenExists(tokenSymbol: MProduct): void {
   const availableTokens = getAvailableTokens();
   if (!availableTokens.includes(tokenSymbol)) {
-    throw new Error(
-      `Token '${tokenSymbol}' not found. Available tokens: ${availableTokens.join(', ')}`,
-    );
+    throw createUserError(`Token '${tokenSymbol}' not found`, [
+      `Available tokens: ${availableTokens.join(', ')}`,
+    ]);
   }
 }
 
 export function validateNetworkExists(network: string): void {
   const availableNetworks = getAvailableNetworks();
   if (!availableNetworks.includes(network)) {
-    throw new Error(
-      `Network '${network}' not found. Available networks: ${availableNetworks.join(', ')}`,
-    );
+    throw createUserError(`Network '${network}' not found`, [
+      `Available networks: ${availableNetworks.join(', ')}`,
+    ]);
   }
 }

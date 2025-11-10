@@ -2,7 +2,7 @@ import { AnchorProvider } from '@coral-xyz/anchor';
 import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import { Keypair, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
 
-import { executeNetworkScript } from '@/common/utils';
+import { executeNetworkScript } from '@/common/scriptRunner';
 import { fetchAccountAcState, getAccountAcStatePda } from '@/test/helpers/ac.helpers';
 import { createAtaIfNotExistsInx, parseUnits, toBN } from '@/test/helpers/common.helpers';
 import { fetchDataFeedState } from '@/test/helpers/data-feed.helpers';
@@ -16,7 +16,7 @@ import {
 import { getAcProgram } from './deploy/contracts/ac';
 import { getDataFeedProgram } from './deploy/contracts/dataFeed';
 import { getVaultsProgram } from './deploy/contracts/vaults';
-import { getTokenAddresses } from './utils/addressManager';
+import { requireRedeemerVault } from './utils/addressValidators';
 import { getMtoken, getNetwork, getAmount } from './utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Keypair) {
@@ -25,7 +25,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const amountStr = getAmount();
 
   console.log(`╔════════════════════════════════════════════════╗`);
-  console.log(`║        Redeem Request Fiat Script             ║`);
+  console.log(`║        Redeem Request Fiat Script              ║`);
   console.log(`╚════════════════════════════════════════════════╝`);
   console.log(`Token: ${mtoken}`);
   console.log(`Amount: ${amountStr}`);
@@ -34,10 +34,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   console.log('');
 
   // Get token addresses
-  const tokenAddrs = getTokenAddresses(network, mtoken);
-  if (!tokenAddrs?.redeemer?.commonVault) {
-    throw new Error(`Redeemer vault not found for ${mtoken} on ${network}`);
-  }
+  const vaultCommon = requireRedeemerVault(network, mtoken);
 
   // Parse amount - mToken amounts use 9 decimals
   const mTokenDecimals = 9;
@@ -46,8 +43,6 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const vaultsProgram = getVaultsProgram(provider);
   const feedProgram = getDataFeedProgram(provider);
   const acProgram = getAcProgram(provider);
-
-  const vaultCommon = tokenAddrs.redeemer.commonVault;
 
   const commonState = await fetchVaultCommonState(vaultsProgram, vaultCommon);
 

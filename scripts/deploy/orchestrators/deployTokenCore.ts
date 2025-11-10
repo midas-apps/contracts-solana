@@ -2,11 +2,13 @@ import { AnchorProvider } from '@coral-xyz/anchor';
 import { Keypair, PublicKey } from '@solana/web3.js';
 
 import { createMTokenMint } from '@/common/create-mtoken-mint';
+import { createUserError, isAccountNotFoundError } from '@/common/errorHandler';
 import { MProduct } from '@/common/tokenTypes';
 import { getTokenAuthorityPda } from '@/test/helpers/token-authority.helpers';
 
 import { TokenConfig } from '../../configs/types';
-import { getTokenAddresses, registerAddress } from '../../utils/addressManager';
+import { getTokenAddresses } from '../../utils/addressQueries';
+import { registerAddress } from '../../utils/addressRegistry';
 import { verifyNetworkInfrastructure } from '../../utils/dependencyChecker';
 import { deployAcRole, DeployAcRoleConfig, getAcProgram } from '../contracts/ac';
 import { getTokenAuthorityProgram } from '../contracts/token-authority';
@@ -48,14 +50,12 @@ export async function deployTokenCore(
         acRole = existingAddresses.acRole;
         console.log(`    ✓ AC Role already deployed: ${acRole.toString()}`);
       } else {
-        throw new Error('AC Role in addresses.ts does not exist on-chain');
+        throw createUserError('AC Role in addresses.ts does not exist on-chain', [
+          'Remove the address from addresses.ts or verify the account exists',
+        ]);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (
-        errorMessage.includes('Account does not exist') ||
-        errorMessage.includes('InvalidAccountData')
-      ) {
+      if (isAccountNotFoundError(error)) {
         console.warn(
           `⚠️  AC Role in addresses.ts (${existingAddresses.acRole.toString()}) does not exist on-chain. Deploying new one...`,
         );
@@ -82,14 +82,12 @@ export async function deployTokenCore(
         mToken = existingAddresses.mToken;
         console.log(`    ✓ mToken already deployed: ${mToken.toString()}`);
       } else {
-        throw new Error('mToken in addresses.ts does not exist on-chain');
+        throw createUserError('mToken in addresses.ts does not exist on-chain', [
+          'Remove the address from addresses.ts or verify the account exists',
+        ]);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (
-        errorMessage.includes('Account does not exist') ||
-        errorMessage.includes('InvalidAccountData')
-      ) {
+      if (isAccountNotFoundError(error)) {
         console.warn(
           `⚠️  mToken in addresses.ts (${existingAddresses.mToken.toString()}) does not exist on-chain. Deploying new one...`,
         );
@@ -147,14 +145,12 @@ export async function deployTokenCore(
         tokenAuthority = existingAddresses.tokenAuthority.account;
         console.log(`    ✓ Token Authority already deployed: ${tokenAuthority.toString()}`);
       } else {
-        throw new Error('Token Authority in addresses.ts does not exist on-chain');
+        throw createUserError('Token Authority in addresses.ts does not exist on-chain', [
+          'Remove the address from addresses.ts or verify the account exists',
+        ]);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (
-        errorMessage.includes('Account does not exist') ||
-        errorMessage.includes('InvalidAccountData')
-      ) {
+      if (isAccountNotFoundError(error)) {
         console.warn(
           `⚠️  Token Authority in addresses.ts (${existingAddresses.tokenAuthority.account.toString()}) does not exist on-chain. Deploying new one...`,
         );
@@ -185,7 +181,7 @@ export async function deployTokenCore(
     console.log(`    Token Authority: ${tokenAuthority.toString()}`);
   }
 
-  const { saveAddressesToFile } = await import('../../utils/addressManager');
+  const { saveAddressesToFile } = await import('../../utils/addressStorage');
   await saveAddressesToFile();
 
   return {

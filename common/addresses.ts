@@ -72,18 +72,3 @@ export const addresses: Record<string, NetworkAddresses> = {
   // Note: Addresses may change when local validator is reset
   localnet: {},
 };
-
-// Helper function to get token addresses
-export function getTokenAddresses(
-  network: string,
-  tokenSymbol: MProduct,
-): TokenAddresses | undefined {
-  const networkAddrs = addresses[network];
-  if (!networkAddrs) return undefined;
-
-  if (networkAddrs.tokens?.[tokenSymbol]) {
-    return networkAddrs.tokens[tokenSymbol];
-  }
-
-  return undefined;
-}

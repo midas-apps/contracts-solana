@@ -4,10 +4,10 @@ import * as path from 'path';
 import { AnchorProvider } from '@coral-xyz/anchor';
 import { Connection, PublicKey } from '@solana/web3.js';
 
+import { createUserError, isAccountNotFoundError } from '@/common/errorHandler';
 import { MProduct } from '@/common/tokenTypes';
 
-import { getTokenAddresses } from './addressManager';
-import { getAcAddress, getAcRoleGlobalAddress } from './networkResolver';
+import { getTokenAddresses, getAcAddress, getAcRoleGlobalAddress } from './addressQueries';
 
 export type RequiredComponent = 'mToken' | 'tokenAuthority' | 'mTokenDataFeed' | 'acRole';
 
@@ -28,17 +28,16 @@ export function verifyNetworkInfrastructure(network: string): void {
       if (!acRoleGlobal) missing.push('AC Role Global');
       if (!ac) missing.push('AC');
 
-      throw new Error(
-        `Network infrastructure not found for ${network}. Missing: ${missing.join(', ')}\n` +
-          `Please run: yarn deploy:network --network ${network}`,
+      throw createUserError(
+        `Network infrastructure not found for ${network}. Missing: ${missing.join(', ')}`,
+        [`Run: yarn deploy:network --network ${network}`],
       );
     }
   } catch (error) {
     if (error instanceof Error && error.message.includes('Network addresses not found')) {
-      throw new Error(
-        `Network '${network}' not found or network infrastructure not deployed.\n` +
-          `Please run: yarn deploy:network --network ${network}`,
-      );
+      throw createUserError(`Network '${network}' not found.`, [
+        `Run: yarn deploy:network --network ${network}`,
+      ]);
     }
     throw error;
   }
@@ -52,10 +51,9 @@ export function verifyTokenComponents(
   const tokenAddrs = getTokenAddresses(network, tokenSymbol);
 
   if (!tokenAddrs) {
-    throw new Error(
-      `Token addresses not found for ${tokenSymbol} on ${network}.\n` +
-        `Please deploy the token first: yarn deploy:token --mtoken ${tokenSymbol} --network ${network}`,
-    );
+    throw createUserError(`Token addresses not found for ${tokenSymbol} on ${network}.`, [
+      `Run: yarn deploy:token-core --mtoken ${tokenSymbol} --network ${network}`,
+    ]);
   }
 
   const missing: string[] = [];
@@ -73,11 +71,9 @@ export function verifyTokenComponents(
   }
 
   if (missing.length > 0) {
-    throw new Error(
-      `Required token components missing for ${tokenSymbol} on ${network}.\n` +
-        `Missing: ${missing.join(', ')}\n` +
-        `Please deploy missing components or run full token deployment:\n` +
-        `  yarn deploy:token --mtoken ${tokenSymbol} --network ${network}`,
+    throw createUserError(
+      `Required token components missing for ${tokenSymbol} on ${network}. Missing: ${missing.join(', ')}`,
+      [`Run: yarn deploy:token-core --mtoken ${tokenSymbol} --network ${network}`],
     );
   }
 }
@@ -141,12 +137,13 @@ export function verifyNoTokenComponentsDeployed(network: string, tokenSymbol: MP
         steps.map((s, i) => `   ${i + 1}. ${s}`).join('\n')
       : '';
 
-  throw new Error(
-    `❌ Token components already deployed for ${tokenSymbol} on ${network}.\n` +
-      `   Deployed components: ${deployedList}\n\n` +
-      `   deploy:all should only be used for fresh deployments.` +
-      suggestions +
-      `\n\n   Or remove deployed components from addresses.ts if you want to redeploy.`,
+  throw createUserError(
+    `Token components already deployed for ${tokenSymbol} on ${network}. Deployed components: ${deployedList}`,
+    [
+      'deploy:all should only be used for fresh deployments',
+      ...(suggestions ? [suggestions] : []),
+      'Or remove deployed components from addresses.ts if you want to redeploy',
+    ],
   );
 }
 
@@ -217,13 +214,13 @@ export async function verifyProgramsDeployed(
 
   if (missingPrograms.length > 0) {
     const programList = missingPrograms.map((p) => `  - ${p.name} (${p.id})`).join('\n');
-    throw new Error(
-      `Solana programs are not deployed on ${network}.\n` +
-        `Missing programs:\n${programList}\n\n` +
-        `Please deploy programs first:\n` +
-        `  1. Build programs: yarn build\n` +
-        `  2. Deploy programs: anchor deploy --provider.cluster ${network.toLowerCase()}\n\n` +
-        `Note: For localnet, make sure solana-test-validator is running.`,
+    throw createUserError(
+      `Solana programs are not deployed on ${network}. Missing programs:\n${programList}`,
+      [
+        'Build programs: yarn build',
+        `Deploy programs: anchor deploy --provider.cluster ${network.toLowerCase()}`,
+        'Note: For localnet, make sure solana-test-validator is running.',
+      ],
     );
   }
 }
@@ -256,11 +253,7 @@ export async function verifyAnchorAccountExistsOnChain<T>(
     await accountFetcher(address);
     return true;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    if (
-      errorMessage.includes('Account does not exist') ||
-      errorMessage.includes('InvalidAccountData')
-    ) {
+    if (isAccountNotFoundError(error)) {
       return false;
     }
     // Re-throw unexpected errors

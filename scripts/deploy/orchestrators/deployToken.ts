@@ -4,7 +4,7 @@ import { Keypair, PublicKey } from '@solana/web3.js';
 import { MProduct } from '@/common/tokenTypes';
 
 import { TokenConfig } from '../../configs/types';
-import { registerAddress } from '../../utils/addressManager';
+import { registerAddress } from '../../utils/addressRegistry';
 
 import { deployDataFeedFromConfig } from './deployDataFeed';
 import { deployMinterVaultFromConfig } from './deployMinterVault';
@@ -65,7 +65,7 @@ export async function deployTokenFull(
   registerAddress(network, tokenSymbol, 'redeemer', redeemerVaultResult);
   console.log(`    Redeemer Vault: ${redeemerVaultResult.commonVault.toString()}`);
 
-  const { saveAddressesToFile } = await import('../../utils/addressManager');
+  const { saveAddressesToFile } = await import('../../utils/addressStorage');
   await saveAddressesToFile();
 
   return {

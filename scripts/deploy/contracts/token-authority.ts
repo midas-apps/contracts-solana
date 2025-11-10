@@ -1,6 +1,7 @@
 import { AnchorProvider, Program } from '@coral-xyz/anchor';
 import { PublicKey, sendAndConfirmTransaction } from '@solana/web3.js';
 
+import { isAccountNotFoundError } from '@/common/errorHandler';
 import { TokenAuthority } from '@/target/types/token_authority';
 import {
   getTokenAuthorityPda,
@@ -38,11 +39,7 @@ export const deployTokenAuthority = async (
     }
     return authority;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    if (
-      errorMessage.includes('Account does not exist') ||
-      errorMessage.includes('InvalidAccountData')
-    ) {
+    if (isAccountNotFoundError(error)) {
       // Account doesn't exist, proceed with initialization
     } else {
       throw error;

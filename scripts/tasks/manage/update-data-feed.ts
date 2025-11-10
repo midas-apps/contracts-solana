@@ -1,14 +1,15 @@
 import { AnchorProvider } from '@coral-xyz/anchor';
 import { Keypair, PublicKey, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
 
-import { executeNetworkScript } from '@/common/utils';
+import { createUserError } from '@/common/errorHandler';
+import { executeNetworkScript } from '@/common/scriptRunner';
 import { DATA_FEED_AC_ROLES } from '@/test/constants/data-feed.constants';
 import { getAccountAcRoleStatePda } from '@/test/helpers/ac.helpers';
 import { DataFeedMode, fetchDataFeedState } from '@/test/helpers/data-feed.helpers';
 
-import { getDataFeedProgram } from './deploy/contracts/dataFeed';
-import { getTokenAddresses } from './utils/addressManager';
-import { getMtoken, getNetwork, getOptionalArg } from './utils/argumentParser';
+import { getDataFeedProgram } from '../../deploy/contracts/dataFeed';
+import { getTokenAddresses } from '../../utils/addressQueries';
+import { getMtoken, getNetwork, getOptionalArg } from '../../utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Keypair) {
   const mtoken = getMtoken();
@@ -38,7 +39,9 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   // Get token addresses
   const tokenAddrs = getTokenAddresses(network, mtoken);
   if (!tokenAddrs?.mTokenDataFeed) {
-    throw new Error(`Data feed not found for ${mtoken} on ${network}`);
+    throw createUserError(`Data feed not found for ${mtoken} on ${network}`, [
+      `Run: yarn deploy:token-datafeed --mtoken ${mtoken} --network ${network}`,
+    ]);
   }
 
   const feedProgram = getDataFeedProgram(provider);

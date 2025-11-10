@@ -7,199 +7,35 @@ import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { PublicKey } from '@solana/web3.js';
 import * as prettier from 'prettier';
 
-import { addresses, TokenAddresses, DataFeed, NetworkAddresses } from '@/common/addresses';
+import { addresses, TokenAddresses, NetworkAddresses, DataFeed } from '@/common/addresses';
 import { MProduct, PaymentToken } from '@/common/tokenTypes';
 
-import { DeploymentState, markComponentCompleted, ComponentName } from './deploymentState';
-
-function ensureNetworkExists(network: string): void {
-  if (!addresses[network]) {
-    if (network === 'localnet') {
-      addresses[network] = {
-        tokens: {} as Partial<Record<MProduct, TokenAddresses>>,
-      };
-    } else if (addresses.devnet) {
-      addresses[network] = {
-        acRoleGlobal: addresses.devnet.acRoleGlobal,
-        ac: addresses.devnet.ac,
-        tokens: {} as Partial<Record<MProduct, TokenAddresses>>,
-      };
-    } else {
-      throw new Error(
-        `Network '${network}' not found in addresses. Please initialize it in common/addresses.ts or ensure devnet exists as fallback.`,
-      );
-    }
-  }
-}
-
-export function registerGlobalAddresses(
-  network: string,
-  acRoleGlobal: PublicKey,
-  ac: PublicKey,
-): void {
-  ensureNetworkExists(network);
-  const networkAddrs = addresses[network];
-  networkAddrs.acRoleGlobal = acRoleGlobal;
-  networkAddrs.ac = ac;
-}
-
-export function needsGlobalAddressesDeployment(network: string): boolean {
-  const networkAddrs = addresses[network];
-  if (!networkAddrs) return true;
-  return !networkAddrs.acRoleGlobal || !networkAddrs.ac;
-}
-
-function validateComponentValue<K extends keyof TokenAddresses>(
-  component: K,
-  value: TokenAddresses[K],
-): void {
-  if (value === null || value === undefined) {
-    throw new Error(
-      `Invalid value for component '${component}': value cannot be null or undefined`,
-    );
-  }
-
-  if (component === 'acRole' || component === 'mTokenDataFeed' || component === 'mToken') {
-    if (!(value instanceof PublicKey)) {
-      throw new Error(
-        `Invalid value for component '${component}': expected PublicKey, got ${typeof value}`,
-      );
-    }
-  }
-
-  if (component === 'tokenAuthority') {
-    if (
-      typeof value !== 'object' ||
-      !('account' in value) ||
-      !('seed' in value) ||
-      !(value.account instanceof PublicKey) ||
-      typeof value.seed !== 'string'
-    ) {
-      throw new Error(
-        `Invalid value for component '${component}': expected { account: PublicKey, seed: string }`,
-      );
-    }
-  }
-
-  if (component === 'minter' || component === 'redeemer') {
-    if (
-      typeof value !== 'object' ||
-      !('commonVault' in value) ||
-      !('account' in value) ||
-      !(value.commonVault instanceof PublicKey) ||
-      !(value.account instanceof PublicKey)
-    ) {
-      throw new Error(
-        `Invalid value for component '${component}': expected { commonVault: PublicKey, account: PublicKey }`,
-      );
-    }
-  }
-}
-
-export function registerAddress<K extends keyof TokenAddresses>(
-  network: string,
-  tokenSymbol: MProduct,
-  component: K,
-  value: TokenAddresses[K],
-): void {
-  validateComponentValue(component, value);
-  ensureNetworkExists(network);
-
-  const networkAddrs = addresses[network];
-  if (!networkAddrs.tokens) {
-    networkAddrs.tokens = {} as Partial<Record<MProduct, TokenAddresses>>;
-  }
-  if (!networkAddrs.tokens[tokenSymbol]) {
-    networkAddrs.tokens[tokenSymbol] = {} as TokenAddresses;
-  }
-
-  networkAddrs.tokens[tokenSymbol][component] = value;
-}
-
-export function getTokenAddresses(
-  network: string,
-  tokenSymbol: MProduct,
-): TokenAddresses | undefined {
-  const networkAddrs = addresses[network];
-  if (!networkAddrs) return undefined;
-  return networkAddrs.tokens?.[tokenSymbol];
-}
-
-export function getFeedAddresses(network: string, feedSymbol: PaymentToken): DataFeed | undefined {
-  return addresses[network]?.feeds?.[feedSymbol];
-}
-
-function mapComponentToStateName<K extends keyof TokenAddresses>(component: K): ComponentName {
-  const mapping: Partial<Record<keyof TokenAddresses, ComponentName>> = {
-    acRole: 'acRole',
-    mToken: 'mToken',
-    mTokenDataFeed: 'dataFeed',
-    tokenAuthority: 'tokenAuthority',
-    minter: 'minterVault',
-    redeemer: 'redeemerVault',
-  };
-
-  const stateName = mapping[component];
-  if (!stateName) {
-    throw new Error(`No mapping found for component: ${String(component)}`);
-  }
-  return stateName;
-}
-
-function extractPublicKey<K extends keyof TokenAddresses>(
-  component: K,
-  value: TokenAddresses[K],
-): PublicKey {
-  if (value instanceof PublicKey) {
-    return value;
-  }
-
-  if (typeof value === 'object' && value !== null) {
-    if ('account' in value && value.account instanceof PublicKey) {
-      return value.account;
-    }
-    if ('commonVault' in value && value.commonVault instanceof PublicKey) {
-      return value.commonVault;
-    }
-  }
-
-  throw new Error(`Cannot extract PublicKey from component '${String(component)}' value`);
-}
-
-export function registerAndComplete<K extends keyof TokenAddresses>(
-  network: string,
-  tokenSymbol: MProduct,
-  component: K,
-  value: TokenAddresses[K],
-  state: DeploymentState,
-  transactionSignature?: string,
-): void {
-  registerAddress(network, tokenSymbol, component, value);
-  const stateComponentName = mapComponentToStateName(component);
-  const address = extractPublicKey(component, value);
-  markComponentCompleted(state, stateComponentName, address, transactionSignature);
-}
-
+// Formatting utilities
 function formatPublicKey(pubkey: PublicKey): string {
   return `new PublicKey('${pubkey.toString()}')`;
+}
+
+function formatObject(parts: string[], indent = '        '): string {
+  if (parts.length === 0) return '{}';
+  return `{\n${indent}${parts.join(`,\n${indent}`)}\n      }`;
 }
 
 function formatTokenAuthority(
   tokenAuthority: { account: PublicKey; seed: string } | undefined,
 ): string {
   if (!tokenAuthority) return '';
-  return `{
-        account: ${formatPublicKey(tokenAuthority.account)},
-        seed: '${tokenAuthority.seed}',
-      }`;
+  return formatObject([
+    `account: ${formatPublicKey(tokenAuthority.account)}`,
+    `seed: '${tokenAuthority.seed}'`,
+  ]);
 }
 
 function formatVault(vault: { commonVault: PublicKey; account: PublicKey } | undefined): string {
   if (!vault) return '';
-  return `{
-        commonVault: ${formatPublicKey(vault.commonVault)},
-        account: ${formatPublicKey(vault.account)},
-      }`;
+  return formatObject([
+    `commonVault: ${formatPublicKey(vault.commonVault)}`,
+    `account: ${formatPublicKey(vault.account)}`,
+  ]);
 }
 
 function formatDataFeed(feed: DataFeed | undefined): string {
@@ -207,19 +43,17 @@ function formatDataFeed(feed: DataFeed | undefined): string {
   const parts: string[] = [];
   if (feed.token) parts.push(`token: ${formatPublicKey(feed.token)}`);
   if (feed.tokenProgram) {
-    if (feed.tokenProgram.equals(TOKEN_PROGRAM_ID)) {
-      parts.push(`tokenProgram: TOKEN_PROGRAM_ID`);
-    } else {
-      parts.push(`tokenProgram: ${formatPublicKey(feed.tokenProgram)}`);
-    }
+    const tokenProgramStr = feed.tokenProgram.equals(TOKEN_PROGRAM_ID)
+      ? 'TOKEN_PROGRAM_ID'
+      : formatPublicKey(feed.tokenProgram);
+    parts.push(`tokenProgram: ${tokenProgramStr}`);
   }
   if (feed.dataFeed) parts.push(`dataFeed: ${formatPublicKey(feed.dataFeed)}`);
   if (feed.underlyingFeed) parts.push(`underlyingFeed: ${formatPublicKey(feed.underlyingFeed)}`);
-  return `{
-        ${parts.join(',\n        ')}
-      }`;
+  return formatObject(parts);
 }
 
+// Code generation for addresses file
 function generateTokenAddressesCode(tokenAddrs: TokenAddresses, indent = '      '): string {
   const parts: string[] = [];
   if (tokenAddrs.acRole) parts.push(`acRole: ${formatPublicKey(tokenAddrs.acRole)}`);
@@ -291,6 +125,7 @@ ${indent}  ${parts.join(`,\n${indent}  `)}
 ${indent}}`;
 }
 
+// Generate complete addresses file content
 function generateAddressesFileContent(): string {
   const networks = Object.entries(addresses).sort(([a], [b]) => {
     if (a === 'devnet') return -1;
@@ -351,21 +186,6 @@ export interface TokenAddresses {
 export const addresses: Record<string, NetworkAddresses> = {
 ${networkEntries.join(',\n')},
 };
-
-// Helper function to get token addresses
-export function getTokenAddresses(
-  network: string,
-  tokenSymbol: MProduct,
-): TokenAddresses | undefined {
-  const networkAddrs = addresses[network];
-  if (!networkAddrs) return undefined;
-
-  if (networkAddrs.tokens?.[tokenSymbol]) {
-    return networkAddrs.tokens[tokenSymbol];
-  }
-
-  return undefined;
-}
 `;
 }
 

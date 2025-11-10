@@ -2,38 +2,6 @@
 
 This directory contains a clean, configurable deployment system for Solana smart contracts.
 
-## Architecture Overview
-
-```
-scripts/
-├── configs/              # Configuration validation and loading
-│   ├── types.ts         # Zod schemas for type-safe configs
-│   ├── loadTokenConfig.ts
-│   └── validateConfig.ts
-├── deploy/              # Deployment orchestrators
-│   └── orchestrators/
-│       ├── deployNetworkInfrastructure.ts
-│       ├── deployTokenCore.ts
-│       ├── deployToken.ts (full deployment)
-│       ├── deployDataFeed.ts
-│       ├── deployMinterVault.ts
-│       ├── deployRedeemerVault.ts
-│       └── deployTokenAuthority.ts
-├── tasks/               # CLI entry points
-│   ├── deploy-all.ts
-│   ├── deploy-network-infrastructure.ts
-│   ├── deploy-token-core.ts
-│   ├── deploy-token-datafeed.ts
-│   ├── deploy-token-vaults.ts
-│   └── add-payment-token.ts
-└── utils/               # Utility functions
-    ├── argumentParser.ts
-    ├── deploymentState.ts
-    ├── addressManager.ts
-    ├── networkResolver.ts
-    └── dependencyChecker.ts
-```
-
 ## Deployment Flow
 
 The deployment system follows a **two-level hierarchy**:
@@ -524,9 +492,19 @@ Options:
 - `--stable`: Use 1:1 rate (for stablecoins)
 - `--is-fiat`: Fiat payment token flag
 
-## Management Scripts
+## Script Organization
 
-All management scripts now support CLI arguments for `--mtoken`, `--network`, and other script-specific options.
+The scripts directory follows a clear organizational pattern:
+
+- **`tasks/`** - Official scripts accessible via yarn commands, organized by purpose:
+  - `tasks/deploy/` - Deployment scripts (`yarn deploy:*`)
+  - `tasks/manage/` - Management scripts (`yarn grant:role`, `yarn add:payment-token`, etc.)
+- **`scripts/` (root)** - User-facing operational scripts run directly with `tsx`:
+  - Mint/redeem operations (`mint-instant.ts`, `redeem-instant.ts`, etc.)
+
+## User Operations Scripts
+
+These scripts are run directly with `tsx` and are located in the `scripts/` root directory.
 
 ### Mint Scripts
 
@@ -621,12 +599,14 @@ tsx scripts/redeem-request-fiat.ts \
 
 ### Management Scripts
 
-#### grant-role
+All management scripts are located in `scripts/tasks/manage/` and are accessible via yarn commands.
+
+#### grant:role
 
 Grant an access control role to an account.
 
 ```bash
-tsx scripts/grant-role.ts \
+yarn grant:role \
   --mtoken mTBILL \
   --network devnet \
   --role vault_admin_role
@@ -645,12 +625,12 @@ tsx scripts/grant-role.ts \
 - `admin_role`: Access control admin
 - `data_feed_admin`: Data feed administrator
 
-#### transfer-authority
+#### transfer:authority
 
 Transfer token authority (mint, freeze, etc.).
 
 ```bash
-tsx scripts/transfer-authority.ts \
+yarn transfer:authority \
   --mtoken mTBILL \
   --network devnet \
   --authority-type FreezeAccount \
@@ -666,12 +646,12 @@ tsx scripts/transfer-authority.ts \
 - `--current-authority`: Current authority address (optional, defaults to payer)
 - `--new-authority`: New authority address (optional, defaults to payer)
 
-#### update-data-feed
+#### update:data-feed
 
 Update data feed configuration.
 
 ```bash
-tsx scripts/update-data-feed.ts \
+yarn update:data-feed \
   --mtoken mTBILL \
   --network devnet \
   [--new-underlying-feed <PUBKEY>] \
@@ -690,7 +670,7 @@ tsx scripts/update-data-feed.ts \
 Delegate payment token allowance to redeemer vault.
 
 ```bash
-tsx scripts/delegate.ts \
+yarn delegate \
   --mtoken mTBILL \
   --network devnet \
   --payment-token USDC
@@ -860,13 +840,21 @@ Use `deploy:all` for complete deployments, use `deploy:token-core` if you want t
 
 ## Contributing
 
-When adding new deployment functionality:
+When adding new functionality:
 
-1. **Add orchestrator function** in `scripts/deploy/orchestrators/`
-2. **Add CLI task** in `scripts/tasks/`
-3. **Update package.json** with new script
-4. **Add types/validation** in `scripts/configs/types.ts`
+### For Deployment/Management Scripts (Yarn Commands)
+
+1. **Add orchestrator function** in `scripts/deploy/orchestrators/` (for deployment scripts)
+2. **Add CLI task** in `scripts/tasks/deploy/` or `scripts/tasks/manage/` (depending on purpose)
+3. **Update package.json** with new yarn script command
+4. **Add types/validation** in `scripts/configs/types.ts` (if needed)
 5. **Update this README**
+
+### For User Operations (Direct Execution)
+
+1. **Add script** directly in `scripts/` root directory
+2. **Use `tsx scripts/script-name.ts`** to run (no package.json entry needed)
+3. **Update this README** with usage instructions
 
 ## Related Files
 

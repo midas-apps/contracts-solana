@@ -6,10 +6,16 @@ import {
 } from '@solana/spl-token';
 import { Keypair, PublicKey, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
 
-import { executeNetworkScript } from '@/common/utils';
+import { createUserError } from '@/common/errorHandler';
+import { executeNetworkScript } from '@/common/scriptRunner';
 
-import { getTokenAddresses } from './utils/addressManager';
-import { getMtoken, getNetwork, getAuthorityType, getOptionalArg } from './utils/argumentParser';
+import { getTokenAddresses } from '../../utils/addressQueries';
+import {
+  getMtoken,
+  getNetwork,
+  getAuthorityType,
+  getOptionalArg,
+} from '../../utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Keypair) {
   const mtoken = getMtoken();
@@ -30,7 +36,9 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   // Get token addresses
   const tokenAddrs = getTokenAddresses(network, mtoken);
   if (!tokenAddrs?.mToken) {
-    throw new Error(`mToken not found for ${mtoken} on ${network}`);
+    throw createUserError(`mToken not found for ${mtoken} on ${network}`, [
+      `Run: yarn deploy:token-core --mtoken ${mtoken} --network ${network}`,
+    ]);
   }
 
   // Map authority type string to AuthorityType enum
@@ -43,7 +51,9 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 
   const authorityTypeEnum = authorityTypeMap[authorityType];
   if (!authorityTypeEnum) {
-    throw new Error(`Invalid authority type: ${authorityType}`);
+    throw createUserError(`Invalid authority type: ${authorityType}`, [
+      'Must be one of: MintTokens, FreezeAccount, AccountOwner, CloseAccount',
+    ]);
   }
 
   const account = tokenAddrs.mToken;

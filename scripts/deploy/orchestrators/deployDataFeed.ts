@@ -2,12 +2,17 @@ import { AnchorProvider } from '@coral-xyz/anchor';
 import { Keypair, PublicKey } from '@solana/web3.js';
 import { getAddress } from 'viem';
 
+import { createUserError, isAccountNotFoundError } from '@/common/errorHandler';
 import { MProduct } from '@/common/tokenTypes';
 
 import { TokenConfig } from '../../configs/types';
-import { getTokenAddresses, registerAddress } from '../../utils/addressManager';
+import {
+  getTokenAddresses,
+  getTokenAcRoleAddress,
+  getAcRoleGlobalAddress,
+} from '../../utils/addressQueries';
+import { registerAddress } from '../../utils/addressRegistry';
 import { verifyNetworkInfrastructure } from '../../utils/dependencyChecker';
-import { getTokenAcRoleAddress, getAcRoleGlobalAddress } from '../../utils/networkResolver';
 import { deployChainlinkFeed } from '../contracts/feeds/chainlink';
 import { deployManualFeed } from '../contracts/feeds/manual';
 import { deployPythFeed } from '../contracts/feeds/pyth';
@@ -19,7 +24,9 @@ function resolveAcRole(network: string, tokenSymbol: MProduct): PublicKey {
 
   const globalAcRole = getAcRoleGlobalAddress(network);
   if (!globalAcRole) {
-    throw new Error(`AC Role not found for token ${tokenSymbol} on ${network}`);
+    throw createUserError(`AC Role not found for token ${tokenSymbol} on ${network}`, [
+      `Run: yarn deploy:token-core --mtoken ${tokenSymbol} --network ${network}`,
+    ]);
   }
 
   return globalAcRole;
@@ -55,14 +62,12 @@ export async function deployDataFeedFromConfig(
         );
         return existingAddresses.mTokenDataFeed;
       } else {
-        throw new Error('Data Feed in addresses.ts does not exist on-chain');
+        throw createUserError('Data Feed in addresses.ts does not exist on-chain', [
+          'Remove the address from addresses.ts or verify the account exists',
+        ]);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (
-        errorMessage.includes('Account does not exist') ||
-        errorMessage.includes('InvalidAccountData')
-      ) {
+      if (isAccountNotFoundError(error)) {
         console.warn(
           `⚠️  Data Feed in addresses.ts (${existingAddresses.mTokenDataFeed.toString()}) does not exist on-chain. Deploying new one...`,
         );
@@ -89,8 +94,9 @@ export async function deployDataFeedFromConfig(
         // Verify the provided feed exists on-chain
         const feedExists = await verifySwitchboardFeed(provider, underlyingFeed, env);
         if (!feedExists) {
-          throw new Error(
+          throw createUserError(
             `Switchboard feed at ${underlyingFeed.toString()} does not exist on-chain`,
+            ['Verify the feed address is correct or deploy a new feed'],
           );
         }
         console.log(`    ✓ Using existing Switchboard feed: ${underlyingFeed.toString()}`);
@@ -167,12 +173,14 @@ export async function deployDataFeedFromConfig(
     }
 
     default:
-      throw new Error(`Unsupported feed mode: ${mode}`);
+      throw createUserError(`Unsupported feed mode: ${mode}`, [
+        'Supported modes: switchboard, pyth, chainlink, manual',
+      ]);
   }
 
   registerAddress(network, tokenSymbol, 'mTokenDataFeed', dataFeed);
 
-  const { saveAddressesToFile } = await import('../../utils/addressManager');
+  const { saveAddressesToFile } = await import('../../utils/addressStorage');
   await saveAddressesToFile();
 
   return dataFeed;

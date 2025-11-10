@@ -6,9 +6,8 @@ import { parsePercent, parseUnits } from '@/test/helpers/common.helpers';
 import { getMinterVaultPda } from '@/test/helpers/vaults.helpers';
 
 import { TokenConfig } from '../../configs/types';
-import { getTokenAddresses } from '../../utils/addressManager';
+import { getTokenAddresses, getTokenAcRoleAddress, getAcAddress } from '../../utils/addressQueries';
 import { verifyDependencies } from '../../utils/dependencyChecker';
-import { getTokenAcRoleAddress, getAcAddress } from '../../utils/networkResolver';
 import { deployMinterVault, DeployMinterVaultConfig } from '../contracts/vaults';
 
 export interface MinterVaultResult {

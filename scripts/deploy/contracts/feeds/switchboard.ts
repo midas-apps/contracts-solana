@@ -15,6 +15,8 @@ import {
 import * as sb from '@switchboard-xyz/on-demand';
 import { Address } from 'viem';
 
+import { isAccountNotFoundError } from '@/common/errorHandler';
+
 import { CommonParams } from '../dataFeed';
 
 export interface DeploySwitchboardFeedParams {
@@ -195,12 +197,7 @@ export const verifySwitchboardFeed = async (
     await feedAccount.loadData();
     return true;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    if (
-      errorMessage.includes('Account does not exist') ||
-      errorMessage.includes('InvalidAccountData') ||
-      errorMessage.includes('failed to get account')
-    ) {
+    if (isAccountNotFoundError(error)) {
       return false;
     }
     throw error;

@@ -2,7 +2,7 @@ import { AnchorProvider } from '@coral-xyz/anchor';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { Keypair, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
 
-import { executeNetworkScript } from '@/common/utils';
+import { executeNetworkScript } from '@/common/scriptRunner';
 import { MAX_U128 } from '@/test/constants/common.constants';
 import { VAULT_AC_ROLES } from '@/test/constants/vaults.constants';
 import { getAccountAcRoleStatePda } from '@/test/helpers/ac.helpers';
@@ -16,7 +16,8 @@ import { fetchVaultCommonState } from '@/test/helpers/vaults.helpers';
 
 import { loadTokenConfig } from '../../configs/loadTokenConfig';
 import { getVaultsProgram } from '../../deploy/contracts/vaults';
-import { getFeedAddresses, getTokenAddresses } from '../../utils/addressManager';
+import { getTokenAddresses } from '../../utils/addressQueries';
+import { requireRedeemerVault, requirePaymentTokenFeed } from '../../utils/addressValidators';
 import {
   getMtoken,
   getNetwork,
@@ -34,9 +35,9 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const stable = getOptionalBoolean('stable');
   const isFiat = getOptionalBoolean('is-fiat');
 
-  console.log(`╔════════════════════════════════════════════════╗`);
-  console.log(`║        Add Payment Token Script               ║`);
-  console.log(`╚════════════════════════════════════════════════╝`);
+  console.log(`╔══════════════════════════════════════════════╗`);
+  console.log(`║        Add Payment Token Script              ║`);
+  console.log(`╚══════════════════════════════════════════════╝`);
   console.log(`Token: ${mtoken}`);
   console.log(`Payment Token: ${paymentToken}`);
   console.log(`Network: ${network}`);
@@ -49,20 +50,11 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   console.log('✓ Configuration loaded');
 
   // Get token addresses
+  requireRedeemerVault(network, mtoken);
   const tokenAddrs = getTokenAddresses(network, mtoken);
-  if (!tokenAddrs?.redeemer?.commonVault) {
-    throw new Error(`Redeemer vault not found for ${mtoken} on ${network}`);
-  }
 
   // Get payment token feed address
-  const feedAddr = getFeedAddresses(network, paymentToken);
-  if (!feedAddr?.dataFeed) {
-    throw new Error(`Feed not found for payment token ${paymentToken} on ${network}`);
-  }
-
-  if (!feedAddr.token) {
-    throw new Error(`Token mint not found for payment token ${paymentToken} on ${network}`);
-  }
+  const feedAddr = requirePaymentTokenFeed(network, paymentToken, mtoken);
 
   // Get payment token config from token config or use CLI args
   const paymentTokenConfig = config.paymentTokens?.find(

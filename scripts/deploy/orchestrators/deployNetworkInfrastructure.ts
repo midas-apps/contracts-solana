@@ -1,10 +1,8 @@
 import { AnchorProvider } from '@coral-xyz/anchor';
 import { Keypair, PublicKey } from '@solana/web3.js';
 
-import {
-  registerGlobalAddresses,
-  needsGlobalAddressesDeployment,
-} from '../../utils/addressManager';
+import { needsGlobalAddressesDeployment } from '../../utils/addressQueries';
+import { registerGlobalAddresses } from '../../utils/addressRegistry';
 import { verifyProgramsDeployed } from '../../utils/dependencyChecker';
 import { deployAcRole, deployAc, DeployAcRoleConfig, DeployAcConfig } from '../contracts/ac';
 
@@ -29,20 +27,12 @@ export async function deployNetworkInfrastructure(
   network: string,
 ): Promise<NetworkInfrastructureResult> {
   // Verify that programs are deployed before attempting to use them
-  try {
-    await verifyProgramsDeployed(provider.connection, network);
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error('❌ Program Deployment Check Failed');
-      console.error(error.message);
-    }
-    throw error;
-  }
+  await verifyProgramsDeployed(provider.connection, network);
 
   // Check if already deployed
   if (!needsGlobalAddressesDeployment(network)) {
     try {
-      const { getAcAddress, getAcRoleGlobalAddress } = await import('../../utils/networkResolver');
+      const { getAcAddress, getAcRoleGlobalAddress } = await import('../../utils/addressQueries');
       const acRoleGlobal = getAcRoleGlobalAddress(network);
       const ac = getAcAddress(network);
 
@@ -78,7 +68,7 @@ export async function deployNetworkInfrastructure(
   registerGlobalAddresses(network, acRoleGlobal, ac);
 
   // Auto-save addresses to file
-  const { saveAddressesToFile } = await import('../../utils/addressManager');
+  const { saveAddressesToFile } = await import('../../utils/addressStorage');
   await saveAddressesToFile();
 
   return { acRoleGlobal, ac, alreadyDeployed: false };

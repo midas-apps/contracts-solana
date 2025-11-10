@@ -1,7 +1,7 @@
 import { AnchorProvider } from '@coral-xyz/anchor';
 import { Keypair } from '@solana/web3.js';
 
-import { executeNetworkScript } from '@/common/utils';
+import { executeNetworkScript } from '@/common/scriptRunner';
 
 import { loadTokenConfig } from '../../configs/loadTokenConfig';
 import { deployNetworkInfrastructure } from '../../deploy/orchestrators/deployNetworkInfrastructure';

@@ -2,7 +2,7 @@ import { AnchorProvider } from '@coral-xyz/anchor';
 import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import { Keypair, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
 
-import { executeNetworkScript } from '@/common/utils';
+import { executeNetworkScript } from '@/common/scriptRunner';
 import { fetchAccountAcState, getAccountAcStatePda } from '@/test/helpers/ac.helpers';
 import { createAtaIfNotExistsInx, parseUnits, toBN } from '@/test/helpers/common.helpers';
 import { fetchDataFeedState } from '@/test/helpers/data-feed.helpers';
@@ -17,7 +17,7 @@ import {
 import { getAcProgram } from './deploy/contracts/ac';
 import { getDataFeedProgram } from './deploy/contracts/dataFeed';
 import { getVaultsProgram } from './deploy/contracts/vaults';
-import { getFeedAddresses, getTokenAddresses } from './utils/addressManager';
+import { requireMinterVault, requirePaymentTokenFeed } from './utils/addressValidators';
 import { getMtoken, getNetwork, getPaymentToken, getAmount } from './utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Keypair) {
@@ -37,19 +37,10 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   console.log('');
 
   // Get token addresses
-  const tokenAddrs = getTokenAddresses(network, mtoken);
-  if (!tokenAddrs?.minter?.commonVault) {
-    throw new Error(`Minter vault not found for ${mtoken} on ${network}`);
-  }
+  const vaultCommon = requireMinterVault(network, mtoken);
 
   // Get payment token feed address
-  const feedAddr = getFeedAddresses(network, paymentToken);
-  if (!feedAddr?.token) {
-    throw new Error(`Payment token mint not found for ${paymentToken} on ${network}`);
-  }
-  if (!feedAddr?.dataFeed) {
-    throw new Error(`Feed not found for payment token ${paymentToken} on ${network}`);
-  }
+  const feedAddr = requirePaymentTokenFeed(network, paymentToken, mtoken);
 
   // Parse amount - payment tokens typically have 6 decimals (USDC, USDT)
   const paymentTokenDecimals = 6; // USDC/USDT standard
@@ -58,8 +49,6 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const vaultsProgram = getVaultsProgram(provider);
   const feedProgram = getDataFeedProgram(provider);
   const acProgram = getAcProgram(provider);
-
-  const vaultCommon = tokenAddrs.minter.commonVault;
 
   const commonState = await fetchVaultCommonState(vaultsProgram, vaultCommon);
 
