@@ -13,6 +13,7 @@ import {
 } from '../../utils/addressQueries';
 import { registerAddress } from '../../utils/addressRegistry';
 import { verifyNetworkInfrastructure } from '../../utils/dependencyChecker';
+import { getDataFeedProgram } from '../contracts/dataFeed';
 import { deployChainlinkFeed } from '../contracts/feeds/chainlink';
 import { deployManualFeed } from '../contracts/feeds/manual';
 import { deployPythFeed } from '../contracts/feeds/pyth';
@@ -50,7 +51,6 @@ export async function deployDataFeedFromConfig(
 
   const existingAddresses = getTokenAddresses(network, tokenSymbol);
   if (existingAddresses?.mTokenDataFeed) {
-    const { getDataFeedProgram } = await import('../contracts/dataFeed');
     const dataFeedProgram = getDataFeedProgram(provider);
     try {
       const onChainFeed = await dataFeedProgram.account.feedState.fetch(

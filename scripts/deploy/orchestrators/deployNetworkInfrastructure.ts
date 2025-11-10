@@ -1,7 +1,11 @@
 import { AnchorProvider } from '@coral-xyz/anchor';
 import { Keypair, PublicKey } from '@solana/web3.js';
 
-import { needsGlobalAddressesDeployment } from '../../utils/addressQueries';
+import {
+  needsGlobalAddressesDeployment,
+  getAcAddress,
+  getAcRoleGlobalAddress,
+} from '../../utils/addressQueries';
 import { registerGlobalAddresses } from '../../utils/addressRegistry';
 import { verifyProgramsDeployed } from '../../utils/dependencyChecker';
 import { deployAcRole, deployAc, DeployAcRoleConfig, DeployAcConfig } from '../contracts/ac';
@@ -32,7 +36,6 @@ export async function deployNetworkInfrastructure(
   // Check if already deployed
   if (!needsGlobalAddressesDeployment(network)) {
     try {
-      const { getAcAddress, getAcRoleGlobalAddress } = await import('../../utils/addressQueries');
       const acRoleGlobal = getAcRoleGlobalAddress(network);
       const ac = getAcAddress(network);
 

@@ -7,6 +7,7 @@ import { executeNetworkScript } from '@/common/scriptRunner';
 import { loadTokenConfig } from '../../configs/loadTokenConfig';
 import { deployMinterVaultFromConfig } from '../../deploy/orchestrators/deployMinterVault';
 import { deployRedeemerVaultFromConfig } from '../../deploy/orchestrators/deployRedeemerVault';
+import { getTokenAddresses } from '../../utils/addressQueries';
 import { registerAddress } from '../../utils/addressRegistry';
 import { getMtoken, getNetwork } from '../../utils/argumentParser';
 import { verifyDependencies, verifyVaultsOnChain } from '../../utils/dependencyChecker';
@@ -33,7 +34,6 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   let minterVaultResult;
   if (verification.minter.exists && verification.minter.address) {
     console.log('\n[1/2] Minter Vault...');
-    const { getTokenAddresses } = await import('../../utils/addressQueries');
     const tokenAddrs = getTokenAddresses(network, mtoken);
     if (tokenAddrs?.minter) {
       minterVaultResult = tokenAddrs.minter;
@@ -53,7 +53,6 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   let redeemerVaultResult;
   if (verification.redeemer.exists && verification.redeemer.address) {
     console.log('\n[2/2] Redeemer Vault...');
-    const { getTokenAddresses } = await import('../../utils/addressQueries');
     const tokenAddrs = getTokenAddresses(network, mtoken);
     if (tokenAddrs?.redeemer) {
       redeemerVaultResult = tokenAddrs.redeemer;

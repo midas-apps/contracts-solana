@@ -7,6 +7,11 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import { createUserError, isAccountNotFoundError } from '@/common/errorHandler';
 import { MProduct } from '@/common/tokenTypes';
 
+import { getAcProgram } from '../deploy/contracts/ac';
+import { getDataFeedProgram } from '../deploy/contracts/dataFeed';
+import { getTokenAuthorityProgram } from '../deploy/contracts/token-authority';
+import { getVaultsProgram } from '../deploy/contracts/vaults';
+
 import { getTokenAddresses, getAcAddress, getAcRoleGlobalAddress } from './addressQueries';
 
 export type RequiredComponent = 'mToken' | 'tokenAuthority' | 'mTokenDataFeed' | 'acRole';
@@ -284,7 +289,6 @@ export async function verifyTokenCoreOnChain(
   // Verify AC Role
   if (tokenAddrs?.acRole) {
     results.acRole.address = tokenAddrs.acRole;
-    const { getAcProgram } = await import('../deploy/contracts/ac');
     const acProgram = getAcProgram(provider);
     results.acRole.exists = await verifyAnchorAccountExistsOnChain(
       (addr) => acProgram.account.accessControlRoleState.fetch(addr),
@@ -304,7 +308,6 @@ export async function verifyTokenCoreOnChain(
   // Verify Token Authority
   if (tokenAddrs?.tokenAuthority) {
     results.tokenAuthority.address = tokenAddrs.tokenAuthority.account;
-    const { getTokenAuthorityProgram } = await import('../deploy/contracts/token-authority');
     const tokenAuthorityProgram = getTokenAuthorityProgram(provider);
     results.tokenAuthority.exists = await verifyAnchorAccountExistsOnChain(
       (addr) => tokenAuthorityProgram.account.tokenAuthorityState.fetch(addr),
@@ -328,7 +331,6 @@ export async function verifyDataFeedOnChain(
     return { exists: false };
   }
 
-  const { getDataFeedProgram } = await import('../deploy/contracts/dataFeed');
   const dataFeedProgram = getDataFeedProgram(provider);
   const exists = await verifyAnchorAccountExistsOnChain(
     (addr) => dataFeedProgram.account.feedState.fetch(addr),
@@ -355,7 +357,6 @@ export async function verifyVaultsOnChain(
     redeemer: { exists: false, address: undefined as PublicKey | undefined },
   };
 
-  const { getVaultsProgram } = await import('../deploy/contracts/vaults');
   const vaultsProgram = getVaultsProgram(provider);
 
   // Verify Minter Vault
