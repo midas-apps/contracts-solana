@@ -191,3 +191,35 @@ export function registerAndComplete<K extends keyof TokenAddresses>(
   const address = extractPublicKey(component, value);
   markComponentCompleted(state, stateComponentName, address, transactionSignature);
 }
+
+function validateDataFeed(component: string, value: unknown): asserts value is DataFeed {
+  if (typeof value !== 'object' || value === null) {
+    throw createUserError(`Invalid value for component '${component}': expected DataFeed object`);
+  }
+
+  const feed = value as Partial<DataFeed>;
+  const fields: (keyof DataFeed)[] = ['token', 'dataFeed', 'tokenProgram', 'underlyingFeed'];
+  for (const field of fields) {
+    if (feed[field] !== undefined && !(feed[field] instanceof PublicKey)) {
+      throw createUserError(
+        `Invalid value for component '${component}.${field}': expected PublicKey`,
+      );
+    }
+  }
+}
+
+export function registerPaymentTokenFeed(
+  network: string,
+  paymentToken: PaymentToken,
+  feed: DataFeed,
+): void {
+  validateDataFeed('paymentTokenFeed', feed);
+  ensureNetworkExists(network);
+
+  const networkAddrs = addresses[network];
+  if (!networkAddrs.feeds) {
+    networkAddrs.feeds = {} as Partial<Record<PaymentToken, DataFeed>>;
+  }
+
+  networkAddrs.feeds[paymentToken] = feed;
+}

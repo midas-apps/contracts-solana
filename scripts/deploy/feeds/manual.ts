@@ -5,7 +5,7 @@ import { AC_ROLES } from '@/test/constants/ac.constants';
 import { DATA_FEED_AC_ROLES } from '@/test/constants/data-feed.constants';
 import { getAccountAcRoleStatePda, acRoleToBuffer } from '@/test/helpers/ac.helpers';
 import { toBN } from '@/test/helpers/common.helpers';
-import { getManualFeedStatePda, DataFeedMode } from '@/test/helpers/data-feed.helpers';
+import { getManualFeedStatePda } from '@/test/helpers/data-feed.helpers';
 
 import { getAcProgram } from '../ac';
 import {
@@ -110,30 +110,6 @@ export async function deployManualFeed(
     );
 
     await sendAndConfirmTransaction(provider.connection, manualFeedTx, [payer], {
-      commitment: 'finalized',
-    });
-
-    // Step 3: Update base feed to use manual feed as underlying feed
-    const updateTx = new Transaction().add(
-      await dataFeedProgram.methods
-        .updateFeed(
-          null, // acRole - no change
-          manualFeedPda, // underlyingFeed - already set, but ensure it's correct
-          DataFeedMode.manual, // mode - explicitly set to manual for consistency
-          null, // minPrice - no change
-          null, // maxPrice - no change
-          null, // maxStaleness - no change
-        )
-        .accountsPartial({
-          authority: payer.publicKey,
-          feed: feedPublicKey,
-          acRole: params.acRole,
-          authorityAcRole: authorityAcRolePda,
-        })
-        .instruction(),
-    );
-
-    await sendAndConfirmTransaction(provider.connection, updateTx, [payer], {
       commitment: 'finalized',
     });
 

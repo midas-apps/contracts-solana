@@ -1,3 +1,4 @@
+import { PaymentToken } from '@/common/tokenTypes';
 import { TokenConfigWithNetworks } from '@/scripts/configs/types';
 import { PLACEHOLDER_FEED_ADDRESS } from '@/scripts/utils/feedUtils';
 
@@ -34,6 +35,15 @@ export const mTBILLConfig: TokenConfigWithNetworks = {
         minAmount: '1',
         firstMintMinMTokens: '10',
         greenListEnforced: false,
+        paymentTokens: [
+          {
+            symbol: PaymentToken.USDC,
+            fee: '0.1',
+            allowance: '1000000',
+            stable: true,
+            isFiat: false,
+          },
+        ],
       },
       redeemer: {
         instantFee: '1',
@@ -43,22 +53,16 @@ export const mTBILLConfig: TokenConfigWithNetworks = {
         minFiatRedeemAmount: '10',
         fiatFlatFee: '1',
         greenListEnforced: false,
+        paymentTokens: [
+          {
+            symbol: PaymentToken.USDC,
+            fee: '0.1',
+            allowance: '1000000',
+            stable: true,
+            isFiat: false,
+          },
+        ],
       },
-      // Optional: Payment tokens configuration
-      // Uncomment and configure when adding payment tokens
-      // Note: Mint and feed addresses must exist in common/addresses.ts for the target network
-      // paymentTokens: [
-      //   {
-      //     symbol: "USDC",
-      //     mint: "...", // USDC mint address for devnet
-      //     feed: "...", // Data feed address from common/addresses.ts
-      //     fee: "0.1", // 0.1% fee
-      //     allowance: "1000000", // Max allowance
-      //     stable: true, // Uses 1:1 rate (stablecoin)
-      //     isFiat: false,
-      //     tokenProgram: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", // Optional, defaults to TOKEN_PROGRAM_ID
-      //   },
-      // ],
     },
     localnet: {
       dataFeed: {
@@ -75,6 +79,15 @@ export const mTBILLConfig: TokenConfigWithNetworks = {
         minAmount: '1',
         firstMintMinMTokens: '10',
         greenListEnforced: false,
+        paymentTokens: [
+          {
+            symbol: PaymentToken.USDC,
+            fee: '0.1',
+            allowance: '1000000',
+            stable: true,
+            isFiat: false,
+          },
+        ],
       },
       redeemer: {
         instantFee: '1',
@@ -84,6 +97,15 @@ export const mTBILLConfig: TokenConfigWithNetworks = {
         minFiatRedeemAmount: '10',
         fiatFlatFee: '1',
         greenListEnforced: false,
+        paymentTokens: [
+          {
+            symbol: PaymentToken.USDC,
+            fee: '0.1',
+            allowance: '1000000',
+            stable: true,
+            isFiat: false,
+          },
+        ],
       },
     },
   },

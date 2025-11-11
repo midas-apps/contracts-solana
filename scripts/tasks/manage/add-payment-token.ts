@@ -1,9 +1,8 @@
 import { AnchorProvider } from '@coral-xyz/anchor';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { Keypair, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
+import { Keypair, PublicKey, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
 
 import { executeNetworkScript } from '@/common/scriptRunner';
-import { MAX_U128 } from '@/test/constants/common.constants';
 import { VAULT_AC_ROLES } from '@/test/constants/vaults.constants';
 import { getAccountAcRoleStatePda } from '@/test/helpers/ac.helpers';
 import {
@@ -17,50 +16,36 @@ import { fetchVaultCommonState } from '@/test/helpers/vaults.helpers';
 import { loadTokenConfig } from '../../configs/loadTokenConfig';
 import { getVaultsProgram } from '../../deploy/vaults';
 import { getTokenAddresses } from '../../utils/addressQueries';
-import { requireRedeemerVault, requirePaymentTokenFeed } from '../../utils/addressValidators';
+import {
+  requireMinterVault,
+  requireRedeemerVault,
+  requirePaymentTokenFeed,
+} from '../../utils/addressValidators';
 import {
   getMtoken,
   getNetwork,
   getPaymentToken,
-  getOptionalArg,
-  getOptionalBoolean,
+  getOptionalVaults,
 } from '../../utils/argumentParser';
 
-async function main(provider: AnchorProvider, payer: Keypair) {
-  const mtoken = getMtoken();
-  const network = getNetwork();
-  const paymentToken = getPaymentToken();
-  const fee = getOptionalArg('fee');
-  const allowance = getOptionalArg('allowance');
-  const stable = getOptionalBoolean('stable');
-  const isFiat = getOptionalBoolean('is-fiat');
+type VaultType = 'minter' | 'redeemer';
 
-  console.log(`Adding ${paymentToken} as payment token for ${mtoken}`);
+async function addPaymentTokenToVault(
+  provider: AnchorProvider,
+  payer: Keypair,
+  vaultsProgram: ReturnType<typeof getVaultsProgram>,
+  vaultCommon: PublicKey,
+  feedAddr: { token: PublicKey; dataFeed: PublicKey; tokenProgram: PublicKey } | null,
+  finalFee: string,
+  finalAllowance: string,
+  finalStable: boolean,
+  finalIsFiat: boolean,
+): Promise<string> {
+  const commonState = await fetchVaultCommonState(vaultsProgram, vaultCommon);
 
-  // Load configuration (with cross-reference validation for payment tokens)
-  console.log('Loading configuration...');
-  const config = loadTokenConfig(mtoken, network);
-  console.log('✓ Configuration loaded');
-
-  // Get token addresses
-  requireRedeemerVault(network, mtoken);
-  const tokenAddrs = getTokenAddresses(network, mtoken);
-
-  // Get payment token feed address
-  const feedAddr = requirePaymentTokenFeed(network, paymentToken, mtoken);
-
-  // Get payment token config from token config or use CLI args
-  const paymentTokenConfig = config.paymentTokens?.find(
-    (pt) => pt.symbol.toLowerCase() === paymentToken.toLowerCase(),
-  );
-
-  const finalFee = fee || paymentTokenConfig?.fee || '0.1';
-  const finalAllowance = allowance || paymentTokenConfig?.allowance || MAX_U128.toString();
-  const finalStable = stable !== undefined ? stable : paymentTokenConfig?.stable || false;
-  const finalIsFiat = isFiat !== undefined ? isFiat : paymentTokenConfig?.isFiat || false;
-
-  const vaultsProgram = getVaultsProgram(provider);
-  const commonState = await fetchVaultCommonState(vaultsProgram, tokenAddrs.redeemer.commonVault);
+  if (!feedAddr && !finalIsFiat) {
+    throw new Error('Feed address is required for non-fiat payment tokens');
+  }
 
   const tx = new Transaction().add(
     finalIsFiat
@@ -71,7 +56,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
           )
           .accountsPartial({
             authority: payer.publicKey,
-            vaultCommon: tokenAddrs.redeemer.commonVault,
+            vaultCommon: vaultCommon,
             authorityAcRole: getAccountAcRoleStatePda(
               commonState.acRole,
               payer.publicKey,
@@ -87,10 +72,10 @@ async function main(provider: AnchorProvider, payer: Keypair) {
           )
           .accountsPartial({
             authority: payer.publicKey,
-            tokenProgram: feedAddr.tokenProgram || TOKEN_PROGRAM_ID,
-            vaultCommon: tokenAddrs.redeemer.commonVault,
-            dataFeed: feedAddr.dataFeed,
-            paymentMint: feedAddr.token,
+            tokenProgram: feedAddr!.tokenProgram || TOKEN_PROGRAM_ID,
+            vaultCommon: vaultCommon,
+            dataFeed: feedAddr!.dataFeed,
+            paymentMint: feedAddr!.token,
             authorityAcRole: getAccountAcRoleStatePda(
               commonState.acRole,
               payer.publicKey,
@@ -100,7 +85,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
           .instruction(),
   );
 
-  if (!finalIsFiat) {
+  if (!finalIsFiat && feedAddr) {
     const feeReceiverCreateAtaInx = await createAtaIfNotExistsInx(
       provider.connection,
       feedAddr.token,
@@ -132,8 +117,110 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     commitment: 'finalized',
   });
 
-  console.log(`✅ Payment token ${paymentToken} added successfully!`);
-  console.log(`Transaction: ${txRes}`);
+  return txRes;
+}
+
+async function main(provider: AnchorProvider, payer: Keypair) {
+  const mtoken = getMtoken();
+  const network = getNetwork();
+  const paymentToken = getPaymentToken();
+  const cliVaults = getOptionalVaults();
+
+  console.log(`Adding ${paymentToken} as payment token for ${mtoken}`);
+
+  // Load configuration (with cross-reference validation for payment tokens)
+  console.log('Loading configuration...');
+  const config = loadTokenConfig(mtoken, network);
+  console.log('✓ Configuration loaded');
+
+  // Get token addresses
+  const tokenAddrs = getTokenAddresses(network, mtoken);
+  if (!tokenAddrs) {
+    throw new Error(`Token addresses not found for ${mtoken} on ${network}`);
+  }
+
+  // Determine target vaults: CLI overrides default (both vaults)
+  const targetVaults: VaultType[] = cliVaults || (['minter', 'redeemer'] as VaultType[]);
+
+  console.log(`Target vaults: ${targetVaults.join(', ')}`);
+
+  // Validate vaults exist
+  if (targetVaults.includes('minter')) {
+    requireMinterVault(network, mtoken);
+  }
+  if (targetVaults.includes('redeemer')) {
+    requireRedeemerVault(network, mtoken);
+  }
+
+  const vaultsProgram = getVaultsProgram(provider);
+
+  // Add payment token to each target vault with its specific config
+  const results: { vault: VaultType; tx: string }[] = [];
+
+  for (const vaultType of targetVaults) {
+    const vaultCommon =
+      vaultType === 'minter' ? tokenAddrs.minter?.commonVault : tokenAddrs.redeemer?.commonVault;
+
+    if (!vaultCommon) {
+      throw new Error(`${vaultType} vault not found for ${mtoken} on ${network}`);
+    }
+
+    // Find payment token config for this specific vault
+    const vaultConfig = vaultType === 'minter' ? config.minter : config.redeemer;
+    const paymentTokenConfig = vaultConfig.paymentTokens?.find(
+      (pt) => pt.symbol.toLowerCase() === paymentToken.toLowerCase(),
+    );
+
+    if (!paymentTokenConfig) {
+      throw new Error(
+        `Payment token ${paymentToken} not found in ${vaultType} config for ${mtoken} on ${network}. ` +
+          `Please add it to the ${vaultType}.paymentTokens array in the token configuration file.`,
+      );
+    }
+
+    // Get payment token config values (all come from config only)
+    const finalFee = paymentTokenConfig.fee;
+    const finalAllowance = paymentTokenConfig.allowance;
+    const finalStable = paymentTokenConfig.stable;
+    const finalIsFiat = paymentTokenConfig.isFiat ?? false;
+
+    // Get payment token feed address from common/addresses.ts (only for non-fiat tokens)
+    // Fiat tokens use FIAT_MINT (zero address) and don't have addresses in common/addresses.ts
+    let feedAddr: { token: PublicKey; dataFeed: PublicKey; tokenProgram: PublicKey } | null = null;
+    if (!finalIsFiat) {
+      try {
+        feedAddr = requirePaymentTokenFeed(network, paymentToken, mtoken);
+      } catch {
+        throw new Error(
+          `Payment token ${paymentToken} is not fiat but addresses not found in common/addresses.ts for ${network}. ` +
+            `Either add addresses to common/addresses.ts or set isFiat: true in config.`,
+        );
+      }
+    }
+
+    console.log(
+      `Adding payment token to ${vaultType} vault (fee: ${finalFee}%, allowance: ${finalAllowance}, stable: ${finalStable}, fiat: ${finalIsFiat})...`,
+    );
+    const txRes = await addPaymentTokenToVault(
+      provider,
+      payer,
+      vaultsProgram,
+      vaultCommon,
+      feedAddr,
+      finalFee,
+      finalAllowance,
+      finalStable,
+      finalIsFiat,
+    );
+
+    results.push({ vault: vaultType, tx: txRes });
+    console.log(`✅ Payment token added to ${vaultType} vault`);
+    console.log(`   Transaction: ${txRes}`);
+  }
+
+  console.log(
+    `\n✅ Payment token ${paymentToken} added successfully to ${results.length} vault(s)!`,
+  );
 }
 
 const network = getNetwork();

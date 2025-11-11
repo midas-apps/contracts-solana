@@ -1,9 +1,10 @@
 import { PublicKey } from '@solana/web3.js';
 import { z } from 'zod';
 
+import { PaymentToken } from '@/common/tokenTypes';
+
 import { PLACEHOLDER_FEED_ADDRESS } from '../utils/feedUtils';
 
-// Helper schema for PublicKey strings
 const publicKeySchema = z.string().refine(
   (val) => {
     try {
@@ -16,7 +17,6 @@ const publicKeySchema = z.string().refine(
   { message: 'Invalid PublicKey format' },
 );
 
-// Data Feed Configuration
 export const dataFeedModeSchema = z.enum(['switchboard', 'pyth', 'chainlink', 'manual']);
 
 export const switchboardConfigSchema = z.object({
@@ -67,7 +67,6 @@ export const dataFeedConfigSchema = z
     },
   );
 
-// Token Metadata
 export const tokenMetadataSchema = z.object({
   name: z.string(),
   symbol: z.string(),
@@ -75,12 +74,23 @@ export const tokenMetadataSchema = z.object({
   uri: z.string().url().optional(),
 });
 
-// Token Authority Configuration
 export const tokenAuthorityConfigSchema = z.object({
   seed: z.string(),
 });
 
-// Minter Vault Configuration
+export const paymentTokenConfigSchema = z.object({
+  symbol: z
+    .string()
+    .refine((val) => Object.values(PaymentToken).includes(val as PaymentToken), {
+      message: `Invalid payment token symbol. Must be one of: ${Object.values(PaymentToken).join(', ')}`,
+    })
+    .transform((val) => val as PaymentToken),
+  fee: z.string(),
+  allowance: z.string(),
+  stable: z.boolean(),
+  isFiat: z.boolean().default(false),
+});
+
 export const minterVaultConfigSchema = z.object({
   instantFee: z.string(),
   instantDailyLimit: z.string(),
@@ -90,9 +100,9 @@ export const minterVaultConfigSchema = z.object({
   greenListEnforced: z.boolean().default(false),
   tokensReceiver: publicKeySchema.optional(),
   feeReceiver: publicKeySchema.optional(),
+  paymentTokens: z.array(paymentTokenConfigSchema).optional(),
 });
 
-// Redeemer Vault Configuration
 export const redeemerVaultConfigSchema = z.object({
   instantFee: z.string(),
   instantDailyLimit: z.string(),
@@ -104,55 +114,43 @@ export const redeemerVaultConfigSchema = z.object({
   tokensReceiver: publicKeySchema.optional(),
   feeReceiver: publicKeySchema.optional(),
   requestRedeemer: publicKeySchema.optional(),
+  paymentTokens: z.array(paymentTokenConfigSchema).optional(),
 });
 
-// Payment Token Configuration
-export const paymentTokenConfigSchema = z.object({
-  symbol: z.string(),
-  mint: publicKeySchema,
-  feed: publicKeySchema,
-  fee: z.string(),
-  allowance: z.string(),
-  stable: z.boolean().default(false),
-  isFiat: z.boolean().default(false),
-  tokenProgram: publicKeySchema.optional(),
-});
-
-// Complete Token Configuration
 export const tokenConfigSchema = z.object({
   metadata: tokenMetadataSchema,
   tokenAuthority: tokenAuthorityConfigSchema,
   dataFeed: dataFeedConfigSchema,
   minter: minterVaultConfigSchema,
   redeemer: redeemerVaultConfigSchema,
-  paymentTokens: z.array(paymentTokenConfigSchema).optional(),
 });
 
-// Network-specific configuration (per-network overrides)
 export const networkSpecificConfigSchema = z.object({
   dataFeed: dataFeedConfigSchema,
   minter: minterVaultConfigSchema,
   redeemer: redeemerVaultConfigSchema,
-  paymentTokens: z.array(paymentTokenConfigSchema).optional(),
 });
 
-// Token Configuration with Networks (new structure)
-// Base config contains shared values, networks contains network-specific configs
 export const tokenConfigWithNetworksSchema = z.object({
   metadata: tokenMetadataSchema,
   tokenAuthority: tokenAuthorityConfigSchema,
   networks: z.record(z.string(), networkSpecificConfigSchema),
 });
 
-// Type exports
-export type DataFeedMode = z.infer<typeof dataFeedModeSchema>;
-export type SwitchboardConfig = z.infer<typeof switchboardConfigSchema>;
+export const paymentTokenMetadataSchema = z.object({
+  name: z.string(),
+  symbol: z.string(),
+  decimals: z.number().int().min(0).max(18),
+});
+
+// Payment Token Deployment Configuration
+export const paymentTokenDeploymentConfigSchema = z.object({
+  metadata: paymentTokenMetadataSchema,
+  tokenAddress: publicKeySchema,
+  dataFeed: dataFeedConfigSchema,
+});
+
 export type DataFeedConfig = z.infer<typeof dataFeedConfigSchema>;
-export type TokenMetadata = z.infer<typeof tokenMetadataSchema>;
-export type TokenAuthorityConfig = z.infer<typeof tokenAuthorityConfigSchema>;
-export type MinterVaultConfig = z.infer<typeof minterVaultConfigSchema>;
-export type RedeemerVaultConfig = z.infer<typeof redeemerVaultConfigSchema>;
-export type PaymentTokenConfig = z.infer<typeof paymentTokenConfigSchema>;
 export type TokenConfig = z.infer<typeof tokenConfigSchema>;
-export type NetworkSpecificConfig = z.infer<typeof networkSpecificConfigSchema>;
 export type TokenConfigWithNetworks = z.infer<typeof tokenConfigWithNetworksSchema>;
+export type PaymentTokenDeploymentConfig = z.infer<typeof paymentTokenDeploymentConfigSchema>;

@@ -104,10 +104,31 @@ export function getOptionalArg(key: string): string | undefined {
   return argv[key] as string | undefined;
 }
 
-/** Get optional boolean argument */
-export function getOptionalBoolean(key: string): boolean | undefined {
+/** Get optional vaults array from arguments */
+export function getOptionalVaults(): ('minter' | 'redeemer')[] | undefined {
   const argv = getParsedArgs();
-  const value = argv[key];
-  if (value === undefined) return undefined;
-  return Boolean(value);
+  const vaults = argv.vaults as string | string[] | undefined;
+  if (!vaults) return undefined;
+
+  const vaultArray = Array.isArray(vaults) ? vaults : vaults.split(',').map((v) => v.trim());
+  const validVaults: ('minter' | 'redeemer')[] = [];
+
+  for (const vault of vaultArray) {
+    if (vault === 'minter' || vault === 'redeemer') {
+      validVaults.push(vault);
+    } else {
+      throw createUserError(`Invalid vault '${vault}'`, [
+        "Must be one of: 'minter', 'redeemer'",
+        'Example: --vaults minter,redeemer or --vaults minter',
+      ]);
+    }
+  }
+
+  if (validVaults.length === 0) {
+    throw createUserError('No valid vaults specified', [
+      "Must include at least one of: 'minter', 'redeemer'",
+    ]);
+  }
+
+  return validVaults;
 }

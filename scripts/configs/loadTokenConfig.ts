@@ -7,9 +7,7 @@ import { TokenConfig, tokenConfigSchema, tokenConfigWithNetworksSchema } from '.
 export function loadTokenConfig(tokenSymbol: MProduct, network: string): TokenConfig {
   const config = tokenConfigs[tokenSymbol];
   if (!config) {
-    throw createUserError(`Token config not found: ${tokenSymbol}`, [
-      `Available tokens: ${Object.keys(tokenConfigs).join(', ') || 'none'}`,
-    ]);
+    throw createUserError(`Token config not found: ${tokenSymbol}`);
   }
 
   const parseResult = tokenConfigWithNetworksSchema.safeParse(config);
@@ -17,17 +15,12 @@ export function loadTokenConfig(tokenSymbol: MProduct, network: string): TokenCo
     const errors = parseResult.error.issues
       .map((e) => `${e.path.join('.')}: ${e.message}`)
       .join('\n');
-    throw createUserError(`Invalid config format for ${tokenSymbol}`, [
-      'Check the token configuration file',
-      `Errors:\n${errors}`,
-    ]);
+    throw createUserError(`Invalid config format for ${tokenSymbol}: ${errors}`);
   }
 
   const { networks, ...baseConfig } = parseResult.data;
   if (!networks[network]) {
-    throw createUserError(`Network '${network}' not found for ${tokenSymbol}`, [
-      `Available networks: ${Object.keys(networks).join(', ') || 'none'}`,
-    ]);
+    throw createUserError(`Network '${network}' not found for ${tokenSymbol}`);
   }
 
   const merged = { ...baseConfig, ...networks[network] };

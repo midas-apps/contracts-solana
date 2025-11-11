@@ -202,7 +202,6 @@ export async function saveAddressesToFile(): Promise<void> {
     });
 
     fs.writeFileSync(addressesFilePath, formatted, 'utf-8');
-    console.log('✓ Addresses saved to common/addresses.ts');
   } catch (error) {
     console.error('❌ Failed to save addresses to file:', error);
     throw error;

@@ -15,6 +15,8 @@
     "deploy:token-core": "tsx scripts/tasks/deploy/deploy-token-core.ts",
     "deploy:token-datafeed": "tsx scripts/tasks/deploy/deploy-token-datafeed.ts",
     "deploy:token-vaults": "tsx scripts/tasks/deploy/deploy-token-vaults.ts",
+    "deploy:payment-token-feed": "tsx scripts/tasks/deploy/deploy-payment-token-feed.ts",
+    "deploy:mock-payment-token": "tsx scripts/tasks/deploy/mock/deploy-mock-payment-token.ts",
     "add:payment-token": "tsx scripts/tasks/manage/add-payment-token.ts",
     "grant:role": "tsx scripts/tasks/manage/grant-role.ts",
     "transfer:authority": "tsx scripts/tasks/manage/transfer-authority.ts",
