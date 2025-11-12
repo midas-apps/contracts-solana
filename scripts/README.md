@@ -19,28 +19,52 @@ Deploys network infrastructure (AC Role Global + AC).
 yarn deploy:network --network devnet
 ```
 
-### `deploy:token-core`
+#### `deploy:token-ac-role`
 
-Deploys core token components (AC Role, mToken, Token Authority).
+Deploys token AC Role.
 
 ```bash
-yarn deploy:token-core --mtoken mTBILL --network devnet
+yarn deploy:token-ac-role --mtoken mTBILL --network devnet
+```
+
+#### `deploy:token-mint`
+
+Deploys mToken mint. Requires AC Role.
+
+```bash
+yarn deploy:token-mint --mtoken mTBILL --network devnet
+```
+
+#### `deploy:token-authority`
+
+Deploys Token Authority. Requires AC Role and mToken.
+
+```bash
+yarn deploy:token-authority --mtoken mTBILL --network devnet
 ```
 
 ### `deploy:token-datafeed`
 
-Deploys data feed (Switchboard/Chainlink/Pyth/Manual).
+Deploys data feed (Switchboard/Chainlink/Pyth/Manual). Requires AC Role.
 
 ```bash
 yarn deploy:token-datafeed --mtoken mTBILL --network devnet
 ```
 
-### `deploy:token-vaults`
+#### `deploy:minter-vault`
 
-Deploys Minter Vault and Redeemer Vault.
+Deploys Minter Vault. Requires AC, AC Role, mToken, mTokenDataFeed, and Token Authority.
 
 ```bash
-yarn deploy:token-vaults --mtoken mTBILL --network devnet
+yarn deploy:minter-vault --mtoken mTBILL --network devnet
+```
+
+#### `deploy:redeemer-vault`
+
+Deploys Redeemer Vault. Requires AC, AC Role, mToken, and mTokenDataFeed.
+
+```bash
+yarn deploy:redeemer-vault --mtoken mTBILL --network devnet
 ```
 
 ## Configuration

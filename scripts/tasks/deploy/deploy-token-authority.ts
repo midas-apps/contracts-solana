@@ -1,7 +1,6 @@
 import { AnchorProvider } from '@coral-xyz/anchor';
 import { Keypair, PublicKey } from '@solana/web3.js';
 
-import { createMTokenMint } from '@/common/create-mtoken-mint';
 import {
   createUserError,
   isAccountNotFoundError,
@@ -10,9 +9,8 @@ import {
 import { executeNetworkScript } from '@/common/scriptRunner';
 
 import { loadTokenConfig } from '../../configs/loadTokenConfig';
-import { deployAcRole, getAcProgram } from '../../deploy/ac';
 import { getTokenAuthorityProgram, deployTokenAuthority } from '../../deploy/token-authority';
-import { getTokenAddresses } from '../../utils/addressQueries';
+import { getTokenAddresses, getTokenAcRoleAddress } from '../../utils/addressQueries';
 import { registerAddress } from '../../utils/addressRegistry';
 import { saveAddressesToFile } from '../../utils/addressStorage';
 import { getMtoken, getNetwork } from '../../utils/argumentParser';
@@ -21,80 +19,27 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const mtoken = getMtoken();
   const network = getNetwork();
 
-  console.log(`Deploying core token: ${mtoken}`);
+  console.log(`Deploying token authority for: ${mtoken}`);
 
   const config = loadTokenConfig(mtoken, network);
   const existingAddresses = getTokenAddresses(network, mtoken);
-  const acProgram = getAcProgram(provider);
   const tokenAuthorityProgram = getTokenAuthorityProgram(provider);
 
-  let acRole: PublicKey;
-  if (existingAddresses?.acRole) {
-    try {
-      await acProgram.account.accessControlRoleState.fetch(existingAddresses.acRole);
-      acRole = existingAddresses.acRole;
-    } catch (error) {
-      if (isAccountNotFoundError(error)) {
-        acRole = await deployAcRole({ provider, payer }, {});
-      } else {
-        throw createUserError('AC Role in addresses.ts does not exist on-chain', [
-          'Remove the address from addresses.ts or verify the account exists',
-        ]);
-      }
-    }
-  } else {
-    acRole = await deployAcRole({ provider, payer }, {});
+  // Check prerequisites: AC Role and mToken must exist
+  const acRole = getTokenAcRoleAddress(network, mtoken);
+  if (!acRole) {
+    throw createUserError(`Token AC Role not found for ${mtoken} on ${network}`, [
+      `Run: yarn deploy:token-ac-role --mtoken ${mtoken} --network ${network}`,
+    ]);
   }
-  registerAddress(network, mtoken, 'acRole', acRole);
-  await saveAddressesToFile();
 
-  let mToken: PublicKey;
-  if (existingAddresses?.mToken) {
-    try {
-      const mintInfo = await provider.connection.getAccountInfo(existingAddresses.mToken);
-      if (mintInfo) {
-        mToken = existingAddresses.mToken;
-      } else {
-        throw createUserError('mToken in addresses.ts does not exist on-chain', [
-          'Remove the address from addresses.ts or verify the account exists',
-        ]);
-      }
-    } catch (error) {
-      if (isAccountNotFoundError(error)) {
-        const mint = await createMTokenMint({
-          payer,
-          authority: payer.publicKey,
-          connection: provider.connection,
-          metadata: {
-            name: config.metadata.name,
-            symbol: config.metadata.symbol,
-            uri: config.metadata.uri || '',
-            additionalMetadata: [],
-          },
-        });
-        mToken = mint.publicKey;
-      } else {
-        throw error;
-      }
-    }
-  } else {
-    const mint = await createMTokenMint({
-      payer,
-      authority: payer.publicKey,
-      connection: provider.connection,
-      metadata: {
-        name: config.metadata.name,
-        symbol: config.metadata.symbol,
-        uri: config.metadata.uri || '',
-        additionalMetadata: [],
-      },
-    });
-    mToken = mint.publicKey;
+  const tokenAddrs = getTokenAddresses(network, mtoken);
+  if (!tokenAddrs?.mToken) {
+    throw createUserError(`mToken not found for ${mtoken} on ${network}`, [
+      `Run: yarn deploy:token-mint --mtoken ${mtoken} --network ${network}`,
+    ]);
   }
-  registerAddress(network, mtoken, 'mToken', mToken);
-  await saveAddressesToFile();
 
-  // Use the acRole we just deployed/verified above - no need to resolve it again
   let tokenAuthority: PublicKey;
   if (existingAddresses?.tokenAuthority) {
     try {
@@ -114,6 +59,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
         );
       }
       tokenAuthority = existingAddresses.tokenAuthority.account;
+      console.log(`✓ Token Authority already exists: ${tokenAuthority.toString()}`);
     } catch (error) {
       // Re-throw user errors (like AC Role mismatch) as-is
       if (isUserActionableError(error)) {
@@ -144,15 +90,14 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     );
     tokenAuthority = authority;
   }
+
   registerAddress(network, mtoken, 'tokenAuthority', {
     seed: config.tokenAuthority.seed,
     account: tokenAuthority,
   });
   await saveAddressesToFile();
 
-  console.log('✅ Core token deployed successfully');
-  console.log(`AC Role: ${acRole.toString()}`);
-  console.log(`mToken: ${mToken.toString()}`);
+  console.log('✅ Token Authority deployed successfully');
   console.log(`Token Authority: ${tokenAuthority.toString()}`);
 }
 

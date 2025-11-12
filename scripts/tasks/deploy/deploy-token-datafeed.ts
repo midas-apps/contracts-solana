@@ -42,7 +42,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     const acRole = getTokenAcRoleAddress(network, mtoken);
     if (!acRole) {
       throw createUserError(`Token AC Role not found for ${mtoken} on ${network}`, [
-        `Run: yarn deploy:token-core --mtoken ${mtoken} --network ${network}`,
+        `Run: yarn deploy:token-ac-role --mtoken ${mtoken} --network ${network}`,
       ]);
     }
 

@@ -4,10 +4,10 @@ import { Keypair, PublicKey } from '@solana/web3.js';
 import { createUserError } from '@/common/errorHandler';
 import { executeNetworkScript } from '@/common/scriptRunner';
 import { parsePercent, parseUnits } from '@/test/helpers/common.helpers';
-import { getMinterVaultPda, getRedeemerVaultPda } from '@/test/helpers/vaults.helpers';
+import { getMinterVaultPda } from '@/test/helpers/vaults.helpers';
 
 import { loadTokenConfig } from '../../configs/loadTokenConfig';
-import { deployMinterVault, deployRedeemerVault } from '../../deploy/vaults';
+import { deployMinterVault } from '../../deploy/vaults';
 import {
   getTokenAddresses,
   getTokenAcRoleAddress,
@@ -22,7 +22,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const mtoken = getMtoken();
   const network = getNetwork();
 
-  console.log(`Deploying vaults for: ${mtoken}`);
+  console.log(`Deploying minter vault for: ${mtoken}`);
 
   const config = loadTokenConfig(mtoken, network);
 
@@ -36,12 +36,12 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const tokenAcRole = getTokenAcRoleAddress(network, mtoken);
   if (!tokenAcRole) {
     throw createUserError(`Token AC Role not found for ${mtoken} on ${network}`, [
-      `Run: yarn deploy:token-core --mtoken ${mtoken} --network ${network}`,
+      `Run: yarn deploy:token-ac-role --mtoken ${mtoken} --network ${network}`,
     ]);
   }
 
   const acRoleGlobal = getAcRoleGlobalAddress(network);
-  if (tokenAcRole.equals(acRoleGlobal)) {
+  if (acRoleGlobal && tokenAcRole.equals(acRoleGlobal)) {
     throw createUserError(`Token AC Role cannot match global AC Role`, [
       `Token AC Role: ${tokenAcRole.toString()}`,
       `Global AC Role: ${acRoleGlobal.toString()}`,
@@ -51,7 +51,25 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const tokenAddrs = getTokenAddresses(network, mtoken);
   if (!tokenAddrs) {
     throw createUserError(`Token addresses not found for ${mtoken} on ${network}`, [
-      `Run: yarn deploy:token-core --mtoken ${mtoken} --network ${network}`,
+      `Run: yarn deploy:token-ac-role --mtoken ${mtoken} --network ${network}`,
+    ]);
+  }
+
+  if (!tokenAddrs.mToken) {
+    throw createUserError(`mToken not found for ${mtoken} on ${network}`, [
+      `Run: yarn deploy:token-mint --mtoken ${mtoken} --network ${network}`,
+    ]);
+  }
+
+  if (!tokenAddrs.mTokenDataFeed) {
+    throw createUserError(`mToken Data Feed not found for ${mtoken} on ${network}`, [
+      `Run: yarn deploy:token-datafeed --mtoken ${mtoken} --network ${network}`,
+    ]);
+  }
+
+  if (!tokenAddrs.tokenAuthority) {
+    throw createUserError(`Token Authority not found for ${mtoken} on ${network}`, [
+      `Run: yarn deploy:token-authority --mtoken ${mtoken} --network ${network}`,
     ]);
   }
 
@@ -60,9 +78,9 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     {
       acRole: tokenAcRole,
       ac: globalAc,
-      mToken: tokenAddrs.mToken!,
-      mTokenFeed: tokenAddrs.mTokenDataFeed!,
-      tokenAuthority: tokenAddrs.tokenAuthority!.account,
+      mToken: tokenAddrs.mToken,
+      mTokenFeed: tokenAddrs.mTokenDataFeed,
+      tokenAuthority: tokenAddrs.tokenAuthority.account,
       instantFee: parsePercent(parseFloat(config.minter.instantFee)),
       instantDailyLimit: parseUnits(config.minter.instantDailyLimit),
       variationTolerance: parsePercent(parseFloat(config.minter.variationTolerance)),
@@ -80,42 +98,10 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     commonVault: minterCommonVault,
     account: minterVaultPda,
   });
-
-  const redeemerCommonVault = await deployRedeemerVault(
-    { provider, payer },
-    {
-      acRole: tokenAcRole,
-      ac: globalAc,
-      mToken: tokenAddrs.mToken!,
-      mTokenFeed: tokenAddrs.mTokenDataFeed!,
-      instantFee: parsePercent(parseFloat(config.redeemer.instantFee)),
-      instantDailyLimit: parseUnits(config.redeemer.instantDailyLimit),
-      variationTolerance: parsePercent(parseFloat(config.redeemer.variationTolerance)),
-      minAmount: parseUnits(config.redeemer.minAmount),
-      minFiatRedeemAmount: parseUnits(config.redeemer.minFiatRedeemAmount),
-      fiatFlatFee: parseUnits(config.redeemer.fiatFlatFee),
-      greenListEnforced: config.redeemer.greenListEnforced,
-      tokensReceiver: config.redeemer.tokensReceiver
-        ? new PublicKey(config.redeemer.tokensReceiver)
-        : undefined,
-      feeReceiver: config.redeemer.feeReceiver
-        ? new PublicKey(config.redeemer.feeReceiver)
-        : undefined,
-      requestRedeemer: config.redeemer.requestRedeemer
-        ? new PublicKey(config.redeemer.requestRedeemer)
-        : undefined,
-    },
-  );
-  const redeemerVaultPda = getRedeemerVaultPda(redeemerCommonVault);
-  registerAddress(network, mtoken, 'redeemer', {
-    commonVault: redeemerCommonVault,
-    account: redeemerVaultPda,
-  });
   await saveAddressesToFile();
 
-  console.log('✅ Vaults deployed successfully');
+  console.log('✅ Minter vault deployed successfully');
   console.log(`Minter Vault: ${minterCommonVault.toString()}`);
-  console.log(`Redeemer Vault: ${redeemerCommonVault.toString()}`);
 }
 
 const network = getNetwork();
