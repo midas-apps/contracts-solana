@@ -6,7 +6,7 @@ import {
   getMint,
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
-import { Keypair, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
+import { Keypair, PublicKey, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
 
 import { addresses } from '@/common/addresses';
 import { executeNetworkScript } from '@/common/scriptRunner';
@@ -19,6 +19,14 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const paymentToken = getPaymentToken();
   const amountArg = getOptionalArg('amount');
   const amountStr = amountArg ? String(amountArg) : '1000';
+  const recipientArg = getOptionalArg('recipient') || getOptionalArg('to');
+
+  let recipient: PublicKey;
+  try {
+    recipient = recipientArg ? new PublicKey(recipientArg) : payer.publicKey;
+  } catch (error) {
+    throw new Error(`Invalid recipient address: ${recipientArg}\n${error}`);
+  }
 
   const feed = addresses[network]?.feeds?.[paymentToken];
   const mint = feed?.token;
@@ -35,6 +43,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   console.log(`${paymentToken} Mint: ${mint.toBase58()}`);
   console.log(`Token Program: ${tokenProgram.toBase58()}`);
   console.log(`Payer: ${payer.publicKey.toBase58()}`);
+  console.log(`Recipient: ${recipient.toBase58()}`);
 
   const mintInfo = await getMint(provider.connection, mint, undefined, tokenProgram);
   console.log(`Mint Authority: ${mintInfo.mintAuthority?.toBase58() || 'None (frozen)'}`);
@@ -48,7 +57,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   }
 
   const amount = parseUnits(amountStr, mintInfo.decimals);
-  const ata = getAssociatedTokenAddressSync(mint, payer.publicKey, true, tokenProgram);
+  const ata = getAssociatedTokenAddressSync(mint, recipient, true, tokenProgram);
   console.log(`Associated Token Account: ${ata.toBase58()}`);
 
   // Get balance before minting
@@ -65,7 +74,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const ataInstruction = await createAtaIfNotExistsInx(
     provider.connection,
     mint,
-    payer.publicKey,
+    recipient,
     payer,
     tokenProgram,
   );
@@ -97,3 +106,4 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 executeNetworkScript(getNetwork(), main);
 
 // yarn tsx scripts/local-test-utils/mint-payment-token.ts --network devnet --payment-token USDC --amount 1000
+// yarn tsx scripts/local-test-utils/mint-payment-token.ts --network devnet --payment-token USDC --amount 1000 --recipient <address>

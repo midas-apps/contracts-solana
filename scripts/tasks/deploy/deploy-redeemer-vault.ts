@@ -67,6 +67,14 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     ]);
   }
 
+  if (!config.redeemer.tokensReceiver) {
+    throw createUserError(`tokensReceiver is not configured for ${mtoken} redeemer vault`);
+  }
+
+  if (!config.redeemer.feeReceiver) {
+    throw createUserError(`feeReceiver is not configured for ${mtoken} redeemer vault`);
+  }
+
   const redeemerCommonVault = await deployRedeemerVault(
     { provider, payer },
     {
@@ -81,12 +89,8 @@ async function main(provider: AnchorProvider, payer: Keypair) {
       minFiatRedeemAmount: parseUnits(config.redeemer.minFiatRedeemAmount),
       fiatFlatFee: parseUnits(config.redeemer.fiatFlatFee),
       greenListEnforced: config.redeemer.greenListEnforced,
-      tokensReceiver: config.redeemer.tokensReceiver
-        ? new PublicKey(config.redeemer.tokensReceiver)
-        : undefined,
-      feeReceiver: config.redeemer.feeReceiver
-        ? new PublicKey(config.redeemer.feeReceiver)
-        : undefined,
+      tokensReceiver: new PublicKey(config.redeemer.tokensReceiver),
+      feeReceiver: new PublicKey(config.redeemer.feeReceiver),
       requestRedeemer: config.redeemer.requestRedeemer
         ? new PublicKey(config.redeemer.requestRedeemer)
         : undefined,

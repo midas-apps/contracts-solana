@@ -43,7 +43,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   };
 
   const authorityTypeEnum = authorityTypeMap[authorityType];
-  if (!authorityTypeEnum) {
+  if (authorityTypeEnum === undefined) {
     throw createUserError(`Invalid authority type: ${authorityType}`, [
       'Must be one of: MintTokens, FreezeAccount, AccountOwner, CloseAccount',
     ]);

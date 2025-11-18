@@ -27,8 +27,8 @@ export interface DeployMinterVaultConfig {
   mToken: PublicKey;
   mTokenFeed: PublicKey;
   greenListEnforced: boolean;
-  tokensReceiver?: PublicKey;
-  feeReceiver?: PublicKey;
+  tokensReceiver: PublicKey;
+  feeReceiver: PublicKey;
   instantFee: bigint;
   instantDailyLimit: bigint;
   variationTolerance: bigint;
@@ -44,13 +44,13 @@ export interface DeployRedeemerVaultConfig {
   mToken: PublicKey;
   mTokenFeed: PublicKey;
   greenListEnforced: boolean;
-  tokensReceiver?: PublicKey;
-  feeReceiver?: PublicKey;
+  tokensReceiver: PublicKey;
+  feeReceiver: PublicKey;
   instantFee: bigint;
   instantDailyLimit: bigint;
   variationTolerance: bigint;
   minAmount: bigint;
-  requestRedeemer?: PublicKey;
+  requestRedeemer: PublicKey;
   minFiatRedeemAmount: bigint;
   fiatFlatFee: bigint;
 }
@@ -75,9 +75,6 @@ export const deployMinterVault = async (
   }: DeployMinterVaultConfig,
 ) => {
   commonVault ??= Keypair.generate();
-
-  tokensReceiver ??= common.payer.publicKey;
-  feeReceiver ??= common.payer.publicKey;
 
   const vaultsProgram = getVaultsProgram(common.provider);
   const acProgram = getAcProgram(common.provider);
@@ -223,10 +220,6 @@ export const deployRedeemerVault = async (
   }: DeployRedeemerVaultConfig,
 ) => {
   commonVault ??= Keypair.generate();
-
-  tokensReceiver ??= common.payer.publicKey;
-  feeReceiver ??= common.payer.publicKey;
-  requestRedeemer ??= common.payer.publicKey;
 
   const vaultsProgram = getVaultsProgram(common.provider);
 

@@ -73,6 +73,14 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     ]);
   }
 
+  if (!config.minter.tokensReceiver) {
+    throw createUserError(`tokensReceiver is not configured for ${mtoken} minter vault`);
+  }
+
+  if (!config.minter.feeReceiver) {
+    throw createUserError(`feeReceiver is not configured for ${mtoken} minter vault`);
+  }
+
   const minterCommonVault = await deployMinterVault(
     { provider, payer },
     {
@@ -87,10 +95,8 @@ async function main(provider: AnchorProvider, payer: Keypair) {
       minAmount: parseUnits(config.minter.minAmount),
       firstMintMinMTokens: parseUnits(config.minter.firstMintMinMTokens),
       greenListEnforced: config.minter.greenListEnforced,
-      tokensReceiver: config.minter.tokensReceiver
-        ? new PublicKey(config.minter.tokensReceiver)
-        : undefined,
-      feeReceiver: config.minter.feeReceiver ? new PublicKey(config.minter.feeReceiver) : undefined,
+      tokensReceiver: new PublicKey(config.minter.tokensReceiver),
+      feeReceiver: new PublicKey(config.minter.feeReceiver),
     },
   );
   const minterVaultPda = getMinterVaultPda(minterCommonVault);

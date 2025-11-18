@@ -1,5 +1,5 @@
 import { AnchorProvider } from '@coral-xyz/anchor';
-import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
+import { getAssociatedTokenAddressSync } from '@solana/spl-token';
 import { Keypair, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
 
 import { executeNetworkScript } from '@/common/scriptRunner';
@@ -16,6 +16,7 @@ import {
 
 import { getAcProgram } from './deploy/ac';
 import { getDataFeedProgram } from './deploy/dataFeed';
+import { getSwitchboardPullInx } from './deploy/feeds/switchboard';
 import { getVaultsProgram } from './deploy/vaults';
 import { requireMinterVault, requirePaymentTokenFeed } from './utils/addressValidators';
 import { getMtoken, getNetwork, getPaymentToken, getAmount } from './utils/argumentParser';
@@ -26,7 +27,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const paymentToken = getPaymentToken();
   const amountStr = getAmount();
 
-  console.log(`Minting ${amountStr} ${mtoken} tokens with ${paymentToken}`);
+  console.log(`Minting ${mtoken} tokens for ${amountStr} ${paymentToken}`);
 
   // Get token addresses
   const vaultCommon = requireMinterVault(network, mtoken);
@@ -34,8 +35,8 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   // Get payment token feed address
   const feedAddr = requirePaymentTokenFeed(network, paymentToken, mtoken);
 
-  // Parse amount - payment tokens typically have 6 decimals (USDC, USDT)
-  const paymentTokenDecimals = 6; // USDC/USDT standard
+  // Parse amount
+  const paymentTokenDecimals = 6;
   const amount = parseUnits(amountStr, paymentTokenDecimals);
 
   const vaultsProgram = getVaultsProgram(provider);
@@ -63,40 +64,107 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     true,
   );
 
-  const ata = await createAtaIfNotExistsInx(
-    provider.connection,
-    commonState.mMint,
+  const paymentMintSignerAta = getAssociatedTokenAddressSync(
+    feedAddr.token,
     payer.publicKey,
-    payer,
-    TOKEN_2022_PROGRAM_ID,
+    true,
+    feedAddr.tokenProgram,
+  );
+  const paymentMintTokensReceiverAta = getAssociatedTokenAddressSync(
+    feedAddr.token,
+    commonState.tokensReceiver,
+    true,
+    feedAddr.tokenProgram,
+  );
+  const paymentMintFeeReceiverAta = getAssociatedTokenAddressSync(
+    feedAddr.token,
+    commonState.feeReceiver,
+    true,
+    feedAddr.tokenProgram,
   );
 
-  // const tx1 = new Transaction();
+  const paymentMintSignerAtaInx = await createAtaIfNotExistsInx(
+    provider.connection,
+    feedAddr.token,
+    payer.publicKey,
+    payer,
+    feedAddr.tokenProgram,
+  );
+  const paymentMintTokensReceiverAtaInx = await createAtaIfNotExistsInx(
+    provider.connection,
+    feedAddr.token,
+    commonState.tokensReceiver,
+    payer,
+    feedAddr.tokenProgram,
+  );
+  const paymentMintFeeReceiverAtaInx = commonState.feeReceiver.equals(commonState.tokensReceiver)
+    ? null
+    : await createAtaIfNotExistsInx(
+        provider.connection,
+        feedAddr.token,
+        commonState.feeReceiver,
+        payer,
+        feedAddr.tokenProgram,
+      );
 
-  // tx1.add(
-  //   await getSwitchboardPullInx(provider, mFeed.underlyingFeed, config.env)
-  // );
+  // Pull Switchboard feeds if needed
+  const isMFeedSwitchboard = 'switchboard' in mFeed.mode;
+  const isPaymentFeedSwitchboard = 'switchboard' in paymentFeed.mode;
 
-  // const txRes1 = await sendAndConfirmTransaction(
-  //   provider.connection,
-  //   tx1,
-  //   [payer],
-  //   {
-  //     commitment: "finalized",
-  //   }
-  // );
+  if (isMFeedSwitchboard || isPaymentFeedSwitchboard) {
+    const tx1 = new Transaction();
 
-  // console.log({ txRes1 });
+    if (isMFeedSwitchboard) {
+      console.log('Pulling mToken Switchboard feed...');
+      tx1.add(
+        await getSwitchboardPullInx(
+          provider,
+          mFeed.underlyingFeed,
+          network === 'mainnet' ? 'mainnet' : 'devnet',
+        ),
+      );
+    }
+
+    if (isPaymentFeedSwitchboard) {
+      console.log('Pulling payment token Switchboard feed...');
+      tx1.add(
+        await getSwitchboardPullInx(
+          provider,
+          paymentFeed.underlyingFeed,
+          network === 'mainnet' ? 'mainnet' : 'devnet',
+        ),
+      );
+    }
+
+    const txRes1 = await sendAndConfirmTransaction(provider.connection, tx1, [payer], {
+      commitment: 'finalized',
+    });
+
+    console.log('Switchboard feeds pulled:', txRes1);
+  } else {
+    console.log('No Switchboard feeds to pull, skipping feed update transaction');
+  }
 
   const tx2 = new Transaction();
 
-  if (ata) {
-    console.log('ata');
-    tx2.add(ata);
+  // Add ATA creation instructions if needed
+  if (paymentMintSignerAtaInx) {
+    console.log('Creating payment token ATA for signer');
+    tx2.add(paymentMintSignerAtaInx);
+  }
+
+  if (paymentMintTokensReceiverAtaInx) {
+    console.log('Creating payment token ATA for tokens receiver');
+    tx2.add(paymentMintTokensReceiverAtaInx);
+  }
+
+  if (paymentMintFeeReceiverAtaInx) {
+    console.log('Creating payment token ATA for fee receiver');
+    tx2.add(paymentMintFeeReceiverAtaInx);
   }
 
   if (!acUser) {
-    console.log('acUser');
+    console.log('Creating access control account for user');
     tx2.add(
       await acProgram.methods
         .newAccountAc()
@@ -111,7 +179,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   }
 
   if (!commonUser) {
-    console.log('commonUser');
+    console.log('Creating vault common account for user');
     tx2.add(
       await vaultsProgram.methods
         .newCommonVaultAccount()
@@ -139,6 +207,9 @@ async function main(provider: AnchorProvider, payer: Keypair) {
         paymentMintFeed: paymentFeed.underlyingFeed,
         paymentMintTokenProgram: feedAddr.tokenProgram,
         accountAc: getAccountAcStatePda(commonState.ac, payer.publicKey),
+        paymentMintSignerAta: paymentMintSignerAta,
+        paymentMintTokensReceiverAta: paymentMintTokensReceiverAta,
+        paymentMintFeeReceiverAta: paymentMintFeeReceiverAta,
       })
       .instruction(),
   );

@@ -1,5 +1,5 @@
 import { AnchorProvider } from '@coral-xyz/anchor';
-import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
+import { getAssociatedTokenAddressSync, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import { Keypair, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
 
 import { executeNetworkScript } from '@/common/scriptRunner';
@@ -17,6 +17,7 @@ import {
 
 import { getAcProgram } from './deploy/ac';
 import { getDataFeedProgram } from './deploy/dataFeed';
+import { getSwitchboardPullInx } from './deploy/feeds/switchboard';
 import { getVaultsProgram } from './deploy/vaults';
 import { requireRedeemerVault, requirePaymentTokenFeed } from './utils/addressValidators';
 import { getMtoken, getNetwork, getPaymentToken, getAmount } from './utils/argumentParser';
@@ -35,7 +36,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   // Get payment token feed address
   const feedAddr = requirePaymentTokenFeed(network, paymentToken, mtoken);
 
-  // Parse amount - mToken amounts use 9 decimals
+  // Parse amount
   const mTokenDecimals = 9;
   const amount = parseUnits(amountStr, mTokenDecimals);
 
@@ -64,39 +65,54 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     true,
   );
 
-  const ata = await createAtaIfNotExistsInx(
+  const mMintSignerAta = getAssociatedTokenAddressSync(
+    commonState.mMint,
+    payer.publicKey,
+    true,
+    TOKEN_2022_PROGRAM_ID,
+  );
+  const mMintVaultAta = getAssociatedTokenAddressSync(
+    commonState.mMint,
+    getRedeemerVaultPda(vaultCommon),
+    true,
+    TOKEN_2022_PROGRAM_ID,
+  );
+  const mMintFeeReceiverAta = getAssociatedTokenAddressSync(
+    commonState.mMint,
+    commonState.feeReceiver,
+    true,
+    TOKEN_2022_PROGRAM_ID,
+  );
+
+  const mMintSignerAtaInx = await createAtaIfNotExistsInx(
     provider.connection,
     commonState.mMint,
     payer.publicKey,
     payer,
     TOKEN_2022_PROGRAM_ID,
   );
-
-  const ataReceiver = await createAtaIfNotExistsInx(
+  const mMintTokensReceiverAtaInx = await createAtaIfNotExistsInx(
     provider.connection,
     commonState.mMint,
     commonState.tokensReceiver,
     payer,
     TOKEN_2022_PROGRAM_ID,
   );
-
-  const vaultCreateAtaInx = await createAtaIfNotExistsInx(
+  const paymentMintVaultAtaInx = await createAtaIfNotExistsInx(
     provider.connection,
     feedAddr.token,
     getRedeemerVaultPda(vaultCommon),
     payer,
     feedAddr.tokenProgram,
   );
-
-  const vaultCreateMMinAtaInx = await createAtaIfNotExistsInx(
+  const mMintVaultAtaInx = await createAtaIfNotExistsInx(
     provider.connection,
     commonState.mMint,
     getRedeemerVaultPda(vaultCommon),
     payer,
     TOKEN_2022_PROGRAM_ID,
   );
-
-  const ataFeeReceiver = commonState.feeReceiver.equals(commonState.tokensReceiver)
+  const mMintFeeReceiverAtaInx = commonState.feeReceiver.equals(commonState.tokensReceiver)
     ? null
     : await createAtaIfNotExistsInx(
         provider.connection,
@@ -106,47 +122,74 @@ async function main(provider: AnchorProvider, payer: Keypair) {
         TOKEN_2022_PROGRAM_ID,
       );
 
-  // const tx1 = new Transaction();
+  // Pull Switchboard feeds if needed
+  const isMFeedSwitchboard = 'switchboard' in mFeed.mode;
+  const isPaymentFeedSwitchboard = 'switchboard' in paymentFeed.mode;
 
-  // tx1.add(
-  //   await getSwitchboardPullInx(provider, mFeed.underlyingFeed, config.env)
-  // );
+  if (isMFeedSwitchboard || isPaymentFeedSwitchboard) {
+    const tx1 = new Transaction();
 
-  // const txRes1 = await sendAndConfirmTransaction(
-  //   provider.connection,
-  //   tx1,
-  //   [payer],
-  //   {
-  //     commitment: "finalized",
-  //   }
-  // );
+    if (isMFeedSwitchboard) {
+      console.log('Pulling mToken Switchboard feed...');
+      tx1.add(
+        await getSwitchboardPullInx(
+          provider,
+          mFeed.underlyingFeed,
+          network === 'mainnet' ? 'mainnet' : 'devnet',
+        ),
+      );
+    }
+
+    if (isPaymentFeedSwitchboard) {
+      console.log('Pulling payment token Switchboard feed...');
+      tx1.add(
+        await getSwitchboardPullInx(
+          provider,
+          paymentFeed.underlyingFeed,
+          network === 'mainnet' ? 'mainnet' : 'devnet',
+        ),
+      );
+    }
+
+    const txRes1 = await sendAndConfirmTransaction(provider.connection, tx1, [payer], {
+      commitment: 'finalized',
+    });
+
+    console.log('Switchboard feeds pulled:', txRes1);
+  } else {
+    console.log('No Switchboard feeds to pull, skipping feed update transaction');
+  }
+
   const tx2 = new Transaction();
 
-  if (ata) {
-    console.log('ata');
-    tx2.add(ata);
+  // Add ATA creation instructions if needed
+  if (mMintSignerAtaInx) {
+    console.log('Creating mToken ATA for signer');
+    tx2.add(mMintSignerAtaInx);
   }
 
-  if (ataReceiver) {
-    console.log('ata');
-    tx2.add(ataReceiver);
+  if (mMintTokensReceiverAtaInx) {
+    console.log('Creating mToken ATA for tokens receiver');
+    tx2.add(mMintTokensReceiverAtaInx);
   }
 
-  if (ataFeeReceiver) {
-    console.log('ata');
-    tx2.add(ataFeeReceiver);
+  if (mMintFeeReceiverAtaInx) {
+    console.log('Creating mToken ATA for fee receiver');
+    tx2.add(mMintFeeReceiverAtaInx);
   }
 
-  if (vaultCreateAtaInx) {
-    tx2.add(vaultCreateAtaInx);
+  if (paymentMintVaultAtaInx) {
+    console.log('Creating payment token ATA for vault');
+    tx2.add(paymentMintVaultAtaInx);
   }
 
-  if (vaultCreateMMinAtaInx) {
-    tx2.add(vaultCreateMMinAtaInx);
+  if (mMintVaultAtaInx) {
+    console.log('Creating mToken ATA for vault');
+    tx2.add(mMintVaultAtaInx);
   }
 
   if (!acUser) {
-    console.log('acUser');
+    console.log('Creating access control account for user');
     tx2.add(
       await acProgram.methods
         .newAccountAc()
@@ -161,7 +204,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   }
 
   if (!commonUser) {
-    console.log('commonUser');
+    console.log('Creating vault common account for user');
     tx2.add(
       await vaultsProgram.methods
         .newCommonVaultAccount()
@@ -192,6 +235,9 @@ async function main(provider: AnchorProvider, payer: Keypair) {
         paymentMintFeed: paymentFeed.underlyingFeed,
         paymentMintTokenProgram: feedAddr.tokenProgram,
         accountAc: getAccountAcStatePda(commonState.ac, payer.publicKey),
+        mMintVaultAta: mMintVaultAta,
+        mMintFeeReceiverAta: mMintFeeReceiverAta,
+        mMintSignerAta: mMintSignerAta,
       })
       .instruction(),
   );

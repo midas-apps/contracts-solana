@@ -1,11 +1,20 @@
-import { AnchorProvider } from '@coral-xyz/anchor';
+import { AnchorProvider, Program } from '@coral-xyz/anchor';
 import { PublicKey } from '@solana/web3.js';
+import * as sb from '@switchboard-xyz/on-demand';
 
 import { addresses } from '@/common/addresses';
 import { executeNetworkScript } from '@/common/scriptRunner';
+import { MProduct, PaymentToken } from '@/common/tokenTypes';
 
 import { getDataFeedProgram } from '../deploy/dataFeed';
-import { getNetwork, getPaymentToken } from '../utils/argumentParser';
+import { getNetwork, getOptionalArg } from '../utils/argumentParser';
+
+// Switchboard program IDs from official documentation
+// https://docs.switchboard.xyz/tooling-and-resources/technical-resources-and-documentation/solana-accounts
+const SWITCHBOARD_PROGRAM_IDS = {
+  devnet: 'Aio4gaXjXzJNVLtzwtNVmSqGKpANtXhybbkhtAC94ji2',
+  mainnet: 'SBondMDrcV3K4kxZR1HNVT7osZxAHVHgYXL5Ze1oMUv',
+} as const;
 
 interface FeedState {
   acRole: PublicKey;
@@ -35,27 +44,94 @@ function formatPrice(price: { toString: () => string }): string {
   return `${priceNumber.toFixed(9)} (raw: ${priceBN.toString()})`;
 }
 
+function convertToBase9(value: bigint, decimals: number): bigint {
+  if (decimals === 9) return value;
+  if (decimals > 9) return value / BigInt(10 ** (decimals - 9));
+  return value * BigInt(10 ** (9 - decimals));
+}
+
+async function fetchUnderlyingPrice(
+  provider: AnchorProvider,
+  feedState: FeedState,
+  network: string,
+): Promise<{ price: bigint; decimals: number; timestamp?: number } | null> {
+  const mode = formatMode(feedState.mode);
+
+  try {
+    if (mode === 'switchboard') {
+      const env = network === 'mainnet' ? 'mainnet' : 'devnet';
+      const programId = new PublicKey(SWITCHBOARD_PROGRAM_IDS[env]);
+      const idl = await Program.fetchIdl(programId, provider);
+      if (!idl) return null;
+
+      const program = new Program(idl, provider);
+      const feedAccount = new sb.PullFeed(program, feedState.underlyingFeed);
+      const data = await feedAccount.loadData();
+
+      return {
+        price: convertToBase9(BigInt(data.result.value.toString()), 18),
+        decimals: 18,
+      };
+    }
+
+    // For other modes, we'd need their specific implementations
+    // Manual feeds would require fetching ManualFeedState
+    // Pyth would need pyth SDK
+    // Chainlink would need chainlink SDK
+    return null;
+  } catch (error) {
+    console.log(
+      `   ⚠️  Could not fetch price: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    );
+    return null;
+  }
+}
+
 async function main(provider: AnchorProvider) {
-  const paymentToken = getPaymentToken();
   const network = getNetwork();
+  const paymentToken = getOptionalArg('payment-token') || getOptionalArg('p');
+  const mtoken = getOptionalArg('mtoken') || getOptionalArg('m');
 
-  console.log(`\n🔍 Verifying feed for ${paymentToken} on ${network}\n`);
-
-  // Get feed address from registry
-  const networkAddresses = addresses[network];
-  if (!networkAddresses?.feeds?.[paymentToken]) {
-    throw new Error(`Feed not found for ${paymentToken} on ${network}. Please deploy it first.`);
+  if (!paymentToken && !mtoken) {
+    throw new Error('Either --payment-token or --mtoken is required');
   }
 
-  const feedInfo = networkAddresses.feeds[paymentToken];
-  const feedAddress = feedInfo.dataFeed;
+  if (paymentToken && mtoken) {
+    throw new Error('Cannot specify both --payment-token and --mtoken');
+  }
+
+  const networkAddresses = addresses[network];
+  let feedAddress: PublicKey | undefined;
+  let tokenAddress: PublicKey | undefined;
+  let feedName: string;
+  let storedUnderlyingFeed: PublicKey | undefined;
+
+  if (paymentToken) {
+    feedName = `${paymentToken} payment token`;
+    const feedInfo = networkAddresses?.feeds?.[paymentToken as PaymentToken];
+    if (!feedInfo) {
+      throw new Error(`Feed not found for ${paymentToken} on ${network}. Please deploy it first.`);
+    }
+    feedAddress = feedInfo.dataFeed;
+    tokenAddress = feedInfo.token;
+    storedUnderlyingFeed = feedInfo.underlyingFeed;
+  } else if (mtoken) {
+    feedName = `${mtoken} mToken`;
+    const tokenInfo = networkAddresses?.tokens?.[mtoken as MProduct];
+    if (!tokenInfo) {
+      throw new Error(`Token info not found for ${mtoken} on ${network}. Please deploy it first.`);
+    }
+    feedAddress = tokenInfo.mTokenDataFeed;
+    tokenAddress = tokenInfo.mToken;
+  }
 
   if (!feedAddress) {
-    throw new Error(`Feed address not found for ${paymentToken} on ${network}`);
+    throw new Error(`Feed address not found for ${feedName} on ${network}`);
   }
 
+  console.log(`\n🔍 Verifying feed for ${feedName} on ${network}\n`);
   console.log(`📊 Feed Address: ${feedAddress.toString()}`);
-  console.log(`💎 Token: ${feedInfo.token?.toString() || 'N/A'}\n`);
+  console.log(`💎 Token: ${tokenAddress?.toString() || 'N/A'}\n`);
 
   // Load the data feed program
   const program = getDataFeedProgram(provider);
@@ -63,34 +139,53 @@ async function main(provider: AnchorProvider) {
   // Fetch feed state
   console.log('📥 Fetching feed state from chain...');
   const feedState = (await program.account.feedState.fetch(feedAddress)) as unknown as FeedState;
+  const mode = formatMode(feedState.mode);
 
   console.log('✅ Feed state fetched successfully!\n');
 
-  // Display feed state
-  console.log('📋 Feed State:');
+  // Display feed configuration
+  console.log('📋 Feed Configuration:');
   console.log(`   AC Role: ${feedState.acRole.toString()}`);
-  console.log(`   Mode: ${formatMode(feedState.mode)}`);
+  console.log(`   Mode: ${mode}`);
   console.log(`   Underlying Feed: ${feedState.underlyingFeed.toString()}`);
   console.log(`   Min Price: ${formatPrice(feedState.minPrice)}`);
   console.log(`   Max Price: ${formatPrice(feedState.maxPrice)}`);
-  console.log(`   Max Staleness: ${feedState.maxStaleness} seconds\n`);
+  console.log(`   Max Staleness: ${feedState.maxStaleness}s\n`);
 
-  // Compare with stored address
-  const storedUnderlyingFeed = feedInfo.underlyingFeed;
+  // Verify stored address matches on-chain (only for payment tokens)
   if (storedUnderlyingFeed) {
     const matches = feedState.underlyingFeed.equals(storedUnderlyingFeed);
     console.log('🔍 Address Verification:');
-    console.log(`   Stored Underlying Feed: ${storedUnderlyingFeed.toString()}`);
-    console.log(`   On-chain Underlying Feed: ${feedState.underlyingFeed.toString()}`);
-    console.log(`   Match: ${matches ? '✅' : '❌'}\n`);
+    console.log(`   Stored:   ${storedUnderlyingFeed.toString()}`);
+    console.log(`   On-chain: ${feedState.underlyingFeed.toString()}`);
+    console.log(`   Status:   ${matches ? '✅ Match' : '❌ Mismatch'}\n`);
 
     if (!matches) {
-      console.log('⚠️  Warning: Stored address does not match on-chain address!');
-      console.log('   Consider updating addresses.ts with the correct underlying feed address.\n');
+      console.log('⚠️  Warning: Update addresses.ts with the correct underlying feed address\n');
     }
   } else {
-    console.log('⚠️  Note: Underlying feed address not stored in addresses.ts');
-    console.log(`   On-chain Underlying Feed: ${feedState.underlyingFeed.toString()}\n`);
+    console.log('ℹ️  Note: Underlying feed address not stored in addresses.ts\n');
+  }
+
+  // Fetch and verify current price
+  console.log('💰 Current Price:');
+  const priceData = await fetchUnderlyingPrice(provider, feedState, network);
+
+  if (priceData) {
+    const priceInBase9 = priceData.price;
+    const priceNumber = Number(priceInBase9) / 1e9;
+    const minPrice = BigInt(feedState.minPrice.toString());
+    const maxPrice = BigInt(feedState.maxPrice.toString());
+    const withinBounds = priceInBase9 >= minPrice && priceInBase9 <= maxPrice;
+
+    console.log(`   Value: $${priceNumber.toFixed(9)}`);
+    console.log(`   Raw (base-9): ${priceInBase9.toString()}`);
+    console.log(`   Bounds Check: ${withinBounds ? '✅ Within limits' : '❌ Out of bounds'}\n`);
+
+    // Summary
+    console.log(`📈 Feed Health: ${withinBounds ? '✅ Healthy' : '⚠️  Out of bounds'}\n`);
+  } else {
+    console.log(`   ℹ️  Price fetching not implemented for ${mode} mode\n`);
   }
 
   console.log('✅ Feed verification completed!\n');
@@ -99,4 +194,6 @@ async function main(provider: AnchorProvider) {
 const network = getNetwork();
 executeNetworkScript(network, main);
 
-// yarn tsx scripts/local-test-utils/verify-feed.ts --network devnet --payment-token USDC
+// Usage:
+// Payment token feed: yarn tsx scripts/local-test-utils/verify-feed.ts --network devnet --payment-token USDC
+// mToken feed:        yarn tsx scripts/local-test-utils/verify-feed.ts --network devnet --mtoken mTBILL

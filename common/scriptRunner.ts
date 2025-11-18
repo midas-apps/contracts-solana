@@ -1,8 +1,11 @@
 import { AnchorProvider } from '@coral-xyz/anchor';
 import { Keypair } from '@solana/web3.js';
+import { config } from 'dotenv';
 
 import { handleError } from './errorHandler';
 import { createNetworkProvider } from './provider';
+
+config();
 
 /** Execute a network script with error handling and provider setup */
 export async function executeNetworkScript(

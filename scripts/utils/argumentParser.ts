@@ -62,11 +62,11 @@ export function getPaymentToken(): PaymentToken {
 /** Get amount from arguments (optional) */
 export function getAmount(): string {
   const argv = getParsedArgs();
-  const amount = (argv.amount || argv.a) as string | undefined;
+  const amount = argv.amount || argv.a;
   if (!amount) {
     throw createUserError('Amount is required', ['Use --amount or -a to specify']);
   }
-  return amount;
+  return String(amount);
 }
 
 /** Get role from arguments (optional) */
