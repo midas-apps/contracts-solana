@@ -35,14 +35,18 @@ function ensureNetworkExists(network: string): void {
   }
 }
 
-export function registerGlobalAddresses(
-  network: string,
-  acRoleGlobal: PublicKey,
-  ac: PublicKey,
-): void {
+export function registerGlobalAcRole(network: string, acRoleGlobal: PublicKey): void {
   ensureNetworkExists(network);
   const networkAddrs = addresses[network];
   networkAddrs.acRoleGlobal = acRoleGlobal;
+}
+
+export function registerGlobalAc(network: string, ac: PublicKey): void {
+  ensureNetworkExists(network);
+  const networkAddrs = addresses[network];
+  if (!networkAddrs.acRoleGlobal) {
+    throw new Error(`AC Role must be registered before AC for network ${network}`);
+  }
   networkAddrs.ac = ac;
 }
 

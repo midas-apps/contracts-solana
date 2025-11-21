@@ -1,5 +1,5 @@
-import { AnchorProvider } from '@coral-xyz/anchor';
-import { Keypair, PublicKey } from '@solana/web3.js';
+import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
+import { PublicKey } from '@solana/web3.js';
 
 import { createUserError, isAccountNotFoundError } from '@/common/errorHandler';
 import { executeNetworkScript } from '@/common/scriptRunner';
@@ -10,9 +10,8 @@ import { registerAddress } from '../../utils/addressRegistry';
 import { saveAddressesToFile } from '../../utils/addressStorage';
 import { getMtoken, getNetwork } from '../../utils/argumentParser';
 
-async function main(provider: AnchorProvider, payer: Keypair) {
+async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const mtoken = getMtoken();
-  const network = getNetwork();
 
   console.log(`Deploying token AC Role for: ${mtoken}`);
 
@@ -46,4 +45,4 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main);
+executeNetworkScript(network, main, 'deployer');

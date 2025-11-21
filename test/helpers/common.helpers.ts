@@ -376,7 +376,7 @@ export const createAtaIfNotExistsInx = async (
   connection: Connection,
   mint: PublicKey,
   owner: PublicKey,
-  payer: Keypair,
+  payer: { publicKey: PublicKey },
   program = TOKEN_PROGRAM_ID,
 ) => {
   const ata = getAssociatedTokenAddressSync(mint, owner, true, program);

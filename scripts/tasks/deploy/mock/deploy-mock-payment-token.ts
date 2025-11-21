@@ -1,6 +1,5 @@
-import { AnchorProvider } from '@coral-xyz/anchor';
+import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { Keypair } from '@solana/web3.js';
 
 import { createUserError } from '@/common/errorHandler';
 import { executeNetworkScript } from '@/common/scriptRunner';
@@ -18,9 +17,8 @@ const MOCK_TOKEN_CONFIG = {
   initialSupply: '10000000',
 };
 
-async function main(provider: AnchorProvider, payer: Keypair) {
+async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const paymentToken = getPaymentToken();
-  const network = getNetwork();
 
   if (network !== 'devnet' && network !== 'localnet') {
     throw createUserError(
@@ -39,8 +37,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 
   console.log('Creating mock payment token mint...');
   const mintPublicKey = await createMockPaymentTokenMint({
-    connection: provider.connection,
-    payer,
+    provider,
     authority: payer.publicKey,
     config: MOCK_TOKEN_CONFIG,
   });
@@ -60,4 +57,4 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main);
+executeNetworkScript(network, main, 'local-wallet');

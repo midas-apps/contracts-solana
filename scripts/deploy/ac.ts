@@ -1,5 +1,7 @@
 import { AnchorProvider, Program } from '@coral-xyz/anchor';
-import { Keypair, PublicKey, sendAndConfirmTransaction } from '@solana/web3.js';
+import { Keypair, PublicKey } from '@solana/web3.js';
+
+import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 
 import AC_IDL from '../../target/idl/access_control.json' with { type: 'json' };
 import { AccessControl } from '../../target/types/access_control';
@@ -36,8 +38,12 @@ export const deployAc = async (common: CommonParams, { acRole, ac }: DeployAcCon
     })
     .transaction();
 
-  await sendAndConfirmTransaction(common.provider.connection, tx, [common.payer, ac], {
-    commitment: 'finalized',
+  await sendAndWaitForCustomSolanaTxSign(common.provider, common.network, tx, [ac], {
+    action: 'deployer',
+    comment: 'Deploy Access Control',
+    waitForTx: true,
+    pollingIntervalMs: 1000,
+    timeoutDurationMs: 120 * 1000,
   });
 
   return ac.publicKey;
@@ -61,8 +67,12 @@ export const deployAcRole = async (common: CommonParams, { acRole }: DeployAcRol
     })
     .transaction();
 
-  await sendAndConfirmTransaction(common.provider.connection, tx, [common.payer, acRole], {
-    commitment: 'finalized',
+  await sendAndWaitForCustomSolanaTxSign(common.provider, common.network, tx, [acRole], {
+    action: 'deployer',
+    comment: 'Deploy AC Role',
+    waitForTx: true,
+    pollingIntervalMs: 1000,
+    timeoutDurationMs: 120 * 1000,
   });
 
   return acRole.publicKey;

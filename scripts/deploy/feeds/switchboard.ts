@@ -1,10 +1,5 @@
 import { AnchorProvider, Program } from '@coral-xyz/anchor';
-import {
-  PublicKey,
-  TransactionInstruction,
-  sendAndConfirmTransaction,
-  Transaction,
-} from '@solana/web3.js';
+import { PublicKey, TransactionInstruction, Transaction } from '@solana/web3.js';
 import {
   PullFeed,
   CrossbarClient,
@@ -159,7 +154,7 @@ export const deploySwitchboardFeed = async (
 
   // console.log(simulateResult);
 
-  const sig = await sendAndConfirmTransaction(provider.connection, tx, [payer, feedKeypair], {
+  const sig = await provider.sendAndConfirm(tx, [feedKeypair], {
     commitment: 'finalized',
     skipPreflight: true,
   });

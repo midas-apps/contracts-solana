@@ -146,3 +146,77 @@ export const getVaultPda = (commonVault: PublicKey, vaultSeed: Buffer) => {
   const [pda] = findPDA([vaultSeed, commonVault], VAULTS_PROGRAM_ID);
   return pda;
 };
+
+/**
+ * Fetches all minter vault requests for a given vault
+ * @param program - The vaults program instance
+ * @param vaultCommon - The common vault public key
+ * @param onlyActive - If true, only return non-null (active) requests
+ * @returns Array of request states with their IDs
+ */
+export const fetchAllMinterVaultRequests = async (
+  program: VaultsProgram,
+  vaultCommon: PublicKey,
+  onlyActive = true,
+) => {
+  const commonState = await fetchVaultCommonState(program, vaultCommon);
+  const requestsCount = commonState.requestsCount.toNumber();
+  const minterVaultPda = getMinterVaultPda(vaultCommon);
+
+  const requests: {
+    id: bigint;
+    state: Awaited<ReturnType<typeof fetchMinterVaultRequestState>> | null;
+  }[] = [];
+
+  for (let i = 0; i < requestsCount; i++) {
+    const requestId = BigInt(i);
+    const requestPda = getMinterVaultRequestPda(minterVaultPda, requestId);
+    const requestState = await fetchMinterVaultRequestState(program, requestPda, true);
+
+    if (!onlyActive || requestState !== null) {
+      requests.push({
+        id: requestId,
+        state: requestState,
+      });
+    }
+  }
+
+  return requests;
+};
+
+/**
+ * Fetches all redeemer vault requests for a given vault
+ * @param program - The vaults program instance
+ * @param vaultCommon - The common vault public key
+ * @param onlyActive - If true, only return non-null (active) requests
+ * @returns Array of request states with their IDs
+ */
+export const fetchAllRedeemerVaultRequests = async (
+  program: VaultsProgram,
+  vaultCommon: PublicKey,
+  onlyActive = true,
+) => {
+  const commonState = await fetchVaultCommonState(program, vaultCommon);
+  const requestsCount = commonState.requestsCount.toNumber();
+  const redeemerVaultPda = getRedeemerVaultPda(vaultCommon);
+
+  const requests: {
+    id: bigint;
+    state: Awaited<ReturnType<typeof fetchRedeemerVaultRequestState>> | null;
+  }[] = [];
+
+  for (let i = 0; i < requestsCount; i++) {
+    const requestId = BigInt(i);
+    const requestPda = getRedeemerVaultRequestPda(redeemerVaultPda, requestId);
+    const requestState = await fetchRedeemerVaultRequestState(program, requestPda, true);
+
+    if (!onlyActive || requestState !== null) {
+      requests.push({
+        id: requestId,
+        state: requestState,
+      });
+    }
+  }
+
+  return requests;
+};

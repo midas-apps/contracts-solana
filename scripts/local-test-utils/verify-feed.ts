@@ -192,7 +192,7 @@ async function main(provider: AnchorProvider) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main);
+executeNetworkScript(network, main, 'local-wallet');
 
 // Usage:
 // Payment token feed: yarn tsx scripts/local-test-utils/verify-feed.ts --network devnet --payment-token USDC

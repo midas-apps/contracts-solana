@@ -1,7 +1,8 @@
 import { AnchorProvider, Program } from '@coral-xyz/anchor';
-import { PublicKey, sendAndConfirmTransaction } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 
 import { isAccountNotFoundError } from '@/common/errorHandler';
+import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 import { TokenAuthority } from '@/target/types/token_authority';
 import {
   getTokenAuthorityPda,
@@ -54,8 +55,12 @@ export const deployTokenAuthority = async (
     })
     .transaction();
 
-  await sendAndConfirmTransaction(common.provider.connection, tx, [common.payer], {
-    commitment: 'finalized',
+  await sendAndWaitForCustomSolanaTxSign(common.provider, common.network, tx, [], {
+    action: 'deployer',
+    comment: 'Deploy Token Authority',
+    waitForTx: true,
+    pollingIntervalMs: 1000,
+    timeoutDurationMs: 120 * 1000,
   });
 
   return authority;

@@ -37,33 +37,33 @@ export interface TokenAddresses {
 
 export const addresses: Record<string, NetworkAddresses> = {
   devnet: {
-    acRoleGlobal: new PublicKey('2XbEsVBKUPfs74jEHKXgChgpTp7jLWyXDQG26Tbe3NWt'),
-    ac: new PublicKey('3UgrPzUH33EaVkW1Xvw4pw9FnrptzzELnvCfLLPGZq2y'),
+    acRoleGlobal: new PublicKey('23u9vEJZMEttKiBppqNzwfMGmBXHqXLyMYUzaYegmHFU'),
+    ac: new PublicKey('FzDYrqApor8nB2FVecPHgDa8Fo3n6zFM7VT1QK9fxxqg'),
     tokens: {
       [MProduct.MTBILL]: {
-        acRole: new PublicKey('7eKVoZusavoMKDnmEPiXTZekAhDBhEXAhqPw3xfw28Ai'),
-        mToken: new PublicKey('7MnCPtnhcyNNsKJnZhu9joyEiQCGLBLYULsrXXiUxxWG'),
+        acRole: new PublicKey('FzrHGtLeFtdXe3wbQwdYkuyF4bRUexQVzpXajR1fFpqm'),
+        mToken: new PublicKey('Dq5LudGLxCAf1iCdDQH4uUY6aPf5rChD1RuVDFHArLWP'),
         tokenAuthority: {
-          account: new PublicKey('Bb6qPwVHuKxkx2U1TbbfXJTwXjKJPfrbvombSEt1mYLm'),
+          account: new PublicKey('3KFxzsUWDcZQCB9w6wnfNyhJRoQPW66dZyABRTWaSPZU'),
           seed: 'mtbill-token-authority',
         },
-        mTokenDataFeed: new PublicKey('86Xest1Zo3ZJ8NNfyGJvD62nFw7gUPg7jAZVkBNSbCEw'),
+        mTokenDataFeed: new PublicKey('6NwoiVNsKHAXstcgGye9kkfF8N5h4jUBPMoRpKXPBA6L'),
         minter: {
-          commonVault: new PublicKey('2XKR94FbetbtVAg94KPSrXCXAh7vZP9mSfwiRkioPovN'),
-          account: new PublicKey('CbCHN1eEmuH5z7MqsJ3bUHQsJrKawrGeLyNxbNRjWNJw'),
+          commonVault: new PublicKey('2rsjVWeskM2rwY6xKSoxSN8mLWGmW4hkEjj8gqUpdfiB'),
+          account: new PublicKey('AjeCRXLVxwxrk1uxW5XsHN11HqSHtsVvsYmMMP1KzZ3n'),
         },
         redeemer: {
-          commonVault: new PublicKey('2Gn5LQEyLruiUjJrqtSKAtFTzoRdnjDSmdM2fFMFxTNU'),
-          account: new PublicKey('HQAtnBuJndvEj2N5HhETc55hrzC2yTKhSkMGj7URz8SZ'),
+          commonVault: new PublicKey('Dc4yseMgmvgTt5KgbURku4isuZuAAGxAik4KJCcXG99m'),
+          account: new PublicKey('FZQbJaThndkckRNhje6m8qSghaUpY9VrDsouLitpfoCD'),
         },
       },
     },
     feeds: {
       [PaymentToken.USDC]: {
-        token: new PublicKey('FTRTWir5jXSekX1FDgXhg74Veoz3xq7MKX3pXKJt4y3e'),
+        token: new PublicKey('DzhqAQ2C4X3TkvChkdKRo9LqoVVtqTbm4y7WsbxqP6Y9'),
         tokenProgram: TOKEN_PROGRAM_ID,
-        dataFeed: new PublicKey('Hj8C7ZG8XxpmpivtQ2GzKcgAxgy8MX58krNWCmYYLLcF'),
-        underlyingFeed: new PublicKey('DHB2Ph8CK7PmR3xswqcmDkgQeucnwSZtfnMpnc7mQgkb'),
+        dataFeed: new PublicKey('2prq84UfGoqEvkyhqScFk8SqQBu3aReiteLQ1HnGJcA6'),
+        underlyingFeed: new PublicKey('CWajqu4CEqyL9HjMXDvo5Rk7EW4uymP9zeKKfexTxVey'),
       },
     },
   },

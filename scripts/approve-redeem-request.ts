@@ -1,11 +1,11 @@
-import { AnchorProvider } from '@coral-xyz/anchor';
+import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
 import {
   getAccount,
   getAssociatedTokenAddressSync,
   getMint,
   TOKEN_2022_PROGRAM_ID,
 } from '@solana/spl-token';
-import { Keypair, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
+import { Transaction } from '@solana/web3.js';
 
 import { executeNetworkScript } from '@/common/scriptRunner';
 import { VAULT_AC_ROLES } from '@/test/constants/vaults.constants';
@@ -24,7 +24,7 @@ import { getVaultsProgram } from './deploy/vaults';
 import { requirePaymentTokenFeed, requireRedeemerVault } from './utils/addressValidators';
 import { getMtoken, getNetwork, getPaymentToken, getOptionalArg } from './utils/argumentParser';
 
-async function main(provider: AnchorProvider, payer: Keypair) {
+async function main(provider: AnchorProvider, payer: Wallet) {
   const mtoken = getMtoken();
   const network = getNetwork();
   const paymentToken = getPaymentToken();
@@ -306,7 +306,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
       .instruction(),
   );
 
-  const txRes = await sendAndConfirmTransaction(provider.connection, tx, [payer], {
+  const txRes = await provider.sendAndConfirm(tx, [], {
     commitment: 'finalized',
   });
 
@@ -315,7 +315,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main);
+executeNetworkScript(network, main, 'local-wallet');
 
 // Usage examples:
 // yarn tsx scripts/approve-redeem-request.ts --network devnet --mtoken mTBILL --payment-token USDC --request-id 0 --new-rate 1000000000 --is-safe true

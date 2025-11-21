@@ -1,6 +1,6 @@
-import { AnchorProvider } from '@coral-xyz/anchor';
+import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { Keypair, PublicKey, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
+import { PublicKey, Transaction } from '@solana/web3.js';
 
 import { executeNetworkScript } from '@/common/scriptRunner';
 import { VAULT_AC_ROLES } from '@/test/constants/vaults.constants';
@@ -32,7 +32,7 @@ type VaultType = 'minter' | 'redeemer';
 
 async function addPaymentTokenToVault(
   provider: AnchorProvider,
-  payer: Keypair,
+  payer: Wallet,
   vaultsProgram: ReturnType<typeof getVaultsProgram>,
   vaultCommon: PublicKey,
   feedAddr: { token: PublicKey; dataFeed: PublicKey; tokenProgram: PublicKey } | null,
@@ -113,14 +113,14 @@ async function addPaymentTokenToVault(
     }
   }
 
-  const txRes = await sendAndConfirmTransaction(provider.connection, tx, [payer], {
+  const txRes = await provider.sendAndConfirm(tx, [], {
     commitment: 'finalized',
   });
 
   return txRes;
 }
 
-async function main(provider: AnchorProvider, payer: Keypair) {
+async function main(provider: AnchorProvider, payer: Wallet) {
   const mtoken = getMtoken();
   const network = getNetwork();
   const paymentToken = getPaymentToken();
@@ -224,4 +224,4 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main);
+executeNetworkScript(network, main, 'update-vault');

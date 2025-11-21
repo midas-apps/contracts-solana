@@ -1,4 +1,4 @@
-import { Keypair, PublicKey, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
+import { Keypair, PublicKey, Transaction } from '@solana/web3.js';
 
 import { isPlaceholderFeed } from '@/scripts/utils/feedUtils';
 import { AC_ROLES } from '@/test/constants/ac.constants';
@@ -80,12 +80,14 @@ export async function deployManualFeed(
         .instruction(),
     );
 
-    await sendAndConfirmTransaction(provider.connection, grantRoleTx, [payer], {
-      commitment: 'finalized',
-      skipPreflight: true,
-    }).catch(() => {
-      // Role might already exist, that's fine
-    });
+    await provider
+      .sendAndConfirm(grantRoleTx, [], {
+        commitment: 'finalized',
+        skipPreflight: true,
+      })
+      .catch(() => {
+        // Role might already exist, that's fine
+      });
 
     // Step 2: Deploy manual feed associated with base feed
     const dataFeedProgram = getDataFeedProgram(provider);
@@ -109,7 +111,7 @@ export async function deployManualFeed(
         .instruction(),
     );
 
-    await sendAndConfirmTransaction(provider.connection, manualFeedTx, [payer], {
+    await provider.sendAndConfirm(manualFeedTx, [], {
       commitment: 'finalized',
     });
 

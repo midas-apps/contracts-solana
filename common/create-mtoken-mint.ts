@@ -1,3 +1,4 @@
+import { AnchorProvider } from '@coral-xyz/anchor';
 import {
   ExtensionType,
   createInitializeMintInstruction,
@@ -9,38 +10,21 @@ import {
   createInitializePermanentDelegateInstruction,
 } from '@solana/spl-token';
 import { createInitializeInstruction, pack, TokenMetadata } from '@solana/spl-token-metadata';
-import {
-  sendAndConfirmTransaction,
-  Connection,
-  Keypair,
-  SystemProgram,
-  Transaction,
-  PublicKey,
-  Signer,
-} from '@solana/web3.js';
+import { Keypair, SystemProgram, Transaction, PublicKey } from '@solana/web3.js';
 
 // Define the extensions to be used by the mint
 const extensions = [ExtensionType.PermanentDelegate, ExtensionType.MetadataPointer];
 
 export const createMTBillTokenMint = async ({
-  payer,
+  provider,
   mint,
   authority,
-  connection,
-  sendTxFn,
 }: {
-  connection: Connection;
-  payer: Keypair;
+  provider: AnchorProvider;
   mint?: Keypair;
   authority: PublicKey;
-  sendTxFn?: (
-    connection: Connection,
-    transaction: Transaction,
-    signers: Signer[],
-  ) => Promise<unknown>;
 }) => {
   mint ??= Keypair.generate();
-  sendTxFn ??= sendAndConfirmTransaction;
 
   const metadata = {
     name: 'Midas US Treasury Bill Token',
@@ -54,11 +38,13 @@ export const createMTBillTokenMint = async ({
   const mintLen = getMintLen(extensions);
   const metadataLen = TYPE_SIZE + LENGTH_SIZE + pack(metadata).length;
 
-  const mintLamports = await connection.getMinimumBalanceForRentExemption(mintLen + metadataLen);
+  const mintLamports = await provider.connection.getMinimumBalanceForRentExemption(
+    mintLen + metadataLen,
+  );
 
   const mintTransaction = new Transaction().add(
     SystemProgram.createAccount({
-      fromPubkey: payer.publicKey,
+      fromPubkey: provider.wallet.publicKey,
       newAccountPubkey: mint.publicKey,
       space: mintLen,
       lamports: mintLamports,
@@ -84,32 +70,23 @@ export const createMTBillTokenMint = async ({
     }),
   );
 
-  await sendTxFn(connection, mintTransaction, [payer, mint]);
+  await provider.sendAndConfirm(mintTransaction, [mint]);
 
   return mint;
 };
 
 export const createMTokenMint = async ({
-  payer,
+  provider,
   mint,
   metadata,
   authority,
-  connection,
-  sendTxFn,
 }: {
-  connection: Connection;
-  payer: Keypair;
+  provider: AnchorProvider;
   mint?: Keypair;
   metadata: Omit<TokenMetadata, 'updateAuthority' | 'mint'>;
   authority: PublicKey;
-  sendTxFn?: (
-    connection: Connection,
-    transaction: Transaction,
-    signers: Signer[],
-  ) => Promise<unknown>;
 }) => {
   mint ??= Keypair.generate();
-  sendTxFn ??= sendAndConfirmTransaction;
 
   const fullMetadata = {
     ...metadata,
@@ -120,11 +97,13 @@ export const createMTokenMint = async ({
   const mintLen = getMintLen(extensions);
   const metadataLen = TYPE_SIZE + LENGTH_SIZE + pack(fullMetadata).length;
 
-  const mintLamports = await connection.getMinimumBalanceForRentExemption(mintLen + metadataLen);
+  const mintLamports = await provider.connection.getMinimumBalanceForRentExemption(
+    mintLen + metadataLen,
+  );
 
   const mintTransaction = new Transaction().add(
     SystemProgram.createAccount({
-      fromPubkey: payer.publicKey,
+      fromPubkey: provider.wallet.publicKey,
       newAccountPubkey: mint.publicKey,
       space: mintLen,
       lamports: mintLamports,
@@ -150,7 +129,7 @@ export const createMTokenMint = async ({
     }),
   );
 
-  await sendTxFn(connection, mintTransaction, [payer, mint]);
+  await provider.sendAndConfirm(mintTransaction, [mint]);
 
   return mint;
 };

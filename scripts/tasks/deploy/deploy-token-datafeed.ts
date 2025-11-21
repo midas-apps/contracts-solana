@@ -1,5 +1,5 @@
-import { AnchorProvider } from '@coral-xyz/anchor';
-import { Keypair, PublicKey } from '@solana/web3.js';
+import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
+import { PublicKey } from '@solana/web3.js';
 
 import { createUserError, isAccountNotFoundError } from '@/common/errorHandler';
 import { executeNetworkScript } from '@/common/scriptRunner';
@@ -12,9 +12,8 @@ import { saveAddressesToFile } from '../../utils/addressStorage';
 import { getMtoken, getNetwork } from '../../utils/argumentParser';
 import { deployFeedFromConfig } from '../../utils/feedDeployment';
 
-async function main(provider: AnchorProvider, payer: Keypair) {
+async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const mtoken = getMtoken();
-  const network = getNetwork();
 
   console.log(`Deploying data feed for: ${mtoken}`);
 
@@ -49,6 +48,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     const feedResult = await deployFeedFromConfig({
       provider,
       payer,
+      network,
       acRole,
       dataFeedConfig: config.dataFeed,
     });
@@ -63,4 +63,4 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main);
+executeNetworkScript(network, main, 'deployer');

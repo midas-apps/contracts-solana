@@ -1,5 +1,5 @@
-import { AnchorProvider } from '@coral-xyz/anchor';
-import { Keypair, PublicKey, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
+import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
+import { PublicKey, Transaction } from '@solana/web3.js';
 
 import { createUserError } from '@/common/errorHandler';
 import { executeNetworkScript } from '@/common/scriptRunner';
@@ -11,7 +11,7 @@ import { getDataFeedProgram } from '../../deploy/dataFeed';
 import { getTokenAddresses } from '../../utils/addressQueries';
 import { getMtoken, getNetwork, getOptionalArg } from '../../utils/argumentParser';
 
-async function main(provider: AnchorProvider, payer: Keypair) {
+async function main(provider: AnchorProvider, payer: Wallet) {
   const mtoken = getMtoken();
   const network = getNetwork();
   const newUnderlyingFeed = getOptionalArg('new-underlying-feed');
@@ -66,7 +66,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
       .instruction(),
   );
 
-  const txRes = await sendAndConfirmTransaction(provider.connection, tx, [payer], {
+  const txRes = await provider.sendAndConfirm(tx, [], {
     commitment: 'finalized',
   });
 
@@ -75,4 +75,4 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main);
+executeNetworkScript(network, main, 'update-feed-ptoken');

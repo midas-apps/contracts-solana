@@ -1,7 +1,8 @@
 import { AnchorProvider, Program } from '@coral-xyz/anchor';
 import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
-import { Keypair, PublicKey, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
+import { Keypair, PublicKey, Transaction } from '@solana/web3.js';
 
+import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 import { MidasVaults } from '@/target/types/midas_vaults';
 import { TOKEN_AUTHORITY_ROLES } from '@/test/constants/token-authority.constants';
 import { VAULT_AC_ROLES, VaultActionIds } from '@/test/constants/vaults.constants';
@@ -192,8 +193,12 @@ export const deployMinterVault = async (
       .instruction(),
   );
 
-  await sendAndConfirmTransaction(common.provider.connection, tx, [common.payer, commonVault], {
-    commitment: 'finalized',
+  await sendAndWaitForCustomSolanaTxSign(common.provider, common.network, tx, [commonVault], {
+    action: 'deployer',
+    comment: 'Deploy Minter Vault',
+    waitForTx: true,
+    pollingIntervalMs: 1000,
+    timeoutDurationMs: 120 * 1000,
   });
 
   return commonVault.publicKey;
@@ -337,8 +342,12 @@ export const deployRedeemerVault = async (
     tx.add(ataReceiver);
   }
 
-  await sendAndConfirmTransaction(common.provider.connection, tx, [common.payer, commonVault], {
-    commitment: 'finalized',
+  await sendAndWaitForCustomSolanaTxSign(common.provider, common.network, tx, [commonVault], {
+    action: 'deployer',
+    comment: 'Deploy Redeemer Vault',
+    waitForTx: true,
+    pollingIntervalMs: 1000,
+    timeoutDurationMs: 120 * 1000,
   });
 
   return commonVault.publicKey;

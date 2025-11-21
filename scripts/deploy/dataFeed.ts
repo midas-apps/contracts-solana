@@ -1,6 +1,7 @@
-import { AnchorProvider, Program } from '@coral-xyz/anchor';
-import { Keypair, PublicKey, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
+import { AnchorProvider, Program, Wallet } from '@coral-xyz/anchor';
+import { Keypair, PublicKey, Transaction } from '@solana/web3.js';
 
+import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 import { DataFeed } from '@/target/types/data_feed';
 import { toBN } from '@/test/helpers/common.helpers';
 import { DataFeedMode } from '@/test/helpers/data-feed.helpers';
@@ -9,7 +10,8 @@ import DATA_FEED_IDL from '../../target/idl/data_feed.json' with { type: 'json' 
 
 export interface CommonParams {
   provider: AnchorProvider;
-  payer: Keypair;
+  payer: Wallet;
+  network: string;
 }
 
 export const getDataFeedProgram = (provider: AnchorProvider) => {
@@ -52,8 +54,12 @@ export const deployDataFeed = async (
       .instruction(),
   );
 
-  await sendAndConfirmTransaction(common.provider.connection, tx, [common.payer, feed], {
-    commitment: 'finalized',
+  await sendAndWaitForCustomSolanaTxSign(common.provider, common.network, tx, [feed], {
+    action: 'deployer',
+    comment: 'Deploy Data Feed',
+    waitForTx: true,
+    pollingIntervalMs: 1000,
+    timeoutDurationMs: 120 * 1000,
   });
 
   return feed.publicKey;

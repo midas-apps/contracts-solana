@@ -1,5 +1,5 @@
-import { AnchorProvider } from '@coral-xyz/anchor';
-import { Keypair, PublicKey } from '@solana/web3.js';
+import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
+import { PublicKey } from '@solana/web3.js';
 
 import { createMTokenMint } from '@/common/create-mtoken-mint';
 import { createUserError, isAccountNotFoundError } from '@/common/errorHandler';
@@ -11,9 +11,8 @@ import { registerAddress } from '../../utils/addressRegistry';
 import { saveAddressesToFile } from '../../utils/addressStorage';
 import { getMtoken, getNetwork } from '../../utils/argumentParser';
 
-async function main(provider: AnchorProvider, payer: Keypair) {
+async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const mtoken = getMtoken();
-  const network = getNetwork();
 
   console.log(`Deploying mToken mint for: ${mtoken}`);
 
@@ -43,9 +42,8 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     } catch (error) {
       if (isAccountNotFoundError(error)) {
         const mint = await createMTokenMint({
-          payer,
+          provider,
           authority: payer.publicKey,
-          connection: provider.connection,
           metadata: {
             name: config.metadata.name,
             symbol: config.metadata.symbol,
@@ -60,9 +58,8 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     }
   } else {
     const mint = await createMTokenMint({
-      payer,
+      provider,
       authority: payer.publicKey,
-      connection: provider.connection,
       metadata: {
         name: config.metadata.name,
         symbol: config.metadata.symbol,
@@ -81,4 +78,4 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main);
+executeNetworkScript(network, main, 'deployer');

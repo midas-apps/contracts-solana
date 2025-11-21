@@ -1,6 +1,6 @@
-import { AnchorProvider } from '@coral-xyz/anchor';
+import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
 import { getAssociatedTokenAddressSync, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
-import { Keypair, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
+import { Transaction } from '@solana/web3.js';
 
 import { executeNetworkScript } from '@/common/scriptRunner';
 import { fetchAccountAcState, getAccountAcStatePda } from '@/test/helpers/ac.helpers';
@@ -20,7 +20,7 @@ import { getVaultsProgram } from './deploy/vaults';
 import { requireRedeemerVault } from './utils/addressValidators';
 import { getMtoken, getNetwork, getAmount } from './utils/argumentParser';
 
-async function main(provider: AnchorProvider, payer: Keypair) {
+async function main(provider: AnchorProvider, payer: Wallet) {
   const mtoken = getMtoken();
   const network = getNetwork();
   const amountStr = getAmount();
@@ -119,7 +119,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
       ),
     );
 
-    const txRes1 = await sendAndConfirmTransaction(provider.connection, tx1, [payer], {
+    const txRes1 = await provider.sendAndConfirm(tx1, [], {
       commitment: 'finalized',
     });
 
@@ -201,7 +201,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
       .instruction(),
   );
 
-  const txRes = await sendAndConfirmTransaction(provider.connection, tx2, [payer], {
+  const txRes = await provider.sendAndConfirm(tx2, [], {
     commitment: 'finalized',
   });
 
@@ -210,4 +210,4 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main);
+executeNetworkScript(network, main, 'local-wallet');

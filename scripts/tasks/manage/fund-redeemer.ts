@@ -1,11 +1,11 @@
-import { AnchorProvider } from '@coral-xyz/anchor';
+import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
 import {
   createApproveInstruction,
   getAccount,
   getAssociatedTokenAddressSync,
   getMint,
 } from '@solana/spl-token';
-import { Keypair, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
+import { Keypair, Transaction } from '@solana/web3.js';
 
 import { createUserError } from '@/common/errorHandler';
 import { executeNetworkScript } from '@/common/scriptRunner';
@@ -17,7 +17,7 @@ import { getVaultsProgram } from '../../deploy/vaults';
 import { requirePaymentTokenFeed, requireRedeemerVault } from '../../utils/addressValidators';
 import { getMtoken, getNetwork, getOptionalArg, getPaymentToken } from '../../utils/argumentParser';
 
-async function main(provider: AnchorProvider, payer: Keypair) {
+async function main(provider: AnchorProvider, payer: Wallet) {
   const mtoken = getMtoken();
   const network = getNetwork();
   const paymentToken = getPaymentToken();
@@ -138,14 +138,10 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     ),
   );
 
-  // Send transaction
-  const signers = [payer];
-  if (redeemerKeypair) {
-    signers.push(redeemerKeypair);
-  }
-
+  // Send transaction - redeemerKeypair must sign in addition to payer
   console.log(`\n📤 Sending transaction...`);
-  const txRes = await sendAndConfirmTransaction(provider.connection, tx, signers, {
+  const additionalSigners: Keypair[] = [redeemerKeypair];
+  const txRes = await provider.sendAndConfirm(tx, additionalSigners, {
     commitment: 'finalized',
   });
 
@@ -155,7 +151,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main);
+executeNetworkScript(network, main, 'update-vault');
 
 // Usage examples:
 //

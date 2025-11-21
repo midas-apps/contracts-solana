@@ -1,5 +1,5 @@
-import { AnchorProvider } from '@coral-xyz/anchor';
-import { Keypair, PublicKey } from '@solana/web3.js';
+import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
+import { PublicKey } from '@solana/web3.js';
 
 import { executeNetworkScript } from '@/common/scriptRunner';
 import { getVaultsProgram } from '@/scripts/deploy/vaults';
@@ -75,7 +75,7 @@ async function getAllPaymentTokensForVault(
   return paymentTokens;
 }
 
-async function main(provider: AnchorProvider, _payer: Keypair) {
+async function main(provider: AnchorProvider, _payer: Wallet) {
   const mtoken = getMtoken();
   const network = getNetwork();
 
@@ -144,6 +144,6 @@ async function main(provider: AnchorProvider, _payer: Keypair) {
   console.log('✅ On-chain state check completed\n');
 }
 
-executeNetworkScript(getNetwork(), main);
+executeNetworkScript(getNetwork(), main, 'local-wallet');
 
 // yarn tsx scripts/local-test-utils/verify-payment-tokens.ts --network devnet --mtoken mTBILL

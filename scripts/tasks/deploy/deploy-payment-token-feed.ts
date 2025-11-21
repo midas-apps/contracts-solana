@@ -1,6 +1,6 @@
-import { AnchorProvider } from '@coral-xyz/anchor';
+import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { Keypair, PublicKey } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 
 import { executeNetworkScript } from '@/common/scriptRunner';
 
@@ -11,9 +11,8 @@ import { requireAcRoleGlobalAddress } from '../../utils/addressValidators';
 import { getNetwork, getPaymentToken } from '../../utils/argumentParser';
 import { deployFeedFromConfig } from '../../utils/feedDeployment';
 
-async function main(provider: AnchorProvider, payer: Keypair) {
+async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const paymentToken = getPaymentToken();
-  const network = getNetwork();
 
   console.log(`Deploying payment token feed for: ${paymentToken} on ${network}`);
 
@@ -28,6 +27,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   const { dataFeed, underlyingFeed } = await deployFeedFromConfig({
     provider,
     payer,
+    network,
     acRole: acRoleGlobal,
     dataFeedConfig: config.dataFeed,
   });
@@ -61,4 +61,4 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main);
+executeNetworkScript(network, main, 'deployer');

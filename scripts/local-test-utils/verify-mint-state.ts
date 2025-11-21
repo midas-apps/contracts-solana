@@ -1,6 +1,5 @@
-import { AnchorProvider } from '@coral-xyz/anchor';
+import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
 import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
-import { Keypair } from '@solana/web3.js';
 
 import { executeNetworkScript } from '@/common/scriptRunner';
 import { formatUnits, fromBN, getBalance } from '@/test/helpers/common.helpers';
@@ -14,7 +13,7 @@ import { getVaultsProgram } from '../deploy/vaults';
 import { requireMinterVault, requirePaymentTokenFeed } from '../utils/addressValidators';
 import { getMtoken, getNetwork, getPaymentToken } from '../utils/argumentParser';
 
-async function main(provider: AnchorProvider, payer: Keypair) {
+async function main(provider: AnchorProvider, payer: Wallet) {
   const mtoken = getMtoken();
   const network = getNetwork();
   const paymentToken = getPaymentToken();
@@ -92,6 +91,6 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main);
+executeNetworkScript(network, main, 'local-wallet');
 
 // yarn tsx scripts/local-test-utils/verify-mint-state.ts --network devnet --mtoken mTBILL --payment-token USDC

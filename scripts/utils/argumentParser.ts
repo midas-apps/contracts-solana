@@ -34,7 +34,15 @@ export function getMtoken(): MProduct {
 /** Get network from arguments */
 export function getNetwork(): string {
   const argv = getParsedArgs();
-  const network = (argv.network || argv.n || 'devnet') as string;
+  const network = (argv.network || argv.n) as string | undefined;
+
+  if (!network) {
+    throw createUserError('Network is required', [
+      'Use --network or -n to specify the network',
+      'Example: --network devnet or --network mainnet',
+    ]);
+  }
+
   const availableNetworks = getAvailableNetworks();
   if (availableNetworks.length > 0 && !availableNetworks.includes(network)) {
     throw createUserError(`Invalid network '${network}'`, [

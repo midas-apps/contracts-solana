@@ -1,6 +1,6 @@
-import { AnchorProvider } from '@coral-xyz/anchor';
+import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
 import { createApproveInstruction } from '@solana/spl-token';
-import { Keypair, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
+import { Transaction } from '@solana/web3.js';
 
 import { executeNetworkScript } from '@/common/scriptRunner';
 import { MAX_U64 } from '@/test/constants/common.constants';
@@ -12,7 +12,7 @@ import {
 } from '../../utils/addressValidators';
 import { getMtoken, getNetwork, getPaymentToken } from '../../utils/argumentParser';
 
-async function main(provider: AnchorProvider, payer: Keypair) {
+async function main(provider: AnchorProvider, payer: Wallet) {
   const mtoken = getMtoken();
   const network = getNetwork();
   const paymentToken = getPaymentToken();
@@ -39,7 +39,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     ),
   );
 
-  const txRes = await sendAndConfirmTransaction(provider.connection, tx, [payer], {
+  const txRes = await provider.sendAndConfirm(tx, [], {
     commitment: 'finalized',
   });
 
@@ -48,4 +48,4 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main);
+executeNetworkScript(network, main, 'update-ac');

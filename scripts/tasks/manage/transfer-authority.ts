@@ -1,10 +1,10 @@
-import { AnchorProvider } from '@coral-xyz/anchor';
+import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
 import {
   AuthorityType,
   createSetAuthorityInstruction,
   TOKEN_2022_PROGRAM_ID,
 } from '@solana/spl-token';
-import { Keypair, PublicKey, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
+import { PublicKey, Transaction } from '@solana/web3.js';
 
 import { createUserError } from '@/common/errorHandler';
 import { executeNetworkScript } from '@/common/scriptRunner';
@@ -17,7 +17,7 @@ import {
   getOptionalArg,
 } from '../../utils/argumentParser';
 
-async function main(provider: AnchorProvider, payer: Keypair) {
+async function main(provider: AnchorProvider, payer: Wallet) {
   const mtoken = getMtoken();
   const network = getNetwork();
   const authorityType = getAuthorityType();
@@ -55,8 +55,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
     : payer.publicKey;
   const newAuthorityPubkey = newAuthority ? new PublicKey(newAuthority) : payer.publicKey;
 
-  const txRes = await sendAndConfirmTransaction(
-    provider.connection,
+  const txRes = await provider.sendAndConfirm(
     new Transaction().add(
       createSetAuthorityInstruction(
         account,
@@ -67,7 +66,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
         TOKEN_2022_PROGRAM_ID,
       ),
     ),
-    [payer],
+    [],
     {
       commitment: 'finalized',
     },
@@ -78,4 +77,4 @@ async function main(provider: AnchorProvider, payer: Keypair) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main);
+executeNetworkScript(network, main, 'update-ac');

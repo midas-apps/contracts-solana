@@ -1,5 +1,5 @@
-import { AnchorProvider } from '@coral-xyz/anchor';
-import { Keypair, PublicKey } from '@solana/web3.js';
+import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
+import { PublicKey } from '@solana/web3.js';
 import { getAddress } from 'viem';
 
 import { createUserError } from '@/common/errorHandler';
@@ -13,7 +13,8 @@ import { deploySwitchboardFeed, verifySwitchboardFeed } from '../deploy/feeds/sw
 
 export interface DeployFeedParams {
   provider: AnchorProvider;
-  payer: Keypair;
+  payer: Wallet;
+  network: string;
   acRole: PublicKey;
   dataFeedConfig: DataFeedConfig;
 }
@@ -26,6 +27,7 @@ export interface DeployFeedResult {
 export async function deployFeedFromConfig({
   provider,
   payer,
+  network,
   acRole,
   dataFeedConfig,
 }: DeployFeedParams): Promise<DeployFeedResult> {
@@ -58,7 +60,7 @@ export async function deployFeedFromConfig({
         switchboardFeed = underlyingFeed;
       } else {
         switchboardFeed = await deploySwitchboardFeed(
-          { provider, payer },
+          { provider, payer, network },
           {
             env,
             feedName,
@@ -69,7 +71,7 @@ export async function deployFeedFromConfig({
       }
 
       const dataFeed = await deployDataFeedContract(
-        { provider, payer },
+        { provider, payer, network },
         {
           ...feedConfig,
           underlyingFeed: switchboardFeed,
@@ -84,7 +86,7 @@ export async function deployFeedFromConfig({
     }
 
     case 'pyth': {
-      const dataFeed = await deployPythFeed({ provider, payer }, { ...feedConfig });
+      const dataFeed = await deployPythFeed({ provider, payer, network }, { ...feedConfig });
       return {
         dataFeed,
         underlyingFeed,
@@ -92,7 +94,7 @@ export async function deployFeedFromConfig({
     }
 
     case 'chainlink': {
-      const dataFeed = await deployChainlinkFeed({ provider, payer }, { ...feedConfig });
+      const dataFeed = await deployChainlinkFeed({ provider, payer, network }, { ...feedConfig });
       return {
         dataFeed,
         underlyingFeed,
@@ -100,7 +102,7 @@ export async function deployFeedFromConfig({
     }
 
     case 'manual': {
-      const dataFeed = await deployManualFeed({ provider, payer }, feedConfig);
+      const dataFeed = await deployManualFeed({ provider, payer, network }, feedConfig);
       // For manual feeds, the underlying feed is a PDA derived from the data feed
       const dataFeedProgram = getDataFeedProgram(provider);
       const [manualFeedPda] = PublicKey.findProgramAddressSync(

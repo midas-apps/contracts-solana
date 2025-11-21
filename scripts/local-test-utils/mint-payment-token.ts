@@ -1,4 +1,4 @@
-import { AnchorProvider } from '@coral-xyz/anchor';
+import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
 import {
   createMintToInstruction,
   getAccount,
@@ -6,7 +6,7 @@ import {
   getMint,
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
-import { Keypair, PublicKey, sendAndConfirmTransaction, Transaction } from '@solana/web3.js';
+import { PublicKey, Transaction } from '@solana/web3.js';
 
 import { addresses } from '@/common/addresses';
 import { executeNetworkScript } from '@/common/scriptRunner';
@@ -14,7 +14,7 @@ import { createAtaIfNotExistsInx, formatUnits, parseUnits } from '@/test/helpers
 
 import { getNetwork, getOptionalArg, getPaymentToken } from '../utils/argumentParser';
 
-async function main(provider: AnchorProvider, payer: Keypair) {
+async function main(provider: AnchorProvider, payer: Wallet) {
   const network = getNetwork();
   const paymentToken = getPaymentToken();
   const amountArg = getOptionalArg('amount');
@@ -87,7 +87,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   );
 
   console.log(`Minting ${amountStr} ${paymentToken}...`);
-  const signature = await sendAndConfirmTransaction(provider.connection, transaction, [payer], {
+  const signature = await provider.sendAndConfirm(transaction, [], {
     commitment: 'finalized',
   });
 
@@ -103,7 +103,7 @@ async function main(provider: AnchorProvider, payer: Keypair) {
   );
 }
 
-executeNetworkScript(getNetwork(), main);
+executeNetworkScript(getNetwork(), main, 'local-wallet');
 
 // yarn tsx scripts/local-test-utils/mint-payment-token.ts --network devnet --payment-token USDC --amount 1000
 // yarn tsx scripts/local-test-utils/mint-payment-token.ts --network devnet --payment-token USDC --amount 1000 --recipient <address>

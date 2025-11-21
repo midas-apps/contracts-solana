@@ -1,10 +1,10 @@
-import { AnchorProvider } from '@coral-xyz/anchor';
-import { Keypair } from '@solana/web3.js';
+import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
 
 import { executeNetworkScript } from '@/common/scriptRunner';
 import { fromBN } from '@/test/helpers/common.helpers';
 import { fetchDataFeedState } from '@/test/helpers/data-feed.helpers';
 import {
+  fetchAllRedeemerVaultRequests,
   fetchPaymentMintState,
   fetchRedeemerVaultRequestState,
   fetchRedeemerVaultState,
@@ -19,7 +19,7 @@ import { getVaultsProgram } from '../deploy/vaults';
 import { requirePaymentTokenFeed, requireRedeemerVault } from '../utils/addressValidators';
 import { getMtoken, getNetwork, getOptionalArg, getPaymentToken } from '../utils/argumentParser';
 
-async function main(provider: AnchorProvider, _payer: Keypair) {
+async function main(provider: AnchorProvider, _payer: Wallet) {
   const mtoken = getMtoken();
   const network = getNetwork();
   const paymentToken = getPaymentToken();
@@ -54,21 +54,17 @@ async function main(provider: AnchorProvider, _payer: Keypair) {
       throw new Error('No redeem requests found');
     }
 
-    let found = false;
-    for (let i = requestsCount - 1n; i >= 0n; i--) {
-      const requestPda = getRedeemerVaultRequestPda(getRedeemerVaultPda(vaultCommon), i);
-      const requestState = await fetchRedeemerVaultRequestState(vaultsProgram, requestPda, true);
-      if (requestState) {
-        requestId = i;
-        found = true;
-        console.log(`\n✅ Found latest request ID: ${requestId}`);
-        break;
-      }
-    }
+    // Fetch all active requests
+    const allRequests = await fetchAllRedeemerVaultRequests(vaultsProgram, vaultCommon, true);
 
-    if (!found) {
+    if (allRequests.length === 0) {
       throw new Error('No pending redeem requests found');
     }
+
+    // Get the latest request
+    requestId = allRequests[allRequests.length - 1].id;
+    console.log(`\n✅ Found latest request ID: ${requestId}`);
+    console.log(`📊 Total active requests: ${allRequests.length}`);
   }
 
   // Fetch redeem request state
@@ -191,7 +187,7 @@ async function main(provider: AnchorProvider, _payer: Keypair) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main);
+executeNetworkScript(network, main, 'local-wallet');
 
 // Usage:
 // yarn tsx scripts/local-test-utils/verify-redeem-request.ts --network devnet --mtoken mTBILL --payment-token USDC --request-id 0
