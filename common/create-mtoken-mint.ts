@@ -10,21 +10,48 @@ import {
   createInitializePermanentDelegateInstruction,
 } from '@solana/spl-token';
 import { createInitializeInstruction, pack, TokenMetadata } from '@solana/spl-token-metadata';
-import { Keypair, SystemProgram, Transaction, PublicKey } from '@solana/web3.js';
+import {
+  Keypair,
+  SystemProgram,
+  Transaction,
+  PublicKey,
+  Connection,
+  Signer,
+} from '@solana/web3.js';
+import { BanksTransactionMeta } from 'solana-bankrun';
 
 // Define the extensions to be used by the mint
 const extensions = [ExtensionType.PermanentDelegate, ExtensionType.MetadataPointer];
 
-export const createMTBillTokenMint = async ({
-  provider,
-  mint,
-  authority,
-}: {
-  provider: AnchorProvider;
+type SendTransactionFn = (
+  connection: Connection,
+  transaction: Transaction,
+  signers: Signer[],
+) => Promise<BanksTransactionMeta | string>;
+
+interface CreateMintBaseParams {
   mint?: Keypair;
   authority: PublicKey;
-}) => {
-  mint ??= Keypair.generate();
+}
+
+interface CreateMintProviderParams extends CreateMintBaseParams {
+  provider: AnchorProvider;
+  payer?: never;
+  connection?: never;
+  sendTxFn?: never;
+}
+
+interface CreateMintTestParams extends CreateMintBaseParams {
+  provider?: never;
+  payer: Signer;
+  connection: Connection;
+  sendTxFn: SendTransactionFn;
+}
+
+export const createMTBillTokenMint = async (
+  params: CreateMintProviderParams | CreateMintTestParams,
+) => {
+  const mint = params.mint ?? Keypair.generate();
 
   const metadata = {
     name: 'Midas US Treasury Bill Token',
@@ -32,19 +59,21 @@ export const createMTBillTokenMint = async ({
     additionalMetadata: [],
     uri: 'https://raw.githubusercontent.com/midas-apps/midas-assets/refs/heads/main/solana/mtbill-metadata',
     mint: mint.publicKey,
-    updateAuthority: authority,
+    updateAuthority: params.authority,
   } as TokenMetadata;
 
   const mintLen = getMintLen(extensions);
   const metadataLen = TYPE_SIZE + LENGTH_SIZE + pack(metadata).length;
 
-  const mintLamports = await provider.connection.getMinimumBalanceForRentExemption(
-    mintLen + metadataLen,
-  );
+  // Determine connection and payer based on params
+  const connection = params.provider ? params.provider.connection : params.connection;
+  const payer = params.provider ? params.provider.wallet.publicKey : params.payer.publicKey;
+
+  const mintLamports = await connection.getMinimumBalanceForRentExemption(mintLen + metadataLen);
 
   const mintTransaction = new Transaction().add(
     SystemProgram.createAccount({
-      fromPubkey: provider.wallet.publicKey,
+      fromPubkey: payer,
       newAccountPubkey: mint.publicKey,
       space: mintLen,
       lamports: mintLamports,
@@ -52,12 +81,22 @@ export const createMTBillTokenMint = async ({
     }),
     createInitializeMetadataPointerInstruction(
       mint.publicKey,
-      authority,
+      params.authority,
       mint.publicKey,
       TOKEN_2022_PROGRAM_ID,
     ),
-    createInitializePermanentDelegateInstruction(mint.publicKey, authority, TOKEN_2022_PROGRAM_ID),
-    createInitializeMintInstruction(mint.publicKey, 9, authority, authority, TOKEN_2022_PROGRAM_ID),
+    createInitializePermanentDelegateInstruction(
+      mint.publicKey,
+      params.authority,
+      TOKEN_2022_PROGRAM_ID,
+    ),
+    createInitializeMintInstruction(
+      mint.publicKey,
+      9,
+      params.authority,
+      params.authority,
+      TOKEN_2022_PROGRAM_ID,
+    ),
     createInitializeInstruction({
       programId: TOKEN_2022_PROGRAM_ID,
       mint: mint.publicKey,
@@ -65,45 +104,59 @@ export const createMTBillTokenMint = async ({
       name: metadata.name,
       symbol: metadata.symbol,
       uri: metadata.uri,
-      mintAuthority: authority,
-      updateAuthority: authority,
+      mintAuthority: params.authority,
+      updateAuthority: params.authority,
     }),
   );
 
-  await provider.sendAndConfirm(mintTransaction, [mint]);
+  // Send transaction based on environment
+  if (params.provider) {
+    await params.provider.sendAndConfirm(mintTransaction, [mint]);
+  } else {
+    await params.sendTxFn(connection, mintTransaction, [params.payer, mint]);
+  }
 
   return mint;
 };
-
-export const createMTokenMint = async ({
-  provider,
-  mint,
-  metadata,
-  authority,
-}: {
-  provider: AnchorProvider;
-  mint?: Keypair;
+interface CreateMTokenProviderParams extends CreateMintBaseParams {
   metadata: Omit<TokenMetadata, 'updateAuthority' | 'mint'>;
-  authority: PublicKey;
-}) => {
-  mint ??= Keypair.generate();
+  provider: AnchorProvider;
+  payer?: never;
+  connection?: never;
+  sendTxFn?: never;
+}
+
+interface CreateMTokenTestParams extends CreateMintBaseParams {
+  metadata: Omit<TokenMetadata, 'updateAuthority' | 'mint'>;
+  provider?: never;
+  payer: Signer;
+  connection: Connection;
+  sendTxFn: SendTransactionFn;
+}
+
+export const createMTokenMint = async (
+  params: CreateMTokenProviderParams | CreateMTokenTestParams,
+) => {
+  const mint = params.mint ?? Keypair.generate();
 
   const fullMetadata = {
-    ...metadata,
+    ...params.metadata,
     mint: mint.publicKey,
-    updateAuthority: authority,
+    updateAuthority: params.authority,
   };
 
   const mintLen = getMintLen(extensions);
   const metadataLen = TYPE_SIZE + LENGTH_SIZE + pack(fullMetadata).length;
 
-  const mintLamports = await provider.connection.getMinimumBalanceForRentExemption(
-    mintLen + metadataLen,
-  );
+  // Determine connection and payer based on params
+  const connection = params.provider ? params.provider.connection : params.connection;
+  const payer = params.provider ? params.provider.wallet.publicKey : params.payer.publicKey;
+
+  const mintLamports = await connection.getMinimumBalanceForRentExemption(mintLen + metadataLen);
 
   const mintTransaction = new Transaction().add(
     SystemProgram.createAccount({
-      fromPubkey: provider.wallet.publicKey,
+      fromPubkey: payer,
       newAccountPubkey: mint.publicKey,
       space: mintLen,
       lamports: mintLamports,
@@ -111,25 +164,40 @@ export const createMTokenMint = async ({
     }),
     createInitializeMetadataPointerInstruction(
       mint.publicKey,
-      authority,
+      params.authority,
       mint.publicKey,
       TOKEN_2022_PROGRAM_ID,
     ),
-    createInitializePermanentDelegateInstruction(mint.publicKey, authority, TOKEN_2022_PROGRAM_ID),
-    createInitializeMintInstruction(mint.publicKey, 9, authority, authority, TOKEN_2022_PROGRAM_ID),
+    createInitializePermanentDelegateInstruction(
+      mint.publicKey,
+      params.authority,
+      TOKEN_2022_PROGRAM_ID,
+    ),
+    createInitializeMintInstruction(
+      mint.publicKey,
+      9,
+      params.authority,
+      params.authority,
+      TOKEN_2022_PROGRAM_ID,
+    ),
     createInitializeInstruction({
       programId: TOKEN_2022_PROGRAM_ID,
       mint: mint.publicKey,
       metadata: fullMetadata.mint,
-      name: metadata.name,
-      symbol: metadata.symbol,
-      uri: metadata.uri,
-      mintAuthority: authority,
-      updateAuthority: authority,
+      name: params.metadata.name,
+      symbol: params.metadata.symbol,
+      uri: params.metadata.uri,
+      mintAuthority: params.authority,
+      updateAuthority: params.authority,
     }),
   );
 
-  await provider.sendAndConfirm(mintTransaction, [mint]);
+  // Send transaction based on environment
+  if (params.provider) {
+    await params.provider.sendAndConfirm(mintTransaction, [mint]);
+  } else {
+    await params.sendTxFn(connection, mintTransaction, [params.payer, mint]);
+  }
 
   return mint;
 };

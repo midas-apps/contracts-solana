@@ -74,6 +74,10 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
     throw createUserError(`feeReceiver is not configured for ${mtoken} redeemer vault`);
   }
 
+  if (!config.redeemer.requestRedeemer) {
+    throw createUserError(`requestRedeemer is not configured for ${mtoken} redeemer vault`);
+  }
+
   const redeemerCommonVault = await deployRedeemerVault(
     { provider, payer, network },
     {
@@ -90,9 +94,7 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
       greenListEnforced: config.redeemer.greenListEnforced,
       tokensReceiver: new PublicKey(config.redeemer.tokensReceiver),
       feeReceiver: new PublicKey(config.redeemer.feeReceiver),
-      requestRedeemer: config.redeemer.requestRedeemer
-        ? new PublicKey(config.redeemer.requestRedeemer)
-        : undefined,
+      requestRedeemer: new PublicKey(config.redeemer.requestRedeemer),
     },
   );
   const redeemerVaultPda = getRedeemerVaultPda(redeemerCommonVault);

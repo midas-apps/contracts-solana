@@ -35,6 +35,8 @@ export const mTBILLConfig: TokenConfigWithNetworks = {
         minAmount: '1',
         firstMintMinMTokens: '10',
         greenListEnforced: false,
+        feeReceiver: 'EfzamqVaGeuo2bVDJUophcChKD65tC52vQzSyrEEP3Fk',
+        tokensReceiver: 'EfzamqVaGeuo2bVDJUophcChKD65tC52vQzSyrEEP3Fk',
         paymentTokens: [
           {
             symbol: PaymentToken.USDC,
@@ -53,6 +55,9 @@ export const mTBILLConfig: TokenConfigWithNetworks = {
         minFiatRedeemAmount: '10',
         fiatFlatFee: '1',
         greenListEnforced: false,
+        feeReceiver: 'QRLkMrM5jfEmS6kmBBEgfDo97VariSWiuoCn1WkmBpj',
+        tokensReceiver: 'QRLkMrM5jfEmS6kmBBEgfDo97VariSWiuoCn1WkmBpj',
+        requestRedeemer: 'QRLkMrM5jfEmS6kmBBEgfDo97VariSWiuoCn1WkmBpj',
         paymentTokens: [
           {
             symbol: PaymentToken.USDC,
@@ -62,6 +67,11 @@ export const mTBILLConfig: TokenConfigWithNetworks = {
             isFiat: false,
           },
         ],
+      },
+      grantRoles: {
+        tokenManagerAddress: 'QRLkMrM5jfEmS6kmBBEgfDo97VariSWiuoCn1WkmBpj',
+        vaultsManagerAddress: 'QRLkMrM5jfEmS6kmBBEgfDo97VariSWiuoCn1WkmBpj',
+        oracleManagerAddress: 'QRLkMrM5jfEmS6kmBBEgfDo97VariSWiuoCn1WkmBpj',
       },
     },
     localnet: {
@@ -79,6 +89,8 @@ export const mTBILLConfig: TokenConfigWithNetworks = {
         minAmount: '1',
         firstMintMinMTokens: '10',
         greenListEnforced: false,
+        feeReceiver: '7KfnBgNZRuQwNruHMpBpBMtu9B9Rjw4SNux3iQvsCESg',
+        tokensReceiver: '7KfnBgNZRuQwNruHMpBpBMtu9B9Rjw4SNux3iQvsCESg',
         paymentTokens: [
           {
             symbol: PaymentToken.USDC,
@@ -97,6 +109,9 @@ export const mTBILLConfig: TokenConfigWithNetworks = {
         minFiatRedeemAmount: '10',
         fiatFlatFee: '1',
         greenListEnforced: false,
+        feeReceiver: '7KfnBgNZRuQwNruHMpBpBMtu9B9Rjw4SNux3iQvsCESg',
+        tokensReceiver: '7KfnBgNZRuQwNruHMpBpBMtu9B9Rjw4SNux3iQvsCESg',
+        requestRedeemer: '7KfnBgNZRuQwNruHMpBpBMtu9B9Rjw4SNux3iQvsCESg',
         paymentTokens: [
           {
             symbol: PaymentToken.USDC,
@@ -106,6 +121,11 @@ export const mTBILLConfig: TokenConfigWithNetworks = {
             isFiat: false,
           },
         ],
+      },
+      grantRoles: {
+        tokenManagerAddress: 'APT88pPXe1Ak3jerAoMuWCuXFfhj1LvsRgMpem87xTmW',
+        vaultsManagerAddress: '8ZSEKPwQ6Q7WdLbwCnUwynSPpiuikqP6qug2Es4X3x51',
+        oracleManagerAddress: 'EqBBuvHDiB5i3G4rbojAX2QgQp1izTW1ET4tGXbDYpA',
       },
     },
   },

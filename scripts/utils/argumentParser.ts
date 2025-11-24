@@ -4,7 +4,7 @@ import { hideBin } from 'yargs/helpers';
 import { createUserError } from '@/common/errorHandler';
 import { MProduct, isMProduct, PaymentToken, isPaymentToken } from '@/common/tokenTypes';
 
-import { getAvailableNetworks } from './configUtils';
+import { getAvailableNetworks } from './getAvailableNetworks';
 
 /** Simple cached parser - parses all args once */
 let parsedArgs: Record<string, unknown> | null = null;

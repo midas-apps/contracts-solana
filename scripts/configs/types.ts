@@ -5,6 +5,8 @@ import { PaymentToken } from '@/common/tokenTypes';
 
 import { PLACEHOLDER_FEED_ADDRESS } from '../utils/feedUtils';
 
+import { grantRolesConfigSchema } from './roles-types';
+
 const publicKeySchema = z.string().refine(
   (val) => {
     try {
@@ -98,9 +100,9 @@ export const minterVaultConfigSchema = z.object({
   minAmount: z.string(),
   firstMintMinMTokens: z.string(),
   greenListEnforced: z.boolean().default(false),
-  tokensReceiver: publicKeySchema.optional(),
-  feeReceiver: publicKeySchema.optional(),
-  paymentTokens: z.array(paymentTokenConfigSchema).optional(),
+  tokensReceiver: publicKeySchema,
+  feeReceiver: publicKeySchema,
+  paymentTokens: z.array(paymentTokenConfigSchema),
 });
 
 export const redeemerVaultConfigSchema = z.object({
@@ -111,10 +113,10 @@ export const redeemerVaultConfigSchema = z.object({
   minFiatRedeemAmount: z.string(),
   fiatFlatFee: z.string(),
   greenListEnforced: z.boolean().default(false),
-  tokensReceiver: publicKeySchema.optional(),
-  feeReceiver: publicKeySchema.optional(),
-  requestRedeemer: publicKeySchema.optional(),
-  paymentTokens: z.array(paymentTokenConfigSchema).optional(),
+  tokensReceiver: publicKeySchema,
+  feeReceiver: publicKeySchema,
+  requestRedeemer: publicKeySchema,
+  paymentTokens: z.array(paymentTokenConfigSchema),
 });
 
 export const tokenConfigSchema = z.object({
@@ -123,12 +125,14 @@ export const tokenConfigSchema = z.object({
   dataFeed: dataFeedConfigSchema,
   minter: minterVaultConfigSchema,
   redeemer: redeemerVaultConfigSchema,
+  grantRoles: grantRolesConfigSchema.optional(),
 });
 
 export const networkSpecificConfigSchema = z.object({
   dataFeed: dataFeedConfigSchema,
   minter: minterVaultConfigSchema,
   redeemer: redeemerVaultConfigSchema,
+  grantRoles: grantRolesConfigSchema.optional(),
 });
 
 export const tokenConfigWithNetworksSchema = z.object({
