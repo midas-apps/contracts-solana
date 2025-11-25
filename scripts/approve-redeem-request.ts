@@ -315,7 +315,7 @@ async function main(provider: AnchorProvider, payer: Wallet) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main, 'local-wallet');
+executeNetworkScript(network, main);
 
 // Usage examples:
 // yarn tsx scripts/approve-redeem-request.ts --network devnet --mtoken mTBILL --payment-token USDC --request-id 0 --new-rate 1000000000 --is-safe true

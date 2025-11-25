@@ -5,6 +5,7 @@ import * as sb from '@switchboard-xyz/on-demand';
 import { addresses } from '@/common/addresses';
 import { executeNetworkScript } from '@/common/scriptRunner';
 import { MProduct, PaymentToken } from '@/common/tokenTypes';
+import { fetchManualFeedState, getManualFeedStatePda } from '@/test/helpers/data-feed.helpers';
 
 import { getDataFeedProgram } from '../deploy/dataFeed';
 import { getNetwork, getOptionalArg } from '../utils/argumentParser';
@@ -54,10 +55,23 @@ async function fetchUnderlyingPrice(
   provider: AnchorProvider,
   feedState: FeedState,
   network: string,
+  baseFeed: PublicKey,
 ): Promise<{ price: bigint; decimals: number; timestamp?: number } | null> {
   const mode = formatMode(feedState.mode);
 
   try {
+    if (mode === 'manual') {
+      const program = getDataFeedProgram(provider);
+      const manualFeedPda = getManualFeedStatePda(baseFeed);
+      const manualFeedState = await fetchManualFeedState(program, manualFeedPda);
+
+      return {
+        price: convertToBase9(BigInt(manualFeedState.price.toString()), manualFeedState.decimals),
+        decimals: manualFeedState.decimals,
+        timestamp: manualFeedState.lastUpdatedAt,
+      };
+    }
+
     if (mode === 'switchboard') {
       const env = network === 'mainnet' ? 'mainnet' : 'devnet';
       const programId = new PublicKey(SWITCHBOARD_PROGRAM_IDS[env]);
@@ -75,7 +89,6 @@ async function fetchUnderlyingPrice(
     }
 
     // For other modes, we'd need their specific implementations
-    // Manual feeds would require fetching ManualFeedState
     // Pyth would need pyth SDK
     // Chainlink would need chainlink SDK
     return null;
@@ -123,6 +136,7 @@ async function main(provider: AnchorProvider) {
     }
     feedAddress = tokenInfo.mTokenDataFeed;
     tokenAddress = tokenInfo.mToken;
+    storedUnderlyingFeed = tokenInfo.mTokenUnderlyingFeed;
   }
 
   if (!feedAddress) {
@@ -169,7 +183,7 @@ async function main(provider: AnchorProvider) {
 
   // Fetch and verify current price
   console.log('💰 Current Price:');
-  const priceData = await fetchUnderlyingPrice(provider, feedState, network);
+  const priceData = await fetchUnderlyingPrice(provider, feedState, network, feedAddress);
 
   if (priceData) {
     const priceInBase9 = priceData.price;
@@ -180,6 +194,10 @@ async function main(provider: AnchorProvider) {
 
     console.log(`   Value: $${priceNumber.toFixed(9)}`);
     console.log(`   Raw (base-9): ${priceInBase9.toString()}`);
+    if (priceData.timestamp) {
+      const date = new Date(priceData.timestamp * 1000);
+      console.log(`   Last Updated: ${date.toISOString()}`);
+    }
     console.log(`   Bounds Check: ${withinBounds ? '✅ Within limits' : '❌ Out of bounds'}\n`);
 
     // Summary
@@ -192,7 +210,7 @@ async function main(provider: AnchorProvider) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main, 'local-wallet');
+executeNetworkScript(network, main);
 
 // Usage:
 // Payment token feed: yarn tsx scripts/local-test-utils/verify-feed.ts --network devnet --payment-token USDC

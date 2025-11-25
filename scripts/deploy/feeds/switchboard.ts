@@ -11,6 +11,7 @@ import * as sb from '@switchboard-xyz/on-demand';
 import { Address } from 'viem';
 
 import { isAccountNotFoundError } from '@/common/errorHandler';
+import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 
 import { CommonParams } from '../dataFeed';
 
@@ -154,12 +155,21 @@ export const deploySwitchboardFeed = async (
 
   // console.log(simulateResult);
 
-  const sig = await provider.sendAndConfirm(tx, [feedKeypair], {
-    commitment: 'finalized',
-    skipPreflight: true,
-  });
+  await sendAndWaitForCustomSolanaTxSign(
+    provider,
+    tx,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [feedKeypair as any], // Switchboard uses a different @solana/web3.js version
+    {
+      action: 'deployer',
+      comment: 'Deploy Switchboard Feed',
+      waitForTx: true,
+      pollingIntervalMs: 1000,
+      timeoutDurationMs: 120 * 1000,
+    },
+  );
 
-  console.log(`Feed ${feedKeypair.publicKey} initialized: ${sig}`);
+  console.log(`Feed ${feedKeypair.publicKey} initialized`);
 
   return feedKeypair.publicKey;
 };

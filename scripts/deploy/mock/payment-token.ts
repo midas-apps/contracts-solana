@@ -8,6 +8,7 @@ import {
 } from '@solana/spl-token';
 import { Keypair, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 
+import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 import { createAtaInx, parseUnits } from '@/test/helpers/common.helpers';
 
 export interface MockPaymentTokenConfig {
@@ -66,8 +67,10 @@ export async function createMockPaymentTokenMint({
     ),
   );
 
-  await provider.sendAndConfirm(transaction, [mint], {
-    commitment: 'finalized',
+  await sendAndWaitForCustomSolanaTxSign(provider, transaction, [mint], {
+    action: 'deployer',
+    comment: `Deploy mock ${config.symbol} payment token`,
+    waitForTx: true,
   });
 
   return mint.publicKey;

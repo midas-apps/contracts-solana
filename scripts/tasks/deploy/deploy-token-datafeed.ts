@@ -53,13 +53,27 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
       dataFeedConfig: config.dataFeed,
     });
     dataFeed = feedResult.dataFeed;
+
+    // Save both the data feed and underlying feed addresses
+    registerAddress(network, mtoken, 'mTokenDataFeed', dataFeed);
+    if (feedResult.underlyingFeed) {
+      registerAddress(network, mtoken, 'mTokenUnderlyingFeed', feedResult.underlyingFeed);
+    }
+  } else {
+    // If data feed already exists, we should still save the underlying feed if available
+    console.log(`✓ Data feed already exists: ${dataFeed.toString()}`);
   }
 
-  registerAddress(network, mtoken, 'mTokenDataFeed', dataFeed);
   await saveAddressesToFile();
 
   console.log('✅ Data feed deployed successfully');
-  console.log(`Address: ${dataFeed.toString()}`);
+  console.log(`Data Feed: ${dataFeed.toString()}`);
+
+  // Show underlying feed if available
+  const savedAddresses = getTokenAddresses(network, mtoken);
+  if (savedAddresses?.mTokenUnderlyingFeed) {
+    console.log(`Underlying Feed: ${savedAddresses.mTokenUnderlyingFeed.toString()}`);
+  }
 }
 
 const network = getNetwork();

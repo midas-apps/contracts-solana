@@ -147,14 +147,25 @@ export const paymentTokenMetadataSchema = z.object({
   decimals: z.number().int().min(0).max(18),
 });
 
-// Payment Token Deployment Configuration
 export const paymentTokenDeploymentConfigSchema = z.object({
   metadata: paymentTokenMetadataSchema,
   tokenAddress: publicKeySchema,
   dataFeed: dataFeedConfigSchema,
 });
 
+export const paymentTokenNetworkConfigSchema = z.object({
+  tokenAddress: publicKeySchema.optional(),
+  dataFeed: dataFeedConfigSchema,
+});
+
+export const paymentTokenConfigWithNetworksSchema = z.object({
+  metadata: paymentTokenMetadataSchema,
+  networks: z.record(z.string(), paymentTokenNetworkConfigSchema),
+});
+
 export type DataFeedConfig = z.infer<typeof dataFeedConfigSchema>;
 export type TokenConfig = z.infer<typeof tokenConfigSchema>;
 export type TokenConfigWithNetworks = z.infer<typeof tokenConfigWithNetworksSchema>;
 export type PaymentTokenDeploymentConfig = z.infer<typeof paymentTokenDeploymentConfigSchema>;
+export type PaymentTokenNetworkConfig = z.infer<typeof paymentTokenNetworkConfigSchema>;
+export type PaymentTokenConfigWithNetworks = z.infer<typeof paymentTokenConfigWithNetworksSchema>;

@@ -64,6 +64,10 @@ function generateTokenAddressesCode(tokenAddrs: TokenAddresses, indent = '      
   if (tokenAddrs.mTokenDataFeed) {
     parts.push(`mTokenDataFeed: ${formatPublicKey(tokenAddrs.mTokenDataFeed)}`);
   }
+
+  if (tokenAddrs.mTokenUnderlyingFeed) {
+    parts.push(`mTokenUnderlyingFeed: ${formatPublicKey(tokenAddrs.mTokenUnderlyingFeed)}`);
+  }
   if (tokenAddrs.minter) parts.push(`minter: ${formatVault(tokenAddrs.minter)}`);
   if (tokenAddrs.redeemer) parts.push(`redeemer: ${formatVault(tokenAddrs.redeemer)}`);
 
@@ -173,6 +177,7 @@ export interface TokenAddresses {
     account: PublicKey;
     };
   mTokenDataFeed?: PublicKey;
+  mTokenUnderlyingFeed?: PublicKey;
   minter?: {
     commonVault: PublicKey;
     account: PublicKey;

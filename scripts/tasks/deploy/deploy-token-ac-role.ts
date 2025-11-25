@@ -26,7 +26,7 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
       console.log(`✓ AC Role already exists: ${acRole.toString()}`);
     } catch (error) {
       if (isAccountNotFoundError(error)) {
-        acRole = await deployAcRole({ provider, payer }, {});
+        acRole = await deployAcRole({ provider, payer, network }, {});
       } else {
         throw createUserError('AC Role in addresses.ts does not exist on-chain', [
           'Remove the address from addresses.ts or verify the account exists',
@@ -34,7 +34,7 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
       }
     }
   } else {
-    acRole = await deployAcRole({ provider, payer }, {});
+    acRole = await deployAcRole({ provider, payer, network }, {});
   }
 
   registerAddress(network, mtoken, 'acRole', acRole);

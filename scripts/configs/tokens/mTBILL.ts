@@ -1,6 +1,5 @@
 import { PaymentToken } from '@/common/tokenTypes';
 import { TokenConfigWithNetworks } from '@/scripts/configs/types';
-import { PLACEHOLDER_FEED_ADDRESS } from '@/scripts/utils/feedUtils';
 
 export const mTBILLConfig: TokenConfigWithNetworks = {
   // Shared configuration (same across all networks)
@@ -80,7 +79,6 @@ export const mTBILLConfig: TokenConfigWithNetworks = {
         minPrice: '0.1',
         maxPrice: '100000',
         maxStaleness: 86400,
-        underlyingFeed: PLACEHOLDER_FEED_ADDRESS, // Placeholder - will be set during deployment
       },
       minter: {
         instantFee: '1',

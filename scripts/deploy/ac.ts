@@ -38,7 +38,7 @@ export const deployAc = async (common: CommonParams, { acRole, ac }: DeployAcCon
     })
     .transaction();
 
-  await sendAndWaitForCustomSolanaTxSign(common.provider, common.network, tx, [ac], {
+  await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [ac], {
     action: 'deployer',
     comment: 'Deploy Access Control',
     waitForTx: true,
@@ -67,7 +67,7 @@ export const deployAcRole = async (common: CommonParams, { acRole }: DeployAcRol
     })
     .transaction();
 
-  await sendAndWaitForCustomSolanaTxSign(common.provider, common.network, tx, [acRole], {
+  await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [acRole], {
     action: 'deployer',
     comment: 'Deploy AC Role',
     waitForTx: true,

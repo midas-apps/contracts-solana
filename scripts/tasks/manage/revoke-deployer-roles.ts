@@ -19,7 +19,9 @@ import { getMtoken, getNetwork } from '../../utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const mtoken = getMtoken();
-  console.log(`Revoke deployer roles: ${mtoken} on ${network}`);
+
+  console.log(`\n━━━ Step 2/3: Revoke Deployer Roles ━━━`);
+  console.log(`Token: ${mtoken} | Network: ${network}\n`);
 
   const networkRolesConfig = networkRolesConfigs[network];
   if (!networkRolesConfig) {
@@ -38,19 +40,29 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const acProgram = getAcProgram(provider);
   const acRole = tokenAddrs.acRole;
 
+  console.log(`Deployer:  ${payer.publicKey.toString()}`);
+  console.log(`AC Admin:  ${accessControlAdminAddress.toString()}\n`);
+
+  // Verify deployer has ADMIN role (needed as authority to revoke roles)
+  const deployerAdminRolePda = getAccountAcRoleStatePda(acRole, payer.publicKey, AC_ROLES.ADMIN);
+  const deployerHasAdmin = await fetchAccountAcRoleState(acProgram, deployerAdminRolePda, true);
+
+  if (!deployerHasAdmin) {
+    throw createUserError('Deployer does not have ADMIN role', [
+      'Cannot revoke roles without ADMIN authority',
+    ]);
+  }
+
+  // Check if AC Admin already has ADMIN role (safe to revoke deployer's ADMIN)
   const acAdminRolePda = getAccountAcRoleStatePda(
     acRole,
     accessControlAdminAddress,
     AC_ROLES.ADMIN,
   );
-  const acAdminHasRole = await fetchAccountAcRoleState(acProgram, acAdminRolePda, true);
+  const acAdminHasAdmin = await fetchAccountAcRoleState(acProgram, acAdminRolePda, true);
+  const canRevokeAdmin = acAdminHasAdmin !== null;
 
-  if (!acAdminHasRole) {
-    throw createUserError('AC Admin missing ADMIN role - run grant:admin-role first');
-  }
-
-  console.log('Safety check passed');
-
+  // Check which roles deployer currently has
   const deployerRoles: { role: string; exists: boolean }[] = [];
   for (const role of DEPLOYER_AUTO_ROLES) {
     const accountAcRolePda = getAccountAcRoleStatePda(acRole, payer.publicKey, role);
@@ -58,20 +70,43 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
     deployerRoles.push({ role, exists: existing !== null });
   }
 
-  const rolesToRevoke = deployerRoles.filter((r) => r.exists);
+  // If AC Admin has ADMIN, we can safely revoke deployer's ADMIN too
+  const rolesToRevoke = deployerRoles.filter((r) => {
+    if (!r.exists) return false;
+    if (r.role === AC_ROLES.ADMIN && !canRevokeAdmin) return false;
+    return true;
+  });
 
   if (rolesToRevoke.length === 0) {
-    console.log('✓ Deployer already has no roles');
+    const hasAdmin = deployerRoles.find((r) => r.role === AC_ROLES.ADMIN && r.exists);
+    if (hasAdmin) {
+      console.log('✓ Operational roles already revoked (ADMIN remains)');
+      console.log('  Run grant:admin-role first, then re-run to revoke ADMIN.\n');
+    } else {
+      console.log('✓ Deployer has no roles\n');
+    }
     console.log(`→ Next: yarn grant:operational-roles --mtoken ${mtoken} --network ${network}\n`);
     return;
   }
 
-  console.log(
-    `Revoking ${rolesToRevoke.length} roles: ${rolesToRevoke.map((r) => r.role).join(', ')}`,
-  );
+  const revokingAdmin = rolesToRevoke.some((r) => r.role === AC_ROLES.ADMIN);
+
+  console.log(`Revoking: ${rolesToRevoke.map((r) => r.role.replace('_role', '')).join(', ')}`);
+  if (!canRevokeAdmin && deployerRoles.find((r) => r.role === AC_ROLES.ADMIN && r.exists)) {
+    console.log('  (ADMIN kept - AC Admin does not have ADMIN yet)\n');
+  } else {
+    console.log();
+  }
+
+  // ADMIN must be revoked LAST (we need it as authority for other revocations)
+  const orderedRoles = rolesToRevoke.sort((a, b) => {
+    if (a.role === AC_ROLES.ADMIN) return 1;
+    if (b.role === AC_ROLES.ADMIN) return -1;
+    return 0;
+  });
 
   const tx = new Transaction();
-  for (const roleInfo of rolesToRevoke) {
+  for (const roleInfo of orderedRoles) {
     tx.add(
       await acProgram.methods
         .revokeRole(acRoleToBuffer(roleInfo.role))
@@ -79,27 +114,29 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
           account: payer.publicKey,
           acRole: acRole,
           authority: payer.publicKey,
-          authorityAcAdminRole: getAccountAcRoleStatePda(acRole, payer.publicKey, AC_ROLES.ADMIN),
+          authorityAcAdminRole: deployerAdminRolePda,
           accountAcRole: getAccountAcRoleStatePda(acRole, payer.publicKey, roleInfo.role),
         })
         .instruction(),
     );
   }
 
-  const result = await sendAndWaitForCustomSolanaTxSign(provider, network, tx, [], {
+  const result = await sendAndWaitForCustomSolanaTxSign(provider, tx, [], {
     action: 'deployer',
-    comment: `Revoke all deployer roles for ${mtoken}`,
+    comment: `Revoke deployer roles for ${mtoken}`,
     mToken: mtoken,
     waitForTx: true,
-    pollingIntervalMs: 1000,
-    timeoutDurationMs: 120 * 1000,
   });
 
-  console.log('✓ All deployer roles revoked');
-  if (result.signature) console.log(`TX: ${result.signature}`);
-  else if (result.txId) console.log(`Fordefi TX: ${result.txId}`);
+  const txInfo = result.signature || result.txId;
+  if (revokingAdmin) {
+    console.log(`✓ All roles revoked (including ADMIN) | TX: ${txInfo}`);
+  } else {
+    console.log(`✓ Operational roles revoked | TX: ${txInfo}`);
+    console.log('  (ADMIN kept - re-run after grant:admin-role to revoke)');
+  }
 
-  console.log(`→ Next: yarn grant:operational-roles --mtoken ${mtoken} --network ${network}\n`);
+  console.log(`\n→ Next: yarn grant:operational-roles --mtoken ${mtoken} --network ${network}\n`);
 }
 
 const network = getNetwork();

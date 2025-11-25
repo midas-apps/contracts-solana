@@ -55,7 +55,7 @@ export const deployTokenAuthority = async (
     })
     .transaction();
 
-  await sendAndWaitForCustomSolanaTxSign(common.provider, common.network, tx, [], {
+  await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [], {
     action: 'deployer',
     comment: 'Deploy Token Authority',
     waitForTx: true,

@@ -25,6 +25,7 @@ export interface TokenAddresses {
     account: PublicKey;
   };
   mTokenDataFeed?: PublicKey;
+  mTokenUnderlyingFeed?: PublicKey;
   minter?: {
     commonVault: PublicKey;
     account: PublicKey;

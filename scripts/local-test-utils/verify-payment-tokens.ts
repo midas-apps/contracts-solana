@@ -144,6 +144,6 @@ async function main(provider: AnchorProvider, _payer: Wallet) {
   console.log('✅ On-chain state check completed\n');
 }
 
-executeNetworkScript(getNetwork(), main, 'local-wallet');
+executeNetworkScript(getNetwork(), main);
 
 // yarn tsx scripts/local-test-utils/verify-payment-tokens.ts --network devnet --mtoken mTBILL

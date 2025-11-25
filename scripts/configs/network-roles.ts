@@ -10,6 +10,6 @@ export const networkRolesConfigs: Record<string, NetworkRolesConfig> = {
     accessControlAdminAddress: 'HDBbVzHxAP3vHWnJkxxU99GfJr5NaxMZN8jj5oy2RGze',
   },
   localnet: {
-    accessControlAdminAddress: 'EfzamqVaGeuo2bVDJUophcChKD65tC52vQzSyrEEP3Fk',
+    accessControlAdminAddress: 'DVUgvDTt56cNaQK7uEsnYpbyzGVNWtej8t2v9nVcdWmf',
   },
 };

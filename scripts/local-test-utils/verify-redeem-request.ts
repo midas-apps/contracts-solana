@@ -187,7 +187,7 @@ async function main(provider: AnchorProvider, _payer: Wallet) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main, 'local-wallet');
+executeNetworkScript(network, main);
 
 // Usage:
 // yarn tsx scripts/local-test-utils/verify-redeem-request.ts --network devnet --mtoken mTBILL --payment-token USDC --request-id 0

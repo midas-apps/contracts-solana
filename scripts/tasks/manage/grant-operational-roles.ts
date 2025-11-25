@@ -20,7 +20,9 @@ import { getMtoken, getNetwork } from '../../utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const mtoken = getMtoken();
-  console.log(`Grant operational roles: ${mtoken} on ${network}`);
+
+  console.log(`\n━━━ Step 3/3: Grant Operational Roles ━━━`);
+  console.log(`Token: ${mtoken} | Network: ${network}\n`);
 
   const networkRolesConfig = networkRolesConfigs[network];
   if (!networkRolesConfig) {
@@ -55,35 +57,38 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const vaultsManagerAddress = new PublicKey(grantRolesConfig.vaultsManagerAddress);
   const oracleManagerAddress = new PublicKey(grantRolesConfig.oracleManagerAddress);
 
-  const acAdminRolePda = getAccountAcRoleStatePda(
-    acRole,
-    accessControlAdminAddress,
-    AC_ROLES.ADMIN,
-  );
-  const acAdminHasRole = await fetchAccountAcRoleState(acProgram, acAdminRolePda, true);
+  console.log(`Authority: ${payer.publicKey.toString()}`);
+  console.log(`Expected:  ${accessControlAdminAddress.toString()}\n`);
 
-  if (!acAdminHasRole) {
-    throw createUserError('AC Admin missing ADMIN role - run full 3-step process first');
+  // Verify current wallet has ADMIN role
+  const payerAdminRolePda = getAccountAcRoleStatePda(acRole, payer.publicKey, AC_ROLES.ADMIN);
+  const payerHasAdmin = await fetchAccountAcRoleState(acProgram, payerAdminRolePda, true);
+
+  if (!payerHasAdmin) {
+    throw createUserError('Current wallet missing ADMIN role', [
+      'Run the full 3-step process:',
+      `1. yarn grant:admin-role --mtoken ${mtoken} --network ${network}`,
+      `2. yarn revoke:deployer-roles --mtoken ${mtoken} --network ${network}`,
+      `3. yarn grant:operational-roles --mtoken ${mtoken} --network ${network}`,
+    ]);
   }
 
-  console.log('Safety check passed');
-  console.log(`Token Mgr:  ${tokenManagerAddress.toBase58()}`);
-  console.log(`Vaults Mgr: ${vaultsManagerAddress.toBase58()}`);
-  console.log(`Oracle Mgr: ${oracleManagerAddress.toBase58()}`);
+  console.log('Recipients:');
+  console.log(`  Token Manager:  ${tokenManagerAddress.toString()}`);
+  console.log(`  Vaults Manager: ${vaultsManagerAddress.toString()}`);
+  console.log(`  Oracle Manager: ${oracleManagerAddress.toString()}\n`);
 
   const roleGrants: { account: PublicKey; role: string; category: string }[] = [];
 
   for (const role of ROLE_GROUPS.TOKEN_MANAGER) {
-    roleGrants.push({ account: tokenManagerAddress, role, category: 'Token Manager' });
+    roleGrants.push({ account: tokenManagerAddress, role, category: 'Token' });
   }
   for (const role of ROLE_GROUPS.VAULTS_MANAGER) {
-    roleGrants.push({ account: vaultsManagerAddress, role, category: 'Vaults Manager' });
+    roleGrants.push({ account: vaultsManagerAddress, role, category: 'Vaults' });
   }
   for (const role of ROLE_GROUPS.ORACLE_MANAGER) {
-    roleGrants.push({ account: oracleManagerAddress, role, category: 'Oracle Manager' });
+    roleGrants.push({ account: oracleManagerAddress, role, category: 'Oracle' });
   }
-
-  console.log(`Checking ${roleGrants.length} roles...`);
 
   const toGrant: typeof roleGrants = [];
   const alreadyGranted: typeof roleGrants = [];
@@ -99,16 +104,17 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
     }
   }
 
-  if (alreadyGranted.length > 0) {
-    console.log(`Already granted: ${alreadyGranted.length}`);
-  }
-
   if (toGrant.length === 0) {
-    console.log('✓ All roles already granted\n');
+    console.log(`✓ All ${roleGrants.length} roles already granted`);
+    console.log('\n✅ Role transfer complete!\n');
     return;
   }
 
-  console.log(`Granting ${toGrant.length} roles...`);
+  if (alreadyGranted.length > 0) {
+    console.log(`Already granted: ${alreadyGranted.length}/${roleGrants.length}`);
+  }
+
+  console.log(`Granting: ${toGrant.map((r) => r.role.replace('_role', '')).join(', ')}\n`);
 
   const tx = new Transaction();
   for (const grant of toGrant) {
@@ -126,20 +132,16 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
     );
   }
 
-  const result = await sendAndWaitForCustomSolanaTxSign(provider, network, tx, [], {
+  const result = await sendAndWaitForCustomSolanaTxSign(provider, tx, [], {
     action: 'update-ac',
     comment: `Grant operational ${mtoken} roles`,
     mToken: mtoken,
     waitForTx: true,
-    pollingIntervalMs: 1000,
-    timeoutDurationMs: 120 * 1000,
   });
 
-  console.log('✓ All operational roles granted');
-  if (result.signature) console.log(`TX: ${result.signature}`);
-  else if (result.txId) console.log(`Fordefi TX: ${result.txId}`);
-
-  console.log('✓ Role transfer complete - deployer has no roles\n');
+  const txInfo = result.signature || result.txId;
+  console.log(`✓ ${toGrant.length} roles granted | TX: ${txInfo}`);
+  console.log('\n✅ Role transfer complete!\n');
 }
 
 const network = getNetwork();

@@ -18,7 +18,9 @@ import { getMtoken, getNetwork } from '../../utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const mtoken = getMtoken();
-  console.log(`Grant ADMIN role: ${mtoken} on ${network}`);
+
+  console.log(`\n━━━ Step 1/3: Grant ADMIN Role ━━━`);
+  console.log(`Token: ${mtoken} | Network: ${network}\n`);
 
   const networkRolesConfig = networkRolesConfigs[network];
   if (!networkRolesConfig) {
@@ -37,13 +39,16 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const acProgram = getAcProgram(provider);
   const acRole = tokenAddrs.acRole;
 
-  console.log(`AC Admin: ${accessControlAdminAddress.toBase58()}`);
+  console.log(`Deployer:  ${payer.publicKey.toString()}`);
+  console.log(`AC Admin:  ${accessControlAdminAddress.toString()}\n`);
 
   const deployerAdminPda = getAccountAcRoleStatePda(acRole, payer.publicKey, AC_ROLES.ADMIN);
   const deployerHasAdmin = await fetchAccountAcRoleState(acProgram, deployerAdminPda, true);
 
   if (!deployerHasAdmin) {
-    throw createUserError('Deployer missing ADMIN role');
+    throw createUserError('Deployer missing ADMIN role', [
+      'Deployer must have ADMIN role to grant it to AC Admin',
+    ]);
   }
 
   const acAdminRolePda = getAccountAcRoleStatePda(
@@ -54,12 +59,10 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const acAdminHasRole = await fetchAccountAcRoleState(acProgram, acAdminRolePda, true);
 
   if (acAdminHasRole) {
-    console.log('✓ ADMIN already granted');
-    console.log('→ Next: yarn revoke:deployer-roles');
+    console.log('✓ ADMIN already granted to AC Admin');
+    console.log(`\n→ Next: yarn revoke:deployer-roles --mtoken ${mtoken} --network ${network}\n`);
     return;
   }
-
-  console.log('Granting ADMIN...');
 
   const tx = new Transaction().add(
     await acProgram.methods
@@ -74,20 +77,16 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
       .instruction(),
   );
 
-  const result = await sendAndWaitForCustomSolanaTxSign(provider, network, tx, [], {
+  const result = await sendAndWaitForCustomSolanaTxSign(provider, tx, [], {
     action: 'deployer',
     comment: `Grant ADMIN for ${mtoken}`,
     mToken: mtoken,
     waitForTx: true,
-    pollingIntervalMs: 1000,
-    timeoutDurationMs: 120 * 1000,
   });
 
-  console.log('✓ ADMIN granted');
-  if (result.signature) console.log(`TX: ${result.signature}`);
-  else if (result.txId) console.log(`Fordefi TX: ${result.txId}`);
-
-  console.log(`→ Next: yarn revoke:deployer-roles --mtoken ${mtoken} --network ${network}\n`);
+  const txInfo = result.signature || result.txId;
+  console.log(`✓ ADMIN granted | TX: ${txInfo}`);
+  console.log(`\n→ Next: yarn revoke:deployer-roles --mtoken ${mtoken} --network ${network}\n`);
 }
 
 const network = getNetwork();

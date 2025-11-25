@@ -21,23 +21,31 @@ export interface TxResult {
 }
 
 let customSigner: CustomSignerModule | undefined;
+let storedNetwork: string | undefined;
 
-export function initCustomSigner(signer: CustomSignerModule | undefined) {
+export function initCustomSigner(signer: CustomSignerModule | undefined, network: string) {
   customSigner = signer;
+  storedNetwork = network;
 }
 
 export async function sendAndWaitForCustomSolanaTxSign(
   provider: AnchorProvider,
-  network: string,
   transaction: Transaction | VersionedTransaction,
   signers: Keypair[],
-  txSignMetadata: TxSignMetadata,
+  metadata: TxSignMetadata,
 ): Promise<TxResult> {
-  if (customSigner) {
-    const chainId = getFordefiChainId(network);
+  if (!storedNetwork) {
+    throw new Error('Call initCustomSigner first');
+  }
 
-    if (transaction instanceof Transaction && !transaction.recentBlockhash) {
-      const { blockhash } = await provider.connection.getLatestBlockhash();
+  const isLocalnet = storedNetwork.toLowerCase() === 'localnet';
+  const commitment = isLocalnet ? 'processed' : 'confirmed';
+
+  if (customSigner) {
+    const chainId = getFordefiChainId(storedNetwork);
+
+    if (transaction instanceof Transaction) {
+      const { blockhash } = await provider.connection.getLatestBlockhash(commitment);
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = provider.publicKey;
     }
@@ -58,43 +66,27 @@ export async function sendAndWaitForCustomSolanaTxSign(
         : Buffer.from(transaction.serialize()).toString('base64');
 
     const result = await customSigner.signSolanaTransaction(serialized, {
-      action: txSignMetadata.action,
-      comment: txSignMetadata.comment,
+      action: metadata.action,
+      comment: metadata.comment,
       chain: chainId,
-      mToken: txSignMetadata.mToken,
-      idempotenceId: txSignMetadata.idempotenceId,
-      waitForTx: txSignMetadata.waitForTx,
-      timeoutDurationMs: txSignMetadata.timeoutDurationMs,
-      pollingIntervalMs: txSignMetadata.pollingIntervalMs,
+      mToken: metadata.mToken,
+      idempotenceId: metadata.idempotenceId,
+      waitForTx: metadata.waitForTx,
+      timeoutDurationMs: metadata.timeoutDurationMs,
+      pollingIntervalMs: metadata.pollingIntervalMs,
     });
 
-    // Handle both string and object return types
     if (typeof result === 'string') {
-      console.log(`✅ Transaction signature: ${result}`);
-      return {
-        sent: true,
-        signature: result,
-      };
+      return { sent: true, signature: result };
     }
-
-    if (result.sent && result.txId) {
-      console.log(`✅ Transaction submitted to Fordefi: ${result.txId}`);
-    } else {
-      console.log('ℹ️  Transaction was not submitted (possibly duplicate)');
-    }
-
     return result;
   }
 
-  // Local wallet flow: sign and send directly
+  // Local wallet flow
   const signature = await provider.sendAndConfirm(transaction, signers, {
-    commitment: 'finalized',
+    commitment,
+    skipPreflight: isLocalnet,
   });
 
-  console.log(`✅ Transaction confirmed: ${signature}`);
-
-  return {
-    sent: true,
-    signature,
-  };
+  return { sent: true, signature };
 }

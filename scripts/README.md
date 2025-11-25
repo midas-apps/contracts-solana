@@ -1,75 +1,44 @@
 # Deployment Scripts
 
-Deployment system for Solana smart contracts.
+Deployment and management system for Midas Solana smart contracts.
 
-## Quick Start
+## Prerequisites
 
-````bash
-# Build and deploy programs
+```bash
 anchor build
-anchor deploy --provider.cluster localnet
-
-## Deployment Commands
-
-### `deploy:network`
-
-Deploys network infrastructure (AC Role Global + AC).
-
-```bash
-yarn deploy:network --network devnet
+anchor deploy --provider.cluster <network>
 ```
 
-#### `deploy:token-ac-role`
+## Deployment
 
-Deploys token AC Role.
+### Network Infrastructure
 
-```bash
-yarn deploy:token-ac-role --mtoken mTBILL --network devnet
-```
+Run once per network before deploying any tokens:
 
-#### `deploy:token-mint`
+1. `yarn deploy:network:01 --network <network>` - Deploy AC Role Global
+2. `yarn deploy:network:02 --network <network>` - Deploy AC
 
-Deploys mToken mint. Requires AC Role.
+### Token Deployment
 
-```bash
-yarn deploy:token-mint --mtoken mTBILL --network devnet
-```
+Run in order for each token:
 
-#### `deploy:token-authority`
+1. `yarn deploy:token-ac-role --mtoken <token> --network <network>`
+2. `yarn deploy:token-mint --mtoken <token> --network <network>`
+3. `yarn deploy:token-authority --mtoken <token> --network <network>`
+4. `yarn deploy:token-datafeed --mtoken <token> --network <network>`
+5. `yarn deploy:minter-vault --mtoken <token> --network <network>`
+6. `yarn deploy:redeemer-vault --mtoken <token> --network <network>`
 
-Deploys Token Authority. Requires AC Role and mToken.
+### Payment Token Deployment
 
-```bash
-yarn deploy:token-authority --mtoken mTBILL --network devnet
-```
-
-### `deploy:token-datafeed`
-
-Deploys data feed (Switchboard/Chainlink/Pyth/Manual). Requires AC Role.
-
-```bash
-yarn deploy:token-datafeed --mtoken mTBILL --network devnet
-```
-
-#### `deploy:minter-vault`
-
-Deploys Minter Vault. Requires AC, AC Role, mToken, mTokenDataFeed, and Token Authority.
-
-```bash
-yarn deploy:minter-vault --mtoken mTBILL --network devnet
-```
-
-#### `deploy:redeemer-vault`
-
-Deploys Redeemer Vault. Requires AC, AC Role, mToken, and mTokenDataFeed.
-
-```bash
-yarn deploy:redeemer-vault --mtoken mTBILL --network devnet
-```
+- `yarn deploy:payment-token-feed --network <network> --payment-token <token>`
+- `yarn deploy:mock-payment-token --network <network> --payment-token <token>` (localnet only)
 
 ## Configuration
 
-Token configs in `configs/tokens/` define deployment parameters. Shared values (metadata, tokenAuthority) at root, network-specific values (dataFeed, minter, redeemer) per network.
+### Token Configuration
+
+Token configs in `configs/tokens/`:
 
 ```typescript
 export const mTBILLConfig: TokenConfigWithNetworks = {
@@ -77,74 +46,116 @@ export const mTBILLConfig: TokenConfigWithNetworks = {
   tokenAuthority: { seed: 'mtbill-token-authority' },
   networks: {
     devnet: {
-      dataFeed: { mode: 'switchboard', ... },
-      minter: { instantFee: '1', ... },
-      redeemer: { instantFee: '1', ... },
+      dataFeed: { mode: 'switchboard', minPrice: '0.1', maxPrice: '100000', ... },
+      minter: { instantFee: '1', instantDailyLimit: '10000', ... },
+      redeemer: { instantFee: '1', instantDailyLimit: '10000', ... },
     },
   },
 };
 ```
 
-Addresses are automatically saved to `common/addresses.ts` after deployment.
+### Payment Token Configuration
 
-## Management Commands
+Payment token configs in `configs/tokens/payment-tokens.ts`.
 
-### Add Payment Token
+### Network Roles
 
-```bash
-yarn add:payment-token --mtoken mTBILL --network devnet --payment-token USDC
-```
+Network admin addresses in `configs/network-roles.ts`.
 
-### Grant Role
+### Address Storage
 
-```bash
-yarn grant:role --mtoken mTBILL --network devnet --role vault_admin_role
-```
+Deployed addresses saved to `common/addresses.ts`.
 
-### Update Data Feed
+## Management
 
-```bash
-yarn update:data-feed --mtoken mTBILL --network devnet --new-mode manual
-```
+### Role Management
+
+- `yarn grant:role --mtoken <token> --network <network> --role <role>`
+- `yarn grant:admin-role --mtoken <token> --network <network>`
+- `yarn grant:operational-roles --mtoken <token> --network <network>`
+- `yarn revoke:deployer-roles --mtoken <token> --network <network>`
+
+Roles: `admin`, `update_account_ac`, `vault_admin`, `vault_pauser`, `m_minter`, `m_burner`, `m_freezer`, `feed_admin`
+
+### Token Management
+
+- `yarn add:payment-token --mtoken <token> --network <network> --payment-token <payment>`
+- `yarn delegate --mtoken <token> --network <network>`
+- `yarn transfer:authority --mtoken <token> --network <network>`
+
+### Feed Management
+
+- `yarn update:data-feed --mtoken <token> --network <network> --new-mode <mode>`
+- `yarn update:manual-feed-price --mtoken <token> --network <network> --price <price> [--decimals <dec>]`
+
+## Verification
+
+- `yarn verify:deployment --mtoken <token> --network <network>`
+- `yarn verify:roles --mtoken <token> --network <network> [--address <pubkey>]`
+- `yarn export:addresses --network <network>`
+
+**Local test utilities** (run with `tsx scripts/local-test-utils/<script>.ts`):
+
+- `verify-feed.ts` - Verify data feed configuration
+- `verify-mint-state.ts` - Verify minter vault state
+- `verify-payment-tokens.ts` - Verify payment token setup
+- `verify-redeem-request.ts` - Verify redeem request state
+- `get-all-requests.ts` - List all pending requests
+- `mint-payment-token.ts` - Mint test payment tokens
 
 ## User Operations
 
 ### Mint
 
 ```bash
-tsx scripts/mint-instant.ts --mtoken mTBILL --network devnet --payment-token USDC --amount 100
-tsx scripts/mint-request.ts --mtoken mTBILL --network devnet --payment-token USDC --amount 100
+tsx scripts/mint-instant.ts --mtoken <token> --network <network> --payment-token <payment> --amount <amount>
+tsx scripts/mint-request.ts --mtoken <token> --network <network> --payment-token <payment> --amount <amount>
 ```
 
 ### Redeem
 
 ```bash
-tsx scripts/redeem-instant.ts --mtoken mTBILL --network devnet --payment-token USDC --amount 10
-tsx scripts/redeem-request.ts --mtoken mTBILL --network devnet --payment-token USDC --amount 10
-tsx scripts/redeem-request-fiat.ts --mtoken mTBILL --network devnet --amount 10
+tsx scripts/redeem-instant.ts --mtoken <token> --network <network> --payment-token <payment> --amount <amount>
+tsx scripts/redeem-request.ts --mtoken <token> --network <network> --payment-token <payment> --amount <amount>
+tsx scripts/redeem-request-fiat.ts --mtoken <token> --network <network> --amount <amount>
 ```
 
-## Common Arguments
+### Approve Redeem Request
 
-- `--mtoken, -m`: Token symbol (required)
-- `--network, -n`: Network (localnet, devnet, testnet, mainnet, default: devnet)
-- `--payment-token, -p`: Payment token symbol
-- `--amount, -a`: Amount
-- `--role, -r`: Role name
+```bash
+tsx scripts/approve-redeem-request.ts --mtoken <token> --network <network> --request-id <id>
+```
 
 ## Local Development
 
 ```bash
-# Start local validator
 solana-test-validator
-
-# Deploy programs
 anchor deploy --provider.cluster localnet
+solana airdrop 10 --url http://127.0.0.1:8899
+```
 
-## Related Files
+## Reference
+
+### Common Arguments
+
+- `--mtoken, -m` - Token symbol (required)
+- `--network, -n` - Network (default: devnet)
+- `--payment-token, -p` - Payment token symbol
+- `--amount, -a` - Amount
+- `--role, -r` - Role name
+- `--address` - Target address (default: current wallet)
+
+### Networks
+
+`localnet`, `devnet`, `testnet`, `mainnet`
+
+### Data Feed Modes
+
+`switchboard`, `pyth`, `chainlink`, `manual`
+
+### Files
 
 - `configs/tokens/` - Token configurations
-- `common/addresses.ts` - Deployed addresses
-- `package.json` - Script commands
-```
-````
+- `configs/tokens/payment-tokens.ts` - Payment token configurations
+- `configs/network-roles.ts` - Network admin addresses
+- `common/addresses.ts` - Deployed contract addresses

@@ -57,4 +57,4 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main, 'local-wallet');
+executeNetworkScript(network, main);

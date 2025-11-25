@@ -113,7 +113,12 @@ function validateComponentValue<K extends keyof TokenAddresses>(
 ): void {
   validateValueNotNull(component, value);
 
-  if (component === 'acRole' || component === 'mTokenDataFeed' || component === 'mToken') {
+  if (
+    component === 'acRole' ||
+    component === 'mTokenDataFeed' ||
+    component === 'mToken' ||
+    component === 'mTokenUnderlyingFeed'
+  ) {
     validatePublicKey(component, value);
   }
 

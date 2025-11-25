@@ -1,5 +1,6 @@
 import { Keypair, PublicKey, Transaction } from '@solana/web3.js';
 
+import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 import { isPlaceholderFeed } from '@/scripts/utils/feedUtils';
 import { AC_ROLES } from '@/test/constants/ac.constants';
 import { DATA_FEED_AC_ROLES } from '@/test/constants/data-feed.constants';
@@ -80,14 +81,13 @@ export async function deployManualFeed(
         .instruction(),
     );
 
-    await provider
-      .sendAndConfirm(grantRoleTx, [], {
-        commitment: 'finalized',
-        skipPreflight: true,
-      })
-      .catch(() => {
-        // Role might already exist, that's fine
-      });
+    await sendAndWaitForCustomSolanaTxSign(provider, grantRoleTx, [], {
+      action: 'deployer',
+      comment: 'Grant FEED_ADMIN role for manual feed',
+      waitForTx: false, // Don't wait since this might fail if role exists
+    }).catch(() => {
+      // Role might already exist, that's fine
+    });
 
     // Step 2: Deploy manual feed associated with base feed
     const dataFeedProgram = getDataFeedProgram(provider);
@@ -111,8 +111,12 @@ export async function deployManualFeed(
         .instruction(),
     );
 
-    await provider.sendAndConfirm(manualFeedTx, [], {
-      commitment: 'finalized',
+    await sendAndWaitForCustomSolanaTxSign(provider, manualFeedTx, [], {
+      action: 'deployer',
+      comment: 'Deploy Manual Feed',
+      waitForTx: true,
+      pollingIntervalMs: 1000,
+      timeoutDurationMs: 120 * 1000,
     });
 
     return feedPublicKey;

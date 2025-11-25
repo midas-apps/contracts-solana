@@ -252,7 +252,7 @@ async function main(provider: AnchorProvider, _payer: Wallet) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main, 'local-wallet');
+executeNetworkScript(network, main);
 
 // Usage:
 // Get all requests (mint + redeem):

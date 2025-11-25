@@ -54,7 +54,7 @@ export const deployDataFeed = async (
       .instruction(),
   );
 
-  await sendAndWaitForCustomSolanaTxSign(common.provider, common.network, tx, [feed], {
+  await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [feed], {
     action: 'deployer',
     comment: 'Deploy Data Feed',
     waitForTx: true,

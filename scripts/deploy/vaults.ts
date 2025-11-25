@@ -193,7 +193,7 @@ export const deployMinterVault = async (
       .instruction(),
   );
 
-  await sendAndWaitForCustomSolanaTxSign(common.provider, common.network, tx, [commonVault], {
+  await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [commonVault], {
     action: 'deployer',
     comment: 'Deploy Minter Vault',
     waitForTx: true,
@@ -342,7 +342,7 @@ export const deployRedeemerVault = async (
     tx.add(ataReceiver);
   }
 
-  await sendAndWaitForCustomSolanaTxSign(common.provider, common.network, tx, [commonVault], {
+  await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [commonVault], {
     action: 'deployer',
     comment: 'Deploy Redeemer Vault',
     waitForTx: true,

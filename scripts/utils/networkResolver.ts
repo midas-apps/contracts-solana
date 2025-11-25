@@ -19,5 +19,6 @@ export function getNetworkConnection(network: string): Connection {
     ]);
   }
 
-  return new Connection(url, 'confirmed');
+  const commitment = normalized === 'localnet' ? 'processed' : 'confirmed';
+  return new Connection(url, commitment);
 }
