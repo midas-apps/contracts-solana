@@ -3,6 +3,7 @@ import { getAssociatedTokenAddressSync, TOKEN_2022_PROGRAM_ID } from '@solana/sp
 import { Transaction } from '@solana/web3.js';
 
 import { executeNetworkScript } from '@/common/scriptRunner';
+import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 import { fetchAccountAcState, getAccountAcStatePda } from '@/test/helpers/ac.helpers';
 import { createAtaIfNotExistsInx, parseUnits, toBN } from '@/test/helpers/common.helpers';
 import { fetchDataFeedState } from '@/test/helpers/data-feed.helpers';
@@ -15,10 +16,10 @@ import {
 
 import { getAcProgram } from './deploy/ac';
 import { getDataFeedProgram } from './deploy/dataFeed';
-import { getSwitchboardPullInx } from './deploy/feeds/switchboard';
 import { getVaultsProgram } from './deploy/vaults';
 import { requireRedeemerVault } from './utils/addressValidators';
 import { getMtoken, getNetwork, getAmount } from './utils/argumentParser';
+import { pullSwitchboardFeeds } from './utils/switchboardHelpers';
 
 async function main(provider: AnchorProvider, payer: Wallet) {
   const mtoken = getMtoken();
@@ -105,28 +106,11 @@ async function main(provider: AnchorProvider, payer: Wallet) {
       );
 
   // Pull Switchboard feeds if needed (only mFeed for fiat redemption)
-  const isMFeedSwitchboard = 'switchboard' in mFeed.mode;
-
-  if (isMFeedSwitchboard) {
-    const tx1 = new Transaction();
-
-    console.log('Pulling mToken Switchboard feed...');
-    tx1.add(
-      await getSwitchboardPullInx(
-        provider,
-        mFeed.underlyingFeed,
-        network === 'mainnet' ? 'mainnet' : 'devnet',
-      ),
-    );
-
-    const txRes1 = await provider.sendAndConfirm(tx1, [], {
-      commitment: 'finalized',
-    });
-
-    console.log('Switchboard feeds pulled:', txRes1);
-  } else {
-    console.log('No Switchboard feeds to pull, skipping feed update transaction');
-  }
+  await pullSwitchboardFeeds(
+    provider,
+    [{ feed: mFeed.underlyingFeed, isSwitchboard: 'switchboard' in mFeed.mode }],
+    network,
+  );
 
   const tx2 = new Transaction();
 
@@ -201,12 +185,10 @@ async function main(provider: AnchorProvider, payer: Wallet) {
       .instruction(),
   );
 
-  const txRes = await provider.sendAndConfirm(tx2, [], {
-    commitment: 'finalized',
-  });
+  const result = await sendAndWaitForCustomSolanaTxSign(provider, tx2, [], {});
 
   console.log(`✅ Redeem request fiat completed successfully`);
-  console.log(`Transaction: ${txRes}`);
+  console.log(`Transaction: ${result.signature}`);
 }
 
 const network = getNetwork();

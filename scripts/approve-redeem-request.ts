@@ -8,6 +8,7 @@ import {
 import { Transaction } from '@solana/web3.js';
 
 import { executeNetworkScript } from '@/common/scriptRunner';
+import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 import { VAULT_AC_ROLES } from '@/test/constants/vaults.constants';
 import { getAccountAcRoleStatePda } from '@/test/helpers/ac.helpers';
 import { createAtaIfNotExistsInx, fromBN, toBN } from '@/test/helpers/common.helpers';
@@ -306,12 +307,10 @@ async function main(provider: AnchorProvider, payer: Wallet) {
       .instruction(),
   );
 
-  const txRes = await provider.sendAndConfirm(tx, [], {
-    commitment: 'finalized',
-  });
+  const result = await sendAndWaitForCustomSolanaTxSign(provider, tx, [], {});
 
   console.log(`✅ Redeem request approved successfully`);
-  console.log(`Transaction: ${txRes}`);
+  console.log(`Transaction: ${result.signature}`);
 }
 
 const network = getNetwork();

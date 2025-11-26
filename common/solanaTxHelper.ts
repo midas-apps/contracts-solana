@@ -5,7 +5,8 @@ import { getFordefiChainId } from './fordefiNetworkMapper';
 import type { CustomSignerModule } from './provider';
 
 export interface TxSignMetadata {
-  action: string;
+  /** Required for Fordefi signing, optional for local wallet */
+  action?: string;
   comment?: string;
   mToken?: string;
   idempotenceId?: string;
@@ -42,6 +43,10 @@ export async function sendAndWaitForCustomSolanaTxSign(
   const commitment = isLocalnet ? 'processed' : 'confirmed';
 
   if (customSigner) {
+    if (!metadata.action) {
+      throw new Error('action is required for Fordefi signing');
+    }
+
     const chainId = getFordefiChainId(storedNetwork);
 
     if (transaction instanceof Transaction) {
