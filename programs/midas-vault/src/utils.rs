@@ -237,10 +237,7 @@ pub fn validate_max_supply_cap(
     minter: &MinterVaultState,
     mint_amount: u64,
 ) -> Result<()> {
-    let new_supply = m_mint
-        .supply
-        .checked_add(mint_amount)
-        .ok_or(MidasVaultsError::MaxSupplyCapExceeded)?;
+    let new_supply = m_mint.supply.checked_add(mint_amount).unwrap();
 
     require_gte!(
         minter.max_supply_cap,
