@@ -230,6 +230,27 @@ pub fn require_variation_tolerance(
     Ok(())
 }
 
+/// Validates that minting `mint_amount` tokens would not exceed `max_supply_cap`.
+/// To disable the cap (unlimited), set `max_supply_cap` to `u64::MAX`.
+pub fn validate_max_supply_cap(
+    m_mint: &Mint,
+    minter: &MinterVaultState,
+    mint_amount: u64,
+) -> Result<()> {
+    let new_supply = m_mint
+        .supply
+        .checked_add(mint_amount)
+        .ok_or(MidasVaultsError::MaxSupplyCapExceeded)?;
+
+    require_gte!(
+        minter.max_supply_cap,
+        new_supply,
+        MidasVaultsError::MaxSupplyCapExceeded
+    );
+
+    Ok(())
+}
+
 /// Calculates fee for a given amount
 ///
 /// # Arguments

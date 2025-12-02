@@ -5,10 +5,10 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-access_control = "GQp4fJwxmLF7vL7uJ4jpS3uRz96qrb7MfoLKMnJoeE3Z"
-data_feed = "7dTNTpTqbHCLxc1FtpCRAq5d4u1Y6WVqrAc1znVGQDxV"
-midas_vaults = "6eFgYZCZZFTe61T4YxWsiHHAunCLTh9V7TAjj8DxuZwm"
-token_authority = "6XqSwGFEuadyqXC9vBLYGJhvQsEVjPdCrtvN6inAb4z3"
+access_control = "7fmev1BQVc9LEXsMDoJs63muHR1B2uSAw1963zfVrpJP"
+data_feed = "6vrYAbfttohJKguPRzspHUW6fn61KDyjzog3q8YRG6yq"
+midas_vaults = "DHfwFSG3JQ2qdX1Ub2QPuDsk9FMQUwyXyZqAs4gGeLnQ"
+token_authority = "GYmnAy5UiKMYuuwJubKKC5WLnWSW3qLo4JFqX4rBqHKE"
 
 [registry]
 url = "https://api.apr.dev"

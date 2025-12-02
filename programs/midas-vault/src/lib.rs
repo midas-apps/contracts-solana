@@ -9,7 +9,7 @@ pub mod utils;
 use crate::utils::Validate;
 use instructions::*;
 
-declare_id!("6eFgYZCZZFTe61T4YxWsiHHAunCLTh9V7TAjj8DxuZwm");
+declare_id!("DHfwFSG3JQ2qdX1Ub2QPuDsk9FMQUwyXyZqAs4gGeLnQ");
 
 #[program]
 pub mod midas_vaults {
@@ -20,19 +20,22 @@ pub mod midas_vaults {
     pub fn new_minter_vault(
         ctx: Context<NewMinterVault>,
         first_deposit_min_m_tokens: u64,
+        max_supply_cap: u64,
     ) -> Result<()> {
-        minter_vault::new_minter_vault::handle(ctx, first_deposit_min_m_tokens)
+        minter_vault::new_minter_vault::handle(ctx, first_deposit_min_m_tokens, max_supply_cap)
     }
 
     pub fn update_minter_vault(
         ctx: Context<UpdateMinterVault>,
         new_first_deposit_min_m_tokens: Option<u64>,
         mint_authority_pda: Option<Pubkey>,
+        max_supply_cap: Option<u64>,
     ) -> Result<()> {
         minter_vault::update_minter_vault::handle(
             ctx,
             new_first_deposit_min_m_tokens,
             mint_authority_pda,
+            max_supply_cap,
         )
     }
 

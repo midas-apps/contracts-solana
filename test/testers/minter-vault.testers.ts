@@ -2,7 +2,7 @@ import { getMint, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-to
 import { PublicKey } from '@solana/web3.js';
 import { expect } from 'vitest';
 
-import { MAX_U128, ONE } from '../constants/common.constants';
+import { MAX_U64, MAX_U128, ONE } from '../constants/common.constants';
 import { TOKEN_AUTHORITY_ROLES } from '../constants/token-authority.constants';
 import { VAULT_AC_ROLES } from '../constants/vaults.constants';
 import { VaultsFixtureReturnType } from '../fixture/vaults.fixture';
@@ -43,10 +43,12 @@ export const newMinterVault = async (
     commonVault,
     tokenAuthority,
     firstDepositMinMTokens,
+    maxSupplyCap,
   }: {
     commonVault?: PublicKey;
     tokenAuthority?: PublicKey;
     firstDepositMinMTokens?: bigint;
+    maxSupplyCap?: bigint;
   },
 
   opt?: OptionalCommonParams,
@@ -63,6 +65,7 @@ export const newMinterVault = async (
   commonVault ??= minterCommonVault.publicKey;
   tokenAuthority ??= getTokenAuthorityPda(mTBillMinterAuthoritySeed);
   firstDepositMinMTokens ??= parseUnits('10');
+  maxSupplyCap ??= MAX_U64; // u64::MAX = no cap
 
   const fetchState = async () => {
     const common = await fetchVaultCommonState(vaultsProgram, commonVault);
@@ -77,7 +80,7 @@ export const newMinterVault = async (
   const stateBefore = await fetchState();
 
   const tx = await vaultsProgram.methods
-    .newMinterVault(toBN(firstDepositMinMTokens))
+    .newMinterVault(toBN(firstDepositMinMTokens), toBN(maxSupplyCap))
     .accountsPartial({
       authority: from.publicKey,
       vaultCommon: commonVault,
@@ -105,6 +108,7 @@ export const newMinterVault = async (
   expect(stateAfter.minter.commonVault.equals(commonVault)).toBe(true);
   expect(stateAfter.minter.mintAuthorityPda.equals(tokenAuthority)).toBe(true);
   expect(fromBN(stateAfter.minter.firstDepositMinMTokens)).toEqual(firstDepositMinMTokens);
+  expect(fromBN(stateAfter.minter.maxSupplyCap)).toEqual(maxSupplyCap);
 };
 
 export const updateMinterVault = async (
@@ -113,10 +117,12 @@ export const updateMinterVault = async (
     commonVault,
     tokenAuthority,
     firstDepositMinMTokens,
+    maxSupplyCap,
   }: {
     commonVault?: PublicKey;
     tokenAuthority?: PublicKey;
     firstDepositMinMTokens?: bigint;
+    maxSupplyCap?: bigint;
   },
 
   opt?: OptionalCommonParams,
@@ -127,6 +133,7 @@ export const updateMinterVault = async (
   commonVault ??= minterCommonVault.publicKey;
   tokenAuthority ??= null;
   firstDepositMinMTokens ??= null;
+  maxSupplyCap ??= null;
 
   const fetchState = async () => {
     const common = await fetchVaultCommonState(vaultsProgram, commonVault);
@@ -141,7 +148,11 @@ export const updateMinterVault = async (
   const stateBefore = await fetchState();
 
   const tx = await vaultsProgram.methods
-    .updateMinterVault(toBNNullable(firstDepositMinMTokens), tokenAuthority)
+    .updateMinterVault(
+      toBNNullable(firstDepositMinMTokens),
+      tokenAuthority,
+      toBNNullable(maxSupplyCap),
+    )
     .accountsPartial({
       authority: from.publicKey,
       vaultCommon: commonVault,
@@ -170,6 +181,10 @@ export const updateMinterVault = async (
 
   if (firstDepositMinMTokens !== null) {
     expect(fromBN(stateAfter.minter.firstDepositMinMTokens)).toEqual(firstDepositMinMTokens);
+  }
+
+  if (maxSupplyCap !== null) {
+    expect(fromBN(stateAfter.minter.maxSupplyCap)).toEqual(maxSupplyCap);
   }
 };
 
@@ -889,9 +904,14 @@ export const prepareCommonMintTest = async (
       fee?: bigint;
     };
   } = {},
+  accounts?: {
+    commonVault?: PublicKey;
+  },
   opt?: OptionalCommonParams,
 ) => {
-  await addPaymentToken(fixture, params.addPaymentToken ?? {}, undefined);
-  await newVaultCommonAccount(fixture, {}, undefined, opt);
+  await addPaymentToken(fixture, params.addPaymentToken ?? {}, {
+    commonVault: accounts?.commonVault,
+  });
+  await newVaultCommonAccount(fixture, {}, { commonVault: accounts?.commonVault }, opt);
   await newAccountAc(fixture, {}, undefined, opt);
 };

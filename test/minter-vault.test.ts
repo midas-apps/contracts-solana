@@ -84,6 +84,17 @@ describe('minter-vault', () => {
       });
     });
 
+    it('update max_supply_cap', async () => {
+      const fixture = await vaultsFixture();
+
+      const commonVault = await newVaultCommon(fixture, {});
+      await newMinterVault(fixture, { commonVault });
+      await updateMinterVault(fixture, {
+        commonVault,
+        maxSupplyCap: parseUnits('1000'),
+      });
+    });
+
     it('should fail; call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
@@ -710,6 +721,69 @@ describe('minter-vault', () => {
         },
       );
     });
+
+    it('should fail: max supply cap exceeded', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updateVaultCommonAccount(fixture, { waivedFee: true });
+      await updateMinterVault(fixture, { maxSupplyCap: parseUnits('99') });
+
+      await mintInstant(
+        fixture,
+        {
+          amountToken: 100,
+          minReceiveAmount: parseUnits('100'),
+        },
+        {},
+        {},
+        {
+          revertedWith: VaultError.MaxSupplyCapExceeded,
+        },
+      );
+    });
+
+    it('mint instant with exact cap match', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updateVaultCommonAccount(fixture, { waivedFee: true });
+      await updateMinterVault(fixture, { maxSupplyCap: parseUnits('100') });
+
+      await mintInstant(
+        fixture,
+        {
+          amountToken: 100,
+          minReceiveAmount: parseUnits('100'),
+        },
+        {},
+        {
+          fee: 0,
+          tokensMinted: parseUnits('100'),
+        },
+      );
+    });
+
+    it('mint instant with room under cap', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updateVaultCommonAccount(fixture, { waivedFee: true });
+      await updateMinterVault(fixture, { maxSupplyCap: parseUnits('100') });
+
+      await mintInstant(
+        fixture,
+        {
+          amountToken: 90,
+          minReceiveAmount: parseUnits('90'),
+        },
+        {},
+        {
+          fee: 0,
+          tokensMinted: parseUnits('90'),
+        },
+      );
+    });
   });
 
   describe('mint_request', () => {
@@ -1286,6 +1360,30 @@ describe('minter-vault', () => {
         {},
         {
           revertedWith: VaultError.VariationToleranceExceeded,
+        },
+      );
+    });
+
+    it('should fail: max supply cap exceeded on approve', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updateVaultCommonAccount(fixture, { waivedFee: true });
+
+      // Create request with 100 tokens (cap is MAX_U64 by default, so this succeeds)
+      await mintRequest(fixture, { amountToken: 100 }, {}, { fee: 0 });
+
+      // Reduce cap before approval
+      await updateMinterVault(fixture, { maxSupplyCap: parseUnits('50') });
+
+      // Approve should fail because cap is now 50 but request wants to mint 100
+      await approveMintRequest(
+        fixture,
+        { requestId: 0n },
+        {},
+        {},
+        {
+          revertedWith: VaultError.MaxSupplyCapExceeded,
         },
       );
     });

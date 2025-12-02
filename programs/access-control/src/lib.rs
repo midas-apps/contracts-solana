@@ -7,7 +7,7 @@ pub mod instructions;
 pub mod state;
 use instructions::*;
 
-declare_id!("GQp4fJwxmLF7vL7uJ4jpS3uRz96qrb7MfoLKMnJoeE3Z");
+declare_id!("7fmev1BQVc9LEXsMDoJs63muHR1B2uSAw1963zfVrpJP");
 
 #[program]
 pub mod access_control {

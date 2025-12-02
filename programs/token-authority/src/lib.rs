@@ -4,7 +4,7 @@ pub mod instructions;
 use instructions::*;
 pub mod state;
 
-declare_id!("6XqSwGFEuadyqXC9vBLYGJhvQsEVjPdCrtvN6inAb4z3");
+declare_id!("GYmnAy5UiKMYuuwJubKKC5WLnWSW3qLo4JFqX4rBqHKE");
 
 #[program]
 pub mod token_authority {
