@@ -256,10 +256,10 @@ executeNetworkScript(network, main);
 
 // Usage:
 // Get all requests (mint + redeem):
-// yarn tsx scripts/local-test-utils/get-all-requests.ts --network devnet --mtoken mTBILL
+// yarn tsx scripts/verify/get-all-requests.ts --network devnet --mtoken mTBILL
 //
 // Get only mint requests:
-// yarn tsx scripts/local-test-utils/get-all-requests.ts --network devnet --mtoken mTBILL --type mint
+// yarn tsx scripts/verify/get-all-requests.ts --network devnet --mtoken mTBILL --type mint
 //
 // Get only redeem requests:
-// yarn tsx scripts/local-test-utils/get-all-requests.ts --network devnet --mtoken mTBILL --type redeem
+// yarn tsx scripts/verify/get-all-requests.ts --network devnet --mtoken mTBILL --type redeem

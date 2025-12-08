@@ -146,4 +146,4 @@ async function main(provider: AnchorProvider, _payer: Wallet) {
 
 executeNetworkScript(getNetwork(), main);
 
-// yarn tsx scripts/local-test-utils/verify-payment-tokens.ts --network devnet --mtoken mTBILL
+// yarn tsx scripts/verify/verify-payment-tokens.ts --network devnet --mtoken mTBILL

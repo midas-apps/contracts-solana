@@ -84,5 +84,5 @@ const network = getNetwork();
 executeNetworkScript(network, main, 'deployer');
 
 // Usage:
-// yarn verify:roles --network localnet --mtoken mTBILL
-// yarn verify:roles --network localnet --mtoken mTBILL --address <PUBKEY>
+// yarn tsx scripts/verify/verify-roles.ts --network localnet --mtoken mTBILL
+// yarn tsx scripts/verify/verify-roles.ts --network localnet --mtoken mTBILL --address <PUBKEY>

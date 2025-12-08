@@ -80,3 +80,6 @@ async function main(provider: AnchorProvider, payer: Wallet) {
 
 const network = getNetwork();
 executeNetworkScript(network, main);
+
+// Usage:
+// yarn tsx scripts/verify/verify-upgrade-authority.ts --network localnet

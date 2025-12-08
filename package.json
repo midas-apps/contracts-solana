@@ -1,7 +1,6 @@
 {
   "type": "module",
   "scripts": {
-    "anchor:script": "anchor run script --",
     "build": "RUSTUP_TOOLCHAIN=\"nightly-2024-05-09\" anchor build",
     "test": "yarn test:anchor && yarn test:cargo",
     "test:cargo": "anchor run test-cargo",
@@ -29,10 +28,7 @@
     "transfer:authority": "tsx scripts/tasks/manage/transfer-authority.ts",
     "update:data-feed": "tsx scripts/tasks/manage/update-data-feed.ts",
     "update:manual-feed-price": "tsx scripts/tasks/manage/update-manual-feed-price.ts",
-    "delegate": "tsx scripts/tasks/manage/delegate.ts",
-    "verify:upgrade-authority": "tsx scripts/local-test-utils/verify-upgrade-authority.ts",
-    "verify:roles": "tsx scripts/local-test-utils/verify-roles.ts",
-    "export:addresses": "tsx scripts/tasks/verify/export-addresses.ts"
+    "delegate": "tsx scripts/tasks/manage/delegate.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "0.30.1",
