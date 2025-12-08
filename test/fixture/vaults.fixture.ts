@@ -13,7 +13,7 @@ import { MidasVaults } from 'target/types/midas_vaults';
 import { createMTokenMint } from '../../common/create-mtoken-mint';
 import MIDAS_VAULTS_IDL from '../../target/idl/midas_vaults.json' with { type: 'json' };
 import { AC_ROLES } from '../constants/ac.constants';
-import { MAX_U128 } from '../constants/common.constants';
+import { MAX_U64, MAX_U128 } from '../constants/common.constants';
 import { TOKEN_AUTHORITY_ROLES } from '../constants/token-authority.constants';
 import { VAULT_AC_ROLES, VaultActionIds } from '../constants/vaults.constants';
 import { acRoleToBuffer, getAccountAcRoleStatePda } from '../helpers/ac.helpers';
@@ -272,7 +272,7 @@ export const vaultsFixture = async (initSlot?: bigint) => {
       })
       .instruction(),
     await vaultsProgram.methods
-      .newMinterVault(toBN(0))
+      .newMinterVault(toBN(0), toBN(MAX_U64))
       .accountsPartial({
         vaultCommon: minterCommonVault.publicKey,
         authority: authority.publicKey,

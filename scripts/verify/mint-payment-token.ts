@@ -105,5 +105,5 @@ async function main(provider: AnchorProvider, payer: Wallet) {
 
 executeNetworkScript(getNetwork(), main);
 
-// yarn tsx scripts/local-test-utils/mint-payment-token.ts --network devnet --payment-token USDC --amount 1000
-// yarn tsx scripts/local-test-utils/mint-payment-token.ts --network devnet --payment-token USDC --amount 1000 --recipient <address>
+// yarn tsx scripts/verify/mint-payment-token.ts --network devnet --payment-token USDC --amount 1000
+// yarn tsx scripts/verify/mint-payment-token.ts --network devnet --payment-token USDC --amount 1000 --recipient <address>

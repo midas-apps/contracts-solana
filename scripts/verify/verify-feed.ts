@@ -213,5 +213,5 @@ const network = getNetwork();
 executeNetworkScript(network, main);
 
 // Usage:
-// Payment token feed: yarn tsx scripts/local-test-utils/verify-feed.ts --network devnet --payment-token USDC
-// mToken feed:        yarn tsx scripts/local-test-utils/verify-feed.ts --network devnet --mtoken mTBILL
+// Payment token feed: yarn tsx scripts/verify/verify-feed.ts --network devnet --payment-token USDC
+// mToken feed:        yarn tsx scripts/verify/verify-feed.ts --network devnet --mtoken mTBILL

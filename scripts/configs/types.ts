@@ -99,6 +99,7 @@ export const minterVaultConfigSchema = z.object({
   variationTolerance: z.string(),
   minAmount: z.string(),
   firstMintMinMTokens: z.string(),
+  maxSupplyCap: z.string().optional(), // If not set, defaults to unlimited (u64::MAX)
   greenListEnforced: z.boolean().default(false),
   tokensReceiver: publicKeySchema,
   feeReceiver: publicKeySchema,

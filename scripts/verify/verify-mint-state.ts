@@ -93,4 +93,4 @@ async function main(provider: AnchorProvider, payer: Wallet) {
 const network = getNetwork();
 executeNetworkScript(network, main);
 
-// yarn tsx scripts/local-test-utils/verify-mint-state.ts --network devnet --mtoken mTBILL --payment-token USDC
+// yarn tsx scripts/verify/verify-mint-state.ts --network devnet --mtoken mTBILL --payment-token USDC

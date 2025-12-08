@@ -57,15 +57,22 @@ pub struct NewMinterVault<'info> {
 /// # Arguments
 ///
 /// - `first_deposit_min_m_tokens` - minimum amount of mTokens required for the first deposit
-pub fn handle(ctx: Context<NewMinterVault>, first_deposit_min_m_tokens: u64) -> Result<()> {
+/// - `max_supply_cap` - maximum supply cap for mToken minting (use u64::MAX for no cap)
+pub fn handle(
+    ctx: Context<NewMinterVault>,
+    first_deposit_min_m_tokens: u64,
+    max_supply_cap: u64,
+) -> Result<()> {
     ctx.accounts.minter_vault.common_vault = ctx.accounts.vault_common.key();
     ctx.accounts.minter_vault.first_deposit_min_m_tokens = first_deposit_min_m_tokens;
     ctx.accounts.minter_vault.mint_authority_pda = ctx.accounts.token_authority.key();
+    ctx.accounts.minter_vault.max_supply_cap = max_supply_cap;
 
     emit!(MinterVaultUpdatedEvent {
         common_vault: ctx.accounts.vault_common.key(),
         first_deposit_min_m_tokens: Some(first_deposit_min_m_tokens),
-        mint_authority_pda: Some(ctx.accounts.token_authority.key())
+        mint_authority_pda: Some(ctx.accounts.token_authority.key()),
+        max_supply_cap: Some(max_supply_cap),
     });
 
     Ok(())

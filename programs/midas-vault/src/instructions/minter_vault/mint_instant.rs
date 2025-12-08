@@ -20,7 +20,8 @@ use crate::{
     utils::{
         mint_token,
         minter::{self},
-        require_and_update_limit, transfer_token, validate_common, Validate, VaultActionId,
+        require_and_update_limit, transfer_token, validate_common, validate_max_supply_cap,
+        Validate, VaultActionId,
     },
 };
 
@@ -258,6 +259,12 @@ pub fn handle(
             params.fee_token_amount,
         )?;
     }
+
+    validate_max_supply_cap(
+        &ctx.accounts.m_mint,
+        &ctx.accounts.minter_vault,
+        params.m_token_amount.try_into().unwrap(),
+    )?;
 
     mint_token(
         &ctx.accounts.vault_common.key(),

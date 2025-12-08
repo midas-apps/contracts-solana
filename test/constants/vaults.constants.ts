@@ -49,4 +49,5 @@ export enum VaultError {
   InvalidSeedProvided,
   InvalidVaultProvided,
   ValueDidtnChange,
+  MaxSupplyCapExceeded,
 }

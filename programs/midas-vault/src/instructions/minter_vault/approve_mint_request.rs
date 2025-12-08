@@ -10,7 +10,9 @@ use crate::{
     constants::{ac_roles, ONE},
     events::MinterVaultRequestApprovedEvent,
     state::{MintVaultRequestState, MinterVaultState, VaultCommonState},
-    utils::{close_account, mint_token, require_variation_tolerance, Closable},
+    utils::{
+        close_account, mint_token, require_variation_tolerance, validate_max_supply_cap, Closable,
+    },
 };
 
 #[derive(Accounts)]
@@ -142,6 +144,12 @@ pub fn handle(
         .unwrap()
         .checked_div(new_out_rate.into())
         .unwrap();
+
+    validate_max_supply_cap(
+        &ctx.accounts.m_mint,
+        &ctx.accounts.minter_vault,
+        amount_to_mint.try_into().unwrap(),
+    )?;
 
     mint_token(
         &ctx.accounts.vault_common.key(),

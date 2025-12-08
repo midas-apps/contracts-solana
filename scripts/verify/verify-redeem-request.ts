@@ -190,4 +190,4 @@ const network = getNetwork();
 executeNetworkScript(network, main);
 
 // Usage:
-// yarn tsx scripts/local-test-utils/verify-redeem-request.ts --network devnet --mtoken mTBILL --payment-token USDC --request-id 0
+// yarn tsx scripts/verify/verify-redeem-request.ts --network devnet --mtoken mTBILL --payment-token USDC --request-id 0
