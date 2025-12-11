@@ -972,7 +972,10 @@ pub mod redeemer {
     ) -> bool {
         let transfer_amount: u64 =
             match decimals_conversion::convert_from_base_9(amount_base9, payment_mint.decimals) {
-                Ok(v) => v.try_into().unwrap_or(u64::MAX),
+                Ok(v) => match v.try_into() {
+                    Ok(amount) => amount,
+                    Err(_) => return false,
+                },
                 Err(_) => return false,
             };
 
