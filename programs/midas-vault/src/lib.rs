@@ -63,8 +63,39 @@ pub mod midas_vaults {
         request_id: u64,
         new_out_rate: u64,
         is_safe: bool,
+        skip_on_supply_cap_exceeded: bool,
     ) -> Result<()> {
-        minter_vault::approve_mint_request::handle(ctx, request_id, new_out_rate, is_safe)
+        minter_vault::approve_mint_request::handle(
+            ctx,
+            request_id,
+            new_out_rate,
+            is_safe,
+            skip_on_supply_cap_exceeded,
+        )
+    }
+
+    pub fn safe_approve_mint_request_at_current_rate(
+        ctx: Context<SafeApproveMintRequestAtCurrentRate>,
+        request_id: u64,
+        skip_on_supply_cap_exceeded: bool,
+    ) -> Result<()> {
+        minter_vault::safe_approve_mint_request_at_current_rate::handle(
+            ctx,
+            request_id,
+            skip_on_supply_cap_exceeded,
+        )
+    }
+
+    pub fn safe_approve_mint_request_at_request_rate(
+        ctx: Context<SafeApproveMintRequestAtRequestRate>,
+        request_id: u64,
+        skip_on_supply_cap_exceeded: bool,
+    ) -> Result<()> {
+        minter_vault::safe_approve_mint_request_at_request_rate::handle(
+            ctx,
+            request_id,
+            skip_on_supply_cap_exceeded,
+        )
     }
 
     pub fn reject_mint_request(context: Context<RejectMintRequest>, request_id: u64) -> Result<()> {
@@ -125,8 +156,15 @@ pub mod midas_vaults {
         request_id: u64,
         new_m_token_rate: u64,
         is_safe: bool,
+        safe_validate_liquidity: bool,
     ) -> Result<()> {
-        redeemer_vault::approve_redeem_request::handle(ctx, request_id, new_m_token_rate, is_safe)
+        redeemer_vault::approve_redeem_request::handle(
+            ctx,
+            request_id,
+            new_m_token_rate,
+            is_safe,
+            safe_validate_liquidity,
+        )
     }
 
     pub fn approve_redeem_request_fiat(
@@ -140,6 +178,30 @@ pub mod midas_vaults {
             request_id,
             new_m_token_rate,
             is_safe,
+        )
+    }
+
+    pub fn safe_approve_redeem_request_at_current_rate(
+        ctx: Context<SafeApproveRedeemRequestAtCurrentRate>,
+        request_id: u64,
+        safe_validate_liquidity: bool,
+    ) -> Result<()> {
+        redeemer_vault::safe_approve_redeem_request_at_current_rate::handle(
+            ctx,
+            request_id,
+            safe_validate_liquidity,
+        )
+    }
+
+    pub fn safe_approve_redeem_request_at_request_rate(
+        ctx: Context<SafeApproveRedeemRequestAtRequestRate>,
+        request_id: u64,
+        safe_validate_liquidity: bool,
+    ) -> Result<()> {
+        redeemer_vault::safe_approve_redeem_request_at_request_rate::handle(
+            ctx,
+            request_id,
+            safe_validate_liquidity,
         )
     }
 

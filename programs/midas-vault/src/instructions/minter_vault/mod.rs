@@ -18,6 +18,14 @@ pub mod approve_mint_request;
 #[allow(ambiguous_glob_reexports)]
 pub use approve_mint_request::*;
 
+pub mod safe_approve_mint_request_at_current_rate;
+#[allow(ambiguous_glob_reexports)]
+pub use safe_approve_mint_request_at_current_rate::*;
+
+pub mod safe_approve_mint_request_at_request_rate;
+#[allow(ambiguous_glob_reexports)]
+pub use safe_approve_mint_request_at_request_rate::*;
+
 pub mod reject_mint_request;
 #[allow(ambiguous_glob_reexports)]
 pub use reject_mint_request::*;

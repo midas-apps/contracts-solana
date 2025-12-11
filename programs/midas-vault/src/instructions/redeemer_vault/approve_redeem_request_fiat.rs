@@ -105,14 +105,14 @@ impl<'info> Closable for ApproveRedeemRequestFiat<'info> {
 /// - `request_id` - id of the request to approve
 /// - `new_m_token_rate` - new rate of mToken.
 /// Using this value admin can correct the output mToken amount.
-/// - `is_safe` - if the redeem request is safe
+/// - `is_safe` - if true, validates variation tolerance between request rate and new rate
 pub fn handle(
     ctx: Context<ApproveRedeemRequestFiat>,
     request_id: u64,
     new_m_token_rate: u64,
     is_safe: bool,
 ) -> Result<()> {
-    redeemer::approve_redeem_request(
+    match redeemer::approve_redeem_request(
         &ctx.accounts.redeem_request,
         &ctx.accounts.vault_common,
         &ctx.accounts.redeemer_vault,
@@ -127,9 +127,13 @@ pub fn handle(
         request_id,
         new_m_token_rate.into(),
         is_safe,
-    )?;
-
-    ctx.accounts.close()?;
-
-    Ok(())
+        false,
+    ) {
+        Ok(true) => {
+            ctx.accounts.close()?;
+            Ok(())
+        }
+        Ok(false) => Ok(()),
+        Err(e) => Err(e),
+    }
 }

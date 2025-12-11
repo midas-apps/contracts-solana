@@ -10,7 +10,7 @@ use crate::{
 
 #[derive(Accounts)]
 #[instruction(request_id: u64)]
-pub struct ApproveRedeemRequest<'info> {
+pub struct SafeApproveRedeemRequestAtRequestRate<'info> {
     /// Account with vault admin role
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -119,7 +119,7 @@ pub struct ApproveRedeemRequest<'info> {
     pub system_program: Program<'info, System>,
 }
 
-impl<'info> Closable for ApproveRedeemRequest<'info> {
+impl<'info> Closable for SafeApproveRedeemRequestAtRequestRate<'info> {
     /// Close implementation to close redeem request
     fn close(&mut self) -> Result<()> {
         close_account(
@@ -132,25 +132,23 @@ impl<'info> Closable for ApproveRedeemRequest<'info> {
     }
 }
 
-/// Approves redeem request and emits an event.
-/// Can be used only for non-fiat redeem requests.
-/// Can be called only by vault admin.
+/// Safely approves redeem request at the rate saved when the request was created.
+/// Uses the original request rate, so variation tolerance is guaranteed to pass.
+/// Will close redeem request account after processing.
+/// Can only be called by the vault admin.
 ///
 /// # Arguments
 ///
-/// - `request_id` - ID of redeem request
-/// - `new_m_token_rate` - new mToken rate
-/// Using this value admin can correct the output mToken amount.
-/// - `is_safe` - if true, validates variation tolerance between request rate and new rate
+/// - `request_id` - id of the redeem request
 /// - `safe_validate_liquidity` - if true, checks redeemer liquidity before transfer
 /// and skips processing (returns success) if insufficient
 pub fn handle(
-    ctx: Context<ApproveRedeemRequest>,
+    ctx: Context<SafeApproveRedeemRequestAtRequestRate>,
     request_id: u64,
-    new_m_token_rate: u64,
-    is_safe: bool,
     safe_validate_liquidity: bool,
 ) -> Result<()> {
+    let new_m_token_rate: u64 = ctx.accounts.redeem_request.m_token_rate;
+
     match redeemer::approve_redeem_request(
         &ctx.accounts.redeem_request,
         &ctx.accounts.vault_common,
@@ -165,7 +163,7 @@ pub fn handle(
         Some(&ctx.accounts.payment_mint_user_ata),
         request_id,
         new_m_token_rate.into(),
-        is_safe,
+        false,
         safe_validate_liquidity,
     ) {
         Ok(true) => {

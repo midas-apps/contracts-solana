@@ -14,7 +14,7 @@ use crate::{
 
 #[derive(Accounts)]
 #[instruction(request_id: u64)]
-pub struct ApproveMintRequest<'info> {
+pub struct SafeApproveMintRequestAtRequestRate<'info> {
     /// Account with vault admin role
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -96,7 +96,7 @@ pub struct ApproveMintRequest<'info> {
     pub system_program: Program<'info, System>,
 }
 
-impl<'info> Closable for ApproveMintRequest<'info> {
+impl<'info> Closable for SafeApproveMintRequestAtRequestRate<'info> {
     /// close implementation for closing mint request
     /// after it was processed
     fn close(&mut self) -> Result<()> {
@@ -110,24 +110,22 @@ impl<'info> Closable for ApproveMintRequest<'info> {
     }
 }
 
-/// Approves mint request, mints tokens to user account and emits an event.
+/// Safely approves mint request at the rate saved when the request was created.
+/// Uses the original request rate, so variation tolerance is guaranteed to pass.
 /// Will close mint request account after processing.
 /// Can only be called by the vault admin.
 ///
 /// # Arguments
 ///
 /// - `request_id` - id of the mint request
-/// - `new_out_rate` - new out rate for the mint request.
-/// Using this value admin can correct the output mToken amount
-/// - `is_safe` - if true, will check variation tolerance before minting
 /// - `skip_on_supply_cap_exceeded` - if true, will skip minting and return success
 pub fn handle(
-    ctx: Context<ApproveMintRequest>,
+    ctx: Context<SafeApproveMintRequestAtRequestRate>,
     request_id: u64,
-    new_out_rate: u64,
-    is_safe: bool,
     skip_on_supply_cap_exceeded: bool,
 ) -> Result<()> {
+    let new_out_rate: u128 = ctx.accounts.mint_request.m_mint_rate.into();
+
     match minter::approve_mint_request(
         &ctx.accounts.mint_request,
         &ctx.accounts.vault_common,
@@ -141,8 +139,8 @@ pub fn handle(
         &ctx.accounts.system_program,
         &ctx.accounts.token_authority_program,
         request_id,
-        new_out_rate.into(),
-        is_safe,
+        new_out_rate,
+        false,
         skip_on_supply_cap_exceeded,
     ) {
         Ok(true) => {
