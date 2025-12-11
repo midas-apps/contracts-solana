@@ -33,7 +33,6 @@ pub struct ApproveRedeemRequest<'info> {
 
     /// Vault common state account
     #[account(
-        mut,
         address = redeemer_vault.common_vault
     )]
     pub vault_common: Account<'info, VaultCommonState>,

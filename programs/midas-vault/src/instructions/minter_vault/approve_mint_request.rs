@@ -28,7 +28,9 @@ pub struct ApproveMintRequest<'info> {
     pub user_account: AccountInfo<'info>,
 
     /// Vault common state account
-    #[account()]
+    #[account(
+        address = minter_vault.common_vault
+    )]
     pub vault_common: Account<'info, VaultCommonState>,
 
     /// Admin role of authority

@@ -24,7 +24,9 @@ pub struct ApproveRedeemRequestFiat<'info> {
     pub user_account: AccountInfo<'info>,
 
     /// Vault common state account
-    #[account(mut)]
+    #[account(
+        address = redeemer_vault.common_vault
+    )]
     pub vault_common: Account<'info, VaultCommonState>,
 
     /// Admin role of authority
