@@ -199,3 +199,5 @@ async function main(provider: AnchorProvider, payer: Wallet) {
 
 const network = getNetwork();
 executeNetworkScript(network, main);
+
+// Usage: yarn tsx scripts/redeem-request-fiat.ts --mtoken mTBILL --network devnet --amount 1000

@@ -232,5 +232,4 @@ async function main(provider: AnchorProvider, payer: Wallet) {
 const network = getNetwork();
 executeNetworkScript(network, main);
 
-// Usage example:
-// yarn tsx scripts/redeem-request.ts --network devnet --mtoken mTBILL --payment-token USDC --amount 100
+// Usage: yarn tsx scripts/redeem-request.ts --mtoken mTBILL --network devnet --payment-token USDC --amount 1000
