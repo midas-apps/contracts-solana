@@ -8,14 +8,8 @@ import { MProduct, PaymentToken } from '@/common/tokenTypes';
 import { fetchManualFeedState, getManualFeedStatePda } from '@/test/helpers/data-feed.helpers';
 
 import { getDataFeedProgram } from '../deploy/dataFeed';
+import { SWITCHBOARD_PROGRAM_IDS } from '../deploy/feeds/switchboard';
 import { getNetwork, getOptionalArg } from '../utils/argumentParser';
-
-// Switchboard program IDs from official documentation
-// https://docs.switchboard.xyz/tooling-and-resources/technical-resources-and-documentation/solana-accounts
-const SWITCHBOARD_PROGRAM_IDS = {
-  devnet: 'Aio4gaXjXzJNVLtzwtNVmSqGKpANtXhybbkhtAC94ji2',
-  mainnet: 'SBondMDrcV3K4kxZR1HNVT7osZxAHVHgYXL5Ze1oMUv',
-} as const;
 
 interface FeedState {
   acRole: PublicKey;

@@ -105,10 +105,16 @@ async function main(provider: AnchorProvider, payer: Wallet) {
         TOKEN_2022_PROGRAM_ID,
       );
 
-  // Pull Switchboard feeds if needed (only mFeed for fiat redemption)
+  // Pull Switchboard feeds if stale (only mFeed for fiat redemption)
   await pullSwitchboardFeeds(
     provider,
-    [{ feed: mFeed.underlyingFeed, isSwitchboard: 'switchboard' in mFeed.mode }],
+    [
+      {
+        feed: mFeed.underlyingFeed,
+        isSwitchboard: 'switchboard' in mFeed.mode,
+        maxStalenessSeconds: mFeed.maxStaleness,
+      },
+    ],
     network,
   );
 
