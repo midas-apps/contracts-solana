@@ -24,14 +24,64 @@ All requirements and invariants for the programs are described in [this notion d
 ## Prerequirments
 
 - anchor-cli - 0.30.1
-- solana-cli - 2.0.16
+- solana-cli - 2.1.16
 - node - 20
 - yarn - 1.22.22
+
+## Installation Guide
+
+Follow these steps to set up your environment:
+
+1. **Install Rust**
+
+   Install Rust using [rustup.rs](https://rustup.rs/).
+
+2. **Install Solana CLI (v2.1.16) via agave-install**
+
+   Use the [official installation guide](https://docs.anza.xyz/cli/install):
+
+   ```sh
+   sh -c "$(curl -sSfL https://release.anza.xyz/v2.1.16/install)"
+   ```
+
+3. **Install Anchor Version Manager (AVM) and Anchor CLI (v0.30.1)**
+
+   ```sh
+   cargo install --git https://github.com/coral-xyz/anchor --tag v0.30.1 avm --locked --force
+   ```
+
+   Then run:
+
+   ```sh
+   avm install 0.30.1
+   avm use 0.30.1
+   ```
+
+   Verify your installation:
+
+   ```sh
+   anchor --version
+   # should output: anchor-cli 0.30.1
+   ```
+
+4. **(Optional) Use Nightly Rust Toolchain for Building**
+
+If you encounter build errors related to the toolchain, you can use the nightly toolchain for building the project.
+
+```sh
+RUSTUP_TOOLCHAIN="nightly-2024-05-09" yarn build
+```
 
 ## How to build the project
 
 ```
 yarn build
+```
+
+or
+
+```
+RUSTUP_TOOLCHAIN="nightly-2024-05-09" yarn build
 ```
 
 ## How to run tests
@@ -79,12 +129,12 @@ target/doc/<program_name>/index.html
 
 ## Program addresses
 
-|Program Name|Address|
-|-|-|
-|**access-control**|`GQp4fJwxmLF7vL7uJ4jpS3uRz96qrb7MfoLKMnJoeE3Z`|
-|**data-feed**|`7dTNTpTqbHCLxc1FtpCRAq5d4u1Y6WVqrAc1znVGQDxV`|
-|**token-authority**|`6XqSwGFEuadyqXC9vBLYGJhvQsEVjPdCrtvN6inAb4z3`|
-|**midas-vaults**|`6eFgYZCZZFTe61T4YxWsiHHAunCLTh9V7TAjj8DxuZwm`|
+| Program Name        | Address                                        |
+| ------------------- | ---------------------------------------------- |
+| **access-control**  | `GQp4fJwxmLF7vL7uJ4jpS3uRz96qrb7MfoLKMnJoeE3Z` |
+| **data-feed**       | `7dTNTpTqbHCLxc1FtpCRAq5d4u1Y6WVqrAc1znVGQDxV` |
+| **token-authority** | `6XqSwGFEuadyqXC9vBLYGJhvQsEVjPdCrtvN6inAb4z3` |
+| **midas-vaults**    | `6eFgYZCZZFTe61T4YxWsiHHAunCLTh9V7TAjj8DxuZwm` |
 
 ## Account addresses
 

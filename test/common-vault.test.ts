@@ -1,23 +1,10 @@
-import * as anchor from "@coral-xyz/anchor";
-import { dataFeedFixture } from "./fixture/dafa-feed.fixture";
-import { DATA_FEED_PROGRAM_ID } from "./constants/data-feed.constants";
-import { DataFeedMode, fetchDataFeedState } from "./helpers/data-feed.helpers";
-import {
-  createNewFeed,
-  createNewManualFeed,
-} from "./testers/data-feed.testers";
-import { vaultsFixture } from "./fixture/vaults.fixture";
-import {
-  VaultError,
-  VAULTS_PROGRAM_ID,
-  VAULTS_SEEDS,
-} from "./constants/vaults.constants";
+import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 
-import {
-  approveMint,
-  parsePercent,
-  parseUnits,
-} from "./helpers/common.helpers";
+import { CommonError, DEFAULT_PUBKEY } from './constants/common.constants';
+import { VaultError, VAULTS_SEEDS } from './constants/vaults.constants';
+import { vaultsFixture } from './fixture/vaults.fixture';
+import { parsePercent, parseUnits } from './helpers/common.helpers';
+import { getMinterVaultPda, getRedeemerVaultPda } from './helpers/vaults.helpers';
 import {
   addPaymentToken,
   newPauseInx,
@@ -30,25 +17,19 @@ import {
   updateVaultCommon,
   updateVaultCommonAccount,
   withdrawTokens,
-} from "./testers/common-vaults.testers";
-import { CommonError, DEFAULT_PUBKEY } from "./constants/common.constants";
-import { mintToken } from "./testers/redeem-vault.testers";
-import {
-  getMinterVaultPda,
-  getRedeemerVaultPda,
-} from "./helpers/vaults.helpers";
-import { mintMToken } from "./testers/token-authority.testers";
-import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
+} from './testers/common-vaults.testers';
+import { mintToken } from './testers/redeem-vault.testers';
+import { mintMToken } from './testers/token-authority.testers';
 
-describe("common-vault", () => {
-  describe("new_common_vault", () => {
-    it("call with default params", async () => {
+describe('common-vault', () => {
+  describe('new_common_vault', () => {
+    it('call with default params', async () => {
       const fixture = await vaultsFixture();
 
       await newVaultCommon(fixture, {});
     });
 
-    it("should fail: when variation_tolerance is 0%", async () => {
+    it('should fail: when variation_tolerance is 0%', async () => {
       const fixture = await vaultsFixture();
 
       await newVaultCommon(
@@ -58,11 +39,11 @@ describe("common-vault", () => {
         },
         {
           revertedWith: VaultError.InvalidFee,
-        }
+        },
       );
     });
 
-    it("should fail: when variation_tolerance is 101%", async () => {
+    it('should fail: when variation_tolerance is 101%', async () => {
       const fixture = await vaultsFixture();
 
       await newVaultCommon(
@@ -72,11 +53,11 @@ describe("common-vault", () => {
         },
         {
           revertedWith: VaultError.InvalidFee,
-        }
+        },
       );
     });
 
-    it("should fail: when instant_fee is 101%", async () => {
+    it('should fail: when instant_fee is 101%', async () => {
       const fixture = await vaultsFixture();
 
       await newVaultCommon(
@@ -86,20 +67,20 @@ describe("common-vault", () => {
         },
         {
           revertedWith: VaultError.InvalidFee,
-        }
+        },
       );
     });
   });
 
-  describe("update_common_vault", () => {
-    it("call with default params", async () => {
+  describe('update_common_vault', () => {
+    it('call with default params', async () => {
       const fixture = await vaultsFixture();
 
       const vaultCommon = await newVaultCommon(fixture, {});
       await updateVaultCommon(fixture, { vaultCommon });
     });
 
-    it("should fail: call from non-authority", async () => {
+    it('should fail: call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
       const vaultCommon = await newVaultCommon(fixture, {});
@@ -109,13 +90,13 @@ describe("common-vault", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
   });
 
-  describe("new_common_vault_account", () => {
-    it("call with default params", async () => {
+  describe('new_common_vault_account', () => {
+    it('call with default params', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -123,7 +104,7 @@ describe("common-vault", () => {
       await newVaultCommonAccount(fixture, {}, { commonVault });
     });
 
-    it("should fail: call when already exist", async () => {
+    it('should fail: call when already exist', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -136,13 +117,13 @@ describe("common-vault", () => {
         { commonVault },
         {
           revertedWith: CommonError.AccountIsAlreadyInitialized,
-        }
+        },
       );
     });
   });
 
-  describe("update_common_vault_account", () => {
-    it("call with default params", async () => {
+  describe('update_common_vault_account', () => {
+    it('call with default params', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -150,7 +131,7 @@ describe("common-vault", () => {
       await updateVaultCommonAccount(fixture, {}, { commonVault });
     });
 
-    it("update free_from_min_amount value", async () => {
+    it('update free_from_min_amount value', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -160,11 +141,11 @@ describe("common-vault", () => {
         {
           freeFromMinAmount: true,
         },
-        { commonVault }
+        { commonVault },
       );
     });
 
-    it("update free_from_min_first_mint value", async () => {
+    it('update free_from_min_first_mint value', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -174,11 +155,11 @@ describe("common-vault", () => {
         {
           freeFromMinFirstMint: true,
         },
-        { commonVault }
+        { commonVault },
       );
     });
 
-    it("update waived_fee value", async () => {
+    it('update waived_fee value', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -188,11 +169,11 @@ describe("common-vault", () => {
         {
           waivedFee: true,
         },
-        { commonVault }
+        { commonVault },
       );
     });
 
-    it("should fail: call from non-authority", async () => {
+    it('should fail: call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -201,7 +182,7 @@ describe("common-vault", () => {
         {
           account: fixture.regularAccounts[0].publicKey,
         },
-        { commonVault }
+        { commonVault },
       );
 
       await updateVaultCommonAccount(
@@ -211,20 +192,20 @@ describe("common-vault", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
   });
 
-  describe("add_payment_token", () => {
-    it("call with default params", async () => {
+  describe('add_payment_token', () => {
+    it('call with default params', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
       await addPaymentToken(fixture, {}, { commonVault });
     });
 
-    it("should fail: call from non-authority", async () => {
+    it('should fail: call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -235,13 +216,13 @@ describe("common-vault", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
   });
 
-  describe("add_payment_token_fiat", () => {
-    it("call with default params", async () => {
+  describe('add_payment_token_fiat', () => {
+    it('call with default params', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -250,11 +231,11 @@ describe("common-vault", () => {
         {
           mint: DEFAULT_PUBKEY,
         },
-        { commonVault }
+        { commonVault },
       );
     });
 
-    it("should fail: call from non-authority", async () => {
+    it('should fail: call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -267,13 +248,13 @@ describe("common-vault", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
   });
 
-  describe("update_payment_token", () => {
-    it("call with default params", async () => {
+  describe('update_payment_token', () => {
+    it('call with default params', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -281,7 +262,7 @@ describe("common-vault", () => {
       await updatePaymentToken(fixture, {}, { commonVault });
     });
 
-    it("update payment token fiat", async () => {
+    it('update payment token fiat', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -290,18 +271,18 @@ describe("common-vault", () => {
         {
           mint: DEFAULT_PUBKEY,
         },
-        { commonVault }
+        { commonVault },
       );
       await updatePaymentToken(
         fixture,
         {
           mint: DEFAULT_PUBKEY,
         },
-        { commonVault }
+        { commonVault },
       );
     });
 
-    it("should fail: when fee is 101%", async () => {
+    it('should fail: when fee is 101%', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -314,11 +295,11 @@ describe("common-vault", () => {
         { commonVault },
         {
           revertedWith: VaultError.InvalidFee,
-        }
+        },
       );
     });
 
-    it("should fail: call from non-authority", async () => {
+    it('should fail: call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -330,13 +311,13 @@ describe("common-vault", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
   });
 
-  describe("remove_payment_token", () => {
-    it("call with default params", async () => {
+  describe('remove_payment_token', () => {
+    it('call with default params', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -344,7 +325,7 @@ describe("common-vault", () => {
       await removePaymentToken(fixture, {}, { commonVault });
     });
 
-    it("should fail: call from non-authority", async () => {
+    it('should fail: call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -356,20 +337,20 @@ describe("common-vault", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
   });
 
-  describe("update_pause", () => {
-    it("call with default params", async () => {
+  describe('update_pause', () => {
+    it('call with default params', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
       await updatePause(fixture, {}, { commonVault });
     });
 
-    it("should fail: call from non-authority", async () => {
+    it('should fail: call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -380,11 +361,11 @@ describe("common-vault", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
 
-    it("should fail: call when the new value is the same as an old one", async () => {
+    it('should fail: call when the new value is the same as an old one', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -394,20 +375,20 @@ describe("common-vault", () => {
         { commonVault },
         {
           revertedWith: VaultError.ValueDidtnChange,
-        }
+        },
       );
     });
   });
 
-  describe("new_pause_inx", () => {
-    it("call with default params", async () => {
+  describe('new_pause_inx', () => {
+    it('call with default params', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
       await newPauseInx(fixture, {}, { commonVault });
     });
 
-    it("should fail: call from non-authority", async () => {
+    it('should fail: call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -418,13 +399,13 @@ describe("common-vault", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
   });
 
-  describe("update_pause_inx", () => {
-    it("call with default params", async () => {
+  describe('update_pause_inx', () => {
+    it('call with default params', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -432,7 +413,7 @@ describe("common-vault", () => {
       await updatePauseInx(fixture, {}, { commonVault });
     });
 
-    it("should fail: call from non-authority", async () => {
+    it('should fail: call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -444,11 +425,11 @@ describe("common-vault", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
 
-    it("should fail: call when the new value is the same as an old one", async () => {
+    it('should fail: call when the new value is the same as an old one', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -459,13 +440,13 @@ describe("common-vault", () => {
         { commonVault },
         {
           revertedWith: VaultError.ValueDidtnChange,
-        }
+        },
       );
     });
   });
 
-  describe("withdraw_tokens", () => {
-    it("call with default params (token program)", async () => {
+  describe('withdraw_tokens', () => {
+    it('call with default params (token program)', async () => {
       const fixture = await vaultsFixture();
 
       await mintToken(fixture, {
@@ -475,7 +456,7 @@ describe("common-vault", () => {
       await withdrawTokens(fixture, {});
     });
 
-    it("withdraw m tokens (token 2022 program)", async () => {
+    it('withdraw m tokens (token 2022 program)', async () => {
       const fixture = await vaultsFixture();
 
       await mintMToken(fixture, {
@@ -485,16 +466,16 @@ describe("common-vault", () => {
       await withdrawTokens(
         fixture,
         {
-          amount: parseUnits("10"),
+          amount: parseUnits('10'),
           mint: fixture.mTBillMint.publicKey,
         },
         {
           tokenProgram: TOKEN_2022_PROGRAM_ID,
-        }
+        },
       );
     });
 
-    it("withdraw from redeemer vault (token program)", async () => {
+    it('withdraw from redeemer vault (token program)', async () => {
       const fixture = await vaultsFixture();
 
       await mintToken(fixture, {
@@ -508,11 +489,11 @@ describe("common-vault", () => {
         },
         {
           commonVault: fixture.redeemerCommonVault.publicKey,
-        }
+        },
       );
     });
 
-    it("withdraw from redeemer vault (token 2022 program)", async () => {
+    it('withdraw from redeemer vault (token 2022 program)', async () => {
       const fixture = await vaultsFixture();
 
       await mintMToken(fixture, {
@@ -522,18 +503,18 @@ describe("common-vault", () => {
       await withdrawTokens(
         fixture,
         {
-          amount: parseUnits("10"),
+          amount: parseUnits('10'),
           mint: fixture.mTBillMint.publicKey,
           vaultSeed: Buffer.from(VAULTS_SEEDS.REDEEMER_VAULT),
         },
         {
           tokenProgram: TOKEN_2022_PROGRAM_ID,
           commonVault: fixture.redeemerCommonVault.publicKey,
-        }
+        },
       );
     });
 
-    it("should fail: call from non-authority", async () => {
+    it('should fail: call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
       await mintToken(fixture, {
@@ -547,11 +528,11 @@ describe("common-vault", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
 
-    it("should fail: when invalid seed provided", async () => {
+    it('should fail: when invalid seed provided', async () => {
       const fixture = await vaultsFixture();
 
       await mintToken(fixture, {
@@ -561,16 +542,16 @@ describe("common-vault", () => {
       await withdrawTokens(
         fixture,
         {
-          vaultSeedParam: Buffer.from("some-seed"),
+          vaultSeedParam: Buffer.from('some-seed'),
         },
         {},
         {
           revertedWith: VaultError.InvalidSeedProvided,
-        }
+        },
       );
     });
 
-    it("should fail: when invalid vault provided", async () => {
+    it('should fail: when invalid vault provided', async () => {
       const fixture = await vaultsFixture();
 
       await mintToken(fixture, {
@@ -585,7 +566,7 @@ describe("common-vault", () => {
         {},
         {
           revertedWith: VaultError.InvalidVaultProvided,
-        }
+        },
       );
     });
   });

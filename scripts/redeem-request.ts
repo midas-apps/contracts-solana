@@ -1,195 +1,168 @@
-import {
-  Keypair,
-  PublicKey,
-  sendAndConfirmTransaction,
-  Transaction,
-} from "@solana/web3.js";
-import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
+import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
+import { getAssociatedTokenAddressSync, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
+import { Transaction } from '@solana/web3.js';
 
-import { executeAnchorScript } from "../common/utils";
-import { MAX_U128 } from "@/test/constants/common.constants";
+import { executeNetworkScript } from '@/common/scriptRunner';
+import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
+import { fetchAccountAcState, getAccountAcStatePda } from '@/test/helpers/ac.helpers';
+import { createAtaIfNotExistsInx, parseUnits, toBN } from '@/test/helpers/common.helpers';
+import { fetchDataFeedState } from '@/test/helpers/data-feed.helpers';
 import {
-  approveMintInstruction,
-  createAtaIfNotExistsInx,
-  fromBN,
-  parsePercent,
-  parseUnits,
-  revokeMintInstruction,
-  toBN,
-} from "@/test/helpers/common.helpers";
-import { getVaultsProgram } from "./deploy/common/vaults";
-import {
-  fetchAccountAcState,
-  getAccountAcRoleStatePda,
-  getAccountAcStatePda,
-} from "@/test/helpers/ac.helpers";
-import {
-  fetchMinterVaultState,
   fetchPaymentMintState,
-  fetchRedeemerVaultState,
   fetchVaultCommonAccountState,
   fetchVaultCommonState,
   getCommonVaultAccountStatePda,
-  getMinterVaultPda,
-  getMinterVaultRequestPda,
   getPaymentMintStatePda,
   getRedeemerVaultPda,
-} from "@/test/helpers/vaults.helpers";
-import { VAULT_AC_ROLES } from "@/test/constants/vaults.constants";
-import { addresses } from "@/common/addresses";
-import {
-  createRevokeInstruction,
-  TOKEN_2022_PROGRAM_ID,
-  TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
-import { fetchDataFeedState } from "@/test/helpers/data-feed.helpers";
-import { getDataFeedProgram } from "./deploy/common/common";
-import { TOKEN_AUTHORITY_ROLES } from "@/test/constants/token-authority.constants";
-import { getAcProgram } from "./deploy/common/ac";
-import { getSwitchboardPullInx } from "./deploy/common/switchboard";
+} from '@/test/helpers/vaults.helpers';
 
-// TODO: change config before execution
-const config = {
-  product: "mTBILL",
-  mint: addresses["devnet"].feeds["usdc"].token,
-  tokenProgram: addresses["devnet"].feeds["usdc"].tokenProgram,
-  amount: parseUnits("10", 9),
-  env: "devnet",
-} as {
-  product: "mTBILL";
-  env: "devnet" | "mainnet";
-  mint: PublicKey;
-  amount: bigint;
-  tokenProgram?: PublicKey;
-};
+import { getAcProgram } from './deploy/ac';
+import { getDataFeedProgram } from './deploy/dataFeed';
+import { getVaultsProgram } from './deploy/vaults';
+import { requireRedeemerVault, requirePaymentTokenFeed } from './utils/addressValidators';
+import { getMtoken, getNetwork, getPaymentToken, getAmount } from './utils/argumentParser';
+import { pullSwitchboardFeeds } from './utils/switchboardHelpers';
 
-async function main(provider: AnchorProvider, payer: Keypair) {
+async function main(provider: AnchorProvider, payer: Wallet) {
+  const mtoken = getMtoken();
+  const network = getNetwork();
+  const paymentToken = getPaymentToken();
+  const amountStr = getAmount();
+
+  console.log(`Redeeming ${amountStr} ${mtoken} tokens for ${paymentToken}`);
+
+  // Get token addresses
+  const vaultCommon = requireRedeemerVault(network, mtoken);
+
+  // Get payment token feed address
+  const feedAddr = requirePaymentTokenFeed(network, paymentToken, mtoken);
+
+  // Parse amount
+  const mTokenDecimals = 9;
+  const amount = parseUnits(amountStr, mTokenDecimals);
+
   const vaultsProgram = getVaultsProgram(provider);
   const feedProgram = getDataFeedProgram(provider);
   const acProgram = getAcProgram(provider);
 
-  const vaultCommon =
-    addresses[config.env][config.product].redeemer.commonVault;
-
   const commonState = await fetchVaultCommonState(vaultsProgram, vaultCommon);
-
-  const vaultState = await fetchRedeemerVaultState(
-    vaultsProgram,
-    getRedeemerVaultPda(vaultCommon)
-  );
 
   const mFeed = await fetchDataFeedState(feedProgram, commonState.mMintFeed);
   const payment = await fetchPaymentMintState(
     vaultsProgram,
-    getPaymentMintStatePda(vaultCommon, config.mint)
+    getPaymentMintStatePda(vaultCommon, feedAddr.token),
   );
   const paymentFeed = await fetchDataFeedState(feedProgram, payment.dataFeed);
 
   const acUser = await fetchAccountAcState(
     acProgram,
     getAccountAcStatePda(commonState.ac, payer.publicKey),
-    true
+    true,
   );
 
   const commonUser = await fetchVaultCommonAccountState(
     vaultsProgram,
     getCommonVaultAccountStatePda(vaultCommon, payer.publicKey),
-    true
+    true,
   );
 
-  const ata = await createAtaIfNotExistsInx(
+  const mMintSignerAta = getAssociatedTokenAddressSync(
+    commonState.mMint,
+    payer.publicKey,
+    true,
+    TOKEN_2022_PROGRAM_ID,
+  );
+  const mMintVaultAta = getAssociatedTokenAddressSync(
+    commonState.mMint,
+    getRedeemerVaultPda(vaultCommon),
+    true,
+    TOKEN_2022_PROGRAM_ID,
+  );
+  const mMintFeeReceiverAta = getAssociatedTokenAddressSync(
+    commonState.mMint,
+    commonState.feeReceiver,
+    true,
+    TOKEN_2022_PROGRAM_ID,
+  );
+
+  const mMintSignerAtaInx = await createAtaIfNotExistsInx(
     provider.connection,
     commonState.mMint,
     payer.publicKey,
     payer,
-    TOKEN_2022_PROGRAM_ID
+    TOKEN_2022_PROGRAM_ID,
   );
-
-  const ataVault = await createAtaIfNotExistsInx(
-    provider.connection,
-    commonState.mMint,
-    getRedeemerVaultPda(vaultCommon),
-    payer,
-    TOKEN_2022_PROGRAM_ID
-  );
-
-  const ataReceiver = await createAtaIfNotExistsInx(
+  const mMintTokensReceiverAtaInx = await createAtaIfNotExistsInx(
     provider.connection,
     commonState.mMint,
     commonState.tokensReceiver,
     payer,
-    TOKEN_2022_PROGRAM_ID
+    TOKEN_2022_PROGRAM_ID,
   );
-
-  const vaultCreateAtaInx = await createAtaIfNotExistsInx(
+  const paymentMintVaultAtaInx = await createAtaIfNotExistsInx(
     provider.connection,
-    config.mint,
+    feedAddr.token,
     getRedeemerVaultPda(vaultCommon),
     payer,
-    config.tokenProgram
+    feedAddr.tokenProgram,
   );
-
-  const vaultCreateMMinAtaInx = await createAtaIfNotExistsInx(
+  const mMintVaultAtaInx = await createAtaIfNotExistsInx(
     provider.connection,
     commonState.mMint,
     getRedeemerVaultPda(vaultCommon),
     payer,
-    TOKEN_2022_PROGRAM_ID
+    TOKEN_2022_PROGRAM_ID,
   );
-
-  const ataFeeReceiver = commonState.feeReceiver.equals(
-    commonState.tokensReceiver
-  )
+  const mMintFeeReceiverAtaInx = commonState.feeReceiver.equals(commonState.tokensReceiver)
     ? null
     : await createAtaIfNotExistsInx(
         provider.connection,
         commonState.mMint,
         commonState.feeReceiver,
         payer,
-        TOKEN_2022_PROGRAM_ID
+        TOKEN_2022_PROGRAM_ID,
       );
 
-  // const tx1 = new Transaction();
+  // Pull Switchboard feeds if needed
+  await pullSwitchboardFeeds(
+    provider,
+    [
+      { feed: mFeed.underlyingFeed, isSwitchboard: 'switchboard' in mFeed.mode },
+      { feed: paymentFeed.underlyingFeed, isSwitchboard: 'switchboard' in paymentFeed.mode },
+    ],
+    network,
+  );
 
-  // tx1.add(
-  //   await getSwitchboardPullInx(provider, mFeed.underlyingFeed, config.env)
-  // );
-
-  // const txRes1 = await sendAndConfirmTransaction(
-  //   provider.connection,
-  //   tx1,
-  //   [payer],
-  //   {
-  //     commitment: "finalized",
-  //   }
-  // );
   const tx2 = new Transaction();
 
-  if (ata) {
-    console.log("ata");
-    tx2.add(ata);
+  // Add ATA creation instructions if needed
+  if (mMintSignerAtaInx) {
+    console.log('Creating mToken ATA for signer');
+    tx2.add(mMintSignerAtaInx);
   }
 
-  if (ataReceiver) {
-    console.log("ata");
-    tx2.add(ataReceiver);
+  if (mMintTokensReceiverAtaInx) {
+    console.log('Creating mToken ATA for tokens receiver');
+    tx2.add(mMintTokensReceiverAtaInx);
   }
 
-  if (ataFeeReceiver) {
-    console.log("ata");
-    tx2.add(ataFeeReceiver);
+  if (mMintFeeReceiverAtaInx) {
+    console.log('Creating mToken ATA for fee receiver');
+    tx2.add(mMintFeeReceiverAtaInx);
   }
 
-  if (vaultCreateAtaInx) {
-    tx2.add(vaultCreateAtaInx);
+  if (paymentMintVaultAtaInx) {
+    console.log('Creating payment token ATA for vault');
+    tx2.add(paymentMintVaultAtaInx);
   }
 
-  if (vaultCreateMMinAtaInx) {
-    tx2.add(vaultCreateMMinAtaInx);
+  if (mMintVaultAtaInx) {
+    console.log('Creating mToken ATA for vault');
+    tx2.add(mMintVaultAtaInx);
   }
 
   if (!acUser) {
-    console.log("acUser");
+    console.log('Creating access control account for user');
     tx2.add(
       await acProgram.methods
         .newAccountAc()
@@ -199,31 +172,28 @@ async function main(provider: AnchorProvider, payer: Keypair) {
           accountAc: getAccountAcStatePda(commonState.ac, payer.publicKey),
           signer: payer.publicKey,
         })
-        .instruction()
+        .instruction(),
     );
   }
 
   if (!commonUser) {
-    console.log("commonUser");
+    console.log('Creating vault common account for user');
     tx2.add(
       await vaultsProgram.methods
         .newCommonVaultAccount()
         .accountsPartial({
           account: payer.publicKey,
           vaultCommon,
-          vaultCommonAccount: getCommonVaultAccountStatePda(
-            vaultCommon,
-            payer.publicKey
-          ),
+          vaultCommonAccount: getCommonVaultAccountStatePda(vaultCommon, payer.publicKey),
           signer: payer.publicKey,
         })
-        .instruction()
+        .instruction(),
     );
   }
 
   tx2.add(
     await vaultsProgram.methods
-      .redeemRequest(toBN(config.amount))
+      .redeemRequest(toBN(amount))
       .accountsPartial({
         vaultCommon: vaultCommon,
         redeemerVault: getRedeemerVaultPda(vaultCommon),
@@ -233,25 +203,26 @@ async function main(provider: AnchorProvider, payer: Keypair) {
         mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
         mMintDataFeed: commonState.mMintFeed,
         signer: payer.publicKey,
-        paymentMint: config.mint,
+        paymentMint: feedAddr.token,
         paymentMintDataFeed: payment.dataFeed,
         paymentMintFeed: paymentFeed.underlyingFeed,
-        paymentMintTokenProgram: config.tokenProgram,
+        paymentMintTokenProgram: feedAddr.tokenProgram,
         accountAc: getAccountAcStatePda(commonState.ac, payer.publicKey),
+        mMintVaultAta: mMintVaultAta,
+        mMintFeeReceiverAta: mMintFeeReceiverAta,
+        mMintSignerAta: mMintSignerAta,
       })
-      .instruction()
+      .instruction(),
   );
 
-  const txRes = await sendAndConfirmTransaction(
-    provider.connection,
-    tx2,
-    [payer],
-    {
-      commitment: "finalized",
-    }
-  );
+  const result = await sendAndWaitForCustomSolanaTxSign(provider, tx2, [], {});
 
-  console.log({ txRes });
+  console.log(`✅ Redeem request completed successfully`);
+  console.log(`Transaction: ${result.signature}`);
 }
 
-executeAnchorScript(main);
+const network = getNetwork();
+executeNetworkScript(network, main);
+
+// Usage example:
+// yarn tsx scripts/redeem-request.ts --network devnet --mtoken mTBILL --payment-token USDC --amount 100

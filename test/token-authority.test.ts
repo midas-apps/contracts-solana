@@ -1,5 +1,17 @@
-import { CommonError, DEFAULT_PUBKEY } from "./constants/common.constants";
-import { acFixture } from "./fixture/ac.fixture";
+import {
+  AuthorityType,
+  createSetAuthorityInstruction,
+  TOKEN_2022_PROGRAM_ID,
+} from '@solana/spl-token';
+import { Keypair, Transaction } from '@solana/web3.js';
+
+import { CommonError } from './constants/common.constants';
+import { acFixture } from './fixture/ac.fixture';
+import { tokenAuthorityFixture } from './fixture/token-authority.fixture';
+import { vaultsFixture } from './fixture/vaults.fixture';
+import { expectTxNotReverted } from './helpers/common.helpers';
+import { getTokenAuthorityPda } from './helpers/token-authority.helpers';
+import { mintToken } from './testers/redeem-vault.testers';
 import {
   burnToken,
   freezeAccount,
@@ -7,46 +19,27 @@ import {
   newTokenAuthority,
   setAuthority,
   thawAccount,
-} from "./testers/token-authority.testers";
-import { tokenAuthorityFixture } from "./fixture/token-authority.fixture";
-import { vaultsFixture } from "./fixture/vaults.fixture";
-import { mintToken } from "./testers/redeem-vault.testers";
-import {
-  AuthorityType,
-  burn,
-  createSetAuthorityInstruction,
-  TOKEN_2022_PROGRAM_ID,
-} from "@solana/spl-token";
-import {
-  Keypair,
-  sendAndConfirmTransaction,
-  Transaction,
-} from "@solana/web3.js";
-import { getTokenAuthorityPda } from "./helpers/token-authority.helpers";
-import {
-  expectNotReverted,
-  expectTxNotReverted,
-} from "./helpers/common.helpers";
+} from './testers/token-authority.testers';
 
-describe("token-authority", () => {
-  describe("new_token_authority", () => {
-    it("call with default params", async () => {
+describe('token-authority', () => {
+  describe('new_token_authority', () => {
+    it('call with default params', async () => {
       const fixture = await tokenAuthorityFixture(await acFixture());
 
       await newTokenAuthority(fixture, {
-        seed: "test-seed",
+        seed: 'test-seed',
       });
     });
   });
 
-  describe("mint", () => {
-    it("call with default params", async () => {
+  describe('mint', () => {
+    it('call with default params', async () => {
       const fixture = await vaultsFixture();
 
       await mintMToken(fixture, {});
     });
 
-    it("should fail: call from non-authority", async () => {
+    it('should fail: call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
       await mintMToken(
@@ -55,13 +48,13 @@ describe("token-authority", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
   });
 
-  describe("set_authority", () => {
-    it("call with default params", async () => {
+  describe('set_authority', () => {
+    it('call with default params', async () => {
       const fixture = await vaultsFixture();
 
       await setAuthority(fixture, {
@@ -79,11 +72,11 @@ describe("token-authority", () => {
         },
         {
           from: fixture.regularAccounts[0],
-        }
+        },
       );
     });
 
-    it("should fail: call from non-authority", async () => {
+    it('should fail: call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
       await mintMToken(
@@ -92,13 +85,13 @@ describe("token-authority", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
   });
 
-  describe("burn", () => {
-    it("call with default params", async () => {
+  describe('burn', () => {
+    it('call with default params', async () => {
       const fixture = await vaultsFixture();
 
       await mintMToken(fixture, {});
@@ -112,16 +105,16 @@ describe("token-authority", () => {
             AuthorityType.PermanentDelegate,
             getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed),
             undefined,
-            TOKEN_2022_PROGRAM_ID
-          )
+            TOKEN_2022_PROGRAM_ID,
+          ),
         ),
-        [fixture.authority]
+        [fixture.authority],
       );
 
       await burnToken(fixture, {}, {});
     });
 
-    it("call when the `from` is a different from the `authority`", async () => {
+    it('call when the `from` is a different from the `authority`', async () => {
       const fixture = await vaultsFixture();
 
       const burnFrom = fixture.accounts[1].publicKey;
@@ -137,10 +130,10 @@ describe("token-authority", () => {
             AuthorityType.PermanentDelegate,
             getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed),
             undefined,
-            TOKEN_2022_PROGRAM_ID
-          )
+            TOKEN_2022_PROGRAM_ID,
+          ),
         ),
-        [fixture.authority]
+        [fixture.authority],
       );
 
       expect(burnFrom).not.toEqual(fixture.authority.publicKey);
@@ -153,7 +146,7 @@ describe("token-authority", () => {
       await burnToken(fixture, { address: burnFrom, amount: 100n }, {});
     });
 
-    it("should fail: call from non-authority", async () => {
+    it('should fail: call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
       await burnToken(
@@ -162,11 +155,11 @@ describe("token-authority", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
 
-    it("should fail: call when authority type is not assigned", async () => {
+    it('should fail: call when authority type is not assigned', async () => {
       const fixture = await vaultsFixture();
 
       await mintMToken(fixture, {});
@@ -176,13 +169,13 @@ describe("token-authority", () => {
         {},
         {
           revertedWith: CommonError.SplOwnerDoesNotMatch,
-        }
+        },
       );
     });
   });
 
-  describe("freeze", () => {
-    it("call with default params", async () => {
+  describe('freeze', () => {
+    it('call with default params', async () => {
       const fixture = await vaultsFixture();
 
       await mintMToken(fixture, {});
@@ -196,16 +189,16 @@ describe("token-authority", () => {
             AuthorityType.FreezeAccount,
             getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed),
             undefined,
-            TOKEN_2022_PROGRAM_ID
-          )
+            TOKEN_2022_PROGRAM_ID,
+          ),
         ),
-        [fixture.authority]
+        [fixture.authority],
       );
 
       await freezeAccount(fixture, {}, {});
     });
 
-    it("should fail: call from non-authority", async () => {
+    it('should fail: call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
       await freezeAccount(
@@ -214,11 +207,11 @@ describe("token-authority", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
 
-    it("should fail: call when authority type is not assigned", async () => {
+    it('should fail: call when authority type is not assigned', async () => {
       const fixture = await vaultsFixture();
 
       await freezeAccount(
@@ -226,13 +219,13 @@ describe("token-authority", () => {
         {},
         {
           revertedWith: CommonError.SplOwnerDoesNotMatch,
-        }
+        },
       );
     });
   });
 
-  describe("thaw", () => {
-    it("call with default params", async () => {
+  describe('thaw', () => {
+    it('call with default params', async () => {
       const fixture = await vaultsFixture();
 
       await mintMToken(fixture, {});
@@ -246,16 +239,16 @@ describe("token-authority", () => {
             AuthorityType.FreezeAccount,
             getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed),
             undefined,
-            TOKEN_2022_PROGRAM_ID
-          )
+            TOKEN_2022_PROGRAM_ID,
+          ),
         ),
-        [fixture.authority]
+        [fixture.authority],
       );
       await freezeAccount(fixture, {});
       await thawAccount(fixture, {}, {});
     });
 
-    it("should fail: call from non-authority", async () => {
+    it('should fail: call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
       await mintMToken(fixture, {});
@@ -269,10 +262,10 @@ describe("token-authority", () => {
             AuthorityType.FreezeAccount,
             getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed),
             undefined,
-            TOKEN_2022_PROGRAM_ID
-          )
+            TOKEN_2022_PROGRAM_ID,
+          ),
         ),
-        [fixture.authority]
+        [fixture.authority],
       );
 
       await thawAccount(
@@ -281,11 +274,11 @@ describe("token-authority", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
 
-    it("should fail: call when authority type is not assigned", async () => {
+    it('should fail: call when authority type is not assigned', async () => {
       const fixture = await vaultsFixture();
 
       await mintMToken(fixture, {});
@@ -299,10 +292,10 @@ describe("token-authority", () => {
             AuthorityType.FreezeAccount,
             getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed),
             undefined,
-            TOKEN_2022_PROGRAM_ID
-          )
+            TOKEN_2022_PROGRAM_ID,
+          ),
         ),
-        [fixture.authority]
+        [fixture.authority],
       );
 
       await freezeAccount(fixture, {});
@@ -317,7 +310,7 @@ describe("token-authority", () => {
         {},
         {
           revertedWith: CommonError.SplOwnerDoesNotMatch,
-        }
+        },
       );
     });
   });

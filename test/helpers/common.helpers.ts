@@ -1,15 +1,5 @@
-import { Idl, Program, web3 } from "@coral-xyz/anchor";
-import * as anchor from "@coral-xyz/anchor";
-import BN from "bn.js";
-import {
-  Connection,
-  Keypair,
-  LAMPORTS_PER_SOL,
-  PublicKey,
-  Signer,
-  SystemProgram,
-  Transaction,
-} from "@solana/web3.js";
+import { Idl, Program, web3 } from '@coral-xyz/anchor';
+import * as anchor from '@coral-xyz/anchor';
 import {
   createApproveInstruction,
   createAssociatedTokenAccountInstruction,
@@ -22,31 +12,39 @@ import {
   TOKEN_PROGRAM_ID,
   TokenAccountNotFoundError,
   TokenInvalidAccountOwnerError,
-} from "@solana/spl-token";
+} from '@solana/spl-token';
+import {
+  Connection,
+  Keypair,
+  LAMPORTS_PER_SOL,
+  PublicKey,
+  Signer,
+  SystemProgram,
+  Transaction,
+} from '@solana/web3.js';
+import { BankrunProvider } from 'anchor-bankrun';
+import BN from 'bn.js';
 import {
   AddedAccount,
   BanksTransactionMeta,
   Clock,
   ProgramTestContext,
   startAnchor,
-} from "solana-bankrun";
+} from 'solana-bankrun';
+import { parseUnits as parseUnitsViem, formatUnits as formatUnitsViem } from 'viem';
 
-import { BankrunProvider } from "anchor-bankrun";
-import {
-  parseUnits as parseUnitsViem,
-  formatUnits as formatUnitsViem,
-} from "viem";
-import { DEFAULT_PUBKEY } from "../constants/common.constants";
-import { DataFeed } from "@/target/types/data_feed";
-import { MidasVaults } from "@/target/types/midas_vaults";
-import { TokenAuthority } from "@/target/types/token_authority";
-import { AccessControl } from "@/target/types/access_control";
+import { AccessControl } from '@/target/types/access_control';
+import { DataFeed } from '@/target/types/data_feed';
+import { MidasVaults } from '@/target/types/midas_vaults';
+import { TokenAuthority } from '@/target/types/token_authority';
+
+import { DEFAULT_PUBKEY } from '../constants/common.constants';
 // import { ZERO_ADDRESS } from "test/constants/common.constants";
 
-export type OptionalCommonParams = {
+export interface OptionalCommonParams {
   from?: Keypair;
   revertedWith?: string | number;
-};
+}
 
 export type DataFeedProgram = Program<DataFeed>;
 export type VaultsProgram = Program<MidasVaults>;
@@ -59,10 +57,7 @@ export function numToHex(decimalCode: number): string {
   return hexCode;
 }
 
-export const initBankrun = async (
-  numAccounts: number = 10,
-  initSlot?: bigint
-) => {
+export const initBankrun = async (numAccounts = 10, initSlot?: bigint) => {
   const accounts: Keypair[] = [];
 
   const accountsToInject: AddedAccount[] = [];
@@ -82,7 +77,7 @@ export const initBankrun = async (
     });
   }
 
-  const context = await startAnchor(".", [], [...accountsToInject]);
+  const context = await startAnchor('.', [], [...accountsToInject]);
   if (initSlot) {
     await warpToSlot(context, initSlot);
   }
@@ -110,18 +105,14 @@ export const toBNNullable = (n: number | string | bigint | null): BN | null => {
 };
 
 export const findPDA = <TProgram extends Idl | unknown>(
-  seeds: Array<string | Buffer | PublicKey | BN>,
-  program: TProgram extends Idl ? Program<TProgram> : PublicKey
+  seeds: (string | Buffer | PublicKey | BN)[],
+  program: TProgram extends Idl ? Program<TProgram> : PublicKey,
 ) => {
   const programId = (program as Program).programId || (program as PublicKey);
 
   return PublicKey.findProgramAddressSync(
-    [
-      ...seeds.map((v) =>
-        Buffer.from((v as PublicKey)?.toBuffer?.() ?? (v as string | Buffer))
-      ),
-    ],
-    programId
+    [...seeds.map((v) => Buffer.from((v as PublicKey)?.toBuffer?.() ?? (v as string | Buffer)))],
+    programId,
   );
 };
 
@@ -129,20 +120,20 @@ export const expectTxReverted = async (
   ctx: ProgramTestContext,
   transaction: web3.Transaction,
   signers: (Keypair | Signer)[],
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
   try {
     await processTransaction(ctx, transaction, signers);
-    throw new Error("Expected to be reverted but not reverted");
+    throw new Error('Expected to be reverted but not reverted');
   } catch (err) {
     const revertMessage =
-      opt?.revertedWith && typeof opt.revertedWith === "number"
+      opt?.revertedWith && typeof opt.revertedWith === 'number'
         ? numToHex(opt.revertedWith as number).toLowerCase()
         : opt.revertedWith?.toString();
 
     if (revertMessage && !err.toString().includes(revertMessage)) {
       throw new Error(
-        `Expected tx to revert with message ${revertMessage}. Err: ${err.toString()}`
+        `Expected tx to revert with message ${revertMessage}. Err: ${err.toString()}`,
       );
     }
   }
@@ -152,28 +143,24 @@ export const expectNotReverted = async (promise: Promise<unknown>) => {
   try {
     await promise;
   } catch (err) {
-    expect(
-      true,
-      `Expected tx to not revert, but it reverted. Err: ${err.toString()}`
-    ).toEqual(false);
+    expect(true, `Expected tx to not revert, but it reverted. Err: ${err.toString()}`).toEqual(
+      false,
+    );
   }
 };
 
 export const expectEvents = async <TProgram extends Idl>(
   txResult: BanksTransactionMeta | string[],
   program: Program<TProgram>,
-  expectedEvents: { name: string; data: Object }[]
+  expectedEvents: { name: string; data: object }[],
 ) => {
-  const parser = new anchor.EventParser(
-    program.programId,
-    new anchor.BorshCoder(program.idl)
-  );
+  const parser = new anchor.EventParser(program.programId, new anchor.BorshCoder(program.idl));
 
   const logs = Array.isArray(txResult) ? txResult : txResult.logMessages;
 
   const events = parser.parseLogs(logs);
 
-  const format = (obj: Object) => {
+  const format = (obj: object) => {
     if (!obj) return obj;
 
     const formattedData = Object.entries(obj).map(([key, value]) => {
@@ -185,7 +172,7 @@ export const expectEvents = async <TProgram extends Idl>(
         return [key, BigInt(value.toString())];
       }
 
-      if (typeof value === "object") {
+      if (typeof value === 'object') {
         return [key, format(value)];
       }
 
@@ -195,11 +182,10 @@ export const expectEvents = async <TProgram extends Idl>(
     return Object.fromEntries(formattedData);
   };
 
-  for (let expectedEv of expectedEvents) {
+  for (const expectedEv of expectedEvents) {
     const event = Array.from(events).find((v) => v.name === expectedEv.name);
 
-    if (!event)
-      throw new Error(`Expected to emit event ${expectedEv.name} but it wasnt`);
+    if (!event) throw new Error(`Expected to emit event ${expectedEv.name} but it wasnt`);
 
     const expectedEvDataObj = format(expectedEv.data);
     const evDataObj = format(event.data);
@@ -209,7 +195,7 @@ export const expectEvents = async <TProgram extends Idl>(
 
       expect(evDataObj).toHaveProperty(key);
 
-      if (typeof value === "object") {
+      if (typeof value === 'object') {
         expect(evDataObj[key]).toMatchObject(value);
       } else {
         expect(evDataObj[key]).toBe(value);
@@ -221,15 +207,14 @@ export const expectEvents = async <TProgram extends Idl>(
 export const expectTxNotReverted = async (
   ctx: ProgramTestContext,
   transaction: Transaction,
-  signers: (Keypair | Signer)[]
+  signers: (Keypair | Signer)[],
 ) => {
   try {
     return await processTransaction(ctx, transaction, signers);
   } catch (err) {
-    expect(
-      true,
-      `Expected tx to not revert, but it reverted. Err: ${err.toString()}`
-    ).toEqual(false);
+    expect(true, `Expected tx to not revert, but it reverted. Err: ${err.toString()}`).toEqual(
+      false,
+    );
   }
 };
 
@@ -244,7 +229,7 @@ export const warpToSlot = async (ctx: ProgramTestContext, slot: bigint) => {
 export const processTransaction = async (
   ctx: ProgramTestContext,
   transaction: Transaction,
-  signers: (Keypair | Signer)[]
+  signers: (Keypair | Signer)[],
 ) => {
   // Need to generate new blockhash
   ctx.warpToSlot(BigInt(latestSlot + 1));
@@ -255,12 +240,6 @@ export const processTransaction = async (
 
   transaction.recentBlockhash = blockHash;
   transaction.sign(...signers);
-
-  const serialized = transaction.serialize({
-    verifySignatures: false,
-    requireAllSignatures: false,
-  });
-  const size = serialized.length + 1 + transaction.signatures.length * 64;
 
   return await client.processTransaction(transaction);
 };
@@ -281,7 +260,7 @@ export const createMint = async (
   freezeAuthority: PublicKey | null,
   decimals: number,
   keypair = Keypair.generate(),
-  programId = TOKEN_PROGRAM_ID
+  programId = TOKEN_PROGRAM_ID,
 ) => {
   const lamports = await getMinimumBalanceForRentExemptMint(connection);
 
@@ -298,8 +277,8 @@ export const createMint = async (
       decimals,
       tokenAuthority,
       freezeAuthority,
-      programId
-    )
+      programId,
+    ),
   );
 
   await processTransaction(ctx, transaction, [payer, keypair]);
@@ -312,7 +291,7 @@ export const approveMintInstruction = (
   payer: Signer,
   approveTo: PublicKey,
   amount: bigint,
-  programId = TOKEN_PROGRAM_ID
+  programId = TOKEN_PROGRAM_ID,
 ) => {
   return createApproveInstruction(
     findATA(mint, payer.publicKey, programId),
@@ -320,7 +299,7 @@ export const approveMintInstruction = (
     payer.publicKey,
     amount,
     undefined,
-    programId
+    programId,
   );
 };
 
@@ -328,13 +307,13 @@ export const revokeMintInstruction = (
   mint: PublicKey,
   payer: Signer,
 
-  programId = TOKEN_PROGRAM_ID
+  programId = TOKEN_PROGRAM_ID,
 ) => {
   return createRevokeInstruction(
     findATA(mint, payer.publicKey, programId),
     payer.publicKey,
     undefined,
-    programId
+    programId,
   );
 };
 
@@ -344,14 +323,12 @@ export const approveMint = async (
   payer: Signer,
   approveTo: PublicKey,
   amount: bigint,
-  programId = TOKEN_PROGRAM_ID
+  programId = TOKEN_PROGRAM_ID,
 ) => {
   await processTransaction(
     ctx,
-    new Transaction().add(
-      approveMintInstruction(mint, payer, approveTo, amount, programId)
-    ),
-    [payer]
+    new Transaction().add(approveMintInstruction(mint, payer, approveTo, amount, programId)),
+    [payer],
   );
 };
 
@@ -361,7 +338,7 @@ export const getOrCreateAta = async (
   mint: PublicKey,
   owner: PublicKey,
   signer: Keypair,
-  program = TOKEN_PROGRAM_ID
+  program = TOKEN_PROGRAM_ID,
 ) => {
   const ata = getAssociatedTokenAddressSync(mint, owner, true, program);
   try {
@@ -371,15 +348,14 @@ export const getOrCreateAta = async (
       ataAccount,
       ata,
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (e: any) {
     if (
       e instanceof TokenAccountNotFoundError ||
       e instanceof TokenInvalidAccountOwnerError ||
-      e?.message?.includes("Could not find")
+      e?.message?.includes('Could not find')
     ) {
-      const ix = new Transaction().add(
-        createAtaInx(signer.publicKey, ata, mint, owner, program)
-      );
+      const ix = new Transaction().add(createAtaInx(signer.publicKey, ata, mint, owner, program));
 
       await processTransaction(context, ix, [signer]);
 
@@ -400,18 +376,19 @@ export const createAtaIfNotExistsInx = async (
   connection: Connection,
   mint: PublicKey,
   owner: PublicKey,
-  payer: Keypair,
-  program = TOKEN_PROGRAM_ID
+  payer: { publicKey: PublicKey },
+  program = TOKEN_PROGRAM_ID,
 ) => {
   const ata = getAssociatedTokenAddressSync(mint, owner, true, program);
   try {
     await getAccount(connection, ata, undefined, program);
     return null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (e: any) {
     if (
       e instanceof TokenAccountNotFoundError ||
       e instanceof TokenInvalidAccountOwnerError ||
-      e?.message?.includes("Could not find")
+      e?.message?.includes('Could not find')
     ) {
       return createAtaInx(payer.publicKey, ata, mint, owner, program);
     }
@@ -423,7 +400,7 @@ export const createAtaIfNotExistsInx = async (
 export const findATA = (
   token: PublicKey,
   address: PublicKey,
-  program = TOKEN_PROGRAM_ID
+  program = TOKEN_PROGRAM_ID,
 ): PublicKey => {
   return getAssociatedTokenAddressSync(token, address, true, program);
 };
@@ -433,21 +410,12 @@ export function createAtaInx(
   ataAccount: PublicKey,
   mint: PublicKey,
   owner = payer,
-  program = TOKEN_PROGRAM_ID
+  program = TOKEN_PROGRAM_ID,
 ) {
-  return createAssociatedTokenAccountInstruction(
-    payer,
-    ataAccount,
-    owner,
-    mint,
-    program
-  );
+  return createAssociatedTokenAccountInstruction(payer, ataAccount, owner, mint, program);
 }
 
-export const timeTravel = async (
-  ctx: ProgramTestContext,
-  timestampDelta: bigint
-) => {
+export const timeTravel = async (ctx: ProgramTestContext, timestampDelta: bigint) => {
   const client = ctx.banksClient;
   const currentClock = await client.getClock();
   ctx.setClock(
@@ -456,15 +424,12 @@ export const timeTravel = async (
       currentClock.epochStartTimestamp,
       currentClock.epoch,
       currentClock.leaderScheduleEpoch,
-      currentClock.unixTimestamp + timestampDelta
-    )
+      currentClock.unixTimestamp + timestampDelta,
+    ),
   );
 };
 
-export const setClockTime = async (
-  ctx: ProgramTestContext,
-  newTimestamp: bigint
-) => {
+export const setClockTime = async (ctx: ProgramTestContext, newTimestamp: bigint) => {
   const client = ctx.banksClient;
   const currentClock = await client.getClock();
   ctx.setClock(
@@ -473,15 +438,12 @@ export const setClockTime = async (
       newTimestamp,
       currentClock.epoch,
       currentClock.leaderScheduleEpoch,
-      newTimestamp
-    )
+      newTimestamp,
+    ),
   );
 };
 
-export const setClockSlot = async (
-  ctx: ProgramTestContext,
-  newSlot: bigint
-) => {
+export const setClockSlot = async (ctx: ProgramTestContext, newSlot: bigint) => {
   const client = ctx.banksClient;
   const currentClock = await client.getClock();
   ctx.setClock(
@@ -490,15 +452,15 @@ export const setClockSlot = async (
       currentClock.epochStartTimestamp,
       currentClock.epoch,
       currentClock.leaderScheduleEpoch,
-      currentClock.unixTimestamp
-    )
+      currentClock.unixTimestamp,
+    ),
   );
 };
 
 export const setClockEpoch = async (
   ctx: ProgramTestContext,
   newEpoch: bigint,
-  epochStartTimestamp: bigint
+  epochStartTimestamp: bigint,
 ) => {
   const client = ctx.banksClient;
   const currentClock = await client.getClock();
@@ -509,8 +471,8 @@ export const setClockEpoch = async (
       epochStartTimestamp,
       newEpoch,
       currentClock.leaderScheduleEpoch,
-      currentClock.unixTimestamp
-    )
+      currentClock.unixTimestamp,
+    ),
   );
 };
 
@@ -523,7 +485,7 @@ export const getBalance = async (
   connection: Connection,
   owner: PublicKey,
   mint: PublicKey | null = DEFAULT_PUBKEY,
-  programId = TOKEN_PROGRAM_ID
+  programId = TOKEN_PROGRAM_ID,
 ) => {
   if (mint.equals(DEFAULT_PUBKEY)) {
     return 0n;
@@ -536,7 +498,7 @@ export const getBalance = async (
       .catch((err) => {
         if (
           err instanceof TokenAccountNotFoundError ||
-          err?.toString?.()?.includes?.("Could not find")
+          err?.toString?.()?.includes?.('Could not find')
         ) {
           return 0n;
         }
@@ -556,13 +518,13 @@ export const fetchAccountNullable = async <TReturn>(
   account: {
     fetch: (account: PublicKey) => Promise<TReturn>;
   },
-  allowNull = false
+  allowNull = false,
 ) => {
   try {
     return await account.fetch(publicKey);
-  } catch (err) {
+  } catch {
     if (!allowNull) {
-      throw new Error("Account state is empty");
+      throw new Error('Account state is empty');
     }
     return null;
   }

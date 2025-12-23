@@ -1,4 +1,4 @@
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey } from '@solana/web3.js';
 
 export enum ANCHOR_ERRORS {
   AccountAlreadyInUse,
@@ -17,7 +17,7 @@ export const DEFAULT_PUBKEY = new PublicKey(0);
 export enum CommonError {
   AccountIsNotInitialized = 3012,
   AccountIsAlreadyInitialized = 0,
-  GenericError = "Program failed to complete",
-  SplInsufficientFunds = "custom program error: 0x1",
-  SplOwnerDoesNotMatch = "custom program error: 0x4",
+  GenericError = 'Program failed to complete',
+  SplInsufficientFunds = 'custom program error: 0x1',
+  SplOwnerDoesNotMatch = 'custom program error: 0x4',
 }

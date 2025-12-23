@@ -14,18 +14,17 @@ token_authority = "6XqSwGFEuadyqXC9vBLYGJhvQsEVjPdCrtvN6inAb4z3"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
+cluster = "Devnet"
 wallet = "~/.config/solana/midas_id.json"
 
 [scripts]
-script = "yarn run ts-node"
-
-test = "RUST_LOG= yarn jest --maxWorkers=1 --testTimeout=1000000"
+script = "tsx"
+test = "RUST_LOG= yarn vitest run"
+test-ac = "yarn vitest run test/ac.test.ts"
+test-auth = "yarn vitest run test/token-authority.test.ts"
 test-cargo = "cargo test-sbf"
-test-ac = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/ac.test.ts"
-test-common = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/common-vault.test.ts"
-test-feed = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/data-feed.test.ts"
-test-minter = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/minter-vault.test.ts"
-test-redeemer = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/redeemer-vault.test.ts"
-test-auth = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/token-authority.test.ts"
-test-tokens = "yarn jest --maxWorkers=1 --testTimeout=1000000 test/mtokens.test.ts"
+test-common = "yarn vitest run test/common-vault.test.ts"
+test-feed = "yarn vitest run test/data-feed.test.ts"
+test-minter = "yarn vitest run test/minter-vault.test.ts"
+test-redeemer = "yarn vitest run test/redeemer-vault.test.ts"
+test-tokens = "yarn vitest run test/mtokens.test.ts"
