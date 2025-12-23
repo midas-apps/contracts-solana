@@ -1,16 +1,17 @@
 use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use data_feed::state::FeedState;
 
 use crate::{
     constants::ac_roles,
     state::{PaymentMintState, RedeemerVaultRequestState, RedeemerVaultState, VaultCommonState},
-    utils::{close_account, redeemer, Closable},
+    utils::{close_account, get_token_rate, redeemer, Closable},
 };
 
 #[derive(Accounts)]
 #[instruction(request_id: u64)]
-pub struct ApproveRedeemRequest<'info> {
+pub struct SafeApproveRedeemRequestAtCurrentRate<'info> {
     /// Account with vault admin role
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -110,6 +111,19 @@ pub struct ApproveRedeemRequest<'info> {
     )]
     pub m_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    /// mMint data feed state account
+    #[account(
+        address = vault_common.m_mint_feed
+    )]
+    pub m_mint_data_feed: Account<'info, FeedState>,
+
+    /// CHECK:
+    /// mMint underlying feed account
+    #[account(
+        address = m_mint_data_feed.underlying_feed
+    )]
+    pub m_mint_feed: AccountInfo<'info>,
+
     /// mMint token program
     pub m_mint_token_program: Interface<'info, TokenInterface>,
     /// Payment mint token program
@@ -118,7 +132,7 @@ pub struct ApproveRedeemRequest<'info> {
     pub system_program: Program<'info, System>,
 }
 
-impl<'info> Closable for ApproveRedeemRequest<'info> {
+impl<'info> Closable for SafeApproveRedeemRequestAtCurrentRate<'info> {
     /// Close implementation to close redeem request
     fn close(&mut self) -> Result<()> {
         close_account(
@@ -131,25 +145,28 @@ impl<'info> Closable for ApproveRedeemRequest<'info> {
     }
 }
 
-/// Approves redeem request and emits an event.
-/// Can be used only for non-fiat redeem requests.
-/// Can be called only by vault admin.
+/// Safely approves redeem request at the current mToken rate from data feed.
+/// Validates variation tolerance between request rate and current rate.
+/// Will close redeem request account after processing.
+/// Can only be called by the vault admin.
 ///
 /// # Arguments
 ///
-/// - `request_id` - ID of redeem request
-/// - `new_m_token_rate` - new mToken rate
-/// Using this value admin can correct the output mToken amount.
-/// - `is_safe` - if true, validates variation tolerance between request rate and new rate
+/// - `request_id` - id of the redeem request
 /// - `safe_validate_liquidity` - if true, checks redeemer liquidity before transfer
 /// and skips processing (returns success) if insufficient
 pub fn handle(
-    ctx: Context<ApproveRedeemRequest>,
+    ctx: Context<SafeApproveRedeemRequestAtCurrentRate>,
     request_id: u64,
-    new_m_token_rate: u64,
-    is_safe: bool,
     safe_validate_liquidity: bool,
 ) -> Result<()> {
+    let current_rate = get_token_rate(
+        &ctx.accounts.m_mint_data_feed,
+        &ctx.accounts.m_mint_feed,
+        false,
+    )?;
+    let new_m_token_rate: u64 = current_rate.try_into().unwrap();
+
     match redeemer::approve_redeem_request(
         &ctx.accounts.redeem_request,
         &ctx.accounts.vault_common,
@@ -164,7 +181,7 @@ pub fn handle(
         Some(&ctx.accounts.payment_mint_user_ata),
         request_id,
         new_m_token_rate.into(),
-        is_safe,
+        true,
         safe_validate_liquidity,
     ) {
         Ok(true) => {

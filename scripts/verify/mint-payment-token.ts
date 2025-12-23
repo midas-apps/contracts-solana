@@ -10,6 +10,7 @@ import { PublicKey, Transaction } from '@solana/web3.js';
 
 import { addresses } from '@/common/addresses';
 import { executeNetworkScript } from '@/common/scriptRunner';
+import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 import { createAtaIfNotExistsInx, formatUnits, parseUnits } from '@/test/helpers/common.helpers';
 
 import { getNetwork, getOptionalArg, getPaymentToken } from '../utils/argumentParser';
@@ -87,8 +88,8 @@ async function main(provider: AnchorProvider, payer: Wallet) {
   );
 
   console.log(`Minting ${amountStr} ${paymentToken}...`);
-  const signature = await provider.sendAndConfirm(transaction, [], {
-    commitment: 'finalized',
+  const result = await sendAndWaitForCustomSolanaTxSign(provider, transaction, [], {
+    comment: `Mint ${amountStr} ${paymentToken} to ${recipient.toBase58()}`,
   });
 
   // Get balance after minting
@@ -97,9 +98,9 @@ async function main(provider: AnchorProvider, payer: Wallet) {
 
   console.log(`✅ Successfully minted ${amountStr} ${paymentToken}`);
   console.log(`Balance after: ${formatUnits(balanceAfter, mintInfo.decimals)} ${paymentToken}`);
-  console.log(`Transaction signature: ${signature}`);
+  console.log(`Transaction signature: ${result.signature}`);
   console.log(
-    `View on Solana Explorer: https://explorer.solana.com/tx/${signature}?cluster=${network}`,
+    `View on Solana Explorer: https://explorer.solana.com/tx/${result.signature}?cluster=${network}`,
   );
 }
 

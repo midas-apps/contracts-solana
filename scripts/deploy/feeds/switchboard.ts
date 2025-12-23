@@ -176,7 +176,7 @@ export const deploySwitchboardFeed = async (
 
 // Switchboard program IDs from official documentation
 // https://docs.switchboard.xyz/tooling-and-resources/technical-resources-and-documentation/solana-accounts
-const SWITCHBOARD_PROGRAM_IDS = {
+export const SWITCHBOARD_PROGRAM_IDS = {
   devnet: 'Aio4gaXjXzJNVLtzwtNVmSqGKpANtXhybbkhtAC94ji2',
   mainnet: 'SBondMDrcV3K4kxZR1HNVT7osZxAHVHgYXL5Ze1oMUv',
 } as const;

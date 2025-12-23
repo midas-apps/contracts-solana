@@ -7,8 +7,8 @@ use crate::{
     errors::MidasVaultsError,
     program::MidasVaults,
     state::{
-        MinterVaultState, PauseInxState, PaymentMintState, RedeemerVaultRequestState,
-        RedeemerVaultState, VaultCommonAccountState, VaultCommonState,
+        MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState,
+        RedeemerVaultRequestState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState,
     },
 };
 use anchor_spl::{
@@ -232,20 +232,9 @@ pub fn require_variation_tolerance(
 
 /// Validates that minting `mint_amount` tokens would not exceed `max_supply_cap`.
 /// To disable the cap (unlimited), set `max_supply_cap` to `u64::MAX`.
-pub fn validate_max_supply_cap(
-    m_mint: &Mint,
-    minter: &MinterVaultState,
-    mint_amount: u64,
-) -> Result<()> {
+pub fn validate_max_supply_cap(m_mint: &Mint, minter: &MinterVaultState, mint_amount: u64) -> bool {
     let new_supply = m_mint.supply.checked_add(mint_amount).unwrap();
-
-    require_gte!(
-        minter.max_supply_cap,
-        new_supply,
-        MidasVaultsError::MaxSupplyCapExceeded
-    );
-
-    Ok(())
+    minter.max_supply_cap >= new_supply
 }
 
 /// Calculates fee for a given amount
@@ -535,9 +524,11 @@ pub fn burn_mtoken_with_signer<'info>(
 
 /// Contains utils and helpers for minter vault
 pub mod minter {
-    use anchor_spl::token_interface::Mint;
+    use access_control::state::AccountAccessControlRoleState;
+    use token_authority::{program::TokenAuthority, state::TokenAuthorityState};
 
     use super::*;
+    use crate::events::MinterVaultRequestApprovedEvent;
 
     #[derive(AnchorDeserialize, AnchorSerialize)]
     /// Return type for `calc_and_validate_deposit`
@@ -673,6 +664,65 @@ pub mod minter {
                 .unwrap(),
             rate,
         ))
+    }
+
+    // Approves mint request. Returns Ok(true) on success, Ok(false) if skipped.
+    #[allow(clippy::too_many_arguments)]
+    pub fn approve_mint_request<'info>(
+        request: &MintVaultRequestState,
+        vault_common: &Account<'info, VaultCommonState>,
+        minter_vault: &Account<'info, MinterVaultState>,
+        m_mint: &Box<InterfaceAccount<'info, Mint>>,
+        m_mint_user_ata: &Box<InterfaceAccount<'info, TokenAccount>>,
+        m_mint_token_program: &Interface<'info, TokenInterface>,
+        user_account: &AccountInfo<'info>,
+        token_authority: &Account<'info, TokenAuthorityState>,
+        vault_minter_role: &Account<'info, AccountAccessControlRoleState>,
+        system_program: &Program<'info, System>,
+        token_authority_program: &Program<'info, TokenAuthority>,
+        request_id: u64,
+        new_out_rate: u128,
+        is_safe: bool,
+        skip_on_supply_cap_exceeded: bool,
+    ) -> Result<bool> {
+        if is_safe {
+            require_variation_tolerance(vault_common, request.m_mint_rate.into(), new_out_rate)?;
+        }
+
+        let amount_to_mint = (request.deposited_usd_wo_fees as u128)
+            .checked_mul(ONE.into())
+            .unwrap()
+            .checked_div(new_out_rate)
+            .unwrap();
+
+        if !validate_max_supply_cap(m_mint, minter_vault, amount_to_mint.try_into().unwrap()) {
+            if skip_on_supply_cap_exceeded {
+                return Ok(false);
+            }
+            return Err(MidasVaultsError::MaxSupplyCapExceeded.into());
+        }
+
+        mint_token(
+            &vault_common.key(),
+            &minter_vault.to_account_info(),
+            user_account,
+            &token_authority.to_account_info(),
+            &vault_minter_role.to_account_info(),
+            &m_mint.to_account_info(),
+            &m_mint_user_ata.to_account_info(),
+            &m_mint_token_program.to_account_info(),
+            &system_program.to_account_info(),
+            &token_authority_program.to_account_info(),
+            amount_to_mint.try_into().unwrap(),
+        )?;
+
+        emit!(MinterVaultRequestApprovedEvent {
+            common_vault: vault_common.key(),
+            new_out_rate: new_out_rate as u64,
+            request_id
+        });
+
+        Ok(true)
     }
 }
 
@@ -914,8 +964,25 @@ pub mod redeemer {
         Ok(())
     }
 
-    /// Approves redeem request. Moved to utils as the approval
-    /// logic is the same for fiat and not-fiat requests
+    /// Validates that requestRedeemer has sufficient balance for the transfer.
+    pub fn validate_liquidity(
+        redeemer_ata: &Box<InterfaceAccount<'_, TokenAccount>>,
+        payment_mint: &Box<InterfaceAccount<'_, Mint>>,
+        amount_base9: u128,
+    ) -> bool {
+        let transfer_amount: u64 =
+            match decimals_conversion::convert_from_base_9(amount_base9, payment_mint.decimals) {
+                Ok(v) => match v.try_into() {
+                    Ok(amount) => amount,
+                    Err(_) => return false,
+                },
+                Err(_) => return false,
+            };
+
+        redeemer_ata.amount >= transfer_amount
+    }
+
+    /// Approves redeem request. Returns Ok(true) on success, Ok(false) if skipped.
     pub fn approve_redeem_request<'info>(
         request: &RedeemerVaultRequestState,
         vault_common: &Account<'info, VaultCommonState>,
@@ -933,7 +1000,8 @@ pub mod redeemer {
         request_id: u64,
         new_m_token_rate: u128,
         is_safe: bool,
-    ) -> Result<()> {
+        safe_validate_liquidity: bool,
+    ) -> Result<bool> {
         let (expected_mint_key, is_fiat) = if let Some(payment_mint) = payment_mint {
             (payment_mint.key(), false)
         } else {
@@ -954,15 +1022,6 @@ pub mod redeemer {
             )?;
         }
 
-        burn_mtoken_with_signer(
-            &vault_common.key(),
-            m_mint_token_program,
-            m_mint,
-            &redeemer_vault.to_account_info(),
-            m_mint_vault_ata,
-            request.m_token_amount.into(),
-        )?;
-
         let decimals = if let Some(payment_mint) = payment_mint {
             payment_mint.decimals
         } else {
@@ -978,9 +1037,17 @@ pub mod redeemer {
             decimals,
         )?;
 
-        require_and_update_allowance(payment_mint_state, amount_token_wo_fee)?;
-
         if !is_fiat {
+            if safe_validate_liquidity
+                && !validate_liquidity(
+                    payment_mint_redeemer_ata.unwrap(),
+                    payment_mint.unwrap(),
+                    amount_token_wo_fee,
+                )
+            {
+                return Ok(false);
+            }
+
             transfer_token_with_signer(
                 &vault_common.key(),
                 RedeemerVaultState::SEED,
@@ -993,12 +1060,23 @@ pub mod redeemer {
             )?;
         }
 
+        require_and_update_allowance(payment_mint_state, amount_token_wo_fee)?;
+
+        burn_mtoken_with_signer(
+            &vault_common.key(),
+            m_mint_token_program,
+            m_mint,
+            &redeemer_vault.to_account_info(),
+            m_mint_vault_ata,
+            request.m_token_amount.into(),
+        )?;
+
         emit!(RedeemerVaultRequestApprovedEvent {
             request_id,
             common_vault: vault_common.key(),
             new_out_rate: new_m_token_rate as u64
         });
-        Ok(())
+        Ok(true)
     }
 
     /// Calculates shared parameters for instant and redeem redeems.

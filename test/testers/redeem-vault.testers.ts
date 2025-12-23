@@ -613,17 +613,20 @@ export const approveRedeemRequest = async (
     isSafe,
     requestId,
     isFiat,
+    safeValidateLiquidity,
   }: {
     requestId?: bigint;
     newRate?: bigint;
     isSafe?: boolean;
     isFiat?: boolean;
+    safeValidateLiquidity?: boolean;
   },
   accounts?: {
     commonVault?: PublicKey;
   },
   expected?: {
     tokensReceived?: number;
+    expectSkipped?: boolean;
   },
   opt?: OptionalCommonParams,
 ) => {
@@ -633,10 +636,13 @@ export const approveRedeemRequest = async (
     tokensReceived: 9.9,
   };
 
+  const expectSkipped = expected?.expectSkipped ?? false;
+
   isFiat ??= false;
   newRate ??= parseUnits('1');
   isSafe ??= false;
   requestId ??= 0n;
+  safeValidateLiquidity ??= false;
 
   const baseAccounts = {
     vaultCommon: accounts?.commonVault ?? fixture.redeemerCommonVault.publicKey,
@@ -772,7 +778,7 @@ export const approveRedeemRequest = async (
         })
         .transaction()
     : await vaultsProgram.methods
-        .approveRedeemRequest(toBN(requestId), toBN(newRate), isSafe)
+        .approveRedeemRequest(toBN(requestId), toBN(newRate), isSafe, safeValidateLiquidity)
         .accountsPartial({
           ...baseAccounts,
           authority: from.publicKey,
@@ -803,6 +809,443 @@ export const approveRedeemRequest = async (
   }
 
   await expectTxNotReverted(context, tx, [from]);
+
+  // When expectSkipped is true, the operation was silently skipped - don't check state changes
+  if (expectSkipped) {
+    return;
+  }
+
+  const stateAfter = await fetchState(user);
+
+  expect(stateAfter.requestState).toEqual(null);
+
+  if (fromBN(stateBefore.paymentTokenState.allowance) !== MAX_U128) {
+    expect(fromBN(stateAfter.paymentTokenState.allowance)).toEqual(
+      fromBN(stateBefore.paymentTokenState.allowance) -
+        parseUnits((expected.tokensReceived ?? 0n).toString()),
+    );
+  }
+
+  expect(fromBN(stateAfter.commonVaultState.instantDailyLimitUsed)).toEqual(
+    fromBN(stateBefore.commonVaultState.instantDailyLimitUsed),
+  );
+
+  expect(stateAfter.commonVaultAccountState.freeFromMinFirstMint).toEqual(false);
+
+  if (!from.publicKey.equals(user)) {
+    expect(stateAfter.balanceFromPaymentMint).toEqual(stateBefore.balanceFromPaymentMint);
+  }
+
+  expect(stateAfter.balanceUserPaymentMint).toEqual(
+    stateBefore.balanceUserPaymentMint + expectedTokensReceivedParsed,
+  );
+
+  expect(stateAfter.balanceUserMMint).toEqual(stateBefore.balanceUserMMint);
+
+  expect(stateAfter.mTokenState.supply).toEqual(
+    stateBefore.mTokenState.supply - fromBN(stateBefore.requestState.mTokenAmount),
+  );
+
+  expect(stateAfter.balanceFeeReceiverMMint).toEqual(stateBefore.balanceFeeReceiverMMint);
+
+  expect(stateAfter.balanceVaultPaymentMint).toEqual(stateBefore.balanceVaultPaymentMint);
+
+  expect(stateAfter.balanceRedeemerPaymentMint).toEqual(
+    stateBefore.balanceRedeemerPaymentMint - expectedTokensReceivedParsed,
+  );
+
+  return { stateAfter };
+};
+
+export const safeApproveRedeemRequestAtCurrentRate = async (
+  fixture: CommonRedeemVaultParams,
+  {
+    requestId,
+    safeValidateLiquidity,
+  }: {
+    requestId?: bigint;
+    safeValidateLiquidity?: boolean;
+  },
+  accounts?: {
+    commonVault?: PublicKey;
+  },
+  expected?: {
+    tokensReceived?: number;
+    expectSkipped?: boolean;
+  },
+  opt?: OptionalCommonParams,
+) => {
+  const { dataFeedProgram, vaultsProgram, authority: owner, context, connection } = fixture;
+
+  expected ??= {
+    tokensReceived: 9.9,
+  };
+
+  const expectSkipped = expected?.expectSkipped ?? false;
+
+  requestId ??= 0n;
+  safeValidateLiquidity ??= false;
+
+  const baseAccounts = {
+    vaultCommon: accounts?.commonVault ?? fixture.redeemerCommonVault.publicKey,
+  };
+
+  const from = opt?.from ?? owner;
+
+  // eslint-disable-next-line prefer-const
+  let requestStateCached: Awaited<ReturnType<typeof fetchRedeemerVaultRequestState>>;
+
+  const fetchState = async (_user?: PublicKey) => {
+    const requestState = await fetchRedeemerVaultRequestState(
+      vaultsProgram,
+      getRedeemerVaultRequestPda(getRedeemerVaultPda(baseAccounts.vaultCommon), requestId),
+      true,
+    );
+
+    const state = requestState ?? requestStateCached;
+
+    const redeemerVaultState = await fetchRedeemerVaultState(
+      vaultsProgram,
+      getRedeemerVaultPda(baseAccounts.vaultCommon),
+    );
+
+    const commonVaultState = await fetchVaultCommonState(vaultsProgram, baseAccounts.vaultCommon);
+
+    const commonVaultAccountState = await fetchVaultCommonAccountState(
+      vaultsProgram,
+      getCommonVaultAccountStatePda(baseAccounts.vaultCommon, state.user),
+    );
+
+    const mMintFeed = await fetchDataFeedState(dataFeedProgram, commonVaultState.mMintFeed);
+
+    const paymentTokenState = await fetchPaymentMintState(
+      vaultsProgram,
+      getPaymentMintStatePda(baseAccounts.vaultCommon, state.paymentMint),
+    );
+
+    const paymentTokenFeed = await fetchDataFeedState(dataFeedProgram, paymentTokenState.dataFeed);
+
+    const balanceUserPaymentMint = await getBalance(connection, state.user, state.paymentMint);
+
+    const balanceFromPaymentMint = await getBalance(connection, from.publicKey, state.paymentMint);
+
+    const balanceVaultPaymentMint = await getBalance(
+      connection,
+      getRedeemerVaultPda(baseAccounts.vaultCommon),
+      state.paymentMint,
+    );
+
+    const balanceRedeemerPaymentMint = await getBalance(
+      connection,
+      redeemerVaultState.requestRedeemer,
+      state.paymentMint,
+    );
+
+    const balanceUserMMint = await getBalance(
+      connection,
+      state.user,
+      commonVaultState.mMint,
+      TOKEN_2022_PROGRAM_ID,
+    );
+
+    const balanceFeeReceiverMMint = await getBalance(
+      connection,
+      commonVaultState.feeReceiver,
+      commonVaultState.mMint,
+      TOKEN_2022_PROGRAM_ID,
+    );
+
+    const mTokenState = await getMint(
+      connection,
+      commonVaultState.mMint,
+      undefined,
+      TOKEN_2022_PROGRAM_ID,
+    );
+
+    const paymentToken = await getMint(connection, state.paymentMint);
+
+    return {
+      redeemerVaultState,
+      commonVaultState,
+      requestState,
+      paymentToken,
+      commonVaultAccountState,
+      mMintFeed,
+      paymentTokenFeed,
+      balanceUserPaymentMint,
+      balanceFromPaymentMint,
+      balanceVaultPaymentMint,
+      balanceRedeemerPaymentMint,
+      balanceUserMMint,
+      balanceFeeReceiverMMint,
+      mTokenState,
+      paymentTokenState,
+    };
+  };
+
+  const stateBefore = await fetchState();
+  requestStateCached = stateBefore.requestState;
+
+  const expectedTokensReceivedParsed = parseUnits(
+    (expected?.tokensReceived ?? 0n).toString(),
+    stateBefore.paymentToken.decimals,
+  );
+
+  expect(stateBefore.requestState).not.toEqual(null);
+
+  const user = stateBefore.requestState.user;
+
+  const tx = await vaultsProgram.methods
+    .safeApproveRedeemRequestAtCurrentRate(toBN(requestId), safeValidateLiquidity)
+    .accountsPartial({
+      ...baseAccounts,
+      authority: from.publicKey,
+      redeemRequest: getRedeemerVaultRequestPda(
+        getRedeemerVaultPda(baseAccounts.vaultCommon),
+        requestId,
+      ),
+      userAccount: user,
+      mMint: stateBefore.commonVaultState.mMint,
+      mMintFeed: stateBefore.mMintFeed.underlyingFeed,
+      mMintDataFeed: stateBefore.commonVaultState.mMintFeed,
+      mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
+      paymentMint: stateBefore.requestState.paymentMint,
+      paymentMintTokenProgram: TOKEN_PROGRAM_ID,
+      requestRedeemer: stateBefore.redeemerVaultState.requestRedeemer,
+      authorityAcRole: getAccountAcRoleStatePda(
+        stateBefore.commonVaultState.acRole,
+        from.publicKey,
+        VAULT_AC_ROLES.VAULT_ADMIN,
+      ),
+    })
+    .transaction();
+
+  if (opt?.revertedWith !== undefined) {
+    await expectTxReverted(context, tx, [from], opt);
+    return;
+  }
+
+  await expectTxNotReverted(context, tx, [from]);
+
+  // When expectSkipped is true, the operation was silently skipped - don't check state changes
+  if (expectSkipped) {
+    return;
+  }
+
+  const stateAfter = await fetchState(user);
+
+  expect(stateAfter.requestState).toEqual(null);
+
+  if (fromBN(stateBefore.paymentTokenState.allowance) !== MAX_U128) {
+    expect(fromBN(stateAfter.paymentTokenState.allowance)).toEqual(
+      fromBN(stateBefore.paymentTokenState.allowance) -
+        parseUnits((expected.tokensReceived ?? 0n).toString()),
+    );
+  }
+
+  expect(fromBN(stateAfter.commonVaultState.instantDailyLimitUsed)).toEqual(
+    fromBN(stateBefore.commonVaultState.instantDailyLimitUsed),
+  );
+
+  expect(stateAfter.commonVaultAccountState.freeFromMinFirstMint).toEqual(false);
+
+  if (!from.publicKey.equals(user)) {
+    expect(stateAfter.balanceFromPaymentMint).toEqual(stateBefore.balanceFromPaymentMint);
+  }
+
+  expect(stateAfter.balanceUserPaymentMint).toEqual(
+    stateBefore.balanceUserPaymentMint + expectedTokensReceivedParsed,
+  );
+
+  expect(stateAfter.balanceUserMMint).toEqual(stateBefore.balanceUserMMint);
+
+  expect(stateAfter.mTokenState.supply).toEqual(
+    stateBefore.mTokenState.supply - fromBN(stateBefore.requestState.mTokenAmount),
+  );
+
+  expect(stateAfter.balanceFeeReceiverMMint).toEqual(stateBefore.balanceFeeReceiverMMint);
+
+  expect(stateAfter.balanceVaultPaymentMint).toEqual(stateBefore.balanceVaultPaymentMint);
+
+  expect(stateAfter.balanceRedeemerPaymentMint).toEqual(
+    stateBefore.balanceRedeemerPaymentMint - expectedTokensReceivedParsed,
+  );
+
+  return { stateAfter };
+};
+
+export const safeApproveRedeemRequestAtRequestRate = async (
+  fixture: CommonRedeemVaultParams,
+  {
+    requestId,
+    safeValidateLiquidity,
+  }: {
+    requestId?: bigint;
+    safeValidateLiquidity?: boolean;
+  },
+  accounts?: {
+    commonVault?: PublicKey;
+  },
+  expected?: {
+    tokensReceived?: number;
+    expectSkipped?: boolean;
+  },
+  opt?: OptionalCommonParams,
+) => {
+  const { dataFeedProgram, vaultsProgram, authority: owner, context, connection } = fixture;
+
+  expected ??= {
+    tokensReceived: 9.9,
+  };
+
+  const expectSkipped = expected?.expectSkipped ?? false;
+
+  requestId ??= 0n;
+  safeValidateLiquidity ??= false;
+
+  const baseAccounts = {
+    vaultCommon: accounts?.commonVault ?? fixture.redeemerCommonVault.publicKey,
+  };
+
+  const from = opt?.from ?? owner;
+
+  // eslint-disable-next-line prefer-const
+  let requestStateCached: Awaited<ReturnType<typeof fetchRedeemerVaultRequestState>>;
+
+  const fetchState = async (_user?: PublicKey) => {
+    const requestState = await fetchRedeemerVaultRequestState(
+      vaultsProgram,
+      getRedeemerVaultRequestPda(getRedeemerVaultPda(baseAccounts.vaultCommon), requestId),
+      true,
+    );
+
+    const state = requestState ?? requestStateCached;
+
+    const redeemerVaultState = await fetchRedeemerVaultState(
+      vaultsProgram,
+      getRedeemerVaultPda(baseAccounts.vaultCommon),
+    );
+
+    const commonVaultState = await fetchVaultCommonState(vaultsProgram, baseAccounts.vaultCommon);
+
+    const commonVaultAccountState = await fetchVaultCommonAccountState(
+      vaultsProgram,
+      getCommonVaultAccountStatePda(baseAccounts.vaultCommon, state.user),
+    );
+
+    const mMintFeed = await fetchDataFeedState(dataFeedProgram, commonVaultState.mMintFeed);
+
+    const paymentTokenState = await fetchPaymentMintState(
+      vaultsProgram,
+      getPaymentMintStatePda(baseAccounts.vaultCommon, state.paymentMint),
+    );
+
+    const paymentTokenFeed = await fetchDataFeedState(dataFeedProgram, paymentTokenState.dataFeed);
+
+    const balanceUserPaymentMint = await getBalance(connection, state.user, state.paymentMint);
+
+    const balanceFromPaymentMint = await getBalance(connection, from.publicKey, state.paymentMint);
+
+    const balanceVaultPaymentMint = await getBalance(
+      connection,
+      getRedeemerVaultPda(baseAccounts.vaultCommon),
+      state.paymentMint,
+    );
+
+    const balanceRedeemerPaymentMint = await getBalance(
+      connection,
+      redeemerVaultState.requestRedeemer,
+      state.paymentMint,
+    );
+
+    const balanceUserMMint = await getBalance(
+      connection,
+      state.user,
+      commonVaultState.mMint,
+      TOKEN_2022_PROGRAM_ID,
+    );
+
+    const balanceFeeReceiverMMint = await getBalance(
+      connection,
+      commonVaultState.feeReceiver,
+      commonVaultState.mMint,
+      TOKEN_2022_PROGRAM_ID,
+    );
+
+    const mTokenState = await getMint(
+      connection,
+      commonVaultState.mMint,
+      undefined,
+      TOKEN_2022_PROGRAM_ID,
+    );
+
+    const paymentToken = await getMint(connection, state.paymentMint);
+
+    return {
+      redeemerVaultState,
+      commonVaultState,
+      requestState,
+      paymentToken,
+      commonVaultAccountState,
+      mMintFeed,
+      paymentTokenFeed,
+      balanceUserPaymentMint,
+      balanceFromPaymentMint,
+      balanceVaultPaymentMint,
+      balanceRedeemerPaymentMint,
+      balanceUserMMint,
+      balanceFeeReceiverMMint,
+      mTokenState,
+      paymentTokenState,
+    };
+  };
+
+  const stateBefore = await fetchState();
+  requestStateCached = stateBefore.requestState;
+
+  const expectedTokensReceivedParsed = parseUnits(
+    (expected?.tokensReceived ?? 0n).toString(),
+    stateBefore.paymentToken.decimals,
+  );
+
+  expect(stateBefore.requestState).not.toEqual(null);
+
+  const user = stateBefore.requestState.user;
+
+  const tx = await vaultsProgram.methods
+    .safeApproveRedeemRequestAtRequestRate(toBN(requestId), safeValidateLiquidity)
+    .accountsPartial({
+      ...baseAccounts,
+      authority: from.publicKey,
+      redeemRequest: getRedeemerVaultRequestPda(
+        getRedeemerVaultPda(baseAccounts.vaultCommon),
+        requestId,
+      ),
+      userAccount: user,
+      mMint: stateBefore.commonVaultState.mMint,
+      mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
+      paymentMint: stateBefore.requestState.paymentMint,
+      paymentMintTokenProgram: TOKEN_PROGRAM_ID,
+      requestRedeemer: stateBefore.redeemerVaultState.requestRedeemer,
+      authorityAcRole: getAccountAcRoleStatePda(
+        stateBefore.commonVaultState.acRole,
+        from.publicKey,
+        VAULT_AC_ROLES.VAULT_ADMIN,
+      ),
+    })
+    .transaction();
+
+  if (opt?.revertedWith !== undefined) {
+    await expectTxReverted(context, tx, [from], opt);
+    return;
+  }
+
+  await expectTxNotReverted(context, tx, [from]);
+
+  // When expectSkipped is true, the operation was silently skipped - don't check state changes
+  if (expectSkipped) {
+    return;
+  }
 
   const stateAfter = await fetchState(user);
 

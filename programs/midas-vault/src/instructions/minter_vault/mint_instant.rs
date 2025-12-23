@@ -260,11 +260,13 @@ pub fn handle(
         )?;
     }
 
-    validate_max_supply_cap(
+    if !validate_max_supply_cap(
         &ctx.accounts.m_mint,
         &ctx.accounts.minter_vault,
         params.m_token_amount.try_into().unwrap(),
-    )?;
+    ) {
+        return Err(MidasVaultsError::MaxSupplyCapExceeded.into());
+    }
 
     mint_token(
         &ctx.accounts.vault_common.key(),

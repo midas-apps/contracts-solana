@@ -18,6 +18,8 @@ import {
   newMinterVault,
   prepareCommonMintTest,
   rejectMintRequest,
+  safeApproveMintRequestAtCurrentRate,
+  safeApproveMintRequestAtRequestRate,
   updateMinterVault,
 } from './testers/minter-vault.testers';
 import { transferToken } from './testers/redeem-vault.testers';
@@ -1384,6 +1386,181 @@ describe('minter-vault', () => {
         {},
         {
           revertedWith: VaultError.MaxSupplyCapExceeded,
+        },
+      );
+    });
+
+    it('should silently skip with skipOnSupplyCapExceeded=true when max supply cap exceeded', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updateVaultCommonAccount(fixture, { waivedFee: true });
+
+      await mintRequest(fixture, { amountToken: 100 }, {}, { fee: 0 });
+
+      // Reduce cap before approval
+      await updateMinterVault(fixture, { maxSupplyCap: parseUnits('50') });
+
+      // Should not throw, silently skips
+      await approveMintRequest(
+        fixture,
+        { requestId: 0n, skipOnSupplyCapExceeded: true },
+        {},
+        { expectSkipped: true },
+      );
+    });
+
+    it('should still revert with skipOnSupplyCapExceeded=true when variation tolerance exceeded', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      // skipOnSupplyCapExceeded only skips MaxSupplyCapExceeded, other errors still revert
+      await approveMintRequest(
+        fixture,
+        { isSafe: true, newRate: parseUnits('1.11'), skipOnSupplyCapExceeded: true },
+        {},
+        {},
+        { revertedWith: VaultError.VariationToleranceExceeded },
+      );
+    });
+  });
+
+  describe('safe_approve_mint_request_at_current_rate', () => {
+    it('should approve mint request at current rate', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      await safeApproveMintRequestAtCurrentRate(fixture, {});
+    });
+
+    it('should fail: when current rate exceeds variation tolerance', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      // Change rate significantly after request was created
+      await updateManualFeed(fixture, {
+        price: parseUnits('1.11'),
+      });
+
+      await safeApproveMintRequestAtCurrentRate(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          revertedWith: VaultError.VariationToleranceExceeded,
+        },
+      );
+    });
+
+    it('should fail: call from non-authority', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      await safeApproveMintRequestAtCurrentRate(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('should fail: max supply cap exceeded', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updateVaultCommonAccount(fixture, { waivedFee: true });
+
+      await mintRequest(fixture, { amountToken: 100 }, {}, { fee: 0 });
+
+      // Reduce cap before approval
+      await updateMinterVault(fixture, { maxSupplyCap: parseUnits('50') });
+
+      await safeApproveMintRequestAtCurrentRate(
+        fixture,
+        { requestId: 0n },
+        {},
+        {},
+        {
+          revertedWith: VaultError.MaxSupplyCapExceeded,
+        },
+      );
+    });
+  });
+
+  describe('safe_approve_mint_request_at_request_rate', () => {
+    it('should approve mint request at request rate', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      await safeApproveMintRequestAtRequestRate(fixture, {});
+    });
+
+    it('should succeed even when current rate changed significantly', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      // Change rate significantly after request was created
+      await updateManualFeed(fixture, {
+        price: parseUnits('1.5'),
+      });
+
+      // Should still succeed using the original request rate
+      await safeApproveMintRequestAtRequestRate(fixture, {});
+    });
+
+    it('should fail: max supply cap exceeded', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updateVaultCommonAccount(fixture, { waivedFee: true });
+
+      await mintRequest(fixture, { amountToken: 100 }, {}, { fee: 0 });
+
+      // Reduce cap before approval
+      await updateMinterVault(fixture, { maxSupplyCap: parseUnits('50') });
+
+      await safeApproveMintRequestAtRequestRate(
+        fixture,
+        { requestId: 0n },
+        {},
+        {},
+        {
+          revertedWith: VaultError.MaxSupplyCapExceeded,
+        },
+      );
+    });
+
+    it('should fail: call from non-authority', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      await safeApproveMintRequestAtRequestRate(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
         },
       );
     });
