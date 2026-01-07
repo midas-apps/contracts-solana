@@ -1,21 +1,9 @@
-import { PublicKey } from '@solana/web3.js';
 import { z } from 'zod';
 
 import { PaymentToken } from '@/common/tokenTypes';
 
+import { publicKeySchema } from './common-schemas';
 import { grantRolesConfigSchema } from './roles-types';
-
-export const publicKeySchema = z.string().refine(
-  (val) => {
-    try {
-      new PublicKey(val);
-      return true;
-    } catch {
-      return false;
-    }
-  },
-  { message: 'Invalid PublicKey format' },
-);
 
 /**
  * Validates price strings (e.g., "0.1", "100000")
@@ -52,7 +40,7 @@ const ethereumAddressSchema = z.string().refine((val) => /^0x[a-fA-F0-9]{40}$/.t
   message: 'Must be a valid Ethereum address (0x followed by 40 hex characters)',
 });
 
-export const dataFeedModeSchema = z.enum(['switchboard', 'pyth', 'chainlink', 'manual']);
+export const dataFeedModeSchema = z.enum(['switchboard', 'pyth', 'manual']);
 
 export const switchboardConfigSchema = z.object({
   env: z.enum(['devnet', 'mainnet']),
@@ -87,17 +75,17 @@ export const dataFeedConfigSchema = z
   //   If provided, uses existing Switchboard feed.
   // - manual: optional. If not provided, creates a new manual feed PDA internally.
   //   If provided, uses the specified feed address.
-  // - pyth/chainlink: required. Must reference an existing oracle feed address.
+  // - pyth: required. Must reference an existing oracle feed address.
   .refine(
     (data) => {
-      // Pyth and Chainlink modes: underlyingFeed is required
-      if (data.mode === 'pyth' || data.mode === 'chainlink') {
+      // Pyth mode: underlyingFeed is required
+      if (data.mode === 'pyth') {
         return data.underlyingFeed !== undefined;
       }
       return true;
     },
     {
-      message: 'underlyingFeed is required for pyth and chainlink modes',
+      message: 'underlyingFeed is required for pyth mode',
       path: ['underlyingFeed'],
     },
   )

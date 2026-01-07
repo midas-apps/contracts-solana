@@ -121,10 +121,16 @@ async function addPaymentTokenToVault(
     action: 'update-vault',
     comment: `Add ${paymentToken} payment token to ${mtoken} vault`,
     mToken: mtoken,
-    waitForTx: true,
+    waitForTx: false,
   });
 
-  return txResult.signature || '';
+  if (txResult.signature) {
+    return txResult.signature;
+  }
+
+  // Fordefi multi-sig - transaction pending approval
+  console.log(`   ⏳ Pending approval | Fordefi TX ID: ${txResult.txId}`);
+  return `pending:${txResult.txId}`;
 }
 
 async function main(provider: AnchorProvider, payer: Wallet) {
@@ -253,7 +259,15 @@ async function main(provider: AnchorProvider, payer: Wallet) {
   }
 
   if (results.length > 0) {
-    console.log(`\n✅ Successfully added ${results.length} payment token(s) to vault(s)!`);
+    const pending = results.filter((r) => r.tx.startsWith('pending:'));
+    const completed = results.filter((r) => !r.tx.startsWith('pending:'));
+
+    if (completed.length > 0) {
+      console.log(`\n✅ Successfully added ${completed.length} payment token(s) to vault(s)!`);
+    }
+    if (pending.length > 0) {
+      console.log(`\n⏳ ${pending.length} transaction(s) awaiting approval in Fordefi dashboard`);
+    }
   } else {
     console.log('\n⚠️  No payment tokens were added');
   }

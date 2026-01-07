@@ -81,7 +81,7 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main, 'deployer');
+executeNetworkScript(network, main);
 
 // Usage:
 // yarn tsx scripts/tasks/verify/verify-roles.ts --network devnet --mtoken mTBILL

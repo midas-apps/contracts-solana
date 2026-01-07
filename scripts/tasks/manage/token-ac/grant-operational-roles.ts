@@ -11,12 +11,12 @@ import {
   fetchAccountAcRoleState,
 } from '@/test/helpers/ac.helpers';
 
-import { loadTokenConfig } from '../../configs/loadTokenConfig';
-import { networkRolesConfigs } from '../../configs/network-roles';
-import { ROLE_GROUPS } from '../../configs/roles-types';
-import { getAcProgram } from '../../deploy/ac';
-import { getTokenAddresses } from '../../utils/addressQueries';
-import { getMtoken, getNetwork } from '../../utils/argumentParser';
+import { loadTokenConfig } from '../../../configs/loadTokenConfig';
+import { networkRolesConfigs } from '../../../configs/network-roles';
+import { ROLE_GROUPS } from '../../../configs/roles-types';
+import { getAcProgram } from '../../../deploy/ac';
+import { getTokenAddresses } from '../../../utils/addressQueries';
+import { getMtoken, getNetwork } from '../../../utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const mtoken = getMtoken();
@@ -67,9 +67,9 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   if (!payerHasAdmin) {
     throw createUserError('Current wallet missing ADMIN role', [
       'Run the full 3-step process:',
-      `1. yarn grant:admin-role --mtoken ${mtoken} --network ${network}`,
-      `2. yarn revoke:deployer-roles --mtoken ${mtoken} --network ${network}`,
-      `3. yarn grant:operational-roles --mtoken ${mtoken} --network ${network}`,
+      `1. yarn token-ac:grant-admin --mtoken ${mtoken} --network ${network}`,
+      `2. yarn token-ac:revoke-deployer --mtoken ${mtoken} --network ${network}`,
+      `3. yarn token-ac:grant-operational --mtoken ${mtoken} --network ${network}`,
     ]);
   }
 
@@ -136,12 +136,19 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
     action: 'update-ac',
     comment: `Grant operational ${mtoken} roles`,
     mToken: mtoken,
-    waitForTx: true,
+    waitForTx: false,
   });
 
-  const txInfo = result.signature || result.txId;
-  console.log(`✓ ${toGrant.length} roles granted | TX: ${txInfo}`);
-  console.log('\n✅ Role transfer complete!\n');
+  if (result.signature) {
+    // Local wallet or auto-approved - transaction already mined
+    console.log(`✓ ${toGrant.length} roles granted | TX: ${result.signature}`);
+    console.log('\n✅ Role transfer complete!\n');
+  } else {
+    // Fordefi multi-sig - transaction pending approval
+    console.log(`✓ Transaction created | Fordefi TX ID: ${result.txId}`);
+    console.log(`\n⏳ Awaiting approval in Fordefi dashboard`);
+    console.log(`   This transaction requires multi-sig approval before mining.\n`);
+  }
 }
 
 const network = getNetwork();

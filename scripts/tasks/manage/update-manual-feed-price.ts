@@ -97,12 +97,18 @@ async function main(provider: AnchorProvider, payer: Wallet) {
     action: 'update-feed-ptoken',
     comment: `Update manual feed price for ${mtoken}`,
     mToken: mtoken,
-    waitForTx: true,
+    waitForTx: false,
   });
 
-  console.log(`\n✅ Manual feed price updated successfully!`);
   if (txResult.signature) {
+    // Local wallet or auto-approved - transaction already mined
+    console.log(`\n✅ Manual feed price updated successfully!`);
     console.log(`📝 Transaction: ${txResult.signature}\n`);
+  } else {
+    // Fordefi multi-sig - transaction pending approval
+    console.log(`\n✓ Transaction created | Fordefi TX ID: ${txResult.txId}`);
+    console.log(`⏳ Awaiting approval in Fordefi dashboard`);
+    console.log(`   This transaction requires multi-sig approval before mining.\n`);
   }
 }
 

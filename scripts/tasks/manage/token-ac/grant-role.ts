@@ -10,9 +10,9 @@ import {
   fetchAccountAcRoleState,
 } from '@/test/helpers/ac.helpers';
 
-import { getAcProgram } from '../../deploy/ac';
-import { getTokenAddresses } from '../../utils/addressQueries';
-import { getMtoken, getNetwork, getRole } from '../../utils/argumentParser';
+import { getAcProgram } from '../../../deploy/ac';
+import { getTokenAddresses } from '../../../utils/addressQueries';
+import { getMtoken, getNetwork, getRole } from '../../../utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Wallet) {
   const mtoken = getMtoken();

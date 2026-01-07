@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { publicKeySchema } from './types';
+import { publicKeySchema } from './common-schemas';
 
 // Token-level operational role configuration (per token per network)
 export const grantRolesConfigSchema = z.object({

@@ -11,11 +11,11 @@ import {
   fetchAccountAcRoleState,
 } from '@/test/helpers/ac.helpers';
 
-import { networkRolesConfigs } from '../../configs/network-roles';
-import { DEPLOYER_AUTO_ROLES } from '../../configs/roles-types';
-import { getAcProgram } from '../../deploy/ac';
-import { getTokenAddresses } from '../../utils/addressQueries';
-import { getMtoken, getNetwork } from '../../utils/argumentParser';
+import { networkRolesConfigs } from '../../../configs/network-roles';
+import { DEPLOYER_AUTO_ROLES } from '../../../configs/roles-types';
+import { getAcProgram } from '../../../deploy/ac';
+import { getTokenAddresses } from '../../../utils/addressQueries';
+import { getMtoken, getNetwork } from '../../../utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const mtoken = getMtoken();
@@ -81,11 +81,13 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
     const hasAdmin = deployerRoles.find((r) => r.role === AC_ROLES.ADMIN && r.exists);
     if (hasAdmin) {
       console.log('✓ Operational roles already revoked (ADMIN remains)');
-      console.log('  Run grant:admin-role first, then re-run to revoke ADMIN.\n');
+      console.log('  Run token-ac:grant-admin first, then re-run to revoke ADMIN.\n');
     } else {
       console.log('✓ Deployer has no roles\n');
     }
-    console.log(`→ Next: yarn grant:operational-roles --mtoken ${mtoken} --network ${network}\n`);
+    console.log(
+      `→ Next: yarn token-ac:grant-operational --mtoken ${mtoken} --network ${network}\n`,
+    );
     return;
   }
 
@@ -133,10 +135,12 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
     console.log(`✓ All roles revoked (including ADMIN) | TX: ${txInfo}`);
   } else {
     console.log(`✓ Operational roles revoked | TX: ${txInfo}`);
-    console.log('  (ADMIN kept - re-run after grant:admin-role to revoke)');
+    console.log('  (ADMIN kept - re-run after token-ac:grant-admin to revoke)');
   }
 
-  console.log(`\n→ Next: yarn grant:operational-roles --mtoken ${mtoken} --network ${network}\n`);
+  console.log(
+    `\n→ Next: yarn token-ac:grant-operational --mtoken ${mtoken} --network ${network}\n`,
+  );
 }
 
 const network = getNetwork();
