@@ -10,12 +10,12 @@ import { saveAddressesToFile } from '../../../utils/addressStorage';
 import { getNetwork } from '../../../utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Wallet, network: string) {
-  console.log(`[2/2] Deploying AC for: ${network}`);
+  console.log(`Deploying Global AC for: ${network}`);
 
   const acRoleGlobal = getAcRoleGlobalAddress(network);
   if (!acRoleGlobal) {
     throw createUserError(`AC Role not found for network ${network}`, [
-      `Run: yarn deploy:network:01 --network ${network}`,
+      `Run: yarn deploy:global-ac-role --network ${network}`,
     ]);
   }
 

@@ -76,7 +76,7 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const result = await sendAndWaitForCustomSolanaTxSign(provider, tx, [], {
     action: 'deployer',
     comment: 'Revoke deployer ADMIN from Global AC',
-    waitForTx: true,
+    waitForTx: false,
   });
 
   const txInfo = result.signature || result.txId;

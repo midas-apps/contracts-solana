@@ -7,6 +7,7 @@ export const grantRolesConfigSchema = z.object({
   tokenManagerAddress: publicKeySchema,
   vaultsManagerAddress: publicKeySchema,
   oracleManagerAddress: publicKeySchema,
+  metadataAuthority: publicKeySchema.optional(),
 });
 
 export type GrantRolesConfig = z.infer<typeof grantRolesConfigSchema>;

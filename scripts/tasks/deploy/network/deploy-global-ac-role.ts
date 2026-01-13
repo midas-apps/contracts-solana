@@ -9,7 +9,7 @@ import { saveAddressesToFile } from '../../../utils/addressStorage';
 import { getNetwork } from '../../../utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Wallet, network: string) {
-  console.log(`[1/2] Deploying AC Role for: ${network}`);
+  console.log(`Deploying Global AC Role for: ${network}`);
 
   const existingAcRoleGlobal = getAcRoleGlobalAddress(network);
   if (existingAcRoleGlobal) {
@@ -28,7 +28,7 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
 
   console.log('\n✅ AC Role deployment submitted');
   console.log(`AC Role Global: ${acRoleGlobal.toString()}`);
-  console.log(`\nNext step: yarn deploy:network:02 --network ${network}`);
+  console.log(`\nNext step: yarn deploy:global-ac --network ${network}`);
   return;
 }
 

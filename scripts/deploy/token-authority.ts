@@ -55,13 +55,17 @@ export const deployTokenAuthority = async (
     })
     .transaction();
 
-  await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [], {
+  const result = await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [], {
     action: 'deployer',
     comment: 'Deploy Token Authority',
     waitForTx: true,
     pollingIntervalMs: 1000,
     timeoutDurationMs: 120 * 1000,
   });
+
+  if (result.signature) {
+    console.log(`Transaction signature: ${result.signature}`);
+  }
 
   return authority;
 };

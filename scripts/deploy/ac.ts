@@ -38,13 +38,17 @@ export const deployAc = async (common: CommonParams, { acRole, ac }: DeployAcCon
     })
     .transaction();
 
-  await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [ac], {
+  const result = await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [ac], {
     action: 'deployer',
     comment: 'Deploy Access Control',
     waitForTx: true,
     pollingIntervalMs: 1000,
     timeoutDurationMs: 120 * 1000,
   });
+
+  if (result.signature) {
+    console.log(`Transaction signature: ${result.signature}`);
+  }
 
   return ac.publicKey;
 };
@@ -67,13 +71,17 @@ export const deployAcRole = async (common: CommonParams, { acRole }: DeployAcRol
     })
     .transaction();
 
-  await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [acRole], {
+  const result = await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [acRole], {
     action: 'deployer',
     comment: 'Deploy AC Role',
     waitForTx: true,
     pollingIntervalMs: 1000,
     timeoutDurationMs: 120 * 1000,
   });
+
+  if (result.signature) {
+    console.log(`Transaction signature: ${result.signature}`);
+  }
 
   return acRole.publicKey;
 };

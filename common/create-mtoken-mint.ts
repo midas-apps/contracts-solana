@@ -20,6 +20,8 @@ import {
 } from '@solana/web3.js';
 import { BanksTransactionMeta } from 'solana-bankrun';
 
+import { sendAndWaitForCustomSolanaTxSign, TxSignMetadata } from './solanaTxHelper';
+
 // Define the extensions to be used by the mint
 const extensions = [ExtensionType.PermanentDelegate, ExtensionType.MetadataPointer];
 
@@ -36,6 +38,8 @@ interface CreateMintBaseParams {
 
 interface CreateMintProviderParams extends CreateMintBaseParams {
   provider: AnchorProvider;
+  /** Required when using Fordefi signing */
+  txMetadata?: TxSignMetadata;
   payer?: never;
   connection?: never;
   sendTxFn?: never;
@@ -111,7 +115,19 @@ export const createMTBillTokenMint = async (
 
   // Send transaction based on environment
   if (params.provider) {
-    await params.provider.sendAndConfirm(mintTransaction, [mint]);
+    const providerParams = params as CreateMintProviderParams;
+    if (providerParams.txMetadata) {
+      // Use custom signer (Fordefi) flow
+      await sendAndWaitForCustomSolanaTxSign(params.provider, mintTransaction, [mint], {
+        ...providerParams.txMetadata,
+        waitForTx: providerParams.txMetadata.waitForTx ?? true,
+        pollingIntervalMs: providerParams.txMetadata.pollingIntervalMs ?? 1000,
+        timeoutDurationMs: providerParams.txMetadata.timeoutDurationMs ?? 120 * 1000,
+      });
+    } else {
+      // Local wallet flow
+      await params.provider.sendAndConfirm(mintTransaction, [mint]);
+    }
   } else {
     await params.sendTxFn(connection, mintTransaction, [params.payer, mint]);
   }
@@ -121,6 +137,8 @@ export const createMTBillTokenMint = async (
 interface CreateMTokenProviderParams extends CreateMintBaseParams {
   metadata: Omit<TokenMetadata, 'updateAuthority' | 'mint'>;
   provider: AnchorProvider;
+  /** Required when using Fordefi signing */
+  txMetadata?: TxSignMetadata;
   payer?: never;
   connection?: never;
   sendTxFn?: never;
@@ -194,7 +212,19 @@ export const createMTokenMint = async (
 
   // Send transaction based on environment
   if (params.provider) {
-    await params.provider.sendAndConfirm(mintTransaction, [mint]);
+    const providerParams = params as CreateMTokenProviderParams;
+    if (providerParams.txMetadata) {
+      // Use custom signer (Fordefi) flow
+      await sendAndWaitForCustomSolanaTxSign(params.provider, mintTransaction, [mint], {
+        ...providerParams.txMetadata,
+        waitForTx: providerParams.txMetadata.waitForTx ?? true,
+        pollingIntervalMs: providerParams.txMetadata.pollingIntervalMs ?? 1000,
+        timeoutDurationMs: providerParams.txMetadata.timeoutDurationMs ?? 120 * 1000,
+      });
+    } else {
+      // Local wallet flow
+      await params.provider.sendAndConfirm(mintTransaction, [mint]);
+    }
   } else {
     await params.sendTxFn(connection, mintTransaction, [params.payer, mint]);
   }

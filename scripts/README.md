@@ -15,8 +15,8 @@ anchor deploy --provider.cluster <network>
 
 Run once per network before deploying any tokens:
 
-1. `yarn deploy:network:01 --network <network>` - Deploy AC Role Global
-2. `yarn deploy:network:02 --network <network>` - Deploy AC
+1. `yarn deploy:global-ac-role --network <network>` - Deploy Global AC Role
+2. `yarn deploy:global-ac --network <network>` - Deploy Global AC
 
 ### Token Deployment
 

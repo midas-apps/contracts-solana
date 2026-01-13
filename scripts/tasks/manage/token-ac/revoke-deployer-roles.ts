@@ -127,7 +127,7 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
     action: 'deployer',
     comment: `Revoke deployer roles for ${mtoken}`,
     mToken: mtoken,
-    waitForTx: true,
+    waitForTx: false,
   });
 
   const txInfo = result.signature || result.txId;

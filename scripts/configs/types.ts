@@ -56,6 +56,7 @@ export const dataFeedConfigSchema = z
     minPrice: priceSchema,
     maxPrice: priceSchema,
     maxStaleness: z.number().int().positive(),
+    initialPrice: priceSchema.optional(),
     switchboard: switchboardConfigSchema.optional(),
   })
   .refine(
@@ -97,6 +98,20 @@ export const dataFeedConfigSchema = z
     {
       message: 'minPrice must be less than maxPrice',
       path: ['minPrice'],
+    },
+  )
+  .refine(
+    (data) => {
+      // Ensure initialPrice is within [minPrice, maxPrice] when provided
+      if (data.initialPrice === undefined) return true;
+      const initial = parseFloat(data.initialPrice);
+      const min = parseFloat(data.minPrice);
+      const max = parseFloat(data.maxPrice);
+      return initial >= min && initial <= max;
+    },
+    {
+      message: 'initialPrice must be between minPrice and maxPrice',
+      path: ['initialPrice'],
     },
   );
 

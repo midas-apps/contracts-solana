@@ -5,10 +5,16 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-access_control = "GQp4fJwxmLF7vL7uJ4jpS3uRz96qrb7MfoLKMnJoeE3Z"
-data_feed = "7dTNTpTqbHCLxc1FtpCRAq5d4u1Y6WVqrAc1znVGQDxV"
-midas_vaults = "6eFgYZCZZFTe61T4YxWsiHHAunCLTh9V7TAjj8DxuZwm"
-token_authority = "6XqSwGFEuadyqXC9vBLYGJhvQsEVjPdCrtvN6inAb4z3"
+access_control = "MAC1H4FiknRdqG7DdEmQXgdp688w8Zo5t44T3CsKt3P"
+data_feed = "MDF1kkcgJqyizY8k3U1ESAxLBYFYmE3qTwxf2pmGE1s"
+token_authority = "MTA14NBri1ojys9tnxYuRKHTtVNAssT9bHo5Lt21vDa"
+midas_vaults = "MidasZepq8k2oFNCCm1rm31rbbj68JSPJeXwqQu6NfZ"
+
+[programs.devnet]
+access_control = "MAC1H4FiknRdqG7DdEmQXgdp688w8Zo5t44T3CsKt3P"
+data_feed = "MDF1kkcgJqyizY8k3U1ESAxLBYFYmE3qTwxf2pmGE1s"
+token_authority = "MTA14NBri1ojys9tnxYuRKHTtVNAssT9bHo5Lt21vDa"
+midas_vaults = "MidasZepq8k2oFNCCm1rm31rbbj68JSPJeXwqQu6NfZ"
 
 [registry]
 url = "https://api.apr.dev"

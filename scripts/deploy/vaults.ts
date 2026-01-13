@@ -193,13 +193,17 @@ export const deployMinterVault = async (
       .instruction(),
   );
 
-  await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [commonVault], {
+  const result = await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [commonVault], {
     action: 'deployer',
     comment: 'Deploy Minter Vault',
     waitForTx: true,
     pollingIntervalMs: 1000,
     timeoutDurationMs: 120 * 1000,
   });
+
+  if (result.signature) {
+    console.log(`Transaction signature: ${result.signature}`);
+  }
 
   return commonVault.publicKey;
 };
@@ -342,13 +346,17 @@ export const deployRedeemerVault = async (
     tx.add(ataReceiver);
   }
 
-  await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [commonVault], {
+  const result = await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [commonVault], {
     action: 'deployer',
     comment: 'Deploy Redeemer Vault',
     waitForTx: true,
     pollingIntervalMs: 1000,
     timeoutDurationMs: 120 * 1000,
   });
+
+  if (result.signature) {
+    console.log(`Transaction signature: ${result.signature}`);
+  }
 
   return commonVault.publicKey;
 };

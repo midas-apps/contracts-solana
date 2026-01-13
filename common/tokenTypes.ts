@@ -1,6 +1,6 @@
 export enum MProduct {
   MTBILL = 'mTBILL',
-  MBASIS = 'mBASIS',
+  MFONE = 'mFONE',
 }
 
 export enum PaymentToken {

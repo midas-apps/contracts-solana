@@ -22,6 +22,7 @@ export interface DeployManualFeedParams {
   minPrice: bigint;
   maxPrice: bigint;
   maxStaleness: number;
+  initialPrice?: bigint;
 }
 
 /**
@@ -82,11 +83,14 @@ export async function deployManualFeed(
     );
 
     try {
-      await sendAndWaitForCustomSolanaTxSign(provider, grantRoleTx, [], {
+      const roleResult = await sendAndWaitForCustomSolanaTxSign(provider, grantRoleTx, [], {
         action: 'deployer',
         comment: 'Grant FEED_ADMIN role for manual feed',
         waitForTx: true,
       });
+      if (roleResult.signature) {
+        console.log(`Transaction signature: ${roleResult.signature}`);
+      }
       console.log('✓ FEED_ADMIN role granted');
     } catch (error) {
       // Check if error is "role already exists" - if so, continue
@@ -101,7 +105,7 @@ export async function deployManualFeed(
     // Step 2: Deploy manual feed associated with base feed
     const dataFeedProgram = getDataFeedProgram(provider);
 
-    const initialPrice = params.minPrice; // Use minPrice as initial price
+    const initialPrice = params.initialPrice ?? params.minPrice;
     const manualFeedTx = new Transaction().add(
       await dataFeedProgram.methods
         .newManualFeed(toBN(initialPrice), PRICE_DECIMALS)
@@ -115,13 +119,17 @@ export async function deployManualFeed(
         .instruction(),
     );
 
-    await sendAndWaitForCustomSolanaTxSign(provider, manualFeedTx, [], {
+    const manualResult = await sendAndWaitForCustomSolanaTxSign(provider, manualFeedTx, [], {
       action: 'deployer',
       comment: 'Deploy Manual Feed',
       waitForTx: true,
       pollingIntervalMs: 1000,
       timeoutDurationMs: 120 * 1000,
     });
+
+    if (manualResult.signature) {
+      console.log(`Transaction signature: ${manualResult.signature}`);
+    }
 
     return feedPublicKey;
   }

@@ -155,7 +155,7 @@ export const deploySwitchboardFeed = async (
 
   // console.log(simulateResult);
 
-  await sendAndWaitForCustomSolanaTxSign(
+  const result = await sendAndWaitForCustomSolanaTxSign(
     provider,
     tx,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -169,6 +169,9 @@ export const deploySwitchboardFeed = async (
     },
   );
 
+  if (result.signature) {
+    console.log(`Transaction signature: ${result.signature}`);
+  }
   console.log(`Feed ${feedKeypair.publicKey} initialized`);
 
   return feedKeypair.publicKey;

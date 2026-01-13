@@ -77,13 +77,17 @@ export const deployDataFeed = async (common: CommonParams, config: DeployDataFee
       .instruction(),
   );
 
-  await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [feed], {
+  const result = await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [feed], {
     action: 'deployer',
     comment: 'Deploy Data Feed',
     waitForTx: true,
     pollingIntervalMs: 1000,
     timeoutDurationMs: 120 * 1000,
   });
+
+  if (result.signature) {
+    console.log(`Transaction signature: ${result.signature}`);
+  }
 
   return feed.publicKey;
 };

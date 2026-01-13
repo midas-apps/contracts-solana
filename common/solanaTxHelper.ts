@@ -1,5 +1,10 @@
 import { AnchorProvider } from '@coral-xyz/anchor';
-import { Keypair, Transaction, VersionedTransaction } from '@solana/web3.js';
+import {
+  Keypair,
+  Transaction,
+  VersionedTransaction,
+  sendAndConfirmRawTransaction,
+} from '@solana/web3.js';
 
 import { getFordefiChainId } from './fordefiNetworkMapper';
 import type { CustomSignerModule } from './provider';
@@ -29,6 +34,28 @@ export function initCustomSigner(signer: CustomSignerModule | undefined, network
   storedNetwork = network;
 }
 
+function deserializeTransaction(base64Data: string): Transaction | VersionedTransaction {
+  const buffer = Buffer.from(base64Data, 'base64');
+  try {
+    return VersionedTransaction.deserialize(buffer);
+  } catch {
+    return Transaction.from(buffer);
+  }
+}
+
+function addSignaturesToTransaction(
+  signedTx: Transaction | VersionedTransaction,
+  signers: Keypair[],
+): void {
+  if (signers.length === 0) return;
+
+  if (signedTx instanceof Transaction) {
+    signedTx.partialSign(...signers);
+  } else {
+    signedTx.sign(signers);
+  }
+}
+
 export async function sendAndWaitForCustomSolanaTxSign(
   provider: AnchorProvider,
   transaction: Transaction | VersionedTransaction,
@@ -55,14 +82,6 @@ export async function sendAndWaitForCustomSolanaTxSign(
       transaction.feePayer = provider.publicKey;
     }
 
-    if (signers.length > 0) {
-      if (transaction instanceof Transaction) {
-        transaction.partialSign(...signers);
-      } else {
-        transaction.sign(signers);
-      }
-    }
-
     const serialized =
       transaction instanceof Transaction
         ? transaction
@@ -79,11 +98,28 @@ export async function sendAndWaitForCustomSolanaTxSign(
       waitForTx: metadata.waitForTx,
       timeoutDurationMs: metadata.timeoutDurationMs,
       pollingIntervalMs: metadata.pollingIntervalMs,
+      pushMode: signers.length > 0 ? 'manual' : 'auto',
     });
 
+    // Handle string result (legacy flow)
     if (typeof result === 'string') {
       return { sent: true, signature: result };
     }
+
+    // Handle signedTransaction (manual push mode) - add local signatures and broadcast
+    if (result.signedTransaction) {
+      const signedTx = deserializeTransaction(result.signedTransaction);
+      addSignaturesToTransaction(signedTx, signers);
+
+      const signature = await sendAndConfirmRawTransaction(
+        provider.connection,
+        Buffer.from(signedTx.serialize()),
+        { commitment, skipPreflight: isLocalnet },
+      );
+
+      return { sent: true, signature, txId: result.txId };
+    }
+
     return result;
   }
 

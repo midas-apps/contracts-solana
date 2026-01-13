@@ -50,6 +50,10 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
             uri: config.metadata.uri || '',
             additionalMetadata: [],
           },
+          txMetadata: {
+            action: 'deployer',
+            comment: `Deploy mToken mint for ${mtoken}`,
+          },
         });
         mToken = mint.publicKey;
       } else {
@@ -65,6 +69,10 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
         symbol: config.metadata.symbol,
         uri: config.metadata.uri || '',
         additionalMetadata: [],
+      },
+      txMetadata: {
+        action: 'deployer',
+        comment: `Deploy mToken mint for ${mtoken}`,
       },
     });
     mToken = mint.publicKey;
