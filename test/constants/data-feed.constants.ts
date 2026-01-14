@@ -1,11 +1,11 @@
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey } from '@solana/web3.js';
 
-export const DATA_FEED_PROGRAM_ID = new PublicKey(
-  "7dTNTpTqbHCLxc1FtpCRAq5d4u1Y6WVqrAc1znVGQDxV"
-);
+import DATA_FEED_IDL from '../../target/idl/data_feed.json' with { type: 'json' };
+
+export const DATA_FEED_PROGRAM_ID = new PublicKey(DATA_FEED_IDL.address);
 
 export const DATA_FEED_SEEDS = {
-  MANUAL_FEED_STATE_SEED: "manual_feed_state",
+  MANUAL_FEED_STATE_SEED: 'manual_feed_state',
 };
 
 export const SWITCHBOARD_FEEDS = {};
@@ -13,7 +13,7 @@ export const SWITCHBOARD_FEEDS = {};
 export enum DataFeedMode {}
 
 export const DATA_FEED_AC_ROLES = {
-  FEED_ADMIN: "data_feed_admin",
+  FEED_ADMIN: 'data_feed_admin',
 };
 
 export enum DataFeedError {

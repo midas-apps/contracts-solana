@@ -4,4 +4,14 @@ target
 node_modules
 dist
 build
+*.lock
+*.log
+*.so
+*.bin
+*.tar.*
+*.sst
+Cargo.lock
+yarn.lock
 test-ledger
+rocksdb
+snapshot

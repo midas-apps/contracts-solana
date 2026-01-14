@@ -1,21 +1,16 @@
-import { vaultsFixture } from "./fixture/vaults.fixture";
+import { CommonError } from './constants/common.constants';
+import { VaultActionIds, VaultError, VAULTS_PROGRAM_ID } from './constants/vaults.constants';
+import { vaultsFixture } from './fixture/vaults.fixture';
+import { fromBN, parsePercent, parseUnits, timeTravel } from './helpers/common.helpers';
+import { updateAccountAc } from './testers/ac.testers';
 import {
-  VaultActionIds,
-  VaultError,
-  VAULTS_PROGRAM_ID,
-} from "./constants/vaults.constants";
-
-import {
-  addPaymentToken,
   newVaultCommon,
-  newVaultCommonAccount,
   updatePause,
   updatePauseInx,
-  updatePaymentToken,
   updateVaultCommon,
   updateVaultCommonAccount,
-} from "./testers/common-vaults.testers";
-import { newAccountAc, updateAccountAc } from "./testers/ac.testers";
+} from './testers/common-vaults.testers';
+import { updateFeed, updateManualFeed } from './testers/data-feed.testers';
 import {
   approveMintRequest,
   mintInstant,
@@ -24,37 +19,26 @@ import {
   prepareCommonMintTest,
   rejectMintRequest,
   updateMinterVault,
-} from "./testers/minter-vault.testers";
-import { CommonError, MAX_U128 } from "./constants/common.constants";
-import {
-  fromBN,
-  getBalance,
-  parsePercent,
-  parseUnits,
-  timeTravel,
-} from "./helpers/common.helpers";
-import { updateFeed, updateManualFeed } from "./testers/data-feed.testers";
-import { DataFeedError } from "./constants/data-feed.constants";
-import { transferToken } from "./testers/redeem-vault.testers";
-import { Clock } from "solana-bankrun";
+} from './testers/minter-vault.testers';
+import { transferToken } from './testers/redeem-vault.testers';
 
-describe("minter-vault", () => {
-  describe("initializing", () => {
-    it("Should deploy program", async () => {
+describe('minter-vault', () => {
+  describe('initializing', () => {
+    it('Should deploy program', async () => {
       const { vaultsProgram } = await vaultsFixture();
       expect(vaultsProgram.programId.equals(VAULTS_PROGRAM_ID)).toBe(true);
     });
   });
 
-  describe("new_minter_vault", () => {
-    it("call with default params", async () => {
+  describe('new_minter_vault', () => {
+    it('call with default params', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
       await newMinterVault(fixture, { commonVault });
     });
 
-    it("should fail; call from non-authority", async () => {
+    it('should fail; call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -64,13 +48,13 @@ describe("minter-vault", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
   });
 
-  describe("update_minter_vault", () => {
-    it("call with default params", async () => {
+  describe('update_minter_vault', () => {
+    it('call with default params', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -78,18 +62,18 @@ describe("minter-vault", () => {
       await updateMinterVault(fixture, { commonVault });
     });
 
-    it("update new_first_deposit_min_m_tokens", async () => {
+    it('update new_first_deposit_min_m_tokens', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
       await newMinterVault(fixture, { commonVault });
       await updateMinterVault(fixture, {
         commonVault,
-        firstDepositMinMTokens: parseUnits("100"),
+        firstDepositMinMTokens: parseUnits('100'),
       });
     });
 
-    it("update mint_authority_pda", async () => {
+    it('update mint_authority_pda', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -100,7 +84,7 @@ describe("minter-vault", () => {
       });
     });
 
-    it("should fail; call from non-authority", async () => {
+    it('should fail; call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
       const commonVault = await newVaultCommon(fixture, {});
@@ -111,13 +95,13 @@ describe("minter-vault", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
   });
 
-  describe("mint_instant", () => {
-    it("should mint instant", async () => {
+  describe('mint_instant', () => {
+    it('should mint instant', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -127,12 +111,12 @@ describe("minter-vault", () => {
         {},
         {
           fee: 0.1,
-          tokensMinted: parseUnits("9.9"),
-        }
+          tokensMinted: parseUnits('9.9'),
+        },
       );
     });
 
-    it("when green list enabled and user is in green list", async () => {
+    it('when green list enabled and user is in green list', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -148,7 +132,7 @@ describe("minter-vault", () => {
       await mintInstant(fixture, {});
     });
 
-    it("when user is waived from fee", async () => {
+    it('when user is waived from fee', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -163,12 +147,12 @@ describe("minter-vault", () => {
         {},
         {
           fee: 0,
-          tokensMinted: parseUnits("10"),
-        }
+          tokensMinted: parseUnits('10'),
+        },
       );
     });
 
-    it("when allowance is set to u128.max - it should not decrease", async () => {
+    it('when allowance is set to u128.max - it should not decrease', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -176,12 +160,12 @@ describe("minter-vault", () => {
       await mintInstant(fixture, {});
     });
 
-    it("when allowance is not set to u128.max - it should  decrease", async () => {
+    it('when allowance is not set to u128.max - it should  decrease', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture, {
         addPaymentToken: {
-          allowance: parseUnits("10"),
+          allowance: parseUnits('10'),
         },
       });
 
@@ -190,17 +174,17 @@ describe("minter-vault", () => {
       expect(fromBN(stateAfter.paymentTokenState.allowance)).toEqual(0n);
     });
 
-    it("when allowance is not set to u128.max - it should  decrease, mToken price is 1.1$", async () => {
+    it('when allowance is not set to u128.max - it should  decrease, mToken price is 1.1$', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture, {
         addPaymentToken: {
-          allowance: parseUnits("11"),
+          allowance: parseUnits('11'),
         },
       });
 
       await updateManualFeed(fixture, {
-        price: parseUnits("1.1"),
+        price: parseUnits('1.1'),
       });
 
       const { stateAfter } = await mintInstant(
@@ -210,31 +194,29 @@ describe("minter-vault", () => {
         },
         {},
         {
-          tokensMinted: parseUnits("9.9"),
+          tokensMinted: parseUnits('9.9'),
           fee: 0.11,
-        }
+        },
       );
 
       expect(fromBN(stateAfter.paymentTokenState.allowance)).toEqual(0n);
     });
 
-    it("daily limit should decrease", async () => {
+    it('daily limit should decrease', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture, {});
 
       await updateVaultCommon(fixture, {
-        instantDailyLimit: parseUnits("9.9"),
+        instantDailyLimit: parseUnits('9.9'),
       });
 
       const { stateAfter } = await mintInstant(fixture, {});
 
-      expect(fromBN(stateAfter.commonVaultState.instantDailyLimitUsed)).toEqual(
-        parseUnits("9.9")
-      );
+      expect(fromBN(stateAfter.commonVaultState.instantDailyLimitUsed)).toEqual(parseUnits('9.9'));
     });
 
-    it("use all daily limit, then skip to next day and use all limit again", async () => {
+    it('use all daily limit, then skip to next day and use all limit again', async () => {
       const fixture = await vaultsFixture();
 
       await updateFeed(fixture, {
@@ -249,35 +231,33 @@ describe("minter-vault", () => {
       await prepareCommonMintTest(fixture, {});
 
       await updateVaultCommon(fixture, {
-        instantDailyLimit: parseUnits("9.9"),
+        instantDailyLimit: parseUnits('9.9'),
       });
 
       const { stateAfter } = await mintInstant(fixture, {});
 
-      expect(fromBN(stateAfter.commonVaultState.instantDailyLimitUsed)).toEqual(
-        parseUnits("9.9")
-      );
+      expect(fromBN(stateAfter.commonVaultState.instantDailyLimitUsed)).toEqual(parseUnits('9.9'));
 
       await timeTravel(fixture.context, 86400n);
 
       const { stateAfter: stateAfterNextDay } = await mintInstant(fixture, {});
 
-      expect(
-        fromBN(stateAfterNextDay.commonVaultState.instantDailyLimitUsed)
-      ).toEqual(parseUnits("9.9"));
+      expect(fromBN(stateAfterNextDay.commonVaultState.instantDailyLimitUsed)).toEqual(
+        parseUnits('9.9'),
+      );
 
       expect(stateAfterNextDay.commonVaultState.instantLastDay).toEqual(
-        stateAfter.commonVaultState.instantLastDay + 1
+        stateAfter.commonVaultState.instantLastDay + 1,
       );
     });
 
-    it("when first_deposit_min_m_tokens is 10 and mint amount is 10.0089", async () => {
+    it('when first_deposit_min_m_tokens is 10 and mint amount is 10.0089', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
 
       await updateMinterVault(fixture, {
-        firstDepositMinMTokens: parseUnits("10"),
+        firstDepositMinMTokens: parseUnits('10'),
       });
 
       await mintInstant(
@@ -288,18 +268,18 @@ describe("minter-vault", () => {
         {},
         {
           fee: 0.1011,
-          tokensMinted: parseUnits("10.0089"),
-        }
+          tokensMinted: parseUnits('10.0089'),
+        },
       );
     });
 
-    it("when first_deposit_min_m_tokens is 10 and mint amount is 10 and user is waived from fee", async () => {
+    it('when first_deposit_min_m_tokens is 10 and mint amount is 10 and user is waived from fee', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
 
       await updateMinterVault(fixture, {
-        firstDepositMinMTokens: parseUnits("10"),
+        firstDepositMinMTokens: parseUnits('10'),
       });
 
       await updateVaultCommonAccount(fixture, {
@@ -314,18 +294,18 @@ describe("minter-vault", () => {
         {},
         {
           fee: 0,
-          tokensMinted: parseUnits("10"),
-        }
+          tokensMinted: parseUnits('10'),
+        },
       );
     });
 
-    it("when first_deposit_min_m_tokens is 10 but user already minted tokens", async () => {
+    it('when first_deposit_min_m_tokens is 10 but user already minted tokens', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
 
       await updateMinterVault(fixture, {
-        firstDepositMinMTokens: parseUnits("10"),
+        firstDepositMinMTokens: parseUnits('10'),
       });
 
       await updateVaultCommonAccount(fixture, {
@@ -340,31 +320,31 @@ describe("minter-vault", () => {
         {},
         {
           fee: 0,
-          tokensMinted: parseUnits("10"),
-        }
+          tokensMinted: parseUnits('10'),
+        },
       );
 
       await mintInstant(
         fixture,
         {
           amountToken: 1,
-          minReceiveAmount: parseUnits("1"),
+          minReceiveAmount: parseUnits('1'),
         },
         {},
         {
           fee: 0,
-          tokensMinted: parseUnits("1"),
-        }
+          tokensMinted: parseUnits('1'),
+        },
       );
     });
 
-    it("when first_deposit_min_m_tokens is 10 but user is free from min amounts", async () => {
+    it('when first_deposit_min_m_tokens is 10 but user is free from min amounts', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
 
       await updateMinterVault(fixture, {
-        firstDepositMinMTokens: parseUnits("10"),
+        firstDepositMinMTokens: parseUnits('10'),
       });
 
       await updateVaultCommonAccount(fixture, {
@@ -375,23 +355,23 @@ describe("minter-vault", () => {
         fixture,
         {
           amountToken: 9,
-          minReceiveAmount: parseUnits("8.91"),
+          minReceiveAmount: parseUnits('8.91'),
         },
         {},
         {
           fee: 0.09,
-          tokensMinted: parseUnits("8.91"),
-        }
+          tokensMinted: parseUnits('8.91'),
+        },
       );
     });
 
-    it("when min_amount is 10 but user is free from min amounts", async () => {
+    it('when min_amount is 10 but user is free from min amounts', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
 
       await updateVaultCommon(fixture, {
-        minAmount: parseUnits("10"),
+        minAmount: parseUnits('10'),
       });
 
       await updateVaultCommonAccount(fixture, {
@@ -402,28 +382,28 @@ describe("minter-vault", () => {
         fixture,
         {
           amountToken: 9,
-          minReceiveAmount: parseUnits("8.91"),
+          minReceiveAmount: parseUnits('8.91'),
         },
         {},
         {
           fee: 0.09,
-          tokensMinted: parseUnits("8.91"),
-        }
+          tokensMinted: parseUnits('8.91'),
+        },
       );
     });
 
-    it("deposit 100 USDC, when price of stable is 1.05$, mToken price is 5$, token fee 1%, instant fee 0%", async () => {
+    it('deposit 100 USDC, when price of stable is 1.05$, mToken price is 5$, token fee 1%, instant fee 0%', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
 
       await updateManualFeed(fixture, {
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
-        price: parseUnits("1.05"),
+        price: parseUnits('1.05'),
       });
 
       await updateManualFeed(fixture, {
-        price: parseUnits("5"),
+        price: parseUnits('5'),
       });
 
       await updateVaultCommon(fixture, {
@@ -434,17 +414,17 @@ describe("minter-vault", () => {
         fixture,
         {
           amountToken: 100,
-          minReceiveAmount: parseUnits("19.8"),
+          minReceiveAmount: parseUnits('19.8'),
         },
         {},
         {
           fee: 1,
-          tokensMinted: parseUnits("19.8"),
-        }
+          tokensMinted: parseUnits('19.8'),
+        },
       );
     });
 
-    it("deposit 100 USDC, stable = false, price of payment token is 1.05$, mToken price is 5$, token fee 1%, instant fee 0%", async () => {
+    it('deposit 100 USDC, stable = false, price of payment token is 1.05$, mToken price is 5$, token fee 1%, instant fee 0%', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture, {
@@ -455,11 +435,11 @@ describe("minter-vault", () => {
 
       await updateManualFeed(fixture, {
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
-        price: parseUnits("1.05"),
+        price: parseUnits('1.05'),
       });
 
       await updateManualFeed(fixture, {
-        price: parseUnits("5"),
+        price: parseUnits('5'),
       });
 
       await updateVaultCommon(fixture, {
@@ -470,17 +450,17 @@ describe("minter-vault", () => {
         fixture,
         {
           amountToken: 100,
-          minReceiveAmount: parseUnits("20"),
+          minReceiveAmount: parseUnits('20'),
         },
         {},
         {
           fee: 1,
-          tokensMinted: parseUnits("20.79"), // (105 - 1%) / 5
-        }
+          tokensMinted: parseUnits('20.79'), // (105 - 1%) / 5
+        },
       );
     });
 
-    it("should fail: when amount is 0", async () => {
+    it('should fail: when amount is 0', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -493,11 +473,11 @@ describe("minter-vault", () => {
         {},
         {
           revertedWith: VaultError.InvalidInAmount,
-        }
+        },
       );
     });
 
-    it("should fail: when payment token rate is 0", async () => {
+    it('should fail: when payment token rate is 0', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture, {
@@ -515,11 +495,11 @@ describe("minter-vault", () => {
         {
           // TODO: find a way to proxify errors
           revertedWith: CommonError.GenericError,
-        }
+        },
       );
     });
 
-    it("should fail: when function is paused", async () => {
+    it('should fail: when function is paused', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -533,11 +513,11 @@ describe("minter-vault", () => {
         {},
         {
           revertedWith: VaultError.VaultInxPaused,
-        }
+        },
       );
     });
 
-    it("should fail: when vault is paused", async () => {
+    it('should fail: when vault is paused', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -549,16 +529,16 @@ describe("minter-vault", () => {
         {},
         {
           revertedWith: VaultError.VaultPaused,
-        }
+        },
       );
     });
 
-    it("should fail: when allowance is insufficient", async () => {
+    it('should fail: when allowance is insufficient', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture, {
         addPaymentToken: {
-          allowance: parseUnits("0.1"),
+          allowance: parseUnits('0.1'),
         },
       });
 
@@ -569,11 +549,11 @@ describe("minter-vault", () => {
         {},
         {
           revertedWith: VaultError.InsufficientAllowance,
-        }
+        },
       );
     });
 
-    it("should fail: when user`s balance is insufficient", async () => {
+    it('should fail: when user`s balance is insufficient', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -589,17 +569,17 @@ describe("minter-vault", () => {
         {},
         {
           revertedWith: CommonError.SplInsufficientFunds,
-        }
+        },
       );
     });
 
-    it("should fail: when deposit amount is < min_amount", async () => {
+    it('should fail: when deposit amount is < min_amount', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
 
       await updateVaultCommon(fixture, {
-        minAmount: parseUnits("10"),
+        minAmount: parseUnits('10'),
       });
 
       await mintInstant(
@@ -609,17 +589,17 @@ describe("minter-vault", () => {
         {},
         {
           revertedWith: VaultError.LessThanMinAmount,
-        }
+        },
       );
     });
 
-    it("should fail: when deposit amount is < first_deposit_min_m_tokens", async () => {
+    it('should fail: when deposit amount is < first_deposit_min_m_tokens', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
 
       await updateMinterVault(fixture, {
-        firstDepositMinMTokens: parseUnits("10"),
+        firstDepositMinMTokens: parseUnits('10'),
       });
 
       await mintInstant(
@@ -629,17 +609,17 @@ describe("minter-vault", () => {
         {},
         {
           revertedWith: VaultError.LessThanMinAmountFirstMint,
-        }
+        },
       );
     });
 
-    it("should fail: when daily limit is exceeded", async () => {
+    it('should fail: when daily limit is exceeded', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
 
       await updateVaultCommon(fixture, {
-        instantDailyLimit: parseUnits("9"),
+        instantDailyLimit: parseUnits('9'),
       });
 
       await mintInstant(
@@ -649,11 +629,11 @@ describe("minter-vault", () => {
         {},
         {
           revertedWith: VaultError.DailyLimitExceeded,
-        }
+        },
       );
     });
 
-    it("should fail: when received amount is < min_receive_amount", async () => {
+    it('should fail: when received amount is < min_receive_amount', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -661,17 +641,17 @@ describe("minter-vault", () => {
       await mintInstant(
         fixture,
         {
-          minReceiveAmount: parseUnits("9.91"),
+          minReceiveAmount: parseUnits('9.91'),
         },
         {},
         {},
         {
           revertedWith: VaultError.LessThanMinReceiveAmount,
-        }
+        },
       );
     });
 
-    it("should fail: when instant fee is 100%", async () => {
+    it('should fail: when instant fee is 100%', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -687,11 +667,11 @@ describe("minter-vault", () => {
         {},
         {
           revertedWith: VaultError.InvalidConvertAmount,
-        }
+        },
       );
     });
 
-    it("should fail: when green list enabled and user is not green listed", async () => {
+    it('should fail: when green list enabled and user is not green listed', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -707,11 +687,11 @@ describe("minter-vault", () => {
         {},
         {
           revertedWith: VaultError.NotGreenListed,
-        }
+        },
       );
     });
 
-    it("should fail: user is in the black list", async () => {
+    it('should fail: user is in the black list', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -727,20 +707,20 @@ describe("minter-vault", () => {
         {},
         {
           revertedWith: VaultError.Blacklisted,
-        }
+        },
       );
     });
   });
 
-  describe("mint_request", () => {
-    it("should create mint request", async () => {
+  describe('mint_request', () => {
+    it('should create mint request', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
       await mintRequest(fixture, {}, {});
     });
 
-    it("when green list enabled and user is in green list", async () => {
+    it('when green list enabled and user is in green list', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -756,7 +736,7 @@ describe("minter-vault", () => {
       await mintRequest(fixture, {});
     });
 
-    it("when user is waived from fee", async () => {
+    it('when user is waived from fee', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -771,21 +751,19 @@ describe("minter-vault", () => {
         {},
         {
           fee: 0,
-        }
+        },
       );
 
       expect(
         stateAfter.commonVaultRequestState.depositedUsd.eq(
-          stateAfter.commonVaultRequestState.depositedUsdWoFees
-        )
+          stateAfter.commonVaultRequestState.depositedUsdWoFees,
+        ),
       );
 
-      expect(fromBN(stateAfter.commonVaultRequestState.depositedUsd)).toEqual(
-        parseUnits("10")
-      );
+      expect(fromBN(stateAfter.commonVaultRequestState.depositedUsd)).toEqual(parseUnits('10'));
     });
 
-    it("when allowance is set to u128.max - it should not decrease", async () => {
+    it('when allowance is set to u128.max - it should not decrease', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -793,12 +771,12 @@ describe("minter-vault", () => {
       await mintRequest(fixture, {});
     });
 
-    it("when allowance is not set to u128.max - it should  decrease", async () => {
+    it('when allowance is not set to u128.max - it should  decrease', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture, {
         addPaymentToken: {
-          allowance: parseUnits("10"),
+          allowance: parseUnits('10'),
         },
       });
 
@@ -807,17 +785,17 @@ describe("minter-vault", () => {
       expect(fromBN(stateAfter.paymentTokenState.allowance)).toEqual(0n);
     });
 
-    it("when allowance is not set to u128.max - it should  decrease, mToken price is 1.1$", async () => {
+    it('when allowance is not set to u128.max - it should  decrease, mToken price is 1.1$', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture, {
         addPaymentToken: {
-          allowance: parseUnits("11"),
+          allowance: parseUnits('11'),
         },
       });
 
       await updateManualFeed(fixture, {
-        price: parseUnits("1.1"),
+        price: parseUnits('1.1'),
       });
 
       const { stateAfter } = await mintRequest(
@@ -828,19 +806,19 @@ describe("minter-vault", () => {
         {},
         {
           fee: 0.11,
-        }
+        },
       );
 
       expect(fromBN(stateAfter.paymentTokenState.allowance)).toEqual(0n);
     });
 
-    it("when first_deposit_min_m_tokens is 10 and mint amount is 10.0089", async () => {
+    it('when first_deposit_min_m_tokens is 10 and mint amount is 10.0089', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
 
       await updateMinterVault(fixture, {
-        firstDepositMinMTokens: parseUnits("10"),
+        firstDepositMinMTokens: parseUnits('10'),
       });
 
       await mintRequest(
@@ -851,17 +829,17 @@ describe("minter-vault", () => {
         {},
         {
           fee: 0.1011,
-        }
+        },
       );
     });
 
-    it("when first_deposit_min_m_tokens is 10 and mint amount is 10 and user is waived from fee", async () => {
+    it('when first_deposit_min_m_tokens is 10 and mint amount is 10 and user is waived from fee', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
 
       await updateMinterVault(fixture, {
-        firstDepositMinMTokens: parseUnits("10"),
+        firstDepositMinMTokens: parseUnits('10'),
       });
 
       await updateVaultCommonAccount(fixture, {
@@ -876,17 +854,17 @@ describe("minter-vault", () => {
         {},
         {
           fee: 0,
-        }
+        },
       );
     });
 
-    it("when first_deposit_min_m_tokens is 10 but user already minted tokens", async () => {
+    it('when first_deposit_min_m_tokens is 10 but user already minted tokens', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
 
       await updateMinterVault(fixture, {
-        firstDepositMinMTokens: parseUnits("10"),
+        firstDepositMinMTokens: parseUnits('10'),
       });
 
       await updateVaultCommonAccount(fixture, {
@@ -901,8 +879,8 @@ describe("minter-vault", () => {
         {},
         {
           fee: 0,
-          tokensMinted: parseUnits("10"),
-        }
+          tokensMinted: parseUnits('10'),
+        },
       );
 
       await mintRequest(
@@ -913,17 +891,17 @@ describe("minter-vault", () => {
         {},
         {
           fee: 0,
-        }
+        },
       );
     });
 
-    it("when first_deposit_min_m_tokens is 10 but user is free from min amounts", async () => {
+    it('when first_deposit_min_m_tokens is 10 but user is free from min amounts', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
 
       await updateMinterVault(fixture, {
-        firstDepositMinMTokens: parseUnits("10"),
+        firstDepositMinMTokens: parseUnits('10'),
       });
 
       await updateVaultCommonAccount(fixture, {
@@ -938,17 +916,17 @@ describe("minter-vault", () => {
         {},
         {
           fee: 0.09,
-        }
+        },
       );
     });
 
-    it("when min_amount is 10 but user is free from min amounts", async () => {
+    it('when min_amount is 10 but user is free from min amounts', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
 
       await updateVaultCommon(fixture, {
-        minAmount: parseUnits("10"),
+        minAmount: parseUnits('10'),
       });
 
       await updateVaultCommonAccount(fixture, {
@@ -963,22 +941,22 @@ describe("minter-vault", () => {
         {},
         {
           fee: 0.09,
-        }
+        },
       );
     });
 
-    it("deposit 100 USDC, when price of stable is 1.05$, mToken price is 5$, token fee 1%, instant fee 0%", async () => {
+    it('deposit 100 USDC, when price of stable is 1.05$, mToken price is 5$, token fee 1%, instant fee 0%', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
 
       await updateManualFeed(fixture, {
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
-        price: parseUnits("1.05"),
+        price: parseUnits('1.05'),
       });
 
       await updateManualFeed(fixture, {
-        price: parseUnits("5"),
+        price: parseUnits('5'),
       });
 
       await updateVaultCommon(fixture, {
@@ -993,11 +971,11 @@ describe("minter-vault", () => {
         {},
         {
           fee: 1,
-        }
+        },
       );
     });
 
-    it("deposit 100 USDC, stable = false, price of payment token is 1.05$, mToken price is 5$, token fee 1%, instant fee 0%", async () => {
+    it('deposit 100 USDC, stable = false, price of payment token is 1.05$, mToken price is 5$, token fee 1%, instant fee 0%', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture, {
@@ -1008,11 +986,11 @@ describe("minter-vault", () => {
 
       await updateManualFeed(fixture, {
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
-        price: parseUnits("1.05"),
+        price: parseUnits('1.05'),
       });
 
       await updateManualFeed(fixture, {
-        price: parseUnits("5"),
+        price: parseUnits('5'),
       });
 
       await updateVaultCommon(fixture, {
@@ -1027,11 +1005,11 @@ describe("minter-vault", () => {
         {},
         {
           fee: 1,
-        }
+        },
       );
     });
 
-    it("should fail: when amount is 0", async () => {
+    it('should fail: when amount is 0', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -1044,11 +1022,11 @@ describe("minter-vault", () => {
         {},
         {
           revertedWith: VaultError.InvalidInAmount,
-        }
+        },
       );
     });
 
-    it("should fail: when payment token rate is 0", async () => {
+    it('should fail: when payment token rate is 0', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture, {
@@ -1066,11 +1044,11 @@ describe("minter-vault", () => {
         {
           // TODO: find a way to proxify errors
           revertedWith: CommonError.GenericError,
-        }
+        },
       );
     });
 
-    it("should fail: when function is paused", async () => {
+    it('should fail: when function is paused', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -1084,11 +1062,11 @@ describe("minter-vault", () => {
         {},
         {
           revertedWith: VaultError.VaultInxPaused,
-        }
+        },
       );
     });
 
-    it("should fail: when vault is paused", async () => {
+    it('should fail: when vault is paused', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -1100,16 +1078,16 @@ describe("minter-vault", () => {
         {},
         {
           revertedWith: VaultError.VaultPaused,
-        }
+        },
       );
     });
 
-    it("should fail: when allowance is insufficient", async () => {
+    it('should fail: when allowance is insufficient', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture, {
         addPaymentToken: {
-          allowance: parseUnits("0.1"),
+          allowance: parseUnits('0.1'),
         },
       });
 
@@ -1120,11 +1098,11 @@ describe("minter-vault", () => {
         {},
         {
           revertedWith: VaultError.InsufficientAllowance,
-        }
+        },
       );
     });
 
-    it("should fail: when user`s balance is insufficient", async () => {
+    it('should fail: when user`s balance is insufficient', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -1140,17 +1118,17 @@ describe("minter-vault", () => {
         {},
         {
           revertedWith: CommonError.SplInsufficientFunds,
-        }
+        },
       );
     });
 
-    it("should fail: when deposit amount is < min_amount", async () => {
+    it('should fail: when deposit amount is < min_amount', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
 
       await updateVaultCommon(fixture, {
-        minAmount: parseUnits("10"),
+        minAmount: parseUnits('10'),
       });
 
       await mintRequest(
@@ -1160,17 +1138,17 @@ describe("minter-vault", () => {
         {},
         {
           revertedWith: VaultError.LessThanMinAmount,
-        }
+        },
       );
     });
 
-    it("should fail: when deposit amount is < first_deposit_min_m_tokens", async () => {
+    it('should fail: when deposit amount is < first_deposit_min_m_tokens', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
 
       await updateMinterVault(fixture, {
-        firstDepositMinMTokens: parseUnits("10"),
+        firstDepositMinMTokens: parseUnits('10'),
       });
 
       await mintRequest(
@@ -1180,11 +1158,11 @@ describe("minter-vault", () => {
         {},
         {
           revertedWith: VaultError.LessThanMinAmountFirstMint,
-        }
+        },
       );
     });
 
-    it("should fail: when token fee is 100%", async () => {
+    it('should fail: when token fee is 100%', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture, {
@@ -1200,11 +1178,11 @@ describe("minter-vault", () => {
         {},
         {
           revertedWith: VaultError.InvalidConvertAmount,
-        }
+        },
       );
     });
 
-    it("should fail: when green list enabled and user is not green listed", async () => {
+    it('should fail: when green list enabled and user is not green listed', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -1220,11 +1198,11 @@ describe("minter-vault", () => {
         {},
         {
           revertedWith: VaultError.NotGreenListed,
-        }
+        },
       );
     });
 
-    it("should fail: user is in the black list", async () => {
+    it('should fail: user is in the black list', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -1240,13 +1218,13 @@ describe("minter-vault", () => {
         {},
         {
           revertedWith: VaultError.Blacklisted,
-        }
+        },
       );
     });
   });
 
-  describe("approve_mint_request", () => {
-    it("should approve mint request", async () => {
+  describe('approve_mint_request', () => {
+    it('should approve mint request', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture, {});
@@ -1255,7 +1233,7 @@ describe("minter-vault", () => {
       await approveMintRequest(fixture, {});
     });
 
-    it("when safe=true and new rate do not exceed allowed deviation", async () => {
+    it('when safe=true and new rate do not exceed allowed deviation', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture, {});
@@ -1265,16 +1243,16 @@ describe("minter-vault", () => {
         fixture,
         {
           isSafe: true,
-          newRate: parseUnits("1.1"),
+          newRate: parseUnits('1.1'),
         },
         {},
         {
-          tokensMinted: parseUnits("9"),
-        }
+          tokensMinted: parseUnits('9'),
+        },
       );
     });
 
-    it("should fail: call from non-authority", async () => {
+    it('should fail: call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture, {});
@@ -1288,11 +1266,11 @@ describe("minter-vault", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
 
-    it("should fail: when safe is passed and new rate exceeds allowed deviation", async () => {
+    it('should fail: when safe is passed and new rate exceeds allowed deviation', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture, {});
@@ -1302,19 +1280,19 @@ describe("minter-vault", () => {
         fixture,
         {
           isSafe: true,
-          newRate: parseUnits("1.11"),
+          newRate: parseUnits('1.11'),
         },
         {},
         {},
         {
           revertedWith: VaultError.VariationToleranceExceeded,
-        }
+        },
       );
     });
   });
 
-  describe("reject_mint_request", () => {
-    it("should reject mint request", async () => {
+  describe('reject_mint_request', () => {
+    it('should reject mint request', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -1323,7 +1301,7 @@ describe("minter-vault", () => {
       await rejectMintRequest(fixture, {});
     });
 
-    it("should fail: call from non-authority", async () => {
+    it('should fail: call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture, {});
@@ -1336,7 +1314,7 @@ describe("minter-vault", () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        }
+        },
       );
     });
   });

@@ -1,71 +1,24 @@
-import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
-import { DataFeedFixtureReturnType } from "../fixture/dafa-feed.fixture";
+import { AuthorityType, getMint, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
+import { Keypair, PublicKey } from '@solana/web3.js';
+
+import { AC_ROLES } from '../constants/ac.constants';
+import { TOKEN_AUTHORITY_ROLES } from '../constants/token-authority.constants';
+import { TokenAuthorityFixtureReturnType } from '../fixture/token-authority.fixture';
+import { getAccountAcRoleStatePda } from '../helpers/ac.helpers';
 import {
-  DataFeedMode,
-  fetchDataFeedState,
-  fetchManualFeedState,
-  generateFeedAcccount,
-  getManualFeedStatePda,
-} from "../helpers/data-feed.helpers";
-import {
-  approveMint,
-  approveMintInstruction,
   expectTxNotReverted,
   expectTxReverted,
-  findATA,
-  formatUnits,
-  fromBN,
   getBalance,
   getOrCreateAta,
   OptionalCommonParams,
   parseUnits,
-  processTransaction,
   toBN,
-} from "../helpers/common.helpers";
-import { SYSTEM_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/native/system";
-import { VaultsFixtureReturnType } from "../fixture/vaults.fixture";
-import {
-  fetchMinterVaultRequestState,
-  fetchMinterVaultState,
-  fetchPaymentMintState,
-  fetchRedeemerVaultRequestState,
-  fetchRedeemerVaultState,
-  fetchVaultCommonAccountState,
-  fetchVaultCommonState,
-  getCommonVaultAccountStatePda,
-  getMinterVaultPda,
-  getMinterVaultRequestPda,
-  getPaymentMintStatePda,
-  PaymentMint,
-} from "../helpers/vaults.helpers";
-import {
-  AuthorityType,
-  createMintToInstruction,
-  getAssociatedTokenAddressSync,
-  getMint,
-  TOKEN_2022_PROGRAM_ID,
-  TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
-import { MAX_U128 } from "../constants/common.constants";
-import {
-  addPaymentToken,
-  newVaultCommonAccount,
-} from "./common-vaults.testers";
-import {
-  fetchAccountAcState,
-  getAccountAcRoleStatePda,
-  getAccountAcStatePda,
-} from "../helpers/ac.helpers";
-import { newAccountAc } from "./ac.testers";
-import { VAULT_AC_ROLES } from "../constants/vaults.constants";
+} from '../helpers/common.helpers';
 import {
   fetchTokenAuthorityState,
   getTokenAuthorityPda,
   mintAuthoritySeedToBuffer,
-} from "../helpers/token-authority.helpers";
-import { TokenAuthorityFixtureReturnType } from "../fixture/token-authority.fixture";
-import { TOKEN_AUTHORITY_ROLES } from "../constants/token-authority.constants";
-import { AC_ROLES } from "../constants/ac.constants";
+} from '../helpers/token-authority.helpers';
 
 type CommonTokenAuthorityParams = TokenAuthorityFixtureReturnType;
 
@@ -78,19 +31,19 @@ export const newTokenAuthority = async (
     seed?: string;
     acRole?: PublicKey;
   },
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
   const { context, tokenAuthorityProgram, authority, acRoleMTbill } = fixture;
   const from = opt?.from ?? authority;
 
-  seed ??= "mtbill-mint-authority";
+  seed ??= 'mtbill-mint-authority';
   acRole ??= acRoleMTbill.publicKey;
 
   const fetchState = async () => {
     const tokenAuthority = await fetchTokenAuthorityState(
       tokenAuthorityProgram,
       getTokenAuthorityPda(seed),
-      true
+      true,
     );
 
     return {
@@ -98,13 +51,10 @@ export const newTokenAuthority = async (
     };
   };
 
-  const stateBefore = await fetchState();
+  await fetchState();
 
   const tx = await tokenAuthorityProgram.methods
-    .newTokenAuthority(
-      Array.from(Uint8Array.from(mintAuthoritySeedToBuffer(seed))),
-      acRole
-    )
+    .newTokenAuthority(Array.from(Uint8Array.from(mintAuthoritySeedToBuffer(seed))), acRole)
     .accountsPartial({
       signer: from.publicKey,
       tokenAuthority: getTokenAuthorityPda(seed),
@@ -135,11 +85,11 @@ export const mintMToken = async (
     to?: PublicKey;
     amount?: bigint;
   },
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
   mToken ??= fixture.mTBillMint.publicKey;
   to ??= fixture.authority.publicKey;
-  amount ??= parseUnits("10");
+  amount ??= parseUnits('10');
 
   const from = opt?.from ?? fixture.authority;
 
@@ -149,27 +99,27 @@ export const mintMToken = async (
     mToken,
     to,
     from,
-    TOKEN_2022_PROGRAM_ID
+    TOKEN_2022_PROGRAM_ID,
   );
 
   const fetchState = async () => {
     const minterState = await fetchTokenAuthorityState(
       fixture.tokenAuthorityProgram,
-      getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed)
+      getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed),
     );
 
     const balanceReceiver = await getBalance(
       fixture.provider.connection,
       to,
       mToken,
-      TOKEN_2022_PROGRAM_ID
+      TOKEN_2022_PROGRAM_ID,
     );
 
     const mintState = await getMint(
       fixture.provider.connection,
       mToken,
       undefined,
-      TOKEN_2022_PROGRAM_ID
+      TOKEN_2022_PROGRAM_ID,
     );
 
     return {
@@ -192,7 +142,7 @@ export const mintMToken = async (
       authorityMinterRole: getAccountAcRoleStatePda(
         stateBefore.minterState.acRole,
         from.publicKey,
-        TOKEN_AUTHORITY_ROLES.M_MINTER
+        TOKEN_AUTHORITY_ROLES.M_MINTER,
       ),
       tokenProgram: TOKEN_2022_PROGRAM_ID,
     })
@@ -207,13 +157,9 @@ export const mintMToken = async (
 
   const stateAfter = await fetchState();
 
-  expect(stateAfter.balanceReceiver).toEqual(
-    stateBefore.balanceReceiver + amount
-  );
+  expect(stateAfter.balanceReceiver).toEqual(stateBefore.balanceReceiver + amount);
 
-  expect(stateAfter.mintState.supply).toEqual(
-    stateBefore.mintState.supply + amount
-  );
+  expect(stateAfter.mintState.supply).toEqual(stateBefore.mintState.supply + amount);
 };
 
 export const setAuthority = async (
@@ -227,7 +173,7 @@ export const setAuthority = async (
     newAuthority?: PublicKey;
     authorityType?: AuthorityType;
   },
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
   accountOrMint ??= fixture.mTBillMint.publicKey;
   authorityType ??= AuthorityType.MintTokens;
@@ -238,7 +184,7 @@ export const setAuthority = async (
   const fetchState = async () => {
     const minterState = await fetchTokenAuthorityState(
       fixture.tokenAuthorityProgram,
-      getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed)
+      getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed),
     );
 
     return {
@@ -256,7 +202,7 @@ export const setAuthority = async (
       authorityAdminRole: getAccountAcRoleStatePda(
         stateBefore.minterState.acRole,
         from.publicKey,
-        AC_ROLES.ADMIN
+        AC_ROLES.ADMIN,
       ),
       accountOrMint: accountOrMint,
       tokenProgram: TOKEN_2022_PROGRAM_ID,
@@ -284,11 +230,11 @@ export const burnToken = async (
     tokenProgram?: PublicKey;
     amount?: bigint;
   },
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
   mint ??= fixture.mTBillMint.publicKey;
   tokenProgram ??= TOKEN_2022_PROGRAM_ID;
-  amount ??= parseUnits("10");
+  amount ??= parseUnits('10');
   address ??= fixture.authority.publicKey;
 
   const { ata } = await getOrCreateAta(
@@ -297,7 +243,7 @@ export const burnToken = async (
     mint,
     address,
     fixture.authority,
-    tokenProgram
+    tokenProgram,
   );
 
   const from = opt?.from ?? fixture.authority;
@@ -305,14 +251,14 @@ export const burnToken = async (
   const fetchState = async () => {
     const minterState = await fetchTokenAuthorityState(
       fixture.tokenAuthorityProgram,
-      getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed)
+      getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed),
     );
 
     const balanceAccount = await getBalance(
       fixture.provider.connection,
       address,
       mint,
-      TOKEN_2022_PROGRAM_ID
+      TOKEN_2022_PROGRAM_ID,
     );
 
     return {
@@ -331,7 +277,7 @@ export const burnToken = async (
       authorityBurnRole: getAccountAcRoleStatePda(
         stateBefore.minterState.acRole,
         from.publicKey,
-        TOKEN_AUTHORITY_ROLES.M_BURNER
+        TOKEN_AUTHORITY_ROLES.M_BURNER,
       ),
       tokenProgram: TOKEN_2022_PROGRAM_ID,
       mint: mint,
@@ -349,9 +295,7 @@ export const burnToken = async (
 
   const stateAfter = await fetchState();
 
-  expect(stateAfter.balanceAccount).toEqual(
-    stateBefore.balanceAccount - amount
-  );
+  expect(stateAfter.balanceAccount).toEqual(stateBefore.balanceAccount - amount);
 };
 
 export const freezeAccount = async (
@@ -367,11 +311,11 @@ export const freezeAccount = async (
     tokenProgram?: PublicKey;
     amount?: bigint;
   },
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
   mint ??= fixture.mTBillMint.publicKey;
   tokenProgram ??= TOKEN_2022_PROGRAM_ID;
-  amount ??= parseUnits("10");
+  amount ??= parseUnits('10');
   toFreeze ??= fixture.authority.publicKey;
 
   const { ata } = await getOrCreateAta(
@@ -380,7 +324,7 @@ export const freezeAccount = async (
     mint,
     toFreeze,
     fixture.authority,
-    tokenProgram
+    tokenProgram,
   );
 
   const from = opt?.from ?? fixture.authority;
@@ -388,7 +332,7 @@ export const freezeAccount = async (
   const fetchState = async () => {
     const minterState = await fetchTokenAuthorityState(
       fixture.tokenAuthorityProgram,
-      getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed)
+      getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed),
     );
 
     const account = await getOrCreateAta(
@@ -397,7 +341,7 @@ export const freezeAccount = async (
       mint,
       toFreeze,
       from,
-      TOKEN_2022_PROGRAM_ID
+      TOKEN_2022_PROGRAM_ID,
     );
 
     return {
@@ -416,7 +360,7 @@ export const freezeAccount = async (
       authorityFreezeRole: getAccountAcRoleStatePda(
         stateBefore.minterState.acRole,
         from.publicKey,
-        TOKEN_AUTHORITY_ROLES.M_FREEZER
+        TOKEN_AUTHORITY_ROLES.M_FREEZER,
       ),
       tokenProgram: TOKEN_2022_PROGRAM_ID,
       mint: mint,
@@ -450,11 +394,11 @@ export const thawAccount = async (
     tokenProgram?: PublicKey;
     amount?: bigint;
   },
-  opt?: OptionalCommonParams
+  opt?: OptionalCommonParams,
 ) => {
   mint ??= fixture.mTBillMint.publicKey;
   tokenProgram ??= TOKEN_2022_PROGRAM_ID;
-  amount ??= parseUnits("10");
+  amount ??= parseUnits('10');
   toThaw ??= fixture.authority.publicKey;
 
   const { ata } = await getOrCreateAta(
@@ -463,7 +407,7 @@ export const thawAccount = async (
     mint,
     toThaw,
     fixture.authority,
-    tokenProgram
+    tokenProgram,
   );
 
   const from = opt?.from ?? fixture.authority;
@@ -471,7 +415,7 @@ export const thawAccount = async (
   const fetchState = async () => {
     const minterState = await fetchTokenAuthorityState(
       fixture.tokenAuthorityProgram,
-      getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed)
+      getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed),
     );
 
     const account = await getOrCreateAta(
@@ -480,7 +424,7 @@ export const thawAccount = async (
       mint,
       toThaw,
       from,
-      TOKEN_2022_PROGRAM_ID
+      TOKEN_2022_PROGRAM_ID,
     );
 
     return {
@@ -499,7 +443,7 @@ export const thawAccount = async (
       authorityFreezeRole: getAccountAcRoleStatePda(
         stateBefore.minterState.acRole,
         from.publicKey,
-        TOKEN_AUTHORITY_ROLES.M_FREEZER
+        TOKEN_AUTHORITY_ROLES.M_FREEZER,
       ),
       tokenProgram: TOKEN_2022_PROGRAM_ID,
       mint: mint,

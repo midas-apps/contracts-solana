@@ -1,82 +1,60 @@
-import {
-  createMint,
-  findATA,
-  getOrCreateAta,
-  initBankrun,
-  parseUnits,
-  processTransaction,
-  toBN,
-} from "../helpers/common.helpers";
-
-import { Program } from "@coral-xyz/anchor";
-
-import * as DATA_FEED_IDL from "../../target/idl/data_feed.json";
-import * as MIDAS_VAULTS_IDL from "../../target/idl/midas_vaults.json";
-import {
-  generateFeedAcccount,
-  getManualFeedStatePda,
-} from "../helpers/data-feed.helpers";
-import { PublicKey, Transaction } from "@solana/web3.js";
-import { dataFeedFixture } from "./dafa-feed.fixture";
-import {
-  generateAcAccount,
-  generateCommonVaultAccount,
-  getMinterVaultPda,
-  getRedeemerVaultPda,
-} from "../helpers/vaults.helpers";
-import { createMTokenMint } from "../../common/create-mtoken-mint";
+import { Program } from '@coral-xyz/anchor';
 import {
   AuthorityType,
-  createApproveInstruction,
   createMintToInstruction,
   createSetAuthorityInstruction,
   getAssociatedTokenAddressSync,
-  mintTo,
-  mintToInstructionData,
   TOKEN_2022_PROGRAM_ID,
-} from "@solana/spl-token";
-import { MAX_U128 } from "../constants/common.constants";
-import { VAULT_AC_ROLES, VaultActionIds } from "../constants/vaults.constants";
-import { program } from "@coral-xyz/anchor/dist/cjs/native/system";
+} from '@solana/spl-token';
+import { Transaction } from '@solana/web3.js';
+
+import { MidasVaults } from 'target/types/midas_vaults';
+
+import { createMTokenMint } from '../../common/create-mtoken-mint';
+import MIDAS_VAULTS_IDL from '../../target/idl/midas_vaults.json' with { type: 'json' };
+import { AC_ROLES } from '../constants/ac.constants';
+import { MAX_U128 } from '../constants/common.constants';
+import { TOKEN_AUTHORITY_ROLES } from '../constants/token-authority.constants';
+import { VAULT_AC_ROLES, VaultActionIds } from '../constants/vaults.constants';
+import { acRoleToBuffer, getAccountAcRoleStatePda } from '../helpers/ac.helpers';
 import {
-  acRoleToBuffer,
-  getAccountAcRoleStatePda,
-} from "../helpers/ac.helpers";
-import { AC_ROLES } from "../constants/ac.constants";
-import { tokenAuthorityFixture } from "./token-authority.fixture";
-import { TOKEN_AUTHORITY_ROLES } from "../constants/token-authority.constants";
-import { getTokenAuthorityPda } from "../helpers/token-authority.helpers";
-import { MidasVaults } from "target/types/midas_vaults";
+  createMint,
+  getOrCreateAta,
+  parseUnits,
+  processTransaction,
+  toBN,
+} from '../helpers/common.helpers';
+import { getTokenAuthorityPda } from '../helpers/token-authority.helpers';
+import {
+  generateCommonVaultAccount,
+  getMinterVaultPda,
+  getRedeemerVaultPda,
+} from '../helpers/vaults.helpers';
+
+import { dataFeedFixture } from './dafa-feed.fixture';
+import { tokenAuthorityFixture } from './token-authority.fixture';
 
 export const vaultsFixture = async (initSlot?: bigint) => {
   const dfFixture = await dataFeedFixture(initSlot);
   const taFixture = await tokenAuthorityFixture(dfFixture);
 
   const {
-    accounts,
     authority,
     context,
     dataFeedMTBill,
     dataFeedPaymentToken,
-    dataFeedProgram,
-    manualUnderlyingFeedMTBill,
-    manualUnderlyingFeedPaymentToken,
     provider,
     regularAccounts: allRegularAccounts,
     acProgram,
     ac,
-    acRoleGlobal,
     acRoleMTbill,
   } = dfFixture;
 
-  const { tokenAuthorityProgram, mTBillMinterAuthoritySeed } = taFixture;
+  const { mTBillMinterAuthoritySeed } = taFixture;
 
-  const [feeReceiver, tokensReceiver, requestRedeemer, ...regularAccounts] =
-    allRegularAccounts;
-  const vaultsProgram = new Program<MidasVaults>(
-    MIDAS_VAULTS_IDL as any,
-    provider
-  );
+  const [feeReceiver, tokensReceiver, requestRedeemer, ...regularAccounts] = allRegularAccounts;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const vaultsProgram = new Program<MidasVaults>(MIDAS_VAULTS_IDL as any, provider);
 
   const minterCommonVault = generateCommonVaultAccount();
   const redeemerCommonVault = generateCommonVaultAccount();
@@ -87,9 +65,9 @@ export const vaultsFixture = async (initSlot?: bigint) => {
     connection: provider.connection,
     metadata: {
       additionalMetadata: [],
-      name: "mTBILL",
-      symbol: "mTBILL",
-      uri: "",
+      name: 'mTBILL',
+      symbol: 'mTBILL',
+      uri: '',
     },
     sendTxFn: (_, tx, signers) => processTransaction(context, tx, signers),
   });
@@ -100,7 +78,7 @@ export const vaultsFixture = async (initSlot?: bigint) => {
     authority,
     authority.publicKey,
     authority.publicKey,
-    6
+    6,
   );
 
   const usdtMint = await createMint(
@@ -109,7 +87,7 @@ export const vaultsFixture = async (initSlot?: bigint) => {
     authority,
     authority.publicKey,
     authority.publicKey,
-    8
+    8,
   );
 
   const toCreateAtas = [
@@ -146,14 +124,14 @@ export const vaultsFixture = async (initSlot?: bigint) => {
     })),
   ];
 
-  for (let createAta of toCreateAtas) {
+  for (const createAta of toCreateAtas) {
     await getOrCreateAta(
       context,
       provider.connection,
       createAta.mint,
       createAta.owner,
       authority,
-      createAta.program
+      createAta.program,
     );
   }
 
@@ -164,16 +142,16 @@ export const vaultsFixture = async (initSlot?: bigint) => {
         usdcMint,
         getAssociatedTokenAddressSync(usdcMint, authority.publicKey, true),
         authority.publicKey,
-        parseUnits("100000", 6)
+        parseUnits('100000', 6),
       ),
       createMintToInstruction(
         usdtMint,
         getAssociatedTokenAddressSync(usdtMint, authority.publicKey, true),
         authority.publicKey,
-        parseUnits("100000", 8)
-      )
+        parseUnits('100000', 8),
+      ),
     ),
-    [authority]
+    [authority],
   );
 
   await processTransaction(
@@ -188,12 +166,12 @@ export const vaultsFixture = async (initSlot?: bigint) => {
           authorityAcAdminRole: getAccountAcRoleStatePda(
             acRoleMTbill.publicKey,
             authority.publicKey,
-            AC_ROLES.ADMIN
+            AC_ROLES.ADMIN,
           ),
           accountAcRole: getAccountAcRoleStatePda(
             acRoleMTbill.publicKey,
             authority.publicKey,
-            VAULT_AC_ROLES.VAULT_ADMIN
+            VAULT_AC_ROLES.VAULT_ADMIN,
           ),
         })
         .instruction(),
@@ -206,12 +184,12 @@ export const vaultsFixture = async (initSlot?: bigint) => {
           authorityAcAdminRole: getAccountAcRoleStatePda(
             acRoleMTbill.publicKey,
             authority.publicKey,
-            AC_ROLES.ADMIN
+            AC_ROLES.ADMIN,
           ),
           accountAcRole: getAccountAcRoleStatePda(
             acRoleMTbill.publicKey,
             authority.publicKey,
-            VAULT_AC_ROLES.VAULT_PAUSER
+            VAULT_AC_ROLES.VAULT_PAUSER,
           ),
         })
         .instruction(),
@@ -224,12 +202,12 @@ export const vaultsFixture = async (initSlot?: bigint) => {
           authorityAcAdminRole: getAccountAcRoleStatePda(
             acRoleMTbill.publicKey,
             authority.publicKey,
-            AC_ROLES.ADMIN
+            AC_ROLES.ADMIN,
           ),
           accountAcRole: getAccountAcRoleStatePda(
             acRoleMTbill.publicKey,
             getMinterVaultPda(minterCommonVault.publicKey),
-            TOKEN_AUTHORITY_ROLES.M_MINTER
+            TOKEN_AUTHORITY_ROLES.M_MINTER,
           ),
         })
         .instruction(),
@@ -242,12 +220,12 @@ export const vaultsFixture = async (initSlot?: bigint) => {
           authorityAcAdminRole: getAccountAcRoleStatePda(
             acRoleMTbill.publicKey,
             authority.publicKey,
-            AC_ROLES.ADMIN
+            AC_ROLES.ADMIN,
           ),
           accountAcRole: getAccountAcRoleStatePda(
             acRoleMTbill.publicKey,
             authority.publicKey,
-            TOKEN_AUTHORITY_ROLES.M_BURNER
+            TOKEN_AUTHORITY_ROLES.M_BURNER,
           ),
         })
         .instruction(),
@@ -260,17 +238,17 @@ export const vaultsFixture = async (initSlot?: bigint) => {
           authorityAcAdminRole: getAccountAcRoleStatePda(
             acRoleMTbill.publicKey,
             authority.publicKey,
-            AC_ROLES.ADMIN
+            AC_ROLES.ADMIN,
           ),
           accountAcRole: getAccountAcRoleStatePda(
             acRoleMTbill.publicKey,
             authority.publicKey,
-            TOKEN_AUTHORITY_ROLES.M_FREEZER
+            TOKEN_AUTHORITY_ROLES.M_FREEZER,
           ),
         })
-        .instruction()
+        .instruction(),
     ),
-    [authority]
+    [authority],
   );
 
   const createMinterVaultTx = new Transaction().add(
@@ -285,8 +263,8 @@ export const vaultsFixture = async (initSlot?: bigint) => {
         feeReceiver.publicKey,
         toBN(0),
         toBN(MAX_U128),
-        toBN(parseUnits("10", 2)),
-        toBN(0)
+        toBN(parseUnits('10', 2)),
+        toBN(0),
       )
       .accountsPartial({
         vaultCommon: minterCommonVault.publicKey,
@@ -302,7 +280,7 @@ export const vaultsFixture = async (initSlot?: bigint) => {
         authorityAcRole: getAccountAcRoleStatePda(
           acRoleMTbill.publicKey,
           authority.publicKey,
-          VAULT_AC_ROLES.VAULT_ADMIN
+          VAULT_AC_ROLES.VAULT_ADMIN,
         ),
       })
       .instruction(),
@@ -314,7 +292,7 @@ export const vaultsFixture = async (initSlot?: bigint) => {
         authorityAcRole: getAccountAcRoleStatePda(
           acRoleMTbill.publicKey,
           authority.publicKey,
-          VAULT_AC_ROLES.VAULT_PAUSER
+          VAULT_AC_ROLES.VAULT_PAUSER,
         ),
       })
       .instruction(),
@@ -326,7 +304,7 @@ export const vaultsFixture = async (initSlot?: bigint) => {
         authorityAcRole: getAccountAcRoleStatePda(
           acRoleMTbill.publicKey,
           authority.publicKey,
-          VAULT_AC_ROLES.VAULT_PAUSER
+          VAULT_AC_ROLES.VAULT_PAUSER,
         ),
       })
       .instruction(),
@@ -337,14 +315,11 @@ export const vaultsFixture = async (initSlot?: bigint) => {
       AuthorityType.MintTokens,
       getTokenAuthorityPda(mTBillMinterAuthoritySeed),
       undefined,
-      TOKEN_2022_PROGRAM_ID
-    )
+      TOKEN_2022_PROGRAM_ID,
+    ),
   );
 
-  await processTransaction(context, createMinterVaultTx, [
-    authority,
-    minterCommonVault,
-  ]);
+  await processTransaction(context, createMinterVaultTx, [authority, minterCommonVault]);
 
   const createRedeemerVaultTx = new Transaction().add(
     await vaultsProgram.methods
@@ -358,8 +333,8 @@ export const vaultsFixture = async (initSlot?: bigint) => {
         feeReceiver.publicKey,
         toBN(0),
         toBN(MAX_U128),
-        toBN(parseUnits("10", 2)),
-        toBN(0)
+        toBN(parseUnits('10', 2)),
+        toBN(0),
       )
       .accountsPartial({
         vaultCommon: redeemerCommonVault.publicKey,
@@ -374,7 +349,7 @@ export const vaultsFixture = async (initSlot?: bigint) => {
         authorityAcRole: getAccountAcRoleStatePda(
           acRoleMTbill.publicKey,
           authority.publicKey,
-          VAULT_AC_ROLES.VAULT_ADMIN
+          VAULT_AC_ROLES.VAULT_ADMIN,
         ),
       })
       .instruction(),
@@ -386,7 +361,7 @@ export const vaultsFixture = async (initSlot?: bigint) => {
         authorityAcRole: getAccountAcRoleStatePda(
           acRoleMTbill.publicKey,
           authority.publicKey,
-          VAULT_AC_ROLES.VAULT_PAUSER
+          VAULT_AC_ROLES.VAULT_PAUSER,
         ),
       })
       .instruction(),
@@ -398,7 +373,7 @@ export const vaultsFixture = async (initSlot?: bigint) => {
         authorityAcRole: getAccountAcRoleStatePda(
           acRoleMTbill.publicKey,
           authority.publicKey,
-          VAULT_AC_ROLES.VAULT_PAUSER
+          VAULT_AC_ROLES.VAULT_PAUSER,
         ),
       })
       .instruction(),
@@ -410,16 +385,13 @@ export const vaultsFixture = async (initSlot?: bigint) => {
         authorityAcRole: getAccountAcRoleStatePda(
           acRoleMTbill.publicKey,
           authority.publicKey,
-          VAULT_AC_ROLES.VAULT_PAUSER
+          VAULT_AC_ROLES.VAULT_PAUSER,
         ),
       })
-      .instruction()
+      .instruction(),
   );
 
-  await processTransaction(context, createRedeemerVaultTx, [
-    authority,
-    redeemerCommonVault,
-  ]);
+  await processTransaction(context, createRedeemerVaultTx, [authority, redeemerCommonVault]);
 
   return {
     ...dfFixture,
