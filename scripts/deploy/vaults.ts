@@ -6,7 +6,7 @@ import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 import { MidasVaults } from '@/target/types/midas_vaults';
 import { TOKEN_AUTHORITY_ROLES } from '@/test/constants/token-authority.constants';
 import { VAULT_AC_ROLES, VaultActionIds } from '@/test/constants/vaults.constants';
-import { createAtaIfNotExistsInx, toBN } from '@/test/helpers/common.helpers';
+import { createAtaInx, findATA, toBN } from '@/test/helpers/common.helpers';
 import { getMinterVaultPda } from '@/test/helpers/vaults.helpers';
 
 import VAULTS_IDL from '../../target/idl/midas_vaults.json' with { type: 'json' };
@@ -232,35 +232,34 @@ export const deployRedeemerVault = async (
 
   const vaultsProgram = getVaultsProgram(common.provider);
 
-  const ataVault = await createAtaIfNotExistsInx(
-    common.provider.connection,
+  // Create ATAs for payer, tokensReceiver, and feeReceiver (idempotent - succeeds if already exists)
+  const payerAta = findATA(mToken, common.payer.publicKey, TOKEN_2022_PROGRAM_ID);
+  const ataVault = createAtaInx(
+    common.payer.publicKey,
+    payerAta,
     mToken,
     common.payer.publicKey,
-    common.payer,
     TOKEN_2022_PROGRAM_ID,
   );
 
-  // Only create ataReceiver if tokensReceiver is different from payer
-  // (to avoid creating duplicate ATAs for the same owner)
   const ataReceiver = tokensReceiver.equals(common.payer.publicKey)
     ? null
-    : await createAtaIfNotExistsInx(
-        common.provider.connection,
+    : createAtaInx(
+        common.payer.publicKey,
+        findATA(mToken, tokensReceiver, TOKEN_2022_PROGRAM_ID),
         mToken,
         tokensReceiver,
-        common.payer,
         TOKEN_2022_PROGRAM_ID,
       );
 
-  // Only create ataFeeReceiver if feeReceiver is different from tokensReceiver and payer
   const ataFeeReceiver =
     feeReceiver.equals(tokensReceiver) || feeReceiver.equals(common.payer.publicKey)
       ? null
-      : await createAtaIfNotExistsInx(
-          common.provider.connection,
+      : createAtaInx(
+          common.payer.publicKey,
+          findATA(mToken, feeReceiver, TOKEN_2022_PROGRAM_ID),
           mToken,
           feeReceiver,
-          common.payer,
           TOKEN_2022_PROGRAM_ID,
         );
 
@@ -334,9 +333,7 @@ export const deployRedeemerVault = async (
       .instruction(),
   );
 
-  if (ataVault) {
-    tx.add(ataVault);
-  }
+  tx.add(ataVault);
 
   if (ataFeeReceiver) {
     tx.add(ataFeeReceiver);

@@ -2,7 +2,7 @@ import { Idl, Program, web3 } from '@coral-xyz/anchor';
 import * as anchor from '@coral-xyz/anchor';
 import {
   createApproveInstruction,
-  createAssociatedTokenAccountInstruction,
+  createAssociatedTokenAccountIdempotentInstruction,
   createInitializeMint2Instruction,
   createRevokeInstruction,
   getAccount,
@@ -412,7 +412,7 @@ export function createAtaInx(
   owner = payer,
   program = TOKEN_PROGRAM_ID,
 ) {
-  return createAssociatedTokenAccountInstruction(payer, ataAccount, owner, mint, program);
+  return createAssociatedTokenAccountIdempotentInstruction(payer, ataAccount, owner, mint, program);
 }
 
 export const timeTravel = async (ctx: ProgramTestContext, timestampDelta: bigint) => {
