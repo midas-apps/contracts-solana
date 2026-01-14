@@ -89,6 +89,7 @@ export const addresses: Record<string, NetworkAddresses> = {
           seed: 'mfone-token-authority',
         },
         mTokenDataFeed: new PublicKey('7UVwLrMTEDVvzQRaitJi7YLJcxFY8RTmXrHvSPMjTGDm'),
+        mTokenUnderlyingFeed: new PublicKey('HHwwM9t8eEeNDnGpXQnkHth2xHHxkD531qqBqz5H7meX'),
         minter: {
           commonVault: new PublicKey('BzKC2gazYSmB9QE2yUKGZe8K2iedFREYpGZesCHEqRbg'),
           account: new PublicKey('EaXc6FVh6m7R4cEZp1T4h6At95qguP8b8UNFe3pbYoH1'),
