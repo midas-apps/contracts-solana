@@ -74,12 +74,16 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   }
 
   console.log('Recipients:');
+  console.log(`  AC Admin:       ${accessControlAdminAddress.toString()}`);
   console.log(`  Token Manager:  ${tokenManagerAddress.toString()}`);
   console.log(`  Vaults Manager: ${vaultsManagerAddress.toString()}`);
   console.log(`  Oracle Manager: ${oracleManagerAddress.toString()}\n`);
 
   const roleGrants: { account: PublicKey; role: string; category: string }[] = [];
 
+  for (const role of ROLE_GROUPS.AC_ADMIN_OPERATIONAL) {
+    roleGrants.push({ account: accessControlAdminAddress, role, category: 'AC Admin' });
+  }
   for (const role of ROLE_GROUPS.TOKEN_MANAGER) {
     roleGrants.push({ account: tokenManagerAddress, role, category: 'Token' });
   }
