@@ -1,3 +1,6 @@
+This repository is licensed under the Business Source License 1.1.
+The license applies to the entire codebase, including all prior revisions.
+
 # Midas Solana programs repository
 
 This repository contains all Solana programs related to the [midas.app](https://midas.app) project.
