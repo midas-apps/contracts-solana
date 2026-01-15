@@ -46,41 +46,54 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
     ]);
   }
 
-  // Check if global AC admin already has ADMIN role
-  const globalAdminRolePda = getAccountAcRoleStatePda(
-    acRoleGlobal,
-    globalAccessControlAdminAddress,
-    AC_ROLES.ADMIN,
-  );
-  const globalAdminHasRole = await fetchAccountAcRoleState(acProgram, globalAdminRolePda, true);
+  // Roles to grant to global AC admin
+  const rolesToGrant = [AC_ROLES.ADMIN, AC_ROLES.UPDATE_ACCOUNT_AC];
 
-  if (globalAdminHasRole) {
-    console.log('✓ ADMIN already granted to Global AC Admin');
+  const toGrant: { role: string; pda: PublicKey }[] = [];
+
+  for (const role of rolesToGrant) {
+    const rolePda = getAccountAcRoleStatePda(acRoleGlobal, globalAccessControlAdminAddress, role);
+    const hasRole = await fetchAccountAcRoleState(acProgram, rolePda, true);
+
+    if (hasRole) {
+      console.log(`✓ ${role.replace('_role', '')} already granted`);
+    } else {
+      toGrant.push({ role, pda: rolePda });
+    }
+  }
+
+  if (toGrant.length === 0) {
+    console.log('\n✓ All roles already granted to Global AC Admin');
     console.log(`\n→ Next: yarn global-ac:revoke-deployer --network ${network}\n`);
     return;
   }
 
-  const tx = new Transaction().add(
-    await acProgram.methods
-      .grantRole(acRoleToBuffer(AC_ROLES.ADMIN))
-      .accountsPartial({
-        account: globalAccessControlAdminAddress,
-        acRole: acRoleGlobal,
-        authority: payer.publicKey,
-        authorityAcAdminRole: deployerAdminPda,
-        accountAcRole: globalAdminRolePda,
-      })
-      .instruction(),
-  );
+  console.log(`\nGranting: ${toGrant.map((r) => r.role.replace('_role', '')).join(', ')}\n`);
+
+  const tx = new Transaction();
+  for (const { role, pda } of toGrant) {
+    tx.add(
+      await acProgram.methods
+        .grantRole(acRoleToBuffer(role))
+        .accountsPartial({
+          account: globalAccessControlAdminAddress,
+          acRole: acRoleGlobal,
+          authority: payer.publicKey,
+          authorityAcAdminRole: deployerAdminPda,
+          accountAcRole: pda,
+        })
+        .instruction(),
+    );
+  }
 
   const result = await sendAndWaitForCustomSolanaTxSign(provider, tx, [], {
     action: 'deployer',
-    comment: 'Grant ADMIN for Global AC',
+    comment: 'Grant roles for Global AC',
     waitForTx: true,
   });
 
   const txInfo = result.signature || result.txId;
-  console.log(`✓ Global AC ADMIN granted | TX: ${txInfo}`);
+  console.log(`✓ ${toGrant.length} role(s) granted | TX: ${txInfo}`);
   console.log(`\n→ Next: yarn global-ac:revoke-deployer --network ${network}\n`);
 }
 

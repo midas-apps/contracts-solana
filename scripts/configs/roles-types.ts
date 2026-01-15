@@ -31,12 +31,12 @@ export const SOLANA_ROLES = {
 } as const;
 
 export const ROLE_GROUPS = {
-  // Main AC administrator - can grant/revoke all roles
-  ACCESS_CONTROL_ADMIN: [SOLANA_ROLES.ADMIN],
-
-  // AC admin operational roles (granted to accessControlAdminAddress)
-  AC_ADMIN_OPERATIONAL: [
-    SOLANA_ROLES.UPDATE_ACCOUNT_AC, // Manage blacklist/greenlist
+  // Main AC administrator
+  ACCESS_CONTROL_ADMIN: [
+    // Can grant/revoke all roles
+    SOLANA_ROLES.ADMIN,
+    // Can manage blacklist/greenlist
+    SOLANA_ROLES.UPDATE_ACCOUNT_AC,
   ],
 
   // Operational role groups (granted after deployer revocation)

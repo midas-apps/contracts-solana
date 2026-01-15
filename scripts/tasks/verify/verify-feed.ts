@@ -55,15 +55,35 @@ async function fetchUnderlyingPrice(
   provider: AnchorProvider,
   feedState: FeedState,
   network: string,
-  baseFeed: PublicKey,
+  feedAddress: PublicKey,
 ): Promise<{ price: bigint; decimals: number; timestamp?: number } | null> {
   const mode = formatMode(feedState.mode);
 
   try {
     if (mode === 'manual') {
       const program = getDataFeedProgram(provider);
-      const manualFeedPda = getManualFeedStatePda(baseFeed);
-      const manualFeedState = await fetchManualFeedState(program, manualFeedPda);
+      const derivedPda = getManualFeedStatePda(feedAddress);
+
+      // Debug: show what addresses we're checking
+      console.log(`   🔍 Checking underlyingFeed: ${feedState.underlyingFeed.toString()}`);
+      console.log(`   🔍 Derived PDA from feedAddress: ${derivedPda.toString()}`);
+      console.log(
+        `   🔍 PDAs match: ${feedState.underlyingFeed.equals(derivedPda) ? '✅ Yes' : '❌ No'}`,
+      );
+
+      // Try fetching from underlyingFeed first
+      let manualFeedState = await fetchManualFeedState(program, feedState.underlyingFeed);
+
+      if (!manualFeedState && !feedState.underlyingFeed.equals(derivedPda)) {
+        // Fallback: try the PDA derived from the feed address (only if different)
+        console.log(`   🔄 Trying derived PDA...`);
+        manualFeedState = await fetchManualFeedState(program, derivedPda);
+      }
+
+      if (!manualFeedState) {
+        console.log(`   ⚠️  ManualFeedState not found - feed may not be initialized`);
+        return null;
+      }
 
       return {
         price: convertToBase9(BigInt(manualFeedState.price.toString()), manualFeedState.decimals),
