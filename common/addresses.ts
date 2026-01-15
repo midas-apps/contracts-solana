@@ -77,4 +77,36 @@ export const addresses: Record<string, NetworkAddresses> = {
   // Programs are deployed to addresses defined in Anchor.toml [programs.localnet]
   // Note: Addresses may change when local validator is reset
   localnet: {},
+  mainnet: {
+    acRoleGlobal: new PublicKey('39tDSAtrYuy7cA6ipj1N9c8jzs5kRPbWAj5ztmW3sMa6'),
+    ac: new PublicKey('2dGjhqtMhDk1zuhv8NhiTS52fDudaSQt8DHhPbtrit3a'),
+    tokens: {
+      [MProduct.MFONE]: {
+        acRole: new PublicKey('CVUnxqMxQGeUyEn1Pd7DXmZawQMpGruWGLikFe2E7u5k'),
+        mToken: new PublicKey('ESS9fuAbDiyDXy6y1ZAt9VSaiGPSqG8NwaWVX7dePdR7'),
+        tokenAuthority: {
+          account: new PublicKey('4ZifxnpKCVVi6tJLktGJC3dZQWvkXtSzkEVNSE4szMsb'),
+          seed: 'mfone-token-authority',
+        },
+        mTokenDataFeed: new PublicKey('7UVwLrMTEDVvzQRaitJi7YLJcxFY8RTmXrHvSPMjTGDm'),
+        mTokenUnderlyingFeed: new PublicKey('HHwwM9t8eEeNDnGpXQnkHth2xHHxkD531qqBqz5H7meX'),
+        minter: {
+          commonVault: new PublicKey('BzKC2gazYSmB9QE2yUKGZe8K2iedFREYpGZesCHEqRbg'),
+          account: new PublicKey('EaXc6FVh6m7R4cEZp1T4h6At95qguP8b8UNFe3pbYoH1'),
+        },
+        redeemer: {
+          commonVault: new PublicKey('Gzu6rgQ6ezGkNYExQ2WZJvV7Y9LidUKSUAjUZWb5v1c2'),
+          account: new PublicKey('DNJMfdgrrVHKp1nFY5Qoqq14erqzdJoMve5THgKpCkrb'),
+        },
+      },
+    },
+    feeds: {
+      [PaymentToken.USDC]: {
+        token: new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
+        tokenProgram: TOKEN_PROGRAM_ID,
+        dataFeed: new PublicKey('EY9TeqHx3QbKfSbZW7vZPNeg6Y8nwprsa9rm6okGCKpn'),
+        underlyingFeed: new PublicKey('Dpw1EAVrSB1ibxiDQyTAW6Zip3J4Btk2x4SgApQCeFbX'),
+      },
+    },
+  },
 };

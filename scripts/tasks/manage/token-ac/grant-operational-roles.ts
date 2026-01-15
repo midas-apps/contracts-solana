@@ -12,7 +12,6 @@ import {
 } from '@/test/helpers/ac.helpers';
 
 import { loadTokenConfig } from '../../../configs/loadTokenConfig';
-import { networkRolesConfigs } from '../../../configs/network-roles';
 import { ROLE_GROUPS } from '../../../configs/roles-types';
 import { getAcProgram } from '../../../deploy/ac';
 import { getTokenAddresses } from '../../../utils/addressQueries';
@@ -23,13 +22,6 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
 
   console.log(`\n━━━ Step 3/3: Grant Operational Roles ━━━`);
   console.log(`Token: ${mtoken} | Network: ${network}\n`);
-
-  const networkRolesConfig = networkRolesConfigs[network];
-  if (!networkRolesConfig) {
-    throw createUserError(`Network roles config not found: ${network}`);
-  }
-
-  const accessControlAdminAddress = new PublicKey(networkRolesConfig.accessControlAdminAddress);
 
   const config = loadTokenConfig(mtoken, network);
   const grantRolesConfig = config.grantRoles;
@@ -57,8 +49,7 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const vaultsManagerAddress = new PublicKey(grantRolesConfig.vaultsManagerAddress);
   const oracleManagerAddress = new PublicKey(grantRolesConfig.oracleManagerAddress);
 
-  console.log(`Authority: ${payer.publicKey.toString()}`);
-  console.log(`Expected:  ${accessControlAdminAddress.toString()}\n`);
+  console.log(`Authority: ${payer.publicKey.toString()}\n`);
 
   // Verify current wallet has ADMIN role
   const payerAdminRolePda = getAccountAcRoleStatePda(acRole, payer.publicKey, AC_ROLES.ADMIN);

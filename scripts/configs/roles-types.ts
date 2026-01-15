@@ -31,12 +31,16 @@ export const SOLANA_ROLES = {
 } as const;
 
 export const ROLE_GROUPS = {
-  // Main AC administrator - can grant/revoke all roles
-  ACCESS_CONTROL_ADMIN: [SOLANA_ROLES.ADMIN],
+  // Main AC administrator
+  ACCESS_CONTROL_ADMIN: [
+    // Can grant/revoke all roles
+    SOLANA_ROLES.ADMIN,
+    // Can manage blacklist/greenlist
+    SOLANA_ROLES.UPDATE_ACCOUNT_AC,
+  ],
 
   // Operational role groups (granted after deployer revocation)
   TOKEN_MANAGER: [
-    SOLANA_ROLES.UPDATE_ACCOUNT_AC, // Manage blacklist/greenlist
     SOLANA_ROLES.M_MINTER, // Manual mint tokens
     SOLANA_ROLES.M_BURNER, // Manual burn tokens
     SOLANA_ROLES.M_FREEZER, // Freeze/thaw accounts

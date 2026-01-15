@@ -16,11 +16,17 @@ data_feed = "MDF1kkcgJqyizY8k3U1ESAxLBYFYmE3qTwxf2pmGE1s"
 token_authority = "MTA14NBri1ojys9tnxYuRKHTtVNAssT9bHo5Lt21vDa"
 midas_vaults = "MidasZepq8k2oFNCCm1rm31rbbj68JSPJeXwqQu6NfZ"
 
+[programs.mainnet]
+access_control = "MAC1H4FiknRdqG7DdEmQXgdp688w8Zo5t44T3CsKt3P"
+data_feed = "MDF1kkcgJqyizY8k3U1ESAxLBYFYmE3qTwxf2pmGE1s"
+token_authority = "MTA14NBri1ojys9tnxYuRKHTtVNAssT9bHo5Lt21vDa"
+midas_vaults = "MidasZepq8k2oFNCCm1rm31rbbj68JSPJeXwqQu6NfZ"
+
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Devnet"
+cluster = "Mainnet"
 wallet = "~/.config/solana/midas_id.json"
 
 [scripts]
