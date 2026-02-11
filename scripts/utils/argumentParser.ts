@@ -112,6 +112,18 @@ export function getOptionalArg(key: string): string | undefined {
   return argv[key] as string | undefined;
 }
 
+/** Get authority public key from arguments */
+export function getAuthority(): string {
+  const argv = getParsedArgs();
+  const authority = argv.authority as string | undefined;
+  if (!authority) {
+    throw createUserError('Authority is required', [
+      'Use --authority to specify the authority public key (Fordefi vault address)',
+    ]);
+  }
+  return authority;
+}
+
 /** Get optional vaults array from arguments */
 export function getOptionalVaults(): ('minter' | 'redeemer')[] | undefined {
   const argv = getParsedArgs();

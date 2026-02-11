@@ -2,7 +2,6 @@ import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { PublicKey } from '@solana/web3.js';
 
-import { createUserError } from '@/common/errorHandler';
 import { executeNetworkScript } from '@/common/scriptRunner';
 
 import { loadPaymentTokenConfig } from '../../configs/loadPaymentTokenConfig';
@@ -28,15 +27,9 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   if (existingAddresses?.token) {
     mintPublicKey = existingAddresses.token;
     console.log(`✓ Using existing token from addresses.ts: ${mintPublicKey.toString()}`);
-  } else if (config.tokenAddress && config.tokenAddress !== 'placeholder') {
-    // Fall back to config
+  } else {
     mintPublicKey = new PublicKey(config.tokenAddress);
     console.log(`✓ Using token from config: ${mintPublicKey.toString()}`);
-  } else {
-    throw createUserError(`Token address not found for ${paymentToken} on ${network}`, [
-      `Deploy the mock token first: yarn deploy:mock-payment-token --network ${network} --payment-token ${paymentToken}`,
-      `Or add the token address to the network config`,
-    ]);
   }
 
   // Check if data feed already exists

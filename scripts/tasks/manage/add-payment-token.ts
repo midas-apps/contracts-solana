@@ -7,7 +7,8 @@ import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 import { VAULT_AC_ROLES } from '@/test/constants/vaults.constants';
 import { getAccountAcRoleStatePda } from '@/test/helpers/ac.helpers';
 import {
-  createAtaIfNotExistsInx,
+  createAtaInx,
+  findATA,
   toBN,
   parsePercent,
   parseUnits,
@@ -34,9 +35,9 @@ type VaultType = 'minter' | 'redeemer';
 async function addPaymentTokenToVault(
   provider: AnchorProvider,
   payer: Wallet,
-  network: string,
   vaultsProgram: ReturnType<typeof getVaultsProgram>,
   vaultCommon: PublicKey,
+  vaultType: VaultType,
   feedAddr: { token: PublicKey; dataFeed: PublicKey; tokenProgram: PublicKey } | null,
   finalFee: string,
   finalAllowance: string,
@@ -90,41 +91,48 @@ async function addPaymentTokenToVault(
   );
 
   if (!finalIsFiat && feedAddr) {
-    const feeReceiverCreateAtaInx = await createAtaIfNotExistsInx(
-      provider.connection,
-      feedAddr.token,
-      commonState.feeReceiver,
-      payer,
-      feedAddr.tokenProgram || TOKEN_PROGRAM_ID,
+    const tokenProgram = feedAddr.tokenProgram || TOKEN_PROGRAM_ID;
+
+    // Create ATAs for fee and tokens receivers (idempotent - succeeds if already exists)
+    const feeReceiverAta = findATA(feedAddr.token, commonState.feeReceiver, tokenProgram);
+    tx.add(
+      createAtaInx(
+        payer.publicKey,
+        feeReceiverAta,
+        feedAddr.token,
+        commonState.feeReceiver,
+        tokenProgram,
+      ),
     );
 
-    const tokensReceiverCreateAtaInx = commonState.tokensReceiver.equals(commonState.feeReceiver)
-      ? null
-      : await createAtaIfNotExistsInx(
-          provider.connection,
+    if (!commonState.tokensReceiver.equals(commonState.feeReceiver)) {
+      const tokensReceiverAta = findATA(feedAddr.token, commonState.tokensReceiver, tokenProgram);
+      tx.add(
+        createAtaInx(
+          payer.publicKey,
+          tokensReceiverAta,
           feedAddr.token,
           commonState.tokensReceiver,
-          payer,
-          feedAddr.tokenProgram || TOKEN_PROGRAM_ID,
-        );
-
-    if (feeReceiverCreateAtaInx) {
-      tx.add(feeReceiverCreateAtaInx);
-    }
-
-    if (tokensReceiverCreateAtaInx) {
-      tx.add(tokensReceiverCreateAtaInx);
+          tokenProgram,
+        ),
+      );
     }
   }
 
   const txResult = await sendAndWaitForCustomSolanaTxSign(provider, tx, [], {
     action: 'update-vault',
-    comment: `Add ${paymentToken} payment token to ${mtoken} vault`,
+    comment: `Add ${paymentToken} to ${mtoken} ${vaultType} vault`,
     mToken: mtoken,
-    waitForTx: true,
+    waitForTx: false,
   });
 
-  return txResult.signature || '';
+  if (txResult.signature) {
+    return txResult.signature;
+  }
+
+  // Fordefi multi-sig - transaction pending approval
+  console.log(`   ⏳ Pending approval | Fordefi TX ID: ${txResult.txId}`);
+  return `pending:${txResult.txId}`;
 }
 
 async function main(provider: AnchorProvider, payer: Wallet) {
@@ -235,9 +243,9 @@ async function main(provider: AnchorProvider, payer: Wallet) {
       const txRes = await addPaymentTokenToVault(
         provider,
         payer,
-        network,
         vaultsProgram,
         vaultCommon,
+        vaultType,
         feedAddr,
         finalFee,
         finalAllowance,
@@ -253,7 +261,15 @@ async function main(provider: AnchorProvider, payer: Wallet) {
   }
 
   if (results.length > 0) {
-    console.log(`\n✅ Successfully added ${results.length} payment token(s) to vault(s)!`);
+    const pending = results.filter((r) => r.tx.startsWith('pending:'));
+    const completed = results.filter((r) => !r.tx.startsWith('pending:'));
+
+    if (completed.length > 0) {
+      console.log(`\n✅ Successfully added ${completed.length} payment token(s) to vault(s)!`);
+    }
+    if (pending.length > 0) {
+      console.log(`\n⏳ ${pending.length} transaction(s) awaiting approval in Fordefi dashboard`);
+    }
   } else {
     console.log('\n⚠️  No payment tokens were added');
   }

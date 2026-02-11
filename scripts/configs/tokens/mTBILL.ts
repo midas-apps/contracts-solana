@@ -54,9 +54,9 @@ export const mTBILLConfig: TokenConfigWithNetworks = {
         minFiatRedeemAmount: '10',
         fiatFlatFee: '1',
         greenListEnforced: false,
-        feeReceiver: 'QRLkMrM5jfEmS6kmBBEgfDo97VariSWiuoCn1WkmBpj',
-        tokensReceiver: 'QRLkMrM5jfEmS6kmBBEgfDo97VariSWiuoCn1WkmBpj',
-        requestRedeemer: 'QRLkMrM5jfEmS6kmBBEgfDo97VariSWiuoCn1WkmBpj',
+        feeReceiver: 'EfzamqVaGeuo2bVDJUophcChKD65tC52vQzSyrEEP3Fk',
+        tokensReceiver: 'EfzamqVaGeuo2bVDJUophcChKD65tC52vQzSyrEEP3Fk',
+        requestRedeemer: 'EfzamqVaGeuo2bVDJUophcChKD65tC52vQzSyrEEP3Fk',
         paymentTokens: [
           {
             symbol: PaymentToken.USDC,
@@ -68,9 +68,9 @@ export const mTBILLConfig: TokenConfigWithNetworks = {
         ],
       },
       grantRoles: {
-        tokenManagerAddress: 'QRLkMrM5jfEmS6kmBBEgfDo97VariSWiuoCn1WkmBpj',
+        tokenManagerAddress: 'Cekui13bYpDch4JmL7z3Wk7c9qGb9fe7mCrGPxDkaGGh',
         vaultsManagerAddress: 'QRLkMrM5jfEmS6kmBBEgfDo97VariSWiuoCn1WkmBpj',
-        oracleManagerAddress: 'QRLkMrM5jfEmS6kmBBEgfDo97VariSWiuoCn1WkmBpj',
+        oracleManagerAddress: '9KV7ptgH67En5paS62Z9NZZqCpYxoDKhDNpAQQTVy18X',
       },
     },
     localnet: {

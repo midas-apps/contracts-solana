@@ -4,9 +4,9 @@ import { getAddress } from 'viem';
 
 import { createUserError } from '@/common/errorHandler';
 import { DataFeedConfig } from '@/scripts/configs/types';
+import { PRICE_MULTIPLIER } from '@/scripts/constants/pricing';
 
 import { deployDataFeed as deployDataFeedContract, getDataFeedProgram } from '../deploy/dataFeed';
-import { deployChainlinkFeed } from '../deploy/feeds/chainlink';
 import { deployManualFeed } from '../deploy/feeds/manual';
 import { deployPythFeed } from '../deploy/feeds/pyth';
 import { deploySwitchboardFeed, verifySwitchboardFeed } from '../deploy/feeds/switchboard';
@@ -39,9 +39,12 @@ export async function deployFeedFromConfig({
   const feedConfig = {
     acRole,
     underlyingFeed,
-    minPrice: BigInt(Math.floor(parseFloat(dataFeedConfig.minPrice) * 1e9)),
-    maxPrice: BigInt(Math.floor(parseFloat(dataFeedConfig.maxPrice) * 1e9)),
+    minPrice: BigInt(Math.floor(parseFloat(dataFeedConfig.minPrice) * PRICE_MULTIPLIER)),
+    maxPrice: BigInt(Math.floor(parseFloat(dataFeedConfig.maxPrice) * PRICE_MULTIPLIER)),
     maxStaleness: dataFeedConfig.maxStaleness,
+    initialPrice: dataFeedConfig.initialPrice
+      ? BigInt(Math.floor(parseFloat(dataFeedConfig.initialPrice) * PRICE_MULTIPLIER))
+      : undefined,
   };
 
   switch (mode) {
@@ -86,20 +89,28 @@ export async function deployFeedFromConfig({
     }
 
     case 'pyth': {
-      const dataFeed = await deployPythFeed({ provider, payer, network }, { ...feedConfig });
+      if (!underlyingFeed) throw createUserError('underlyingFeed is required for pyth mode');
+      const dataFeed = await deployPythFeed(
+        { provider, payer, network },
+        { ...feedConfig, underlyingFeed },
+      );
       return {
         dataFeed,
         underlyingFeed,
       };
     }
 
-    case 'chainlink': {
-      const dataFeed = await deployChainlinkFeed({ provider, payer, network }, { ...feedConfig });
-      return {
-        dataFeed,
-        underlyingFeed,
-      };
-    }
+    // case 'chainlink': {
+    //   if (!underlyingFeed) throw createUserError('underlyingFeed is required for chainlink mode');
+    //   const dataFeed = await deployChainlinkFeed(
+    //     { provider, payer, network },
+    //     { ...feedConfig, underlyingFeed },
+    //   );
+    //   return {
+    //     dataFeed,
+    //     underlyingFeed,
+    //   };
+    // }
 
     case 'manual': {
       const dataFeed = await deployManualFeed({ provider, payer, network }, feedConfig);

@@ -1,30 +1,51 @@
-import { PublicKey } from '@solana/web3.js';
 import { z } from 'zod';
 
 import { PaymentToken } from '@/common/tokenTypes';
 
-import { PLACEHOLDER_FEED_ADDRESS } from '../utils/feedUtils';
-
+import { publicKeySchema } from './common-schemas';
 import { grantRolesConfigSchema } from './roles-types';
 
-const publicKeySchema = z.string().refine(
-  (val) => {
-    try {
-      new PublicKey(val);
-      return true;
-    } catch {
-      return false;
-    }
-  },
-  { message: 'Invalid PublicKey format' },
-);
+/**
+ * Validates price strings (e.g., "0.1", "100000")
+ * - Must be a valid decimal number
+ * - Must be greater than 0
+ */
+const priceSchema = z
+  .string()
+  .refine((val) => /^\d+\.?\d*$/.test(val), {
+    message: 'Price must be a positive decimal number (e.g., "1.5", "100")',
+  })
+  .refine((val) => parseFloat(val) > 0, {
+    message: 'Price must be greater than 0',
+  });
 
-export const dataFeedModeSchema = z.enum(['switchboard', 'pyth', 'chainlink', 'manual']);
+/**
+ * Validates monetary amount strings (e.g., fees, limits, allowances)
+ * - Must be a valid decimal number
+ * - Must be non-negative (0 or greater)
+ */
+const monetaryAmountSchema = z
+  .string()
+  .refine((val) => /^\d+\.?\d*$/.test(val), {
+    message: 'Amount must be a non-negative decimal number (e.g., "0", "1.5", "1000")',
+  })
+  .refine((val) => parseFloat(val) >= 0, {
+    message: 'Amount must be non-negative',
+  });
+
+/**
+ * Validates Ethereum address format (0x + 40 hex characters)
+ */
+const ethereumAddressSchema = z.string().refine((val) => /^0x[a-fA-F0-9]{40}$/.test(val), {
+  message: 'Must be a valid Ethereum address (0x followed by 40 hex characters)',
+});
+
+export const dataFeedModeSchema = z.enum(['switchboard', 'pyth', 'manual']);
 
 export const switchboardConfigSchema = z.object({
   env: z.enum(['devnet', 'mainnet']),
   ethRpc: z.url(),
-  ethDataFeed: z.string(),
+  ethDataFeed: ethereumAddressSchema,
   feedName: z.string(), // e.g., "mTBILL/USD", "mRe7SOL/SOL"
 });
 
@@ -32,9 +53,10 @@ export const dataFeedConfigSchema = z
   .object({
     mode: dataFeedModeSchema,
     underlyingFeed: publicKeySchema.optional(),
-    minPrice: z.string(),
-    maxPrice: z.string(),
+    minPrice: priceSchema,
+    maxPrice: priceSchema,
     maxStaleness: z.number().int().positive(),
+    initialPrice: priceSchema.optional(),
     switchboard: switchboardConfigSchema.optional(),
   })
   .refine(
@@ -49,23 +71,47 @@ export const dataFeedConfigSchema = z
       path: ['switchboard'],
     },
   )
-  // Note: underlyingFeed is optional for switchboard mode
-  // If provided, it will be used instead of deploying a new feed
-  // If not provided, a new Switchboard feed will be deployed based on ethDataFeed
+  // underlyingFeed behavior varies by mode:
+  // - switchboard: optional. If not provided, deploys new Switchboard oracle feed.
+  //   If provided, uses existing Switchboard feed.
+  // - manual: optional. If not provided, creates a new manual feed PDA internally.
+  //   If provided, uses the specified feed address.
+  // - pyth: required. Must reference an existing oracle feed address.
   .refine(
     (data) => {
-      // Pyth and Chainlink modes: underlyingFeed is required and cannot be a placeholder
-      if (data.mode === 'pyth' || data.mode === 'chainlink') {
-        return (
-          data.underlyingFeed !== undefined && data.underlyingFeed !== PLACEHOLDER_FEED_ADDRESS
-        );
+      // Pyth mode: underlyingFeed is required
+      if (data.mode === 'pyth') {
+        return data.underlyingFeed !== undefined;
       }
       return true;
     },
     {
-      message:
-        'underlyingFeed is required and cannot be a placeholder for pyth and chainlink modes',
+      message: 'underlyingFeed is required for pyth mode',
       path: ['underlyingFeed'],
+    },
+  )
+  .refine(
+    (data) => {
+      // Ensure minPrice < maxPrice
+      return parseFloat(data.minPrice) < parseFloat(data.maxPrice);
+    },
+    {
+      message: 'minPrice must be less than maxPrice',
+      path: ['minPrice'],
+    },
+  )
+  .refine(
+    (data) => {
+      // Ensure initialPrice is within [minPrice, maxPrice] when provided
+      if (data.initialPrice === undefined) return true;
+      const initial = parseFloat(data.initialPrice);
+      const min = parseFloat(data.minPrice);
+      const max = parseFloat(data.maxPrice);
+      return initial >= min && initial <= max;
+    },
+    {
+      message: 'initialPrice must be between minPrice and maxPrice',
+      path: ['initialPrice'],
     },
   );
 
@@ -73,11 +119,15 @@ export const tokenMetadataSchema = z.object({
   name: z.string(),
   symbol: z.string(),
   decimals: z.number().int().min(0).max(18).default(9),
-  uri: z.string().url().optional(),
+  uri: z.url().optional(),
 });
 
 export const tokenAuthorityConfigSchema = z.object({
-  seed: z.string(),
+  seed: z
+    .string()
+    .min(8, 'Seed must be at least 8 characters for security')
+    .max(32, 'Seed must not exceed 32 characters')
+    .regex(/^[a-z0-9-]+$/, 'Seed must only contain lowercase letters, numbers, and hyphens'),
 });
 
 export const paymentTokenConfigSchema = z.object({
@@ -87,19 +137,19 @@ export const paymentTokenConfigSchema = z.object({
       message: `Invalid payment token symbol. Must be one of: ${Object.values(PaymentToken).join(', ')}`,
     })
     .transform((val) => val as PaymentToken),
-  fee: z.string(),
-  allowance: z.string(),
+  fee: monetaryAmountSchema,
+  allowance: monetaryAmountSchema,
   stable: z.boolean(),
   isFiat: z.boolean().default(false),
 });
 
 export const minterVaultConfigSchema = z.object({
-  instantFee: z.string(),
-  instantDailyLimit: z.string(),
-  variationTolerance: z.string(),
-  minAmount: z.string(),
-  firstMintMinMTokens: z.string(),
-  maxSupplyCap: z.string().optional(), // If not set, defaults to unlimited (u64::MAX)
+  instantFee: monetaryAmountSchema,
+  instantDailyLimit: monetaryAmountSchema,
+  variationTolerance: monetaryAmountSchema,
+  minAmount: monetaryAmountSchema,
+  firstMintMinMTokens: monetaryAmountSchema,
+  maxSupplyCap: monetaryAmountSchema.optional(),
   greenListEnforced: z.boolean().default(false),
   tokensReceiver: publicKeySchema,
   feeReceiver: publicKeySchema,
@@ -107,12 +157,12 @@ export const minterVaultConfigSchema = z.object({
 });
 
 export const redeemerVaultConfigSchema = z.object({
-  instantFee: z.string(),
-  instantDailyLimit: z.string(),
-  variationTolerance: z.string(),
-  minAmount: z.string(),
-  minFiatRedeemAmount: z.string(),
-  fiatFlatFee: z.string(),
+  instantFee: monetaryAmountSchema,
+  instantDailyLimit: monetaryAmountSchema,
+  variationTolerance: monetaryAmountSchema,
+  minAmount: monetaryAmountSchema,
+  minFiatRedeemAmount: monetaryAmountSchema,
+  fiatFlatFee: monetaryAmountSchema,
   greenListEnforced: z.boolean().default(false),
   tokensReceiver: publicKeySchema,
   feeReceiver: publicKeySchema,

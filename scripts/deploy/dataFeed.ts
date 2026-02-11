@@ -19,21 +19,44 @@ export const getDataFeedProgram = (provider: AnchorProvider) => {
   return new Program<DataFeed>(DATA_FEED_IDL as any, provider);
 };
 
-export interface DeployDataFeedConfig {
+interface DeployDataFeedBaseConfig {
   acRole: PublicKey;
   feed?: Keypair;
-  mode: keyof typeof DataFeedMode;
-  underlyingFeed: PublicKey;
   minPrice: bigint;
   maxPrice: bigint;
   maxStaleness: number;
 }
 
-export const deployDataFeed = async (
-  common: CommonParams,
-  { feed, underlyingFeed, mode, acRole, maxPrice, maxStaleness, minPrice }: DeployDataFeedConfig,
-) => {
-  feed ??= Keypair.generate();
+/**
+ * Discriminated union for data feed deployments
+ * - Manual and Switchboard feeds: underlyingFeed is optional (will be created if not provided)
+ * - Pyth and Chainlink feeds: underlyingFeed is required (must reference existing oracle)
+ */
+export type DeployDataFeedConfig =
+  | (DeployDataFeedBaseConfig & {
+      mode: 'manual' | 'switchboard';
+      underlyingFeed?: PublicKey;
+    })
+  | (DeployDataFeedBaseConfig & {
+      mode: 'pyth' | 'chainlink';
+      underlyingFeed: PublicKey;
+    });
+
+export const deployDataFeed = async (common: CommonParams, config: DeployDataFeedConfig) => {
+  const {
+    feed: feedKeypair,
+    underlyingFeed,
+    mode,
+    acRole,
+    maxPrice,
+    maxStaleness,
+    minPrice,
+  } = config;
+  const feed = feedKeypair ?? Keypair.generate();
+
+  if ((mode === 'pyth' || mode === 'chainlink') && !underlyingFeed) {
+    throw new Error(`underlyingFeed is required for ${mode} mode`);
+  }
 
   const dataFeedProgram = getDataFeedProgram(common.provider);
 
@@ -54,13 +77,17 @@ export const deployDataFeed = async (
       .instruction(),
   );
 
-  await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [feed], {
+  const result = await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [feed], {
     action: 'deployer',
     comment: 'Deploy Data Feed',
     waitForTx: true,
     pollingIntervalMs: 1000,
     timeoutDurationMs: 120 * 1000,
   });
+
+  if (result.signature) {
+    console.log(`Transaction signature: ${result.signature}`);
+  }
 
   return feed.publicKey;
 };

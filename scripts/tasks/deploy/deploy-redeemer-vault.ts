@@ -28,7 +28,7 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const globalAc = getAcAddress(network);
   if (!globalAc) {
     throw createUserError(`AC not found for network ${network}`, [
-      `Run: yarn deploy:network --network ${network}`,
+      `Run: yarn deploy:global-ac-role --network ${network} && yarn deploy:global-ac --network ${network}`,
     ]);
   }
 

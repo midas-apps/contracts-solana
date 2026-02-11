@@ -32,13 +32,13 @@ export function requireNetworkAddresses(network: string): NetworkAddresses {
   return requireAddress(
     () => getNetworkAddresses(network),
     `Network addresses not found for: ${network}`,
-    [`Run: yarn deploy:network --network ${network}`],
+    [`Run: yarn deploy:global-ac-role && yarn deploy:global-ac --network ${network}`],
   );
 }
 
 export function requireAcAddress(network: string): PublicKey {
   return requireAddress(() => getAcAddress(network), `AC address not found for ${network}`, [
-    `Run: yarn deploy:network --network ${network}`,
+    `Run: yarn deploy:global-ac-role && yarn deploy:global-ac --network ${network}`,
   ]);
 }
 
@@ -46,7 +46,7 @@ export function requireAcRoleGlobalAddress(network: string): PublicKey {
   return requireAddress(
     () => getAcRoleGlobalAddress(network),
     `AC Role Global address not found for ${network}`,
-    [`Run: yarn deploy:network --network ${network}`],
+    [`Run: yarn deploy:global-ac-role && yarn deploy:global-ac --network ${network}`],
   );
 }
 

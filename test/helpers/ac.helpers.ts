@@ -7,7 +7,6 @@ import { AccessControlProgram, fetchAccountNullable, findPDA } from './common.he
 export const DataFeedMode = {
   manual: { manual: {} },
   switchboard: { switchboard: {} },
-  chainlink: { chainlink: {} },
 };
 export const generateAcAccount = () => {
   return Keypair.generate();

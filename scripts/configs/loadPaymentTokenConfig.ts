@@ -46,10 +46,16 @@ export function loadPaymentTokenConfig(
   }
 
   // Return as PaymentTokenDeploymentConfig
-  // Note: tokenAddress will be validated later - either from config or addresses.ts
+  // Note: If tokenAddress is not in config, caller must provide it from addresses.ts
+  // The type requires a valid address, so we validate it here
+  const tokenAddress = networkParseResult.data.tokenAddress;
+  if (!tokenAddress) {
+    throw createUserError(`tokenAddress is required for ${paymentToken} on ${network}`);
+  }
+
   return {
     metadata: configParseResult.data.metadata,
-    tokenAddress: networkParseResult.data.tokenAddress || 'placeholder', // Will be overridden from addresses.ts
+    tokenAddress,
     dataFeed: networkParseResult.data.dataFeed,
   };
 }

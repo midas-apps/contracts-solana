@@ -1,3 +1,6 @@
+This repository is licensed under the Business Source License 1.1.
+The license applies to the entire codebase, including all prior revisions.
+
 # Midas Solana programs repository
 
 This repository contains all Solana programs related to the [midas.app](https://midas.app) project.
@@ -129,12 +132,12 @@ target/doc/<program_name>/index.html
 
 ## Program addresses
 
-| Program Name        | Address                                        |
-| ------------------- | ---------------------------------------------- |
-| **access-control**  | `GQp4fJwxmLF7vL7uJ4jpS3uRz96qrb7MfoLKMnJoeE3Z` |
-| **data-feed**       | `7dTNTpTqbHCLxc1FtpCRAq5d4u1Y6WVqrAc1znVGQDxV` |
-| **token-authority** | `6XqSwGFEuadyqXC9vBLYGJhvQsEVjPdCrtvN6inAb4z3` |
-| **midas-vaults**    | `6eFgYZCZZFTe61T4YxWsiHHAunCLTh9V7TAjj8DxuZwm` |
+| Program Name        | Address                                       |
+| ------------------- | --------------------------------------------- |
+| **access-control**  | `MAC1H4FiknRdqG7DdEmQXgdp688w8Zo5t44T3CsKt3P` |
+| **data-feed**       | `MDF1kkcgJqyizY8k3U1ESAxLBYFYmE3qTwxf2pmGE1s` |
+| **token-authority** | `MTA14NBri1ojys9tnxYuRKHTtVNAssT9bHo5Lt21vDa` |
+| **midas-vaults**    | `MidasZepq8k2oFNCCm1rm31rbbj68JSPJeXwqQu6NfZ` |
 
 ## Account addresses
 

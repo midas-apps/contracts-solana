@@ -11,10 +11,10 @@ import {
   fetchAccountAcRoleState,
 } from '@/test/helpers/ac.helpers';
 
-import { networkRolesConfigs } from '../../configs/network-roles';
-import { getAcProgram } from '../../deploy/ac';
-import { getTokenAddresses } from '../../utils/addressQueries';
-import { getMtoken, getNetwork } from '../../utils/argumentParser';
+import { networkRolesConfigs } from '../../../configs/network-roles';
+import { getAcProgram } from '../../../deploy/ac';
+import { getTokenAddresses } from '../../../utils/addressQueries';
+import { getMtoken, getNetwork } from '../../../utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const mtoken = getMtoken();
@@ -60,7 +60,9 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
 
   if (acAdminHasRole) {
     console.log('✓ ADMIN already granted to AC Admin');
-    console.log(`\n→ Next: yarn revoke:deployer-roles --mtoken ${mtoken} --network ${network}\n`);
+    console.log(
+      `\n→ Next: yarn token-ac:revoke-deployer --mtoken ${mtoken} --network ${network}\n`,
+    );
     return;
   }
 
@@ -86,7 +88,7 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
 
   const txInfo = result.signature || result.txId;
   console.log(`✓ ADMIN granted | TX: ${txInfo}`);
-  console.log(`\n→ Next: yarn revoke:deployer-roles --mtoken ${mtoken} --network ${network}\n`);
+  console.log(`\n→ Next: yarn token-ac:revoke-deployer --mtoken ${mtoken} --network ${network}\n`);
 }
 
 const network = getNetwork();

@@ -20,8 +20,11 @@ export interface CustomSignerModule {
       waitForTx?: boolean;
       timeoutDurationMs?: number;
       pollingIntervalMs?: number;
+      pushMode?: 'auto' | 'manual';
     },
-  ) => Promise<string | { sent: boolean; txId?: string }>;
+  ) => Promise<
+    string | { sent: boolean; txId?: string; signedTransaction?: string; signature?: string }
+  >;
   getSolanaWalletAddressForAction: (action: string, mtoken?: string, chainId?: string) => string;
 }
 

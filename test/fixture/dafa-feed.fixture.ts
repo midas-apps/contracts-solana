@@ -39,16 +39,6 @@ const initMockedFeeds = async (context: ProgramTestContext) => {
     348058928,
   ] as const;
 
-  // Mock chainlink OCR2 USDC/USD feed with test price 0.99
-  const chainlinkHealthyFeed = [
-    Keypair.generate(),
-    Buffer.from(
-      'YLNFQoCBSXUCAZnJra7sYZIu5E6pd0qvi+y5Fd9sZVr/6Cm3RMr8b2YSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFVTREMgLyBVU0QgICAgICAgICAgICAgICAgICAgICAgCAAAAAABAAAAAQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADNcA2kAAAAAwJ7mBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
-      'base64',
-    ),
-    1761827891,
-  ] as const;
-
   for (const feed of [pythHealhyFeed, switchboardHealhyFeed]) {
     context.setAccount(feed[0].publicKey, {
       executable: false,
@@ -57,16 +47,6 @@ const initMockedFeeds = async (context: ProgramTestContext) => {
       data: feed[1],
     });
   }
-
-  // set chainlink feed with correct owner program id
-  context.setAccount(chainlinkHealthyFeed[0].publicKey, {
-    executable: false,
-    // Chainlink v2 SDK checks the owner is the Chainlink OCR2 program id,
-    // so we must set the real program id here or parsing will fail.
-    owner: new PublicKey('HEvSKofvBgfaexv23kMabbYqxasxU3mQ4ibBMEmJWHny'),
-    lamports: 10000,
-    data: chainlinkHealthyFeed[1],
-  });
 
   return {
     pyth: {
@@ -81,12 +61,6 @@ const initMockedFeeds = async (context: ProgramTestContext) => {
       lastUpdatedAtTs: switchboardHealhyFeed[2],
       lastUpdatedAtSlot: switchboardHealhyFeed[3],
       price: formatUnits(1011997930000000000n, 18),
-    },
-    chainlink: {
-      account: chainlinkHealthyFeed[0].publicKey,
-      data: chainlinkHealthyFeed[1],
-      lastUpdatedAtTs: chainlinkHealthyFeed[2],
-      price: formatUnits(99000000n, 8),
     },
   };
 };

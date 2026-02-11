@@ -8,8 +8,6 @@ pub const SWITCHBOARD_FEED_MAX_STALENESS: u32 = 216000;
 pub const PYTH_FEED_MAX_STALENESS: u32 = 5 * 60;
 /// Max staleness for the feed in seconds (1 year)
 pub const MANUAL_FEED_MAX_STALENESS: u32 = 365 * 86400;
-/// Max staleness for the feed in seconds (5 minutes)
-pub const CHAINLINK_FEED_MAX_STALENESS: u32 = 5 * 60;
 
 pub mod ac_roles {
     /// Holder of this role can update `FeedState` and `ManualFeedState`

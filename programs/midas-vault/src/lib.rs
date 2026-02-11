@@ -9,7 +9,7 @@ pub mod utils;
 use crate::utils::Validate;
 use instructions::*;
 
-declare_id!("DHfwFSG3JQ2qdX1Ub2QPuDsk9FMQUwyXyZqAs4gGeLnQ");
+declare_id!("MidasZepq8k2oFNCCm1rm31rbbj68JSPJeXwqQu6NfZ");
 
 #[program]
 pub mod midas_vaults {
