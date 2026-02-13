@@ -38,6 +38,7 @@
     "@solana/spl-token": "0.4.9",
     "@solana/spl-token-metadata": "0.1.6",
     "@solana/web3.js": "1.95.4",
+    "@sqds/multisig": "2.1.4",
     "@switchboard-xyz/on-demand": "1.2.54",
     "@types/bn.js": "5.1.6",
     "anchor-bankrun": "0.5.0",

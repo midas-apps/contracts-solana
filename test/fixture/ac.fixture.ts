@@ -6,11 +6,11 @@ import { AccessControl } from 'target/types/access_control';
 import ACCESS_CONTROL_IDL from '../../target/idl/access_control.json' with { type: 'json' };
 import { AC_ROLES } from '../constants/ac.constants';
 import { acRoleToBuffer, generateAcRoleAccount } from '../helpers/ac.helpers';
-import { initBankrun, processTransaction } from '../helpers/common.helpers';
+import { initBankrun, InitBankrunReturnType, processTransaction } from '../helpers/common.helpers';
 import { generateAcAccount } from '../helpers/vaults.helpers';
 
-export const acFixture = async (initSlot?: bigint) => {
-  const { provider, context, accounts } = await initBankrun(10, initSlot);
+export const acFixture = async (fixture?: InitBankrunReturnType, initSlot?: bigint) => {
+  const { provider, context, accounts } = fixture ?? await initBankrun(10, initSlot);
   const [authority, ...regularAccounts] = accounts;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

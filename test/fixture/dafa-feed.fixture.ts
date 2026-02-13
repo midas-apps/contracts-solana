@@ -8,7 +8,7 @@ import DATA_FEED_IDL from '../../target/idl/data_feed.json' with { type: 'json' 
 import { AC_ROLES } from '../constants/ac.constants';
 import { DATA_FEED_AC_ROLES } from '../constants/data-feed.constants';
 import { acRoleToBuffer, getAccountAcRoleStatePda } from '../helpers/ac.helpers';
-import { formatUnits, parseUnits, processTransaction, toBN } from '../helpers/common.helpers';
+import { formatUnits, InitBankrunReturnType, parseUnits, processTransaction, toBN } from '../helpers/common.helpers';
 import {
   DataFeedMode,
   generateFeedAcccount,
@@ -65,8 +65,8 @@ const initMockedFeeds = async (context: ProgramTestContext) => {
   };
 };
 
-export const dataFeedFixture = async (initSlot?: bigint) => {
-  const acF = await acFixture(initSlot);
+export const dataFeedFixture = async (fixture?: InitBankrunReturnType, initSlot?: bigint) => {
+  const acF = await acFixture(fixture, initSlot);
 
   const {
     provider,
