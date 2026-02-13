@@ -7,6 +7,7 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use data_feed::{state::FeedState, utils::decimals_conversion};
 
 use crate::{
+    errors::MidasVaultsError,
     events::MinterVaultRequestCreatedEvent,
     state::{
         MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState,
@@ -229,7 +230,7 @@ pub fn handle(ctx: Context<MintRequest>, amount_token: u64, referrer_id: [u8; 32
         .vault_common
         .requests_count
         .checked_add(1)
-        .unwrap();
+        .ok_or(MidasVaultsError::ArithmeticOverflow)?;
 
     emit!(MinterVaultRequestCreatedEvent {
         common_vault: ctx.accounts.vault_common.key(),

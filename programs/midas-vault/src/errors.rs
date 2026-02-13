@@ -44,4 +44,6 @@ pub enum MidasVaultsError {
     ValueDidntChange,
     #[msg("Max supply cap exceeded")]
     MaxSupplyCapExceeded,
+    #[msg("Arithmetic overflow or underflow")]
+    ArithmeticOverflow,
 }

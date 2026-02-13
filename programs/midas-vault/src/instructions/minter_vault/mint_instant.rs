@@ -264,7 +264,7 @@ pub fn handle(
         &ctx.accounts.m_mint,
         &ctx.accounts.minter_vault,
         params.m_token_amount.try_into().unwrap(),
-    ) {
+    )? {
         return Err(MidasVaultsError::MaxSupplyCapExceeded.into());
     }
 

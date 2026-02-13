@@ -52,7 +52,7 @@ pub fn close_account(
     let account = acc_to_close.to_account_info();
     **receiver.lamports.borrow_mut() = dest_starting_lamports
         .checked_add(account.lamports())
-        .unwrap();
+        .ok_or(MidasVaultsError::ArithmeticOverflow)?;
     **account.lamports.borrow_mut() = 0;
 
     account.assign(&system_program.key());
@@ -182,10 +182,12 @@ pub fn require_and_update_allowance(
 pub fn require_and_update_limit(common: &mut VaultCommonState, amount: u128) -> Result<()> {
     let current_day = get_current_ts()?
         .checked_div(SECONDS_PER_DAY as u32)
-        .unwrap();
+        .ok_or(MidasVaultsError::ArithmeticOverflow)?;
 
     let new_limit_used = if common.instant_last_day == current_day {
-        common.instant_daily_limit_used.checked_add(amount).unwrap()
+        common.instant_daily_limit_used
+            .checked_add(amount)
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?
     } else {
         amount
     };
@@ -217,9 +219,9 @@ pub fn require_variation_tolerance(
 
     let price_diff_percent = price_diff
         .checked_mul(ONE_HUNDRED_PERCENT.into())
-        .unwrap()
+        .ok_or(MidasVaultsError::ArithmeticOverflow)?
         .checked_div(price)
-        .unwrap();
+        .ok_or(MidasVaultsError::ArithmeticOverflow)?;
 
     require_gte!(
         common.variation_tolerance,
@@ -232,9 +234,16 @@ pub fn require_variation_tolerance(
 
 /// Validates that minting `mint_amount` tokens would not exceed `max_supply_cap`.
 /// To disable the cap (unlimited), set `max_supply_cap` to `u64::MAX`.
-pub fn validate_max_supply_cap(m_mint: &Mint, minter: &MinterVaultState, mint_amount: u64) -> bool {
-    let new_supply = m_mint.supply.checked_add(mint_amount).unwrap();
-    minter.max_supply_cap >= new_supply
+pub fn validate_max_supply_cap(
+    m_mint: &Mint,
+    minter: &MinterVaultState,
+    mint_amount: u64,
+) -> Result<bool> {
+    let new_supply = m_mint
+        .supply
+        .checked_add(mint_amount)
+        .ok_or(MidasVaultsError::ArithmeticOverflow)?;
+    Ok(minter.max_supply_cap >= new_supply)
 }
 
 /// Calculates fee for a given amount
@@ -269,9 +278,9 @@ pub fn get_fee_amount(
 
     Ok(amount
         .checked_mul(fee_percent)
-        .unwrap()
+        .ok_or(MidasVaultsError::ArithmeticOverflow)?
         .checked_div(ONE_HUNDRED_PERCENT.into())
-        .unwrap())
+        .ok_or(MidasVaultsError::ArithmeticOverflow)?)
 }
 
 /// Gets token rate from a data feed.
@@ -593,14 +602,18 @@ pub mod minter {
             decimals,
         )?;
 
-        let amount_token_wo_fee = payment_amount.checked_sub(fee_token_amount).unwrap();
+        let amount_token_wo_fee = payment_amount
+            .checked_sub(fee_token_amount)
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?;
 
         let fee_in_usd = (fee_token_amount.checked_mul(mint_in_rate))
-            .unwrap()
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?
             .checked_div(ONE.into())
-            .unwrap();
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?;
 
-        let deposited_usd = mint_amount_in_usd.checked_sub(fee_in_usd).unwrap();
+        let deposited_usd = mint_amount_in_usd
+            .checked_sub(fee_in_usd)
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?;
 
         let (m_token_amount, m_token_rate) =
             convert_usd_to_m_token(m_data_feed, m_feed, deposited_usd)?;
@@ -637,9 +650,9 @@ pub mod minter {
         Ok((
             amount
                 .checked_mul(rate)
-                .unwrap()
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?
                 .checked_div(ONE.into())
-                .unwrap(),
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?,
             rate,
         ))
     }
@@ -659,9 +672,9 @@ pub mod minter {
         Ok((
             amount
                 .checked_mul(ONE.into())
-                .unwrap()
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?
                 .checked_div(rate)
-                .unwrap(),
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?,
             rate,
         ))
     }
@@ -691,11 +704,11 @@ pub mod minter {
 
         let amount_to_mint = (request.deposited_usd_wo_fees as u128)
             .checked_mul(ONE.into())
-            .unwrap()
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?
             .checked_div(new_out_rate)
-            .unwrap();
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?;
 
-        if !validate_max_supply_cap(m_mint, minter_vault, amount_to_mint.try_into().unwrap()) {
+        if !validate_max_supply_cap(m_mint, minter_vault, amount_to_mint.try_into().unwrap())? {
             if skip_on_supply_cap_exceeded {
                 return Ok(false);
             }
@@ -946,7 +959,9 @@ pub mod redeemer {
 
         let request_id = vault_common.requests_count;
 
-        vault_common.requests_count = request_id.checked_add(1).unwrap();
+        vault_common.requests_count = request_id
+            .checked_add(1)
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?;
 
         emit!(RedeemerVaultRequestCreatedEvent {
             amount_m_token,
@@ -1031,9 +1046,9 @@ pub mod redeemer {
         let amount_token_wo_fee = truncate(
             (request.m_token_amount as u128)
                 .checked_mul(new_m_token_rate)
-                .unwrap()
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?
                 .checked_div(request.payment_mint_rate.into())
-                .unwrap(),
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?,
             decimals,
         )?;
 
@@ -1129,7 +1144,9 @@ pub mod redeemer {
 
         Ok(CalcAndValidateRedeemReturn {
             fee_amount,
-            m_token_amount_wo_fee: m_token_amount.checked_sub(fee_amount).unwrap(),
+            m_token_amount_wo_fee: m_token_amount
+                .checked_sub(fee_amount)
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?,
         })
     }
 
@@ -1149,9 +1166,9 @@ pub mod redeemer {
         Ok((
             amount
                 .checked_mul(ONE.into())
-                .unwrap()
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?
                 .checked_div(rate)
-                .unwrap(),
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?,
             rate,
         ))
     }
@@ -1171,9 +1188,9 @@ pub mod redeemer {
         Ok((
             amount
                 .checked_mul(rate)
-                .unwrap()
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?
                 .checked_div(ONE.into())
-                .unwrap(),
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?,
             rate,
         ))
     }

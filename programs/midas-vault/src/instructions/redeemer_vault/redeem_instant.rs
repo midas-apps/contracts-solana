@@ -219,9 +219,9 @@ pub fn handle(
         params
             .m_token_amount_wo_fee
             .checked_mul(m_token_rate)
-            .unwrap()
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?
             .checked_div(payment_token_rate)
-            .unwrap(),
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?,
         decimals,
     )?;
 
