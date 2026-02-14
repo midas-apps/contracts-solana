@@ -50,6 +50,12 @@ export function registerGlobalAc(network: string, ac: PublicKey): void {
   networkAddrs.ac = ac;
 }
 
+export function registerGlobalTimelock(network: string, timelock: PublicKey): void {
+  ensureNetworkExists(network);
+  const networkAddrs = addresses[network];
+  networkAddrs.timelock = timelock;
+}
+
 // Validation helpers
 function validateValueNotNull<T>(component: string, value: T | null | undefined): void {
   if (value === null || value === undefined) {

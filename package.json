@@ -11,6 +11,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "docgen": "cargo doc",
+    "deploy:timelock": "tsx scripts/tasks/deploy/network/deploy-timelock.ts",
     "deploy:global-ac-role": "tsx scripts/tasks/deploy/network/deploy-global-ac-role.ts",
     "deploy:global-ac": "tsx scripts/tasks/deploy/network/deploy-global-ac.ts",
     "deploy:token-ac-role": "tsx scripts/tasks/deploy/deploy-token-ac-role.ts",

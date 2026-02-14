@@ -6,6 +6,7 @@ import { MProduct, PaymentToken } from './tokenTypes';
 export interface NetworkAddresses {
   acRoleGlobal?: PublicKey;
   ac?: PublicKey;
+  timelock?: PublicKey;
   tokens?: Partial<Record<MProduct, TokenAddresses>>;
   feeds?: Partial<Record<PaymentToken, DataFeed>>;
 }
