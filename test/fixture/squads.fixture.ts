@@ -97,11 +97,22 @@ export const squadsFixture = async (initSlot?: bigint) => {
     }
 
 
-    const mutlisigPda = await createMultisig(context, {
+    const multisigPda = await createMultisig(context, {
         authority,
         connection: provider.connection,
     });
 
+    const multisigSignerPda = await createMultisig(context, {
+        authority,
+        connection: provider.connection,
+        timelock: 0n
+    });
+
+    const multisigWithSquadsSignerPda = await createMultisig(context, {
+        authority,
+        connection: provider.connection,
+        member: multisigSignerPda
+    });
 
     const squadsConnection = provider.connection as any;
 
@@ -109,14 +120,16 @@ export const squadsFixture = async (initSlot?: bigint) => {
         provider,
         context,
         authority,
-        mutlisigPda,
+        multisigPda,
         regularAccounts,
         squadsConnection,
         accounts,
+        multisigSignerPda,
+        multisigWithSquadsSignerPda,
         getMutlisigData: async (pda?: PublicKey) => {
             return await multisig.accounts.Multisig.fromAccountAddress(
                 squadsConnection,
-                pda ?? mutlisigPda
+                pda ?? multisigPda
             );
         }
     };
