@@ -32,10 +32,14 @@
     "transfer:authority": "tsx scripts/tasks/manage/transfer-authority.ts",
     "update:data-feed": "tsx scripts/tasks/manage/update-data-feed.ts",
     "update:manual-feed-price": "tsx scripts/tasks/manage/update-manual-feed-price.ts",
-    "delegate": "tsx scripts/tasks/manage/delegate.ts"
+    "delegate": "tsx scripts/tasks/manage/delegate.ts",
+    "upgrade:program:propose": "tsx scripts/tasks/upgrade/propose-upgrade-program.ts",
+    "upgrade:program:execute": "tsx scripts/tasks/upgrade/execute-upgrade-program.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "0.30.1",
+    "@solana-program/loader-v3": "0.3.0",
+    "@solana/kit": "6.0.1",
     "@solana/spl-token": "0.4.9",
     "@solana/spl-token-metadata": "0.1.6",
     "@solana/web3.js": "1.95.4",

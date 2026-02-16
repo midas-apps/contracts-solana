@@ -3,10 +3,10 @@ import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
 import { createUserError } from '@/common/errorHandler';
 import { executeNetworkScript } from '@/common/scriptRunner';
 
-import { getTimelockAddress } from '../../../utils/addressQueries';
-import { registerGlobalTimelock } from '../../../utils/addressRegistry';
-import { saveAddressesToFile } from '../../../utils/addressStorage';
-import { getNetwork } from '../../../utils/argumentParser';
+import { getTimelockAddress } from '@/scripts/utils/addressQueries';
+import { registerGlobalTimelock } from '@/scripts/utils/addressRegistry';
+import { saveAddressesToFile } from '@/scripts/utils/addressStorage';
+import { getNetwork } from '@/scripts/utils/argumentParser';
 import { loadNetworkConfig } from '@/scripts/configs/loadNetworkConfig';
 import { deployTimelock, DeployTimelockConfig } from '@/scripts/deploy/timelock';
 import { PublicKey } from '@solana/web3.js';

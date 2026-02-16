@@ -7,8 +7,7 @@ import { deployNonceAccount } from '../../deploy/nonce-account';
 import { getAuthority, getNetwork } from '../../utils/argumentParser';
 
 async function main(provider: AnchorProvider, payer: Wallet, network: string) {
-  const authorityStr = getAuthority();
-  const authority = new PublicKey(authorityStr);
+  const authority = getAuthority();
 
   console.log(`Deploying nonce account for authority: ${authority.toBase58()}`);
   console.log(`Network: ${network}`);
