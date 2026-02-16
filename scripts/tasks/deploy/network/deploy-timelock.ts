@@ -16,6 +16,7 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
 
     const networkConfig = loadNetworkConfig(network);
 
+    console.log('networkConfig', networkConfig);
     if (!networkConfig?.timelock) {
         throw createUserError(`Timelock config not found for network ${network}`,);
     }

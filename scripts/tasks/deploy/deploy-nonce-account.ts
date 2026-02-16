@@ -24,11 +24,9 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   console.log('\n✅ Nonce account deployed successfully');
   console.log(`Authority: ${authority.toBase58()}`);
   console.log(`Nonce Account: ${nonceAccount.toBase58()}`);
-  console.log('\n📝 Add this nonce account to the protocol-registry fordefi config:');
-  console.log(`   nonceAccount: new PublicKey("${nonceAccount.toBase58()}")`);
 }
 
 const network = getNetwork();
 executeNetworkScript(network, main, 'deployer');
 
-// Usage: yarn tsx scripts/tasks/deploy/deploy-nonce-account.ts --authority <fordefi-vault-address> --network <network>
+// Usage: yarn tsx scripts/tasks/deploy/deploy-nonce-account.ts --authority <authority-address> --network <network>
