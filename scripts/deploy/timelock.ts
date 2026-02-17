@@ -30,7 +30,7 @@ export const getMultisigInfo = async <T extends boolean = true>(connection: Conn
     });
 }
 
-export const wrapTxWithSqudsSigner = async (connection: Connection, {
+export const wrapTxWithSquadsSigner = async (connection: Connection, {
     instructions,
     multisigSignerPda,
     addressLookupTableAccounts,
@@ -250,7 +250,7 @@ export const sendTxWithTimelock = async (connection: Connection, {
         tx = txCreate;
 
         if (squadsSigner) {
-            tx = await wrapTxWithSqudsSigner(connection, {
+            tx = await wrapTxWithSquadsSigner(connection, {
                 instructions: txCreate.instructions,
                 member: payer,
                 multisigSignerPda: multisigSignerPda,
@@ -295,7 +295,7 @@ export const sendTxWithTimelock = async (connection: Connection, {
         }).compileToV0Message(inxExecute.lookupTableAccounts));
 
         if (squadsSigner) {
-            tx = await wrapTxWithSqudsSigner(connection, {
+            tx = await wrapTxWithSquadsSigner(connection, {
                 instructions: [inxExecute.instruction],
                 member: payer,
                 multisigSignerPda: multisigSignerPda,

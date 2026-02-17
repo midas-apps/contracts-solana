@@ -6,7 +6,7 @@ import * as multisig from "@sqds/multisig";
 import { DAY } from "../constants/common.constants";
 
 
-const wrapTxWithSqudsSigner = async (fixture: SquadsFixtureReturnType, {
+const wrapTxWithSquadsSigner = async (fixture: SquadsFixtureReturnType, {
     instructions,
     member,
     addressLookupTableAccounts,
@@ -155,7 +155,7 @@ export const sendSquadsTxWithTimelock = async (fixture: SquadsFixtureReturnType,
     let getTxCreateExecute: () => Promise<VersionedTransaction>;
 
     if (squadsSigner) {
-        const res = await wrapTxWithSqudsSigner(fixture, {
+        const res = await wrapTxWithSquadsSigner(fixture, {
             instructions: txCreate.instructions,
             member: fromCreate.publicKey,
             payer: fromCreate.publicKey,
@@ -204,7 +204,7 @@ export const sendSquadsTxWithTimelock = async (fixture: SquadsFixtureReturnType,
     let getTxExecuteExecute: () => Promise<VersionedTransaction>;
 
     if (squadsSigner) {
-        const res = await wrapTxWithSqudsSigner(fixture, {
+        const res = await wrapTxWithSquadsSigner(fixture, {
             instructions: [inxExecute.instruction],
             addressLookupTableAccounts: inxExecute.lookupTableAccounts,
             member: fromExecute.publicKey,
@@ -307,7 +307,7 @@ export const sendSquadsConfigurationTxWithTimelock = async (fixture: SquadsFixtu
     let getTxCreateExecute: () => Promise<VersionedTransaction>;
 
     if (squadsSigner) {
-        const res = await wrapTxWithSqudsSigner(fixture, {
+        const res = await wrapTxWithSquadsSigner(fixture, {
             instructions: txCreate.instructions,
             member: fromCreate.publicKey,
             payer: fromCreate.publicKey,
@@ -362,7 +362,7 @@ export const sendSquadsConfigurationTxWithTimelock = async (fixture: SquadsFixtu
     let getTxExecuteExecute: () => Promise<VersionedTransaction>;
 
     if (squadsSigner) {
-        const res = await wrapTxWithSqudsSigner(fixture, {
+        const res = await wrapTxWithSquadsSigner(fixture, {
             instructions: txExecute.instructions,
             member: fromExecute.publicKey,
             payer: fromExecute.publicKey,

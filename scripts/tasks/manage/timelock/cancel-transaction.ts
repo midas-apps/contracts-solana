@@ -9,7 +9,7 @@ import { getMultisigTxIndex, getNetwork } from '@/scripts/utils/argumentParser';
 import { Transaction } from '@solana/web3.js';
 import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 import * as multisig from "@sqds/multisig";
-import { getMultisigInfo, wrapTxWithSqudsSigner } from '@/scripts/deploy/timelock';
+import { getMultisigInfo, wrapTxWithSquadsSigner } from '@/scripts/deploy/timelock';
 
 async function main(
     provider: AnchorProvider,
@@ -47,7 +47,7 @@ async function main(
     ]
 
     const tx = memberMultisigInfo ?
-        await wrapTxWithSqudsSigner(
+        await wrapTxWithSquadsSigner(
             common.provider.connection,
             {
                 instructions: inxs,
