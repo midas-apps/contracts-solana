@@ -5,13 +5,11 @@ import { createUserError } from '@/common/errorHandler';
 import { executeNetworkScript } from '@/common/scriptRunner';
 
 import { getTimelockAddress } from '@/scripts/utils/addressQueries';
-import { getAuthority, getMultisigTxIndex, getNetwork, getProgram } from '@/scripts/utils/argumentParser';
-import { PublicKey, Transaction } from '@solana/web3.js';
-import { programAddresses } from '@/common/programs';
-import { LOADER_V3_PROGRAM_ADDRESS } from '@solana-program/loader-v3';
+import { getMultisigTxIndex, getNetwork } from '@/scripts/utils/argumentParser';
+import { Transaction } from '@solana/web3.js';
 import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
-import { getSetAuthorityInstructionIx } from '@/scripts/utils/loaderProgramHelpers';
 import * as multisig from "@sqds/multisig";
+import { getMultisigInfo, wrapTxWithSqudsSigner } from '@/scripts/deploy/timelock';
 
 async function main(
     provider: AnchorProvider,
@@ -24,17 +22,18 @@ async function main(
 
     const common = { provider, payer, network };
 
-
     const timelock = getTimelockAddress(network);
 
     if (!timelock) {
         throw createUserError(`Timelock not found for network ${network}`,);
     }
 
+    const multisigInfo = await getMultisigInfo(common.provider.connection, timelock);
 
-    const multisigInfo = await multisig.accounts.Multisig.fromAccountAddress(common.provider.connection as any, timelock);
+    const multisigMember = multisigInfo.members[0].key;
+    const memberMultisigInfo = await getMultisigInfo(common.provider.connection, multisigMember, false);
 
-    const tx = new Transaction().add(
+    const inxs = [
         multisig.instructions.proposalCancel({
             multisigPda: timelock,
             transactionIndex: BigInt(multisigTxIndex),
@@ -45,7 +44,17 @@ async function main(
             transactionIndex: BigInt(multisigTxIndex),
             rentCollector: multisigInfo.rentCollector,
         }),
-    );
+    ]
+
+    const tx = memberMultisigInfo ?
+        await wrapTxWithSqudsSigner(
+            common.provider.connection,
+            {
+                instructions: inxs,
+                member: payer.publicKey,
+                multisigSignerPda: multisigMember
+            })
+        : new Transaction().add(...inxs);
 
     const result = await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [], {
         action: 'update-timelock',

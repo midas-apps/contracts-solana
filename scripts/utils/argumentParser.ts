@@ -135,6 +135,10 @@ export function getAuthority<T extends boolean = true>(required?: T): T extends 
     ]);
   }
 
+  if(!authority) {
+    return undefined
+  } 
+
   try {
     return new PublicKey(authority);
   } catch {

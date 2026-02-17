@@ -12,9 +12,25 @@ export interface DeployTimelockConfig {
     createKey?: Keypair;
 }
 
+export const getMultisigInfo = async <T extends boolean = true>(connection: Connection, multisigPda: PublicKey, required?: T): Promise<T extends true ? multisig.accounts.Multisig : multisig.accounts.Multisig | null> => {
+    required ??= true as T;
+    return await multisig.accounts.Multisig.fromAccountAddress(
+        connection as any,
+        multisigPda
+    ).catch(err => {
+        if(required) { 
+            throw err;
+        }
 
+        if (err instanceof Error && err.message.includes('Unable to find Multisig account at') || err.message.includes('Expected  to hold a COption')) {
+            return null;
+        }
 
-const wrapTxWithSqudsSigner = async (connection: Connection, {
+        throw err;
+    });
+}
+
+export const wrapTxWithSqudsSigner = async (connection: Connection, {
     instructions,
     multisigSignerPda,
     addressLookupTableAccounts,
@@ -175,10 +191,7 @@ export const sendTxWithTimelock = async (connection: Connection, {
     });
 
     // Get deserialized multisig account info
-    const multisigInfo = await multisig.accounts.Multisig.fromAccountAddress(
-        connection as any,
-        timelock
-    );
+    const multisigInfo = await getMultisigInfo(connection, timelock);
 
     if (multisigInfo.members.length !== 1) {
         throw new Error('Expected timelock to have only one member, got ' + multisigInfo.members.length);
@@ -186,12 +199,7 @@ export const sendTxWithTimelock = async (connection: Connection, {
 
     const multisigSignerPda = multisigInfo.members[0].key;
 
-    const multisigSignerPdaAccount: multisig.accounts.Multisig | null = await multisig.accounts.Multisig.fromAccountAddress(connection as any, multisigSignerPda).catch(err => {
-        if (err instanceof Error && err.message.includes('Unable to find Multisig account at')) {
-            return null;
-        }
-        throw err;
-    });
+    const multisigSignerPdaAccount = await getMultisigInfo(connection, multisigSignerPda, false);
 
     const squadsSigner = multisigSignerPdaAccount !== null;
 
@@ -241,7 +249,7 @@ export const sendTxWithTimelock = async (connection: Connection, {
 
         tx = txCreate;
 
-        if (squadsSigner !== undefined) {
+        if (squadsSigner) {
             tx = await wrapTxWithSqudsSigner(connection, {
                 instructions: txCreate.instructions,
                 member: payer,
@@ -286,7 +294,7 @@ export const sendTxWithTimelock = async (connection: Connection, {
             instructions: [inxExecute.instruction],
         }).compileToV0Message(inxExecute.lookupTableAccounts));
 
-        if (squadsSigner !== undefined) {
+        if (squadsSigner) {
             tx = await wrapTxWithSqudsSigner(connection, {
                 instructions: [inxExecute.instruction],
                 member: payer,
