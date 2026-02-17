@@ -5,12 +5,11 @@ import { createUserError } from '@/common/errorHandler';
 import { executeNetworkScript } from '@/common/scriptRunner';
 
 import { getTimelockAddress } from '@/scripts/utils/addressQueries';
-import { getBufferAccount, getMultisigTxIndex, getNetwork, getProgram } from '@/scripts/utils/argumentParser';
-import { PublicKey, TransactionInstruction } from '@solana/web3.js';
-import { programAddresses } from '@/common/addresses';
-import { getUpgradeInstruction, LOADER_V3_PROGRAM_ADDRESS } from '@solana-program/loader-v3';
+import { getBufferAccount, getNetwork, getProgram } from '@/scripts/utils/argumentParser';
+import { PublicKey } from '@solana/web3.js';
+import { programAddresses } from '@/common/programs';
+import { LOADER_V3_PROGRAM_ADDRESS } from '@solana-program/loader-v3';
 import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
-import { AccountRole, Address, TransactionSigner } from '@solana/kit';
 import { sendTxWithTimelock } from '@/scripts/deploy/timelock';
 import { getUpgradeInstructionIx } from '@/scripts/utils/loaderProgramHelpers';
 
@@ -66,7 +65,7 @@ async function main(
     const result = await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [], {
         action: 'update-timelock',
         comment: `Propose upgrade of ${program} program trough the timelock`,
-        waitForTx: true,
+        waitForTx: false,
         pollingIntervalMs: 1000,
         timeoutDurationMs: 120 * 1000,
     });

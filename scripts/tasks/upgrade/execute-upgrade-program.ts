@@ -6,7 +6,7 @@ import { executeNetworkScript } from '@/common/scriptRunner';
 
 import { getTimelockAddress } from '@/scripts/utils/addressQueries';
 import {  getMultisigTxIndex, getNetwork } from '@/scripts/utils/argumentParser';
-import { programAddresses } from '@/common/addresses';
+import { programAddresses } from '@/common/programs';
 import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 import { getTimelockTransaction, sendTxWithTimelock } from '@/scripts/deploy/timelock';
 
@@ -66,7 +66,7 @@ async function main(
     const result = await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [], {
         action: 'update-timelock',
         comment: `Execute upgrade of ${program} program trough the timelock`,
-        waitForTx: true,
+        waitForTx: false,
         pollingIntervalMs: 1000,
         timeoutDurationMs: 120 * 1000,
     });

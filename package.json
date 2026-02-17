@@ -34,7 +34,9 @@
     "update:manual-feed-price": "tsx scripts/tasks/manage/update-manual-feed-price.ts",
     "delegate": "tsx scripts/tasks/manage/delegate.ts",
     "upgrade:program:propose": "tsx scripts/tasks/upgrade/propose-upgrade-program.ts",
-    "upgrade:program:execute": "tsx scripts/tasks/upgrade/execute-upgrade-program.ts"
+    "upgrade:program:execute": "tsx scripts/tasks/upgrade/execute-upgrade-program.ts",
+    "timelock:cancel-transaction": "tsx scripts/tasks/manage/timelock/cancel-transaction.ts",
+    "timelock:transfer-upgrade-authority": "tsx scripts/tasks/manage/timelock/transfer-upgrade-authority.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "0.30.1",

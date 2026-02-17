@@ -6,7 +6,7 @@ import { MProduct, isMProduct, PaymentToken, isPaymentToken } from '@/common/tok
 
 import { getAvailableNetworks } from './getAvailableNetworks';
 import { PublicKey } from '@solana/web3.js';
-import { programAddresses } from '@/common/addresses';
+import { programAddresses } from '@/common/programs';
 
 /** Simple cached parser - parses all args once */
 let parsedArgs: Record<string, unknown> | null = null;

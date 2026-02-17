@@ -12,7 +12,7 @@ import { deployTimelock, DeployTimelockConfig } from '@/scripts/deploy/timelock'
 import { PublicKey } from '@solana/web3.js';
 
 async function main(provider: AnchorProvider, payer: Wallet, network: string) {
-    console.log(`Deploying Timelock for: ${network}`);
+    console.log(`Deploying Timelock for: ${network}, payer: ${payer.publicKey.toBase58()}`);
 
     const networkConfig = loadNetworkConfig(network);
 

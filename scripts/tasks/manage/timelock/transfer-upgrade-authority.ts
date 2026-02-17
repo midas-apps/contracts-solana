@@ -7,7 +7,7 @@ import { executeNetworkScript } from '@/common/scriptRunner';
 import { getTimelockAddress } from '@/scripts/utils/addressQueries';
 import { getAuthority, getNetwork, getProgram } from '@/scripts/utils/argumentParser';
 import { PublicKey, Transaction } from '@solana/web3.js';
-import { programAddresses } from '@/common/addresses';
+import { programAddresses } from '@/common/programs';
 import { LOADER_V3_PROGRAM_ADDRESS } from '@solana-program/loader-v3';
 import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 import { getSetAuthorityInstructionIx } from '@/scripts/utils/loaderProgramHelpers';
@@ -19,7 +19,6 @@ async function main(
 ) {
     let authority = getAuthority(false);
     const program = getProgram();
-
 
     if (!authority) {
         console.log('Authority not provided, will use timelock as new authority');
