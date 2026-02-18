@@ -41,7 +41,7 @@ export const addresses: Record<string, NetworkAddresses> = {
   devnet: {
     acRoleGlobal: new PublicKey('BW95RL5v9685QqxvuRGjXiM3f6Td9k5QEBiGkXMHwsx1'),
     ac: new PublicKey('5cMcz3NsbJy6AyvGPpMupBXFiQkwC9qRuMxkTPiTb3Qu'),
-    timelock: new PublicKey('B7A1wFUbCcmyLUWGMLbNRN4VBWH3jhdKFswkfPa63BFt'),
+    timelock: new PublicKey('CNM9uFrjXTun2zk6w7FkXKgryURXezBMZJZ4RSh8NLt3'),
     tokens: {
       [MProduct.MFONE]: {
         acRole: new PublicKey('2SAaMSzZd9DuNsR3QWNy8mZjNJPnMqdsC4rXz8wgnfFR'),

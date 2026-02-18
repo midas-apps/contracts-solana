@@ -1,6 +1,39 @@
+import { createUserError } from "@/common/errorHandler";
 import { getSetAuthorityInstruction, getUpgradeInstruction, LOADER_V3_PROGRAM_ADDRESS } from "@solana-program/loader-v3";
 import { AccountRole, Address, TransactionSigner } from "@solana/kit";
-import { PublicKey, TransactionInstruction } from "@solana/web3.js";
+import { Connection, PublicKey, TransactionInstruction } from "@solana/web3.js";
+
+export const getUpgradeAuthority = async (connection: Connection, programId: PublicKey): Promise<PublicKey | null> => {
+    const [programDataPda] = PublicKey.findProgramAddressSync(
+        [programId.toBuffer()],
+        new PublicKey(LOADER_V3_PROGRAM_ADDRESS)
+    );
+
+    const accountInfo = await connection.getAccountInfo(programDataPda);
+
+    if (!accountInfo) {
+        throw createUserError(`No program data found for ${programId.toBase58()} at address ${programDataPda.toBase58()}`);
+    }
+
+    const data = accountInfo.data;
+
+    // state discriminator
+    const state = data.readUInt32LE(0);
+
+    if (state !== 3) {
+        throw new Error("Not a ProgramData account");
+    }
+
+    const option = data[12]; // 4 + 8
+
+    let upgradeAuthority: PublicKey | null = null;
+
+    if (option === 1) {
+        upgradeAuthority = new PublicKey(data.slice(13, 45));
+    }
+
+    return upgradeAuthority;
+}
 
 export const getSetAuthorityInstructionIx = ({
     bufferOrProgramDataAccount,

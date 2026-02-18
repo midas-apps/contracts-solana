@@ -10,7 +10,7 @@ import { PublicKey, Transaction } from '@solana/web3.js';
 import { programAddresses } from '@/common/programs';
 import { LOADER_V3_PROGRAM_ADDRESS } from '@solana-program/loader-v3';
 import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
-import { getSetAuthorityInstructionIx } from '@/scripts/utils/loaderProgramHelpers';
+import { getSetAuthorityInstructionIx, getUpgradeAuthority } from '@/scripts/utils/loaderProgramHelpers';
 import { sendTxWithTimelock } from '@/scripts/deploy/timelock';
 
 async function main(
@@ -18,7 +18,7 @@ async function main(
     payer: Wallet,
     network: string,
 ) {
-    let authority = getAuthority(false);
+    let newAuthority = getAuthority(false);
     const program = getProgram();
 
     const timelock = getTimelockAddress(network);
@@ -27,12 +27,12 @@ async function main(
         throw createUserError(`Timelock not found for network ${network}`,);
     }
 
-    if (!authority) {
+    if (!newAuthority) {
         console.log('Authority not provided, will use timelock as new authority');
-        authority = timelock;
+        newAuthority = timelock;
     }
 
-    console.log(`Transferring upgrade authority for program ${program} to ${authority.toBase58()} on network ${network}`);
+    console.log(`Transferring upgrade authority for program ${program} to ${newAuthority.toBase58()} on network ${network}`);
 
     const common = { provider, payer, network };
 
@@ -53,13 +53,27 @@ async function main(
         throw createUserError(`No program data found for ${program} at address ${programDataPda.toBase58()}`);
     }
 
+    const currentAuthority = await getUpgradeAuthority(provider.connection, programId);
+
+    if (!currentAuthority) {
+        throw createUserError(`No upgrade authority found for ${programId.toBase58()}`);
+    }
+
+    if (currentAuthority.equals(newAuthority)) {
+        throw createUserError(`New authority is the same as the current authority`);
+    }
+
+    if (!newAuthority.equals(timelock) && !newAuthority.equals(payer.publicKey)) {
+        throw createUserError(`New authority is not the timelock or the payer, it's ${newAuthority.toBase58()}`);
+    }
+
     const inx = getSetAuthorityInstructionIx({
         bufferOrProgramDataAccount: programDataPda,
-        currentAuthority: payer.publicKey,
-        newAuthority: authority,
+        currentAuthority: currentAuthority,
+        newAuthority: newAuthority,
     });
 
-    const tx = authority.equals(timelock) ? await sendTxWithTimelock(common.provider.connection, {
+    const tx = currentAuthority.equals(timelock) ? await sendTxWithTimelock(common.provider.connection, {
         instructions: [inx],
         timelock,
         signer: payer.publicKey,
@@ -68,7 +82,7 @@ async function main(
 
     const result = await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [], {
         action: 'update-timelock',
-        comment: `Transfer upgrade authority of ${program} to ${authority.toBase58()} on network ${network}`,
+        comment: `Transfer upgrade authority of ${program} to ${newAuthority.toBase58()} on network ${network}`,
         waitForTx: false,
         pollingIntervalMs: 1000,
         timeoutDurationMs: 120 * 1000,
