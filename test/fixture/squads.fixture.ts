@@ -72,10 +72,7 @@ const createMultisig = async (context: ProgramTestContext, {
 }
 
 export const squadsFixture = async (initSlot?: bigint) => {
-    const { provider, context, accounts } = await initBankrun(10, initSlot, [{
-        name: 'external/squads',
-        programId: SQUADS_PROGRAM_ID,
-    }]);
+    const { provider, context, accounts } = await initBankrun(10, initSlot, true);
 
     const [authority, ...regularAccounts] = accounts;
 

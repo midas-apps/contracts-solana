@@ -68,8 +68,8 @@ export type InitBankrunReturnType = {
 
 let bunrunReturnCache: InitBankrunReturnType | null = null;
 
-export const initBankrun = async (numAccounts = 10, initSlot?: bigint, extraPrograms: AddedProgram[] = []) => {
-  if (bunrunReturnCache) {
+export const initBankrun = async (numAccounts = 10, initSlot?: bigint, cacheContext = false) => {
+  if (cacheContext && bunrunReturnCache) {
     return bunrunReturnCache;
   }
 
@@ -92,7 +92,10 @@ export const initBankrun = async (numAccounts = 10, initSlot?: bigint, extraProg
     });
   }
 
-  const context = await startAnchor('.', extraPrograms, [...accountsToInject]);
+  const context = await startAnchor('.', [{
+    name: 'external/squads',
+    programId: SQUADS_PROGRAM_ID,
+  }], [...accountsToInject]);
 
   if (initSlot) {
     await warpToSlot(context, initSlot);
@@ -104,10 +107,14 @@ export const initBankrun = async (numAccounts = 10, initSlot?: bigint, extraProg
   bunrunReturnCache = {
     context,
     provider,
-    accounts,
+    accounts: bunrunReturnCache?.accounts ?? accounts,
   };
 
-  return bunrunReturnCache;
+  return {
+    context,
+    provider,
+    accounts,
+  };
 };
 
 export const fromBN = (bn?: BN) => {
@@ -256,7 +263,7 @@ export const processTransaction = async (
   const blockHash = ctx.lastBlockhash;
   const client = ctx.banksClient;
 
-  if(transaction instanceof Transaction) {
+  if (transaction instanceof Transaction) {
     transaction.recentBlockhash = blockHash;
     transaction.sign(...signers);
   } else {
