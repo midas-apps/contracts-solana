@@ -64,6 +64,8 @@ async function main(
         timeoutDurationMs: 120 * 1000,
     });
 
+    console.log(result)
+    
     if (result.signature) {
         console.log(`Transaction signature: ${result.signature}`);
     }
