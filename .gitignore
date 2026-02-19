@@ -1,7 +1,12 @@
 .anchor
 .DS_Store
-target
 **/*.rs.bk
+
+# Anchor build artifacts
+target/*
+!target/idl/
+!target/types/
+
 node_modules
 test-ledger
 docker-target

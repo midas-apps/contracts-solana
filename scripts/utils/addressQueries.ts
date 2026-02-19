@@ -25,6 +25,10 @@ export function getAcAddress(network: string): PublicKey | undefined {
   return addresses[network]?.ac;
 }
 
+export function getTimelockAddress(network: string): PublicKey | undefined {
+  return addresses[network]?.timelock;
+}
+
 export function getAcRoleGlobalAddress(network: string): PublicKey | undefined {
   return addresses[network]?.acRoleGlobal;
 }

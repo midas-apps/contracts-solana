@@ -21,11 +21,13 @@ import {
   Signer,
   SystemProgram,
   Transaction,
+  VersionedTransaction,
 } from '@solana/web3.js';
 import { BankrunProvider } from 'anchor-bankrun';
 import BN from 'bn.js';
 import {
   AddedAccount,
+  AddedProgram,
   BanksTransactionMeta,
   Clock,
   ProgramTestContext,
@@ -39,6 +41,7 @@ import { MidasVaults } from '@/target/types/midas_vaults';
 import { TokenAuthority } from '@/target/types/token_authority';
 
 import { DEFAULT_PUBKEY } from '../constants/common.constants';
+import { SQUADS_PROGRAM_ID } from '../constants/squads.constant';
 // import { ZERO_ADDRESS } from "test/constants/common.constants";
 
 export interface OptionalCommonParams {
@@ -57,7 +60,19 @@ export function numToHex(decimalCode: number): string {
   return hexCode;
 }
 
-export const initBankrun = async (numAccounts = 10, initSlot?: bigint) => {
+export type InitBankrunReturnType = {
+  context: ProgramTestContext;
+  provider: BankrunProvider;
+  accounts: Keypair[];
+};
+
+let bunrunReturnCache: InitBankrunReturnType | null = null;
+
+export const initBankrun = async (numAccounts = 10, initSlot?: bigint, cacheContext = false) => {
+  if (cacheContext && bunrunReturnCache) {
+    return bunrunReturnCache;
+  }
+
   const accounts: Keypair[] = [];
 
   const accountsToInject: AddedAccount[] = [];
@@ -77,13 +92,23 @@ export const initBankrun = async (numAccounts = 10, initSlot?: bigint) => {
     });
   }
 
-  const context = await startAnchor('.', [], [...accountsToInject]);
+  const context = await startAnchor('.', [{
+    name: 'external/squads',
+    programId: SQUADS_PROGRAM_ID,
+  }], [...accountsToInject]);
+
   if (initSlot) {
     await warpToSlot(context, initSlot);
   }
   const provider = new BankrunProvider(context);
 
   anchor.setProvider(provider);
+
+  bunrunReturnCache = {
+    context,
+    provider,
+    accounts: bunrunReturnCache?.accounts ?? accounts,
+  };
 
   return {
     context,
@@ -118,7 +143,7 @@ export const findPDA = <TProgram extends Idl | unknown>(
 
 export const expectTxReverted = async (
   ctx: ProgramTestContext,
-  transaction: web3.Transaction,
+  transaction: Transaction | VersionedTransaction,
   signers: (Keypair | Signer)[],
   opt?: OptionalCommonParams,
 ) => {
@@ -206,7 +231,7 @@ export const expectEvents = async <TProgram extends Idl>(
 
 export const expectTxNotReverted = async (
   ctx: ProgramTestContext,
-  transaction: Transaction,
+  transaction: Transaction | VersionedTransaction,
   signers: (Keypair | Signer)[],
 ) => {
   try {
@@ -228,7 +253,7 @@ export const warpToSlot = async (ctx: ProgramTestContext, slot: bigint) => {
 
 export const processTransaction = async (
   ctx: ProgramTestContext,
-  transaction: Transaction,
+  transaction: Transaction | VersionedTransaction,
   signers: (Keypair | Signer)[],
 ) => {
   // Need to generate new blockhash
@@ -238,8 +263,12 @@ export const processTransaction = async (
   const blockHash = ctx.lastBlockhash;
   const client = ctx.banksClient;
 
-  transaction.recentBlockhash = blockHash;
-  transaction.sign(...signers);
+  if (transaction instanceof Transaction) {
+    transaction.recentBlockhash = blockHash;
+    transaction.sign(...signers);
+  } else {
+    transaction.sign([...signers]);
+  }
 
   return await client.processTransaction(transaction);
 };

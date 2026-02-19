@@ -478,7 +478,7 @@ describe('data-feed', () => {
     const feedUpdatedAtSlot = 348058928n;
 
     it('when underlying Switchboard feed is valid', async () => {
-      const fixture = await vaultsFixture(feedUpdatedAtSlot);
+      const fixture = await vaultsFixture(undefined, feedUpdatedAtSlot);
 
       const feed = await createNewFeed(fixture, {
         mode: 'switchboard',
@@ -512,7 +512,7 @@ describe('data-feed', () => {
     });
 
     it('should fail: when underlying Switchboard feed is stale', async () => {
-      const fixture = await vaultsFixture(feedUpdatedAtSlot + 150n);
+      const fixture = await vaultsFixture(undefined, feedUpdatedAtSlot + 150n);
 
       const feed = await createNewFeed(fixture, {
         mode: 'switchboard',
@@ -547,7 +547,7 @@ describe('data-feed', () => {
     });
 
     it('should fail: when price is > max price', async () => {
-      const fixture = await vaultsFixture(feedUpdatedAtSlot);
+      const fixture = await vaultsFixture(undefined, feedUpdatedAtSlot);
 
       const feed = await createNewFeed(fixture, {
         mode: 'switchboard',
@@ -582,7 +582,7 @@ describe('data-feed', () => {
     });
 
     it('should fail: when price is < min price', async () => {
-      const fixture = await vaultsFixture(feedUpdatedAtSlot);
+      const fixture = await vaultsFixture(undefined, feedUpdatedAtSlot);
 
       const feed = await createNewFeed(fixture, {
         mode: 'switchboard',
