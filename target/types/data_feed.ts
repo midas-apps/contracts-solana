@@ -635,6 +635,11 @@ export type DataFeed = {
       "code": 6009,
       "name": "priceIsHigherThanMax",
       "msg": "Price is higher than max."
+    },
+    {
+      "code": 6010,
+      "name": "arithmeticOverflow",
+      "msg": "Arithmetic overflow or underflow"
     }
   ],
   "types": [

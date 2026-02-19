@@ -776,6 +776,11 @@ export type AccessControl = {
       "code": 6001,
       "name": "bothBlacklistedAndWhitelisted",
       "msg": "Cannot be both blacklisted and whitelisted"
+    },
+    {
+      "code": 6002,
+      "name": "arithmeticOverflow",
+      "msg": "Arithmetic overflow or underflow"
     }
   ],
   "types": [

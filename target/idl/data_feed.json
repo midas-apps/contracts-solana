@@ -629,6 +629,11 @@
       "code": 6009,
       "name": "PriceIsHigherThanMax",
       "msg": "Price is higher than max."
+    },
+    {
+      "code": 6010,
+      "name": "ArithmeticOverflow",
+      "msg": "Arithmetic overflow or underflow"
     }
   ],
   "types": [
