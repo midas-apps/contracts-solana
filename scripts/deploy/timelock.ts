@@ -18,7 +18,7 @@ export const getMultisigInfo = async <T extends boolean = true>(connection: Conn
         connection as any,
         multisigPda
     ).catch(err => {
-        if(required) { 
+        if (required) {
             throw err;
         }
 
@@ -210,11 +210,12 @@ export const sendTxWithTimelock = async (connection: Connection, {
     const member = squadsSigner ? multisigSignerPda : payer;
 
     let tx: Transaction | VersionedTransaction;
+    let newTransactionIndex: bigint | undefined;
 
     if (action.type === 'create') {
         // Get the updated transaction index
         // TODO: get the index from the custom signer
-        const newTransactionIndex = BigInt(multisigInfo.transactionIndex.toString()) + 1n;
+        newTransactionIndex = BigInt(multisigInfo.transactionIndex.toString()) + 1n;
 
         // Build a message with instructions we want to execute
         const txMessage = new TransactionMessage({
@@ -304,7 +305,7 @@ export const sendTxWithTimelock = async (connection: Connection, {
         }
     }
 
-    return tx;
+    return { tx, newTransactionIndex };
 }
 
 export const getTimelockTransaction = async (connection: Connection, {
@@ -345,57 +346,57 @@ export const getTimelockTransaction = async (connection: Connection, {
 export function createMultisigCreateV2Instruction(
     accounts: multisig.generated.MultisigCreateV2InstructionAccounts,
     args: multisig.generated.MultisigCreateV2InstructionArgs
-  ) {
+) {
     const [data] = multisig.generated.multisigCreateV2Struct.serialize({
-      instructionDiscriminator: multisig.generated.multisigCreateV2InstructionDiscriminator,
-      ...args,
+        instructionDiscriminator: multisig.generated.multisigCreateV2InstructionDiscriminator,
+        ...args,
     })
     const keys: AccountMeta[] = [
-      {
-        pubkey: accounts.programConfig,
-        isWritable: false,
-        isSigner: false,
-      },
-      {
-        pubkey: accounts.treasury,
-        isWritable: true,
-        isSigner: false,
-      },
-      {
-        pubkey: accounts.multisig,
-        isWritable: true,
-        isSigner: false,
-      },
-      {
-        pubkey: accounts.createKey,
-        isWritable: true,
-        isSigner: true,
-      },
-      {
-        pubkey: accounts.creator,
-        isWritable: true,
-        isSigner: true,
-      },
-      {
-        pubkey: accounts.systemProgram ?? SystemProgram.programId,
-        isWritable: false,
-        isSigner: false,
-      },
+        {
+            pubkey: accounts.programConfig,
+            isWritable: false,
+            isSigner: false,
+        },
+        {
+            pubkey: accounts.treasury,
+            isWritable: true,
+            isSigner: false,
+        },
+        {
+            pubkey: accounts.multisig,
+            isWritable: true,
+            isSigner: false,
+        },
+        {
+            pubkey: accounts.createKey,
+            isWritable: true,
+            isSigner: true,
+        },
+        {
+            pubkey: accounts.creator,
+            isWritable: true,
+            isSigner: true,
+        },
+        {
+            pubkey: accounts.systemProgram ?? SystemProgram.programId,
+            isWritable: false,
+            isSigner: false,
+        },
     ]
-  
+
     if (accounts.anchorRemainingAccounts != null) {
-      for (const acc of accounts.anchorRemainingAccounts) {
-        keys.push(acc)
-      }
+        for (const acc of accounts.anchorRemainingAccounts) {
+            keys.push(acc)
+        }
     }
-  
+
     const ix = new TransactionInstruction({
-      programId: multisig.PROGRAM_ID,
-      keys,
-      data,
+        programId: multisig.PROGRAM_ID,
+        keys,
+        data,
     })
     return ix
-  }
+}
 
 
 export const deployTimelock = async (common: CommonParams, { delay, member, createKey }: DeployTimelockConfig) => {

@@ -102,7 +102,7 @@ export function getProgram(): keyof (typeof programAddresses) {
 /** Get network from arguments */
 export function getAdditionalBytes(): number {
   const argv = getParsedArgs();
-  const additionalBytes = (argv.additionalBytes || argv.ab) as string | undefined;
+  const additionalBytes = (argv['additional-bytes'] || argv.ab) as string | undefined;
 
   if (!additionalBytes) {
     return 0;

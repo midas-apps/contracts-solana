@@ -5,7 +5,7 @@ import { createUserError } from '@/common/errorHandler';
 import { executeNetworkScript } from '@/common/scriptRunner';
 
 import { getTimelockAddress } from '@/scripts/utils/addressQueries';
-import {  getMultisigTxIndex, getNetwork } from '@/scripts/utils/argumentParser';
+import { getMultisigTxIndex, getNetwork } from '@/scripts/utils/argumentParser';
 import { programAddresses } from '@/common/programs';
 import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 import { getTimelockTransaction, sendTxWithTimelock } from '@/scripts/deploy/timelock';
@@ -56,7 +56,7 @@ async function main(
 
     console.log(`Program: ${program}`);
 
-    const tx = await sendTxWithTimelock(common.provider.connection, {
+    const { tx } = await sendTxWithTimelock(common.provider.connection, {
         instructions: [],
         timelock: existingTimelock,
         signer: payer.publicKey,

@@ -77,7 +77,7 @@ async function main(
         authority: existingTimelock,
     }));
 
-    const tx = await sendTxWithTimelock(common.provider.connection, {
+    const { tx, newTransactionIndex } = await sendTxWithTimelock(common.provider.connection, {
         instructions,
         timelock: existingTimelock,
         signer: payer.publicKey,
@@ -86,11 +86,15 @@ async function main(
 
     const result = await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [], {
         action: 'update-timelock',
-        comment: `Propose upgrade of ${program} program trough the timelock`,
+        comment: `Propose upgrade of ${program} program trough the timelock. Tx index: ${newTransactionIndex?.toString()}`,
         waitForTx: false,
         pollingIntervalMs: 1000,
         timeoutDurationMs: 120 * 1000,
     });
+
+    if (newTransactionIndex !== undefined) {
+        console.log(`Timelock transaction index: ${newTransactionIndex.toString()}`);
+    }
 
     console.log(result)
 
