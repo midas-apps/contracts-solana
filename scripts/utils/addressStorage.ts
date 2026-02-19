@@ -87,7 +87,10 @@ function generateNetworkAddressesCode(networkAddrs: NetworkAddresses, indent = '
     parts.push(`ac: ${formatPublicKey(networkAddrs.ac)}`);
   }
   if (networkAddrs.timelock) {
-    parts.push(`timelock: ${formatPublicKey(networkAddrs.timelock)}`);
+    parts.push(`timelock: ${formatObject([
+      `multisig: ${formatPublicKey(networkAddrs.timelock.multisig)}`,
+      `vault: ${formatPublicKey(networkAddrs.timelock.vault)}`,
+    ])}`);
   }
 
   if (networkAddrs.tokens && Object.keys(networkAddrs.tokens).length > 0) {
@@ -161,9 +164,14 @@ import { MProduct, PaymentToken } from './tokenTypes';
 export interface NetworkAddresses {
   acRoleGlobal?: PublicKey;
   ac?: PublicKey;
-  timelock?: PublicKey;
+  timelock?: TimelockAddresses;
   tokens?: Partial<Record<MProduct, TokenAddresses>>;
   feeds?: Partial<Record<PaymentToken, DataFeed>>;
+}
+
+export interface TimelockAddresses {
+  multisig: PublicKey;
+  vault: PublicKey;
 }
 
 export interface DataFeed {

@@ -12,6 +12,7 @@ import { LOADER_V3_PROGRAM_ADDRESS } from '@solana-program/loader-v3';
 import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 import { getSetAuthorityInstructionIx, getUpgradeAuthority } from '@/scripts/utils/loaderProgramHelpers';
 import { sendTxWithTimelock } from '@/scripts/deploy/timelock';
+import * as multisig from '@sqds/multisig';
 
 async function main(
     provider: AnchorProvider,
@@ -28,8 +29,8 @@ async function main(
     }
 
     if (!newAuthority) {
-        console.log('Authority not provided, will use timelock as new authority');
-        newAuthority = timelock;
+        console.log('Authority not provided, will use timelock vault as new authority');
+        newAuthority = timelock.vault;
     }
 
     console.log(`Transferring upgrade authority for program ${program} to ${newAuthority.toBase58()} on network ${network}`);
@@ -63,8 +64,8 @@ async function main(
         throw createUserError(`New authority is the same as the current authority`);
     }
 
-    if (!newAuthority.equals(timelock) && !newAuthority.equals(payer.publicKey)) {
-        throw createUserError(`New authority is not the timelock or the payer, it's ${newAuthority.toBase58()}`);
+    if (!newAuthority.equals(timelock.vault) && !newAuthority.equals(payer.publicKey)) {
+        throw createUserError(`New authority is not the timelock vault or the payer, it's ${newAuthority.toBase58()}`);
     }
 
     const inx = getSetAuthorityInstructionIx({
@@ -73,12 +74,12 @@ async function main(
         newAuthority: newAuthority,
     });
 
-    const tx = currentAuthority.equals(timelock) ? await sendTxWithTimelock(common.provider.connection, {
+    const { tx, newTransactionIndex } = currentAuthority.equals(timelock.vault) ? await sendTxWithTimelock(common.provider.connection, {
         instructions: [inx],
-        timelock,
+        timelock: timelock.multisig,
         signer: payer.publicKey,
         action: { type: 'create' },
-    }) : new Transaction().add(inx);
+    }) : { tx: new Transaction().add(inx), newTransactionIndex: undefined };
 
     const result = await sendAndWaitForCustomSolanaTxSign(common.provider, tx, [], {
         action: 'update-timelock',
@@ -87,6 +88,8 @@ async function main(
         pollingIntervalMs: 1000,
         timeoutDurationMs: 120 * 1000,
     });
+
+    console.log(`New transaction index: ${newTransactionIndex?.toString()}`);
 
     console.log(result)
 

@@ -28,19 +28,19 @@ async function main(
         throw createUserError(`Timelock not found for network ${network}`,);
     }
 
-    const multisigInfo = await getMultisigInfo(common.provider.connection, timelock);
+    const multisigInfo = await getMultisigInfo(common.provider.connection, timelock.multisig);
 
     const multisigMember = multisigInfo.members[0].key;
     const memberMultisigInfo = await getMultisigInfo(common.provider.connection, multisigMember, false);
 
     const inxs = [
         multisig.instructions.proposalCancel({
-            multisigPda: timelock,
+            multisigPda: timelock.multisig,
             transactionIndex: BigInt(multisigTxIndex),
             member: payer.publicKey,
         }),
         multisig.instructions.vaultTransactionAccountsClose({
-            multisigPda: timelock,
+            multisigPda: timelock.multisig,
             transactionIndex: BigInt(multisigTxIndex),
             rentCollector: multisigInfo.rentCollector,
         }),

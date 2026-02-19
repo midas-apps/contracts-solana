@@ -23,7 +23,8 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
     const existingTimelock = getTimelockAddress(network);
     if (existingTimelock) {
         console.log('✓ Timelock already deployed');
-        console.log(`Timelock: ${existingTimelock.toString()}`);
+        console.log(`Timelock: ${existingTimelock.multisig.toString()}`);
+        console.log(`Vault: ${existingTimelock.vault.toString()}`);
         return;
     }
 
@@ -40,7 +41,8 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
     await saveAddressesToFile();
 
     console.log('\n✅ Timelock deployment submitted');
-    console.log(`Timelock: ${timelock.toString()}`);
+    console.log(`Timelock: ${timelock.multisig.toString()}`);
+    console.log(`Vault: ${timelock.vault.toString()}`);
     return;
 }
 

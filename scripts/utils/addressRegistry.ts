@@ -1,6 +1,6 @@
 import { PublicKey } from '@solana/web3.js';
 
-import { addresses, TokenAddresses, DataFeed } from '@/common/addresses';
+import { addresses, TokenAddresses, DataFeed, TimelockAddresses } from '@/common/addresses';
 import { createUserError } from '@/common/errorHandler';
 import { MProduct, PaymentToken } from '@/common/tokenTypes';
 
@@ -50,7 +50,7 @@ export function registerGlobalAc(network: string, ac: PublicKey): void {
   networkAddrs.ac = ac;
 }
 
-export function registerGlobalTimelock(network: string, timelock: PublicKey): void {
+export function registerGlobalTimelock(network: string, timelock: TimelockAddresses): void {
   ensureNetworkExists(network);
   const networkAddrs = addresses[network];
   networkAddrs.timelock = timelock;

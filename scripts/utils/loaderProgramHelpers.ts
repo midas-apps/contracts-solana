@@ -1,5 +1,5 @@
 import { createUserError } from "@/common/errorHandler";
-import { getExtendProgramInstruction, getSetAuthorityInstruction, getUpgradeInstruction, LOADER_V3_PROGRAM_ADDRESS } from "@solana-program/loader-v3";
+import { getCloseInstruction, getExtendProgramInstruction, getSetAuthorityInstruction, getUpgradeInstruction, LOADER_V3_PROGRAM_ADDRESS } from "@solana-program/loader-v3";
 import { AccountRole, Address, TransactionSigner } from "@solana/kit";
 import { Connection, PublicKey, TransactionInstruction } from "@solana/web3.js";
 
@@ -121,5 +121,32 @@ export const getUpgradeInstructionIx = ({
         })),
         programId: new PublicKey(LOADER_V3_PROGRAM_ADDRESS),
         data: Buffer.from(upgradeIx.data),
+    })
+}
+
+export const getCloseBufferInx = ({
+    destination,
+    bufferAccount,
+    authority,
+}: {
+    destination: PublicKey;
+    bufferAccount: PublicKey;
+    authority: PublicKey;
+}) => {
+
+    const closeIx = getCloseInstruction({
+        destinationAccount: destination.toBase58() as Address,
+        bufferOrProgramDataAccount: bufferAccount.toBase58() as Address,
+        authority: authority.toBase58() as unknown as TransactionSigner,
+    });
+
+    return new TransactionInstruction({
+        keys: closeIx.accounts.map(v => ({
+            isSigner: v.role === AccountRole.READONLY_SIGNER || v.role === AccountRole.WRITABLE_SIGNER,
+            isWritable: v.role === AccountRole.WRITABLE_SIGNER || v.role === AccountRole.WRITABLE,
+            pubkey: new PublicKey((v.address as any).publicKey ?? v.address),
+        })),
+        programId: new PublicKey(LOADER_V3_PROGRAM_ADDRESS),
+        data: Buffer.from(closeIx.data),
     })
 }

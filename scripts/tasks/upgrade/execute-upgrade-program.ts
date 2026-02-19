@@ -8,7 +8,9 @@ import { getTimelockAddress } from '@/scripts/utils/addressQueries';
 import { getMultisigTxIndex, getNetwork } from '@/scripts/utils/argumentParser';
 import { programAddresses } from '@/common/programs';
 import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
-import { getTimelockTransaction, sendTxWithTimelock } from '@/scripts/deploy/timelock';
+import { getMultisigInfo, getTimelockTransaction, sendTxWithTimelock } from '@/scripts/deploy/timelock';
+import { getUpgradeAuthority } from '@/scripts/utils/loaderProgramHelpers';
+import * as multisig from '@sqds/multisig';
 
 async function main(
     provider: AnchorProvider,
@@ -27,9 +29,12 @@ async function main(
     const common = { provider, payer, network };
 
     const { transaction, proposal } = await getTimelockTransaction(common.provider.connection, {
-        timelock: existingTimelock,
+        timelock: existingTimelock.multisig,
         transactionIndex: BigInt(multisigTxIndex),
     });
+
+    const multisigInfo = await getMultisigInfo(common.provider.connection, existingTimelock.multisig);
+
 
     if (!transaction || !proposal) {
         throw createUserError(`Transaction or proposal not found for multisig tx index ${multisigTxIndex}. Its either not created or already executed`,);
@@ -39,6 +44,12 @@ async function main(
         throw createUserError(`Proposal is not approved for multisig tx index ${multisigTxIndex}`,);
     }
 
+    const currentTs = Math.floor(new Date().getTime() / 1000);
+
+    if (BigInt(proposal.status.timestamp.toString()) + BigInt(multisigInfo.timeLock) > BigInt(currentTs)) {
+        throw createUserError(`Transaction timelock is not yet passed`,);
+    }
+    
     const programIdIndex = transaction.message.instructions[0].accountIndexes[1];
     const bufferIndex = transaction.message.instructions[0].accountIndexes[2];
 
@@ -54,11 +65,20 @@ async function main(
         throw createUserError(`Program id ${programId.toBase58()} not found in program addresses`,);
     }
 
+    
     console.log(`Program: ${program}`);
+
+    const currentAuthority = await getUpgradeAuthority(common.provider.connection, programId);
+
+    console.log(`Current authority: ${currentAuthority?.toBase58()}`);
+    
+    if (!currentAuthority.equals(existingTimelock.vault)) {
+        throw createUserError(`Current authority is not the timelock vault, it's ${currentAuthority.toBase58()}`);
+    }
 
     const { tx } = await sendTxWithTimelock(common.provider.connection, {
         instructions: [],
-        timelock: existingTimelock,
+        timelock: existingTimelock.multisig,
         signer: payer.publicKey,
         action: { type: 'execute', transactionIndex: BigInt(multisigTxIndex) },
     });
