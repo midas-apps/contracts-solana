@@ -1,5 +1,5 @@
 import { createUserError } from "@/common/errorHandler";
-import { getSetAuthorityInstruction, getUpgradeInstruction, LOADER_V3_PROGRAM_ADDRESS } from "@solana-program/loader-v3";
+import { getExtendProgramInstruction, getSetAuthorityInstruction, getUpgradeInstruction, LOADER_V3_PROGRAM_ADDRESS } from "@solana-program/loader-v3";
 import { AccountRole, Address, TransactionSigner } from "@solana/kit";
 import { Connection, PublicKey, TransactionInstruction } from "@solana/web3.js";
 
@@ -58,6 +58,36 @@ export const getSetAuthorityInstructionIx = ({
         })),
         programId: new PublicKey(LOADER_V3_PROGRAM_ADDRESS),
         data: Buffer.from(upgradeIx.data),
+    })
+}
+
+
+export const getExtendProgramInstructionIx = ({
+    programId,
+    programDataPda,
+    additionalBytes,
+    payer
+}: {
+    programId: PublicKey;
+    programDataPda: PublicKey;
+    payer: PublicKey;
+    additionalBytes: number;
+}) => {
+    const extendIx = getExtendProgramInstruction({
+        programAccount: programId.toBase58() as Address,
+        programDataAccount: programDataPda.toBase58() as Address,
+        payer: payer.toBase58() as unknown as TransactionSigner,
+        additionalBytes
+    });
+
+    return new TransactionInstruction({
+        keys: extendIx.accounts.map(v => ({
+            isSigner: v.role === AccountRole.READONLY_SIGNER || v.role === AccountRole.WRITABLE_SIGNER,
+            isWritable: v.role === AccountRole.WRITABLE_SIGNER || v.role === AccountRole.WRITABLE,
+            pubkey: new PublicKey((v.address as any).publicKey ?? v.address),
+        })),
+        programId: new PublicKey(LOADER_V3_PROGRAM_ADDRESS),
+        data: Buffer.from(extendIx.data),
     })
 }
 

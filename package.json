@@ -33,6 +33,7 @@
     "update:data-feed": "tsx scripts/tasks/manage/update-data-feed.ts",
     "update:manual-feed-price": "tsx scripts/tasks/manage/update-manual-feed-price.ts",
     "delegate": "tsx scripts/tasks/manage/delegate.ts",
+    "upgrade:calculate-resize": "tsx scripts/tasks/verify/calculate-upgrade-resize.ts",
     "upgrade:propose": "tsx scripts/tasks/upgrade/propose-upgrade-program.ts",
     "upgrade:execute": "tsx scripts/tasks/upgrade/execute-upgrade-program.ts",
     "timelock:cancel-transaction": "tsx scripts/tasks/manage/timelock/cancel-transaction.ts",

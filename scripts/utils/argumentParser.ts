@@ -98,6 +98,27 @@ export function getProgram(): keyof (typeof programAddresses) {
   return program as keyof (typeof programAddresses);
 }
 
+
+/** Get network from arguments */
+export function getAdditionalBytes(): number {
+  const argv = getParsedArgs();
+  const additionalBytes = (argv.additionalBytes || argv.ab) as string | undefined;
+
+  if (!additionalBytes) {
+    return 0;
+  }
+
+  const v = parseInt(additionalBytes);
+
+  if (isNaN(v)) {
+    throw createUserError(`Invalid additional bytes '${additionalBytes}'`, [
+      'Must be a valid number',
+    ]);
+  }
+
+  return v;
+}
+
 /** Get network from arguments */
 export function getMultisigTxIndex(): number {
   const argv = getParsedArgs();
