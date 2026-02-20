@@ -8224,16 +8224,16 @@
       ]
     },
     {
-      "name": "MinterVaultState",
+      "name": "MinterVaultStateV2",
       "discriminator": [
-        7,
-        226,
-        177,
-        77,
-        86,
-        188,
-        114,
-        219
+        51,
+        186,
+        118,
+        163,
+        101,
+        38,
+        195,
+        230
       ]
     },
     {
@@ -9262,7 +9262,7 @@
       }
     },
     {
-      "name": "MinterVaultState",
+      "name": "MinterVaultStateV2",
       "docs": [
         "Minter Vault state definition",
         "Contains everything that is only",

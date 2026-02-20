@@ -96,7 +96,7 @@
         {
           "name": "manual_feed",
           "docs": [
-            "New `ManualFeedState` instance"
+            "New `ManualFeedStateV2` instance"
           ],
           "writable": true,
           "pda": {
@@ -213,6 +213,10 @@
         {
           "name": "decimals",
           "type": "u8"
+        },
+        {
+          "name": "max_answer_deviation",
+          "type": "u64"
         }
       ]
     },
@@ -376,7 +380,151 @@
         {
           "name": "manual_feed",
           "docs": [
-            "`ManualFeedState` instance"
+            "`ManualFeedStateV2` instance"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  110,
+                  117,
+                  97,
+                  108,
+                  95,
+                  102,
+                  101,
+                  101,
+                  100,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "base_feed"
+              }
+            ]
+          }
+        },
+        {
+          "name": "ac_role",
+          "docs": [
+            "AccessControlRoles instance that is set in base_feed"
+          ]
+        },
+        {
+          "name": "authority_ac_role",
+          "docs": [
+            "Feed Admin AC role of `authority`"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99,
+                  95,
+                  114,
+                  111,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "ac_role"
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  97,
+                  116,
+                  97,
+                  95,
+                  102,
+                  101,
+                  101,
+                  100,
+                  95,
+                  97,
+                  100,
+                  109,
+                  105,
+                  110
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "base_feed",
+          "docs": [
+            "`DataFeed` account"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "decimals",
+          "type": {
+            "option": "u8"
+          }
+        },
+        {
+          "name": "max_answer_deviation",
+          "type": {
+            "option": "u64"
+          }
+        }
+      ]
+    },
+    {
+      "name": "update_manual_feed_price",
+      "discriminator": [
+        218,
+        240,
+        154,
+        7,
+        63,
+        198,
+        254,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "Account with Feed Admin role"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "manual_feed",
+          "docs": [
+            "`ManualFeedStateV2` instance"
           ],
           "writable": true,
           "pda": {
@@ -484,15 +632,11 @@
       "args": [
         {
           "name": "price",
-          "type": {
-            "option": "u64"
-          }
+          "type": "u64"
         },
         {
-          "name": "decimals",
-          "type": {
-            "option": "u8"
-          }
+          "name": "is_safe",
+          "type": "bool"
         }
       ]
     }
@@ -538,16 +682,16 @@
       ]
     },
     {
-      "name": "ManualFeedState",
+      "name": "ManualFeedStateV2",
       "discriminator": [
-        85,
-        188,
-        133,
-        61,
-        170,
-        132,
-        192,
-        135
+        131,
+        4,
+        68,
+        70,
+        211,
+        81,
+        75,
+        61
       ]
     }
   ],
@@ -576,6 +720,19 @@
         43,
         97,
         38
+      ]
+    },
+    {
+      "name": "ManualFeedUpdatedEventV2",
+      "discriminator": [
+        238,
+        164,
+        209,
+        41,
+        190,
+        168,
+        29,
+        36
       ]
     }
   ],
@@ -634,6 +791,11 @@
       "code": 6010,
       "name": "ArithmeticOverflow",
       "msg": "Arithmetic overflow or underflow"
+    },
+    {
+      "code": 6011,
+      "name": "DeviationTooHigh",
+      "msg": "Deviation is too high"
     }
   ],
   "types": [
@@ -819,7 +981,7 @@
       }
     },
     {
-      "name": "ManualFeedState",
+      "name": "ManualFeedStateV2",
       "docs": [
         "Account that holds data of manual data feed",
         "where the answer can be controlled by the",
@@ -848,6 +1010,13 @@
               "Last time when price was updated timestamp"
             ],
             "type": "u32"
+          },
+          {
+            "name": "max_answer_deviation",
+            "docs": [
+              "Max answer deviation"
+            ],
+            "type": "u64"
           }
         ]
       }
@@ -884,6 +1053,55 @@
             "name": "price",
             "docs": [
               "New price"
+            ],
+            "type": {
+              "option": "u64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ManualFeedUpdatedEventV2",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "base_feed",
+            "docs": [
+              "`FeedState` account"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "manual_feed",
+            "docs": [
+              "Manual feed account"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "decimals",
+            "docs": [
+              "New Decimals"
+            ],
+            "type": {
+              "option": "u8"
+            }
+          },
+          {
+            "name": "price",
+            "docs": [
+              "New price"
+            ],
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "max_answer_deviation",
+            "docs": [
+              "New max answer deviation"
             ],
             "type": {
               "option": "u64"

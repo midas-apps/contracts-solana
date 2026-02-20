@@ -11,7 +11,7 @@ use pyth_solana_receiver_sdk::price_update::PriceUpdateV2;
 
 use switchboard_on_demand::{PullFeedAccountData, PRECISION};
 
-use crate::state::{FeedState, ManualFeedState};
+use crate::state::{FeedState, ManualFeedStateV2};
 
 /// Parses the price from `feed` account and converts it
 /// to the price with 9 decimal points.
@@ -21,7 +21,7 @@ use crate::state::{FeedState, ManualFeedState};
 ///
 /// - `data_feed` - `FeedState` account
 /// - `feed` - account of the price feed. Currently supported types are:
-///     - `ManualFeedState`
+///     - `ManualFeedStateV2`
 ///     - `PullFeedAccountData`
 ///     - `PriceUpdateV2`
 pub fn get_price_in_base_9<'info>(
@@ -38,7 +38,7 @@ pub fn get_price_in_base_9<'info>(
         FeedMode::MANUAL => {
             // parse manual feed
             let mut buf: &[u8] = &feed.try_borrow_mut_data()?[..];
-            let feed_parsed = ManualFeedState::try_deserialize(&mut buf).unwrap();
+            let feed_parsed = ManualFeedStateV2::try_deserialize(&mut buf).unwrap();
 
             let current_ts = get_current_ts()?;
 
@@ -180,12 +180,13 @@ pub fn update_feed(
     Ok(())
 }
 
-/// Updates `ManualFeedState` values.
+/// Updates `ManualFeedStateV2` values.
 /// If parameter value is None - it wont be updated
 pub fn update_manual_feed(
-    state: &mut ManualFeedState,
+    state: &mut ManualFeedStateV2,
     price: Option<u64>,
     decimals: Option<u8>,
+    max_answer_deviation: Option<u64>,
 ) -> Result<()> {
     if let Some(price) = price {
         state.price = price;
@@ -195,11 +196,31 @@ pub fn update_manual_feed(
         state.decimals = decimals;
     }
 
+    if let Some(max_answer_deviation) = max_answer_deviation {
+        state.max_answer_deviation = max_answer_deviation;
+    }
+
     if Option::is_some(&decimals) || Option::is_some(&price) {
         state.last_updated_at = get_current_ts().unwrap();
     }
 
     Ok(())
+}
+
+pub fn get_deviation(last_price: u128, new_price: u128, decimals: u8) -> Result<u128> {
+    if new_price == 0 {
+        return Ok(100 * 10_u128.pow(decimals.into()));
+    }
+
+    let one = 10_i128.pow(decimals.into());
+
+    let last_price_i: i128 = i128::try_from(last_price).unwrap();
+    let new_price_i: i128 = i128::try_from(new_price).unwrap();
+
+    let price_dif: i128 = new_price_i - last_price_i;
+
+    let deviation: i128 = (price_dif * one * 100).checked_div(last_price_i).unwrap();
+    Ok(deviation.abs().try_into().unwrap())
 }
 
 /// library for converting values from one decimal point precision to another

@@ -4,7 +4,7 @@ use anchor_lang::prelude::*;
 use crate::{
     constants::ac_roles,
     events::MinterVaultUpdatedEvent,
-    state::{MinterVaultState, VaultCommonState},
+    state::{MinterVaultStateV2, VaultCommonState},
 };
 
 #[derive(Accounts)]
@@ -28,10 +28,10 @@ pub struct UpdateMinterVault<'info> {
     /// Minter vault state account
     #[account(
         mut,
-        seeds = [MinterVaultState::SEED, vault_common.key().as_ref()],
+        seeds = [MinterVaultStateV2::SEED, vault_common.key().as_ref()],
         bump
     )]
-    pub minter_vault: Account<'info, MinterVaultState>,
+    pub minter_vault: Account<'info, MinterVaultStateV2>,
 
     /// System program
     pub system_program: Program<'info, System>,

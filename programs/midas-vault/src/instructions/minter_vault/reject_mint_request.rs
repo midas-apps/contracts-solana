@@ -4,7 +4,7 @@ use anchor_lang::prelude::*;
 use crate::{
     constants::ac_roles,
     events::MinterVaultRequestRejectedEvent,
-    state::{MintVaultRequestState, MinterVaultState, VaultCommonState},
+    state::{MintVaultRequestState, MinterVaultStateV2, VaultCommonState},
 };
 
 #[derive(Accounts)]
@@ -38,10 +38,10 @@ pub struct RejectMintRequest<'info> {
     /// Minter vault state account
     #[account(
         mut,
-        seeds = [MinterVaultState::SEED, vault_common.key().as_ref()],
+        seeds = [MinterVaultStateV2::SEED, vault_common.key().as_ref()],
         bump
     )]
-    pub minter_vault: Account<'info, MinterVaultState>,
+    pub minter_vault: Account<'info, MinterVaultStateV2>,
 
     /// Mint request state account
     #[account(

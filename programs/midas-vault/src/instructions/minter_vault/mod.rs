@@ -29,3 +29,7 @@ pub use safe_approve_mint_request_at_request_rate::*;
 pub mod reject_mint_request;
 #[allow(ambiguous_glob_reexports)]
 pub use reject_mint_request::*;
+
+pub mod migration;
+#[allow(ambiguous_glob_reexports)]
+pub use migration::*;

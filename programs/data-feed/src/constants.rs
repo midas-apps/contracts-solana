@@ -10,6 +10,6 @@ pub const PYTH_FEED_MAX_STALENESS: u32 = 5 * 60;
 pub const MANUAL_FEED_MAX_STALENESS: u32 = 365 * 86400;
 
 pub mod ac_roles {
-    /// Holder of this role can update `FeedState` and `ManualFeedState`
+    /// Holder of this role can update `FeedState` and `ManualFeedStateV2`
     pub const FEED_ADMIN: &[u8; 15] = b"data_feed_admin";
 }

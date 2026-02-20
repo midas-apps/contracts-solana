@@ -44,7 +44,7 @@ pub struct UpdateFeed<'info> {
 /// - `ac_role` - AccessControlRole instance that will be used to control access
 /// to management instructions of data-feed program
 /// - `underlying_feed` - Account that holds the price. Currently it might be one of the
-/// next supported account types: PriceUpdateV2 (PYTH), PullFeedAccountData (Switchboard), ManualFeedState
+/// next supported account types: PriceUpdateV2 (PYTH), PullFeedAccountData (Switchboard), ManualFeedStateV2
 /// - `mode` - type of underlying feed
 /// - `min_price` - min_price that feed can return. Should be lower than `max_price`
 /// - `max_price` - max_price that feed can return. Should be higher than `min_price`

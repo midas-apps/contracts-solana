@@ -62,15 +62,24 @@ pub mod data_feed {
         ctx: Context<NewManualFeed>,
         initial_price: u64,
         decimals: u8,
+        max_answer_deviation: u64,
     ) -> Result<()> {
-        new_manual_feed::handle(ctx, initial_price, decimals)
+        new_manual_feed::handle(ctx, initial_price, decimals, max_answer_deviation)
     }
 
     pub fn update_manual_feed(
         ctx: Context<UpdateManualFeed>,
-        price: Option<u64>,
         decimals: Option<u8>,
+        max_answer_deviation: Option<u64>,
     ) -> Result<()> {
-        update_manual_feed::handle(ctx, price, decimals)
+        update_manual_feed::handle(ctx, decimals, max_answer_deviation)
+    }
+
+    pub fn update_manual_feed_price(
+        ctx: Context<UpdateManualFeedPrice>,
+        price: u64,
+        is_safe: bool,
+    ) -> Result<()> {
+        update_manual_feed_price::handle(ctx, price, is_safe)
     }
 }

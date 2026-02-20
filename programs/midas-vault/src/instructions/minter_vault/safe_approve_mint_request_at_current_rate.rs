@@ -9,7 +9,7 @@ use token_authority::{
 
 use crate::{
     constants::ac_roles,
-    state::{MintVaultRequestState, MinterVaultState, VaultCommonState},
+    state::{MintVaultRequestState, MinterVaultStateV2, VaultCommonState},
     utils::{close_account, get_token_rate, minter, Closable},
 };
 
@@ -53,10 +53,10 @@ pub struct SafeApproveMintRequestAtCurrentRate<'info> {
     /// Minter vault state account
     #[account(
         mut,
-        seeds = [MinterVaultState::SEED, vault_common.key().as_ref()],
+        seeds = [MinterVaultStateV2::SEED, vault_common.key().as_ref()],
         bump
     )]
-    pub minter_vault: Account<'info, MinterVaultState>,
+    pub minter_vault: Account<'info, MinterVaultStateV2>,
 
     /// Mint vault request state account
     #[account(

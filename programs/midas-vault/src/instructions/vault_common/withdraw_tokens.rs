@@ -8,7 +8,7 @@ use crate::{
     errors::MidasVaultsError,
     events::TokensWithdrawnEvent,
     program::MidasVaults,
-    state::{MinterVaultState, RedeemerVaultState, VaultCommonState},
+    state::{MinterVaultStateV2, RedeemerVaultState, VaultCommonState},
     utils::transfer_token_with_signer,
 };
 
@@ -83,7 +83,7 @@ pub fn handle(ctx: Context<WithdrawTokens>, vault_seed: Vec<u8>, amount: u64) ->
         decimals_conversion::convert_to_base_9(amount.into(), ctx.accounts.mint.decimals).unwrap();
 
     require!(
-        MinterVaultState::SEED.to_vec() == vault_seed
+        MinterVaultStateV2::SEED.to_vec() == vault_seed
             || RedeemerVaultState::SEED.to_vec() == vault_seed,
         MidasVaultsError::InvalidSeedProvided
     );

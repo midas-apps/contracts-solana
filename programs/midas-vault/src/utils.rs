@@ -7,7 +7,7 @@ use crate::{
     errors::MidasVaultsError,
     program::MidasVaults,
     state::{
-        MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState,
+        MintVaultRequestState, MinterVaultStateV2, PauseInxState, PaymentMintState,
         RedeemerVaultRequestState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState,
     },
 };
@@ -124,7 +124,7 @@ pub fn validate_common(
 pub fn require_and_update_min_amount(
     common: &VaultCommonState,
     common_account: &mut VaultCommonAccountState,
-    minter: Option<&MinterVaultState>,
+    minter: Option<&MinterVaultStateV2>,
     amount: u128,
 ) -> Result<()> {
     if common_account.free_from_min_amount {
@@ -236,7 +236,7 @@ pub fn require_variation_tolerance(
 /// To disable the cap (unlimited), set `max_supply_cap` to `u64::MAX`.
 pub fn validate_max_supply_cap(
     m_mint: &Mint,
-    minter: &MinterVaultState,
+    minter: &MinterVaultStateV2,
     mint_amount: u64,
 ) -> Result<bool> {
     let new_supply = m_mint
@@ -426,7 +426,7 @@ pub fn mint_token<'info>(
     amount: u64,
 ) -> Result<()> {
     let (_, vault_pda_bump_seed) = Pubkey::find_program_address(
-        &[MinterVaultState::SEED, common_vault.as_ref()],
+        &[MinterVaultStateV2::SEED, common_vault.as_ref()],
         &MidasVaults::id(),
     );
 
@@ -446,7 +446,7 @@ pub fn mint_token<'info>(
             token_authority_program.clone(),
             accounts,
             &[&[
-                MinterVaultState::SEED,
+                MinterVaultStateV2::SEED,
                 common_vault.as_ref(),
                 &[vault_pda_bump_seed],
             ]],
@@ -572,7 +572,7 @@ pub mod minter {
         mint_config: &mut PaymentMintState,
         common: &VaultCommonState,
         common_account: &mut VaultCommonAccountState,
-        minter: &mut MinterVaultState,
+        minter: &mut MinterVaultStateV2,
 
         payment_amount: u128,
         is_instant: bool,
@@ -684,7 +684,7 @@ pub mod minter {
     pub fn approve_mint_request<'info>(
         request: &MintVaultRequestState,
         vault_common: &Account<'info, VaultCommonState>,
-        minter_vault: &Account<'info, MinterVaultState>,
+        minter_vault: &Account<'info, MinterVaultStateV2>,
         m_mint: &Box<InterfaceAccount<'info, Mint>>,
         m_mint_user_ata: &Box<InterfaceAccount<'info, TokenAccount>>,
         m_mint_token_program: &Interface<'info, TokenInterface>,

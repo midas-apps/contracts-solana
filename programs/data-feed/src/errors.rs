@@ -24,4 +24,6 @@ pub enum DataFeedError {
     PriceIsHigherThanMax,
     #[msg("Arithmetic overflow or underflow")]
     ArithmeticOverflow,
+    #[msg("Deviation is too high")]
+    DeviationTooHigh,
 }

@@ -8230,16 +8230,16 @@ export type MidasVaults = {
       ]
     },
     {
-      "name": "minterVaultState",
+      "name": "minterVaultStateV2",
       "discriminator": [
-        7,
-        226,
-        177,
-        77,
-        86,
-        188,
-        114,
-        219
+        51,
+        186,
+        118,
+        163,
+        101,
+        38,
+        195,
+        230
       ]
     },
     {
@@ -9268,7 +9268,7 @@ export type MidasVaults = {
       }
     },
     {
-      "name": "minterVaultState",
+      "name": "minterVaultStateV2",
       "docs": [
         "Minter Vault state definition",
         "Contains everything that is only",

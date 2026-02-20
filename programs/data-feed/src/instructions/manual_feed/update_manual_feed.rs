@@ -6,8 +6,8 @@ use anchor_lang::prelude::*;
 
 use crate::{
     constants::ac_roles,
-    events::ManualFeedUpdatedEvent,
-    state::{FeedState, ManualFeedState},
+    events::ManualFeedUpdatedEventV2,
+    state::{FeedState, ManualFeedStateV2},
     utils::update_manual_feed,
 };
 
@@ -17,13 +17,13 @@ pub struct UpdateManualFeed<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    /// `ManualFeedState` instance
+    /// `ManualFeedStateV2` instance
     #[account(
         mut,
-        seeds = [ManualFeedState::SEED, base_feed.key().as_ref()],
+        seeds = [ManualFeedStateV2::SEED, base_feed.key().as_ref()],
         bump,
     )]
-    pub manual_feed: Account<'info, ManualFeedState>,
+    pub manual_feed: Account<'info, ManualFeedStateV2>,
 
     /// AccessControlRoles instance that is set in base_feed
     #[account(
@@ -49,22 +49,23 @@ pub struct UpdateManualFeed<'info> {
 ///
 /// # Arguments
 ///
-/// - `price` - new value for `ManualFeedState.price`
-/// - `decimals` - new decimals value for `ManualFeedState.decimals`
+/// - `decimals` - new decimals value for `ManualFeedStateV2.decimals`
+/// - `max_answer_deviation` - new max answer deviation value for `ManualFeedStateV2.max_answer_deviation`
 pub fn handle(
     ctx: Context<UpdateManualFeed>,
-    price: Option<u64>,
     decimals: Option<u8>,
+    max_answer_deviation: Option<u64>,
 ) -> Result<()> {
     let state = &mut ctx.accounts.manual_feed;
 
-    update_manual_feed(state, price, decimals)?;
+    update_manual_feed(state, None, decimals, max_answer_deviation)?;
 
-    emit!(ManualFeedUpdatedEvent {
+    emit!(ManualFeedUpdatedEventV2 {
         manual_feed: ctx.accounts.manual_feed.key(),
         base_feed: ctx.accounts.base_feed.key(),
         decimals,
-        price
+        price: None,
+        max_answer_deviation,
     });
 
     Ok(())
