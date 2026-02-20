@@ -10,8 +10,9 @@ import { PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { programAddresses } from '@/common/programs';
 import { LOADER_V3_PROGRAM_ADDRESS } from '@solana-program/loader-v3';
 import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
-import { getMultisigInfo, sendTxWithTimelock } from '@/scripts/deploy/timelock';
-import { getExtendProgramInstructionIx, getUpgradeAuthority, getUpgradeInstructionIx } from '@/scripts/utils/loaderProgramHelpers';
+import { sendTxWithTimelock } from '@/scripts/deploy/timelock';
+import { getCloseBufferInx, getExtendProgramInstructionIx, getUpgradeAuthority, getUpgradeInstructionIx } from '@/scripts/utils/loaderProgramHelpers';
+import * as multisig from '@sqds/multisig';
 
 async function main(
     provider: AnchorProvider,
@@ -50,36 +51,42 @@ async function main(
 
     const currentAuthority = await getUpgradeAuthority(provider.connection, programId);
 
-    if (!currentAuthority.equals(existingTimelock)) {
-        throw createUserError(`Current authority is not the timelock, it's ${currentAuthority.toBase58()}`);
+
+    if (!currentAuthority.equals(existingTimelock.vault)) {
+        throw createUserError(`Current authority is not the timelock vault, it's ${currentAuthority.toBase58()}`);
     }
-
-    const multisigData = await getMultisigInfo(provider.connection, existingTimelock);
-
-    const member = multisigData.members[0].key;
 
     const instructions: TransactionInstruction[] = [];
 
     if (additionalBytes > 0) {
+        // if need to extend the program, extend it
         instructions.push(getExtendProgramInstructionIx({
             programId,
             programDataPda,
             additionalBytes,
-            payer: member,
+            payer: existingTimelock.vault,
         }));
     }
 
+    // upgrade the program
     instructions.push(getUpgradeInstructionIx({
         programId,
         programDataPda,
         bufferAccount,
         spillAccount: payer.publicKey,
-        authority: existingTimelock,
+        authority: existingTimelock.vault,
+    }));
+
+    // close the buffer account to recover the funds
+    instructions.push(getCloseBufferInx({
+        destination: payer.publicKey,
+        bufferAccount,
+        authority: existingTimelock.vault,
     }));
 
     const { tx, newTransactionIndex } = await sendTxWithTimelock(common.provider.connection, {
         instructions,
-        timelock: existingTimelock,
+        timelock: existingTimelock.multisig,
         signer: payer.publicKey,
         action: { type: 'create' },
     });

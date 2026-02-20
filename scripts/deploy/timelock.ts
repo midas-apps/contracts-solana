@@ -448,6 +448,15 @@ export const deployTimelock = async (common: CommonParams, { delay, member, crea
         console.log(`Transaction signature: ${result.signature}`);
     }
 
-    return multisigPda as PublicKey;
+
+    const [vaultPda] = multisig.getVaultPda({
+        multisigPda: multisigPda,
+        index: 0,
+    });
+
+    return {
+        multisig: multisigPda as PublicKey,
+        vault: vaultPda as PublicKey,
+    };
 };
 

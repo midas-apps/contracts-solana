@@ -1,6 +1,6 @@
 import { PublicKey } from '@solana/web3.js';
 
-import { addresses, NetworkAddresses, TokenAddresses, DataFeed } from '@/common/addresses';
+import { addresses, NetworkAddresses, TokenAddresses, DataFeed, TimelockAddresses } from '@/common/addresses';
 import { MProduct, PaymentToken } from '@/common/tokenTypes';
 
 // Address getters (return undefined if not found)
@@ -25,7 +25,7 @@ export function getAcAddress(network: string): PublicKey | undefined {
   return addresses[network]?.ac;
 }
 
-export function getTimelockAddress(network: string): PublicKey | undefined {
+export function getTimelockAddress(network: string): TimelockAddresses | undefined {
   return addresses[network]?.timelock;
 }
 
