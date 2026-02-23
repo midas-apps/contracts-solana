@@ -317,6 +317,17 @@ describe('data-feed', () => {
       });
     });
 
+    it('update max answer deviation', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultDataFeed(fixture);
+
+      await updateManualFeed(fixture, {
+        baseFeed,
+        maxAnswerDeviation: parseUnits('2', 2),
+      });
+    });
+
     it('should fail: update from non-authority', async () => {
       const fixture = await dataFeedFixture();
 
@@ -335,7 +346,6 @@ describe('data-feed', () => {
     });
   });
 
-
   describe('update_manual_feed_price', () => {
     it('update price (unsafe)', async () => {
       const fixture = await dataFeedFixture();
@@ -348,6 +358,17 @@ describe('data-feed', () => {
       });
     });
 
+    it('update price (unsafe) when deviation is too high', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultDataFeed(fixture);
+
+      await updateManualFeedPrice(fixture, {
+        baseFeed,
+        price: parseUnits('1.2'),
+      });
+    });
+
     it('update price (safe)', async () => {
       const fixture = await dataFeedFixture();
 
@@ -357,6 +378,26 @@ describe('data-feed', () => {
         baseFeed,
         price: parseUnits('1'),
         isSafe: true,
+      });
+    });
+
+    it('should fail: update price (safe) when deviation is too high', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultDataFeed(fixture);
+
+      await updateManualFeedPrice(fixture, {
+        baseFeed,
+        price: parseUnits('1'),
+        isSafe: true,
+      });
+
+      await updateManualFeedPrice(fixture, {
+        baseFeed,
+        price: parseUnits('1.2'),
+        isSafe: true,
+      }, {
+        revertedWith: DataFeedError.DeviationTooHigh,
       });
     });
   });
@@ -631,6 +672,129 @@ describe('data-feed', () => {
           revertedWith: CommonError.GenericError,
         },
       );
+    });
+  });
+
+  describe("Chainlink underlying ", () => {
+    it("when underlying Chainlink feed is valid", async () => {
+      const fixture = await vaultsFixture();
+
+      const feed = await createNewFeed(fixture, {
+        mode: "chainlink",
+        underlyingFeed: fixture.mockedFeeds.chainlink.account,
+        maxPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()),
+        maxStaleness: 5 * 60,
+      });
+
+      await updateFeed(fixture, {
+        mode: "chainlink",
+        underlyingFeed: fixture.mockedFeeds.chainlink.account,
+        maxPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()),
+        maxStaleness: 5 * 60,
+      });
+
+      await prepareCommonMintTest(fixture);
+
+      await updatePaymentToken(fixture, {
+        dataFeed: feed.publicKey,
+      });
+
+      // align clock with embedded chainlink timestamp to avoid staleness
+      await setClockTime(
+        fixture.context,
+        BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs)
+      );
+
+      await mintInstant(
+        fixture,
+        { minReceiveAmount: 0n },
+        {},
+        // do not assert exact minted amount; just ensure success
+        undefined
+      );
+    });
+
+    it("should fail: when underlying Chainlink feed is stale", async () => {
+      const fixture = await vaultsFixture();
+
+      const feed = await createNewFeed(fixture, {
+        mode: "chainlink",
+        underlyingFeed: fixture.mockedFeeds.chainlink.account,
+        maxPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()),
+        maxStaleness: 5 * 60,
+      });
+
+      await prepareCommonMintTest(fixture);
+
+      await updatePaymentToken(fixture, {
+        dataFeed: feed.publicKey,
+      });
+
+      // move clock beyond maxStaleness
+      await setClockTime(
+        fixture.context,
+        BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs + 301)
+      );
+
+      await mintInstant(fixture, { minReceiveAmount: 0n }, {}, undefined, {
+        revertedWith: CommonError.GenericError,
+      });
+    });
+
+    it("should fail: when price is > max price", async () => {
+      const fixture = await vaultsFixture();
+
+      const feed = await createNewFeed(fixture, {
+        mode: "chainlink",
+        underlyingFeed: fixture.mockedFeeds.chainlink.account,
+        maxPrice:
+          parseUnits(fixture.mockedFeeds.chainlink.price.toString()) - 1n,
+        maxStaleness: 5 * 60,
+      });
+
+      await prepareCommonMintTest(fixture);
+
+      await updatePaymentToken(fixture, {
+        dataFeed: feed.publicKey,
+      });
+
+      await setClockTime(
+        fixture.context,
+        BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs)
+      );
+
+      await mintInstant(fixture, { minReceiveAmount: 0n }, {}, undefined, {
+        revertedWith: CommonError.GenericError,
+      });
+    });
+
+    it("should fail: when price is < min price", async () => {
+      const fixture = await vaultsFixture();
+
+      const feed = await createNewFeed(fixture, {
+        mode: "chainlink",
+        underlyingFeed: fixture.mockedFeeds.chainlink.account,
+        maxPrice:
+          parseUnits(fixture.mockedFeeds.chainlink.price.toString()) + 2n,
+        minPrice:
+          parseUnits(fixture.mockedFeeds.chainlink.price.toString()) + 1n,
+        maxStaleness: 5 * 60,
+      });
+
+      await prepareCommonMintTest(fixture);
+
+      await updatePaymentToken(fixture, {
+        dataFeed: feed.publicKey,
+      });
+
+      await setClockTime(
+        fixture.context,
+        BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs)
+      );
+
+      await mintInstant(fixture, { minReceiveAmount: 0n }, {}, undefined, {
+        revertedWith: CommonError.GenericError,
+      });
     });
   });
 });

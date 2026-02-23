@@ -4,10 +4,6 @@ import { AC_PROGRAM_ID, AC_SEEDS } from '../constants/ac.constants';
 
 import { AccessControlProgram, fetchAccountNullable, findPDA } from './common.helpers';
 
-export const DataFeedMode = {
-  manual: { manual: {} },
-  switchboard: { switchboard: {} },
-};
 export const generateAcAccount = () => {
   return Keypair.generate();
 };

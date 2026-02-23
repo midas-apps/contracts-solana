@@ -991,6 +991,9 @@
           },
           {
             "name": "PYTH"
+          },
+          {
+            "name": "CHAINLINK"
           }
         ]
       }

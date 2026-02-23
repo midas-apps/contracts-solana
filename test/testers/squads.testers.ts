@@ -1,7 +1,6 @@
-import { instructions } from "@sqds/multisig";
 import { SquadsFixtureReturnType } from "../fixture/squads.fixture";
-import { AddressLookupTableAccount, Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction, TransactionInstruction, TransactionMessage, VersionedTransaction } from "@solana/web3.js";
-import { expectTxNotReverted, expectTxReverted, OptionalCommonParams, timeTravel } from "../helpers/common.helpers";
+import { AddressLookupTableAccount, Keypair, PublicKey, Transaction, TransactionInstruction, TransactionMessage, VersionedTransaction } from "@solana/web3.js";
+import { expectTxNotReverted, expectTxReverted, timeTravel } from "../helpers/common.helpers";
 import * as multisig from "@sqds/multisig";
 import { DAY } from "../constants/common.constants";
 

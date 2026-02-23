@@ -576,6 +576,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
+name = "chainlink_solana"
+version = "2.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4d7593d95e79bd77af1bf2634e7ae8de1567027c0ca8d396a555b84036298dd4"
+dependencies = [
+ "borsh 0.10.4",
+ "bytemuck",
+ "solana-program",
+]
+
+[[package]]
 name = "cipher"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -691,6 +702,7 @@ version = "0.1.0"
 dependencies = [
  "access-control",
  "anchor-lang",
+ "chainlink_solana",
  "pyth-solana-receiver-sdk",
  "switchboard-on-demand",
 ]
@@ -1467,7 +1479,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be769465445e8c1474e9c5dac2018218498557af32d9ed057325ec9a41ae81bf"
 dependencies = [
  "heck 0.5.0",
- "itertools 0.12.1",
+ "itertools 0.13.0",
  "log",
  "multimap",
  "once_cell",
@@ -1487,7 +1499,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a56d757972c98b346a9b766e3f02746cde6dd1cd1d1d563472929fdd74bec4d"
 dependencies = [
  "anyhow",
- "itertools 0.12.1",
+ "itertools 0.13.0",
  "proc-macro2",
  "quote",
  "syn 2.0.87",

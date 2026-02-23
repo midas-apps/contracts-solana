@@ -1,7 +1,7 @@
 use crate::{
     constants::{
         DEFAULT_PUBKEY, MANUAL_FEED_MAX_STALENESS, PYTH_FEED_MAX_STALENESS,
-        SWITCHBOARD_FEED_MAX_STALENESS,
+        SWITCHBOARD_FEED_MAX_STALENESS, CHAINLINK_FEED_MAX_STALENESS
     },
     errors::DataFeedError,
     state::FeedMode,
@@ -12,6 +12,7 @@ use pyth_solana_receiver_sdk::price_update::PriceUpdateV2;
 use switchboard_on_demand::{PullFeedAccountData, PRECISION};
 
 use crate::state::{FeedState, ManualFeedStateV2};
+use chainlink_solana::v2::read_feed_v2;
 
 /// Parses the price from `feed` account and converts it
 /// to the price with 9 decimal points.
@@ -21,9 +22,10 @@ use crate::state::{FeedState, ManualFeedStateV2};
 ///
 /// - `data_feed` - `FeedState` account
 /// - `feed` - account of the price feed. Currently supported types are:
-///     - `ManualFeedStateV2`
-///     - `PullFeedAccountData`
-///     - `PriceUpdateV2`
+///     - `ManualFeedStateV2` (Manual feed account)
+///     - `PullFeedAccountData` (Switchboard feed account)
+///     - `PriceUpdateV2` (Pyth feed account)
+///     - `Feed` (Chainlink OCR2 feed account)
 pub fn get_price_in_base_9<'info>(
     data_feed: &FeedState,
     feed: &AccountInfo<'info>,
@@ -88,6 +90,28 @@ pub fn get_price_in_base_9<'info>(
                 raw_price.price as u128,
                 raw_price.exponent.abs().try_into().unwrap(),
             )
+        }
+        FeedMode::CHAINLINK => {
+            // parse chainlink feed via direct account read (SDK v2)
+            let data = feed.try_borrow_data()?;
+            let result = read_feed_v2(data, feed.owner.to_bytes())
+                .map_err(|_| DataFeedError::InvalidUnderlyingFeedProvided)?;
+
+            let round = result
+                .latest_round_data()
+                .ok_or(DataFeedError::PriceIsStale)?;
+
+            // enforce staleness using round.updated_at (seconds)
+            let now = Clock::get()?.unix_timestamp as u64;
+            let age = now.checked_sub(round.timestamp as u64).unwrap_or(u64::MAX);
+            
+            require_gte!(
+                data_feed.max_staleness as u64,
+                age,
+                DataFeedError::PriceIsStale
+            );
+
+            (round.answer as u128, result.decimals())
         }
     };
 
@@ -159,6 +183,7 @@ pub fn update_feed(
         state.max_staleness = max_staleness;
     }
 
+    // TODO: refactor this
     match state.mode {
         FeedMode::MANUAL => require_gte!(
             MANUAL_FEED_MAX_STALENESS,
@@ -172,6 +197,11 @@ pub fn update_feed(
         ),
         FeedMode::SWITCHBOARD => require_gte!(
             SWITCHBOARD_FEED_MAX_STALENESS,
+            state.max_staleness,
+            DataFeedError::ExceedsMaxStaleness
+        ),
+        FeedMode::CHAINLINK => require_gte!(
+            CHAINLINK_FEED_MAX_STALENESS,
             state.max_staleness,
             DataFeedError::ExceedsMaxStaleness
         ),
