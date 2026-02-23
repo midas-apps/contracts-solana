@@ -1,0 +1,6 @@
+{
+  "rust-analyzer.linkedProjects": ["Cargo.toml"],
+  "rust-analyzer.server.extraEnv": {
+    "CARGO_TARGET_DIR": "${workspaceFolder}/target"
+  }
+}

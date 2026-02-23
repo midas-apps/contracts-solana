@@ -62,7 +62,7 @@ pub fn get_price_in_base_9<'info>(
             let feed = PullFeedAccountData::parse(feed_data).unwrap();
             let raw_price = feed
                 .get_value(
-                    &Clock::get()?,
+                    Clock::get().unwrap().slot.into(),
                     data_feed.max_staleness.into(),
                     feed.min_sample_size.into(),
                     true,

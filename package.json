@@ -1,7 +1,7 @@
 {
   "type": "module",
   "scripts": {
-    "build": "RUSTUP_TOOLCHAIN=\"nightly-2024-05-09\" anchor build",
+    "build": "anchor build",
     "test": "yarn test:anchor && yarn test:cargo",
     "test:cargo": "anchor run test-cargo",
     "test:anchor": "anchor run test",
@@ -39,7 +39,7 @@
     "timelock:transfer-upgrade-authority": "tsx scripts/tasks/manage/timelock/transfer-upgrade-authority.ts"
   },
   "dependencies": {
-    "@coral-xyz/anchor": "0.30.1",
+    "@coral-xyz/anchor": "0.32.1",
     "@solana-program/loader-v3": "0.3.0",
     "@solana/kit": "6.0.1",
     "@solana/spl-token": "0.4.9",
