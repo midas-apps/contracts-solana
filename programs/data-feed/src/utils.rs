@@ -1,10 +1,9 @@
 use crate::{
     constants::{
-        DEFAULT_PUBKEY, MANUAL_FEED_MAX_STALENESS, PYTH_FEED_MAX_STALENESS,
-        SWITCHBOARD_FEED_MAX_STALENESS, CHAINLINK_FEED_MAX_STALENESS
+        CHAINLINK_FEED_MAX_STALENESS, DEFAULT_PUBKEY, MANUAL_FEED_MAX_STALENESS, PYTH_FEED_MAX_STALENESS, SWITCHBOARD_FEED_MAX_STALENESS
     },
     errors::DataFeedError,
-    state::FeedMode,
+    state::{FeedMode, ManualFeedGrowthState},
 };
 use anchor_lang::{prelude::*, require_keys_eq, AccountDeserialize, Key, Result};
 use pyth_solana_receiver_sdk::price_update::PriceUpdateV2;
@@ -214,6 +213,33 @@ pub fn update_feed(
 /// If parameter value is None - it wont be updated
 pub fn update_manual_feed(
     state: &mut ManualFeedStateV2,
+    price: Option<u64>,
+    decimals: Option<u8>,
+    max_answer_deviation: Option<u64>,
+) -> Result<()> {
+    if let Some(price) = price {
+        state.price = price;
+    }
+
+    if let Some(decimals) = decimals {
+        state.decimals = decimals;
+    }
+
+    if let Some(max_answer_deviation) = max_answer_deviation {
+        state.max_answer_deviation = max_answer_deviation;
+    }
+
+    if Option::is_some(&decimals) || Option::is_some(&price) {
+        state.last_updated_at = get_current_ts().unwrap();
+    }
+
+    Ok(())
+}
+
+/// Updates `ManualFeedGrowthState` values.
+/// If parameter value is None - it wont be updated
+pub fn update_manual_feed_growth(
+    state: &mut ManualFeedGrowthState,
     price: Option<u64>,
     decimals: Option<u8>,
     max_answer_deviation: Option<u64>,
