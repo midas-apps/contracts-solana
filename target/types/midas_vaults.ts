@@ -9648,6 +9648,19 @@ export type MidasVaults = {
       ]
     },
     {
+      "name": "minterVaultUpdatedEventV2",
+      "discriminator": [
+        181,
+        137,
+        94,
+        50,
+        59,
+        196,
+        135,
+        23
+      ]
+    },
+    {
       "name": "pauseInxUpdatedEvent",
       "discriminator": [
         74,
@@ -10533,6 +10546,39 @@ export type MidasVaults = {
     },
     {
       "name": "minterVaultUpdatedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "commonVault",
+            "docs": [
+              "common vault account"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "firstDepositMinMTokens",
+            "docs": [
+              "min. mTokens for first deposit"
+            ],
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "mintAuthorityPda",
+            "docs": [
+              "mint authority pda (token-authority program)"
+            ],
+            "type": {
+              "option": "pubkey"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "minterVaultUpdatedEventV2",
       "type": {
         "kind": "struct",
         "fields": [

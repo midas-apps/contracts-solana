@@ -10,6 +10,7 @@ import {
   createNewManualFeed,
   updateFeed,
   updateManualFeed,
+  updateManualFeedPrice,
 } from './testers/data-feed.testers';
 import { mintInstant, prepareCommonMintTest } from './testers/minter-vault.testers';
 
@@ -305,17 +306,6 @@ describe('data-feed', () => {
   });
 
   describe('update_manual_feed', () => {
-    it('update price', async () => {
-      const fixture = await dataFeedFixture();
-
-      const baseFeed = await createDefaultDataFeed(fixture);
-
-      await updateManualFeed(fixture, {
-        baseFeed,
-        price: parseUnits('1'),
-      });
-    });
-
     it('update decimals', async () => {
       const fixture = await dataFeedFixture();
 
@@ -342,6 +332,32 @@ describe('data-feed', () => {
           revertedWith: CommonError.AccountIsNotInitialized,
         },
       );
+    });
+  });
+
+
+  describe('update_manual_feed_price', () => {
+    it('update price (unsafe)', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultDataFeed(fixture);
+
+      await updateManualFeedPrice(fixture, {
+        baseFeed,
+        price: parseUnits('1'),
+      });
+    });
+
+    it('update price (safe)', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultDataFeed(fixture);
+
+      await updateManualFeedPrice(fixture, {
+        baseFeed,
+        price: parseUnits('1'),
+        isSafe: true,
+      });
     });
   });
 

@@ -9642,6 +9642,19 @@
       ]
     },
     {
+      "name": "MinterVaultUpdatedEventV2",
+      "discriminator": [
+        181,
+        137,
+        94,
+        50,
+        59,
+        196,
+        135,
+        23
+      ]
+    },
+    {
       "name": "PauseInxUpdatedEvent",
       "discriminator": [
         74,
@@ -10527,6 +10540,39 @@
     },
     {
       "name": "MinterVaultUpdatedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "common_vault",
+            "docs": [
+              "common vault account"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "first_deposit_min_m_tokens",
+            "docs": [
+              "min. mTokens for first deposit"
+            ],
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "mint_authority_pda",
+            "docs": [
+              "mint authority pda (token-authority program)"
+            ],
+            "type": {
+              "option": "pubkey"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "MinterVaultUpdatedEventV2",
       "type": {
         "kind": "struct",
         "fields": [

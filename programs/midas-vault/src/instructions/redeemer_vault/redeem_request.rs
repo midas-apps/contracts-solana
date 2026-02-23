@@ -26,7 +26,7 @@ pub struct RedeemRequest<'info> {
         seeds = [RedeemerVaultState::SEED, vault_common.key().as_ref()],
         bump
     )]
-    pub redeemer_vault: Account<'info, RedeemerVaultState>,
+    pub redeemer_vault: Box<Account<'info, RedeemerVaultState>>,
 
     /// Vault common state account
     #[account(
@@ -41,7 +41,7 @@ pub struct RedeemRequest<'info> {
         seeds = [VaultCommonAccountState::SEED, vault_common.key().as_ref(), signer.key().as_ref()],
         bump
     )]
-    pub vault_common_signer: Account<'info, VaultCommonAccountState>,
+    pub vault_common_signer: Box<Account<'info, VaultCommonAccountState>>,
 
     /// Redeem request state account
     #[account(
@@ -51,14 +51,14 @@ pub struct RedeemRequest<'info> {
         seeds = [RedeemerVaultRequestState::SEED, redeemer_vault.key().as_ref(), &vault_common.requests_count.to_le_bytes()],
         bump
     )]
-    pub redeem_request: Account<'info, RedeemerVaultRequestState>,
+    pub redeem_request: Box<Account<'info, RedeemerVaultRequestState>>,
 
     /// AccessControlState account
     #[account(
         address = vault_common.ac,
         owner = AccessControl::id(),
     )]
-    pub ac: Account<'info, AccessControlState>,
+    pub ac: Box<Account<'info, AccessControlState>>,
 
     /// Account access control state account
     #[account(
@@ -66,7 +66,7 @@ pub struct RedeemRequest<'info> {
         seeds::program = AccessControl::id(),
         bump
     )]
-    pub account_ac: Account<'info, AccountAccessControlState>,
+    pub account_ac: Box<Account<'info, AccountAccessControlState>>,
 
     /// Payment mint account
     #[account(
@@ -115,13 +115,13 @@ pub struct RedeemRequest<'info> {
         seeds = [PaymentMintState::SEED, vault_common.key().as_ref(), payment_mint.key().as_ref()],
         bump
     )]
-    pub payment_mint_state: Account<'info, PaymentMintState>,
+    pub payment_mint_state: Box<Account<'info, PaymentMintState>>,
 
     /// mMint data feed state account
     #[account(
         address = vault_common.m_mint_feed
     )]
-    pub m_mint_data_feed: Account<'info, FeedState>,
+    pub m_mint_data_feed: Box<Account<'info, FeedState>>,
 
     /// CHECK:
     /// mMint underlying feed state account
@@ -134,7 +134,7 @@ pub struct RedeemRequest<'info> {
     #[account(
         address = payment_mint_state.data_feed
     )]
-    pub payment_mint_data_feed: Account<'info, FeedState>,
+    pub payment_mint_data_feed: Box<Account<'info, FeedState>>,
 
     /// CHECK:
     /// Payment mint underlying feed state account
@@ -148,7 +148,7 @@ pub struct RedeemRequest<'info> {
         seeds = [PauseInxState::SEED, vault_common.key().as_ref(), (VaultActionId::RedeemRequest as u8).to_le_bytes().as_ref()],
         bump
     )]
-    pub pause_inx_state: Account<'info, PauseInxState>,
+    pub pause_inx_state: Box<Account<'info, PauseInxState>>,
 
     /// mMint token program
     pub m_mint_token_program: Interface<'info, TokenInterface>,

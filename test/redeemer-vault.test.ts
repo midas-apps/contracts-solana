@@ -39,7 +39,7 @@ import {
   updateVaultCommon,
   updateVaultCommonAccount,
 } from './testers/common-vaults.testers';
-import { updateFeed, updateManualFeed } from './testers/data-feed.testers';
+import { updateFeed, updateManualFeed, updateManualFeedPrice } from './testers/data-feed.testers';
 import {
   approveRedeemRequest,
   mintPaymentTokenAndApprove,
@@ -191,7 +191,7 @@ describe('redeemer-vault', () => {
         },
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('1.1'),
       });
 
@@ -303,12 +303,12 @@ describe('redeemer-vault', () => {
         mintPaymentTokenAndApprove: { amountBase9: parseUnits('495') },
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
         price: parseUnits('1.05'),
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('5'),
       });
 
@@ -341,12 +341,12 @@ describe('redeemer-vault', () => {
         mintPaymentTokenAndApprove: { amountBase9: parseUnits('471.428571') },
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
         price: parseUnits('1.05'),
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('5'),
       });
 
@@ -408,7 +408,7 @@ describe('redeemer-vault', () => {
       await prepareCommonRedeemTest(fixture, {
         addPaymentToken: { stable: false },
       });
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: 0n,
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
       });
@@ -781,12 +781,12 @@ describe('redeemer-vault', () => {
         mintMToken: { amount: parseUnits('100') },
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
         price: parseUnits('1.05'),
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('5'),
       });
 
@@ -816,12 +816,12 @@ describe('redeemer-vault', () => {
         mintMToken: { amount: parseUnits('100') },
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
         price: parseUnits('1.05'),
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('5'),
       });
 
@@ -919,7 +919,7 @@ describe('redeemer-vault', () => {
       await prepareCommonRedeemTest(fixture, {
         addPaymentToken: { stable: false },
       });
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: 0n,
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
       });
@@ -1484,7 +1484,7 @@ describe('redeemer-vault', () => {
       await redeemRequest(fixture, {}, {});
 
       // Change rate significantly after request was created
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('1.11'),
       });
 
@@ -1510,7 +1510,7 @@ describe('redeemer-vault', () => {
       await redeemRequest(fixture, {}, {});
 
       // Change rate significantly after request was created
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('1.11'),
       });
 
@@ -1882,7 +1882,7 @@ describe('redeemer-vault', () => {
       await redeemRequest(fixture, {}, {});
 
       // Change rate significantly after request was created
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('1.5'),
       });
 

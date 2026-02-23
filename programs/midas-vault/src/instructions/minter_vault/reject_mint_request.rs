@@ -25,7 +25,7 @@ pub struct RejectMintRequest<'info> {
     #[account(
         address = minter_vault.common_vault
     )]
-    pub vault_common: Account<'info, VaultCommonState>,
+    pub vault_common: Box<Account<'info, VaultCommonState>>,
 
     /// Admin role of authority
     #[account(
@@ -33,7 +33,7 @@ pub struct RejectMintRequest<'info> {
         seeds::program = AccessControl::id(),
         bump,
     )]
-    pub authority_ac_role: Account<'info, AccountAccessControlRoleState>,
+    pub authority_ac_role: Box<Account<'info, AccountAccessControlRoleState>>,
 
     /// Minter vault state account
     #[account(
@@ -41,7 +41,7 @@ pub struct RejectMintRequest<'info> {
         seeds = [MinterVaultStateV2::SEED, vault_common.key().as_ref()],
         bump
     )]
-    pub minter_vault: Account<'info, MinterVaultStateV2>,
+    pub minter_vault: Box<Account<'info, MinterVaultStateV2>>,
 
     /// Mint request state account
     #[account(
@@ -50,7 +50,7 @@ pub struct RejectMintRequest<'info> {
         seeds = [MintVaultRequestState::SEED, minter_vault.key().as_ref(), &request_id.to_le_bytes()],
         bump,
     )]
-    pub mint_request: Account<'info, MintVaultRequestState>,
+    pub mint_request: Box<Account<'info, MintVaultRequestState>>,
 
     /// System program
     pub system_program: Program<'info, System>,

@@ -99,7 +99,7 @@ async function fetchUnderlyingPrice(
       if (!idl) return null;
 
       const program = new Program(idl, provider);
-      const feedAccount = new sb.PullFeed(program, feedState.underlyingFeed);
+      const feedAccount = new sb.PullFeed(program as any, feedState.underlyingFeed);
       const data = await feedAccount.loadData();
 
       return {

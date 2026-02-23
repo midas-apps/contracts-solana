@@ -10,7 +10,7 @@ import {
   updateVaultCommon,
   updateVaultCommonAccount,
 } from './testers/common-vaults.testers';
-import { updateFeed, updateManualFeed } from './testers/data-feed.testers';
+import { updateFeed, updateManualFeed, updateManualFeedPrice } from './testers/data-feed.testers';
 import {
   approveMintRequest,
   mintInstant,
@@ -196,7 +196,7 @@ describe('minter-vault', () => {
         },
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('1.1'),
       });
 
@@ -410,12 +410,12 @@ describe('minter-vault', () => {
 
       await prepareCommonMintTest(fixture);
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
         price: parseUnits('1.05'),
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('5'),
       });
 
@@ -446,12 +446,12 @@ describe('minter-vault', () => {
         },
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
         price: parseUnits('1.05'),
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('5'),
       });
 
@@ -496,7 +496,7 @@ describe('minter-vault', () => {
       await prepareCommonMintTest(fixture, {
         addPaymentToken: { stable: false },
       });
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: 0n,
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
       });
@@ -870,7 +870,7 @@ describe('minter-vault', () => {
         },
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('1.1'),
       });
 
@@ -1026,12 +1026,12 @@ describe('minter-vault', () => {
 
       await prepareCommonMintTest(fixture);
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
         price: parseUnits('1.05'),
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('5'),
       });
 
@@ -1060,12 +1060,12 @@ describe('minter-vault', () => {
         },
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
         price: parseUnits('1.05'),
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('5'),
       });
 
@@ -1108,7 +1108,7 @@ describe('minter-vault', () => {
       await prepareCommonMintTest(fixture, {
         addPaymentToken: { stable: false },
       });
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: 0n,
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
       });
@@ -1444,7 +1444,7 @@ describe('minter-vault', () => {
       await mintRequest(fixture, {}, {});
 
       // Change rate significantly after request was created
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('1.11'),
       });
 
@@ -1517,7 +1517,7 @@ describe('minter-vault', () => {
       await mintRequest(fixture, {}, {});
 
       // Change rate significantly after request was created
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('1.5'),
       });
 

@@ -19,7 +19,7 @@ export const fetchDataFeedState = (program: DataFeedProgram, feed: PublicKey) =>
 };
 
 export const fetchManualFeedState = (program: DataFeedProgram, feed: PublicKey) => {
-  return program.account.manualFeedState.fetchNullable(feed);
+  return program.account.manualFeedStateV2.fetchNullable(feed);
 };
 
 export const getManualFeedStatePda = (feedPda: PublicKey) => {

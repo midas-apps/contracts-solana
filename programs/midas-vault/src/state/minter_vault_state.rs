@@ -11,8 +11,6 @@ pub struct MinterVaultState {
     pub common_vault: Pubkey,
     /// mint authority pda (token-authority program)
     pub mint_authority_pda: Pubkey,
-    /// max supply cap for mToken minting
-    pub max_supply_cap: u64,
 }
 
 #[account]

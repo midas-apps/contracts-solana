@@ -237,6 +237,7 @@ export const expectTxNotReverted = async (
   try {
     return await processTransaction(ctx, transaction, signers);
   } catch (err) {
+    console.log(err)
     expect(true, `Expected tx to not revert, but it reverted. Err: ${err.toString()}`).toEqual(
       false,
     );
@@ -256,6 +257,11 @@ export const processTransaction = async (
   transaction: Transaction | VersionedTransaction,
   signers: (Keypair | Signer)[],
 ) => {
+  const signersFormatted = signers.map((signer) => signer instanceof Keypair ? {
+    publicKey: signer.publicKey,
+    secretKey: signer.secretKey,
+  } : signer);
+
   // Need to generate new blockhash
   ctx.warpToSlot(BigInt(latestSlot + 1));
   latestSlot++;
@@ -265,12 +271,13 @@ export const processTransaction = async (
 
   if (transaction instanceof Transaction) {
     transaction.recentBlockhash = blockHash;
-    transaction.sign(...signers);
+    transaction.sign(...signersFormatted);
   } else {
-    transaction.sign([...signers]);
+    console.log(signersFormatted)
+    transaction.sign([...signersFormatted]);
   }
 
-  return await client.processTransaction(transaction);
+  return await client.processTransaction(transaction as any);
 };
 
 export const parseUnits = (n: string, decimals = 9) => {

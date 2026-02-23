@@ -136,7 +136,7 @@ export const dataFeedFixture = async (fixture?: InitBankrunReturnType, initSlot?
         })
         .instruction(),
       await dataFeedProgram.methods
-        .newManualFeed(toBN(parseUnits('1')), 9)
+        .newManualFeed(toBN(parseUnits('1')), 9, toBN(parseUnits('1', 2)))
         .accountsPartial({
           baseFeed: feed.publicKey,
           authority: authority.publicKey,

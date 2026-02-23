@@ -4,7 +4,7 @@ use token_authority::{program::TokenAuthority, state::TokenAuthorityState};
 
 use crate::{
     constants::ac_roles,
-    events::MinterVaultUpdatedEvent,
+    events::MinterVaultUpdatedEventV2,
     state::{MinterVaultStateV2, VaultCommonState},
 };
 
@@ -68,7 +68,7 @@ pub fn handle(
     ctx.accounts.minter_vault.mint_authority_pda = ctx.accounts.token_authority.key();
     ctx.accounts.minter_vault.max_supply_cap = max_supply_cap;
 
-    emit!(MinterVaultUpdatedEvent {
+    emit!(MinterVaultUpdatedEventV2 {
         common_vault: ctx.accounts.vault_common.key(),
         first_deposit_min_m_tokens: Some(first_deposit_min_m_tokens),
         mint_authority_pda: Some(ctx.accounts.token_authority.key()),

@@ -32,7 +32,7 @@ pub struct SafeApproveMintRequestAtCurrentRate<'info> {
     #[account(
         address = minter_vault.common_vault
     )]
-    pub vault_common: Account<'info, VaultCommonState>,
+    pub vault_common: Box<Account<'info, VaultCommonState>>,
 
     /// Admin role of authority
     #[account(
@@ -40,7 +40,7 @@ pub struct SafeApproveMintRequestAtCurrentRate<'info> {
         seeds::program = AccessControl::id(),
         bump,
     )]
-    pub authority_ac_role: Account<'info, AccountAccessControlRoleState>,
+    pub authority_ac_role: Box<Account<'info, AccountAccessControlRoleState>>,
 
     /// Vault minter role
     #[account(
@@ -48,7 +48,7 @@ pub struct SafeApproveMintRequestAtCurrentRate<'info> {
         seeds::program = AccessControl::id(),
         bump,
     )]
-    pub vault_minter_role: Account<'info, AccountAccessControlRoleState>,
+    pub vault_minter_role: Box<Account<'info, AccountAccessControlRoleState>>,
 
     /// Minter vault state account
     #[account(
@@ -56,7 +56,7 @@ pub struct SafeApproveMintRequestAtCurrentRate<'info> {
         seeds = [MinterVaultStateV2::SEED, vault_common.key().as_ref()],
         bump
     )]
-    pub minter_vault: Account<'info, MinterVaultStateV2>,
+    pub minter_vault: Box<Account<'info, MinterVaultStateV2>>,
 
     /// Mint vault request state account
     #[account(
@@ -64,7 +64,7 @@ pub struct SafeApproveMintRequestAtCurrentRate<'info> {
         seeds = [MintVaultRequestState::SEED, minter_vault.key().as_ref(), &request_id.to_le_bytes()],
         bump
     )]
-    pub mint_request: Account<'info, MintVaultRequestState>,
+    pub mint_request: Box<Account<'info, MintVaultRequestState>>,
 
     /// Token authority state account (token-authority program)
     #[account(
@@ -72,7 +72,7 @@ pub struct SafeApproveMintRequestAtCurrentRate<'info> {
         address = minter_vault.mint_authority_pda,
         owner = TokenAuthority::id()
     )]
-    pub token_authority: Account<'info, TokenAuthorityState>,
+    pub token_authority: Box<Account<'info, TokenAuthorityState>>,
 
     /// mMint ATA of `user_account`
     #[account(
@@ -95,7 +95,7 @@ pub struct SafeApproveMintRequestAtCurrentRate<'info> {
     #[account(
         address = vault_common.m_mint_feed
     )]
-    pub m_mint_data_feed: Account<'info, FeedState>,
+    pub m_mint_data_feed: Box<Account<'info, FeedState>>,
 
     /// CHECK:
     /// mMint underlying feed account
