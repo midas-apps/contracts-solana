@@ -1,4 +1,5 @@
 import { CommonError } from './constants/common.constants';
+import { DataFeedError } from './constants/data-feed.constants';
 import { VaultActionIds, VaultError, VAULTS_PROGRAM_ID } from './constants/vaults.constants';
 import { vaultsFixture } from './fixture/vaults.fixture';
 import { fromBN, parsePercent, parseUnits, timeTravel } from './helpers/common.helpers';
@@ -10,7 +11,7 @@ import {
   updateVaultCommon,
   updateVaultCommonAccount,
 } from './testers/common-vaults.testers';
-import { updateFeed, updateManualFeed, updateManualFeedPrice } from './testers/data-feed.testers';
+import { updateFeed, updateManualFeedGrowth, updateManualFeedGrowthPrice, updateManualFeedPrice } from './testers/data-feed.testers';
 import {
   approveMintRequest,
   mintInstant,
@@ -126,6 +127,118 @@ describe('minter-vault', () => {
           fee: 0.1,
           tokensMinted: parseUnits('9.9'),
         },
+      );
+    });
+
+    it('should mint instant with manual feed growth', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updateFeed(fixture, {
+        mode: 'manualGrowth',
+        feed: fixture.dataFeedMTBill.publicKey,
+        underlyingFeed: fixture.manualUnderlyingFeedGrowthMTBill,
+      });
+      await mintInstant(
+        fixture,
+        {},
+        {},
+        {
+          fee: 0.1,
+          tokensMinted: parseUnits('9.9'),
+        },
+      );
+    });
+
+    it('should mint instant with manual feed growth with growth apr set to 5%, timestamp is 100s in past', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updateFeed(fixture, {
+        mode: 'manualGrowth',
+        feed: fixture.dataFeedMTBill.publicKey,
+        underlyingFeed: fixture.manualUnderlyingFeedGrowthMTBill,
+      });
+
+      await timeTravel(fixture.context, 3601n);
+      await updateManualFeedGrowthPrice(fixture, {
+        baseFeed: fixture.dataFeedMTBill.publicKey,
+        growthApr: parseUnits('5'),
+        price: parseUnits('1'),
+        priceTimestampDelta: -100
+      });
+
+      await mintInstant(
+        fixture,
+        {},
+        {},
+        {
+          fee: 0.1,
+          tokensMinted: parseUnits('9.899998416'),
+        },
+      );
+    });
+
+    it('should mint instant with manual feed growth with growth apr set to -5%, timestamp is 100s in past', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updateFeed(fixture, {
+        mode: 'manualGrowth',
+        feed: fixture.dataFeedMTBill.publicKey,
+        underlyingFeed: fixture.manualUnderlyingFeedGrowthMTBill,
+      });
+
+      await updateManualFeedGrowth(fixture, {
+        baseFeed: fixture.dataFeedMTBill.publicKey,
+        minGrowthApr: -1n * parseUnits('5'),
+      });
+
+      await timeTravel(fixture.context, 3601n);
+
+      await updateManualFeedGrowthPrice(fixture, {
+        baseFeed: fixture.dataFeedMTBill.publicKey,
+        growthApr: -1n * parseUnits('5'),
+        price: parseUnits('1'),
+        priceTimestampDelta: -100
+      });
+      await timeTravel(fixture.context, 10n);
+
+      await mintInstant(
+        fixture,
+        {},
+        {},
+        {
+          fee: 0.1,
+          tokensMinted: parseUnits('9.900001732'),
+        },
+      );
+    });
+
+    it('with manual feed with growth, price_timestamp should not affect the staleness check', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updateFeed(fixture, {
+        mode: 'manualGrowth',
+        feed: fixture.dataFeedMTBill.publicKey,
+        underlyingFeed: fixture.manualUnderlyingFeedGrowthMTBill,
+        maxStaleness: 3600
+      });
+
+      await timeTravel(fixture.context, 3601n);
+
+      await updateManualFeedGrowthPrice(fixture, {
+        baseFeed: fixture.dataFeedMTBill.publicKey,
+        price: parseUnits('1'),
+        priceTimestampDelta: -7200
+      });
+      await timeTravel(fixture.context, 3000n);
+
+      await mintInstant(
+        fixture,
+        {},
+        {},
       );
     });
 
@@ -742,6 +855,111 @@ describe('minter-vault', () => {
         {
           revertedWith: VaultError.MaxSupplyCapExceeded,
         },
+      );
+    });
+
+    it('should fail: mint instant with manual feed growth with growth apr set to -90%, timestamp is 10d in past and price exceeds min bound', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updateFeed(fixture, {
+        mode: 'manualGrowth',
+        feed: fixture.dataFeedMTBill.publicKey,
+        underlyingFeed: fixture.manualUnderlyingFeedGrowthMTBill,
+        minPrice: parseUnits('0.99'),
+      });
+
+      await updateManualFeedGrowth(fixture, {
+        baseFeed: fixture.dataFeedMTBill.publicKey,
+        minGrowthApr: -1n * parseUnits('90'),
+      });
+
+      await timeTravel(fixture.context, 3601n);
+
+      await updateManualFeedGrowthPrice(fixture, {
+        baseFeed: fixture.dataFeedMTBill.publicKey,
+        growthApr: -1n * parseUnits('90'),
+        price: parseUnits('1'),
+        priceTimestampDelta: -10 * 86400
+      });
+
+      await mintInstant(
+        fixture,
+        {},
+        {},
+        undefined,
+        {
+          revertedWith: DataFeedError.PriceIsLowerThanMin,
+        }
+      );
+    });
+
+    it('should fail: mint instant with manual feed growth with growth apr set to 90%, timestamp is 10d in past and price exceeds max bound', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updateFeed(fixture, {
+        mode: 'manualGrowth',
+        feed: fixture.dataFeedMTBill.publicKey,
+        underlyingFeed: fixture.manualUnderlyingFeedGrowthMTBill,
+        maxPrice: parseUnits('1.01'),
+      });
+
+      await updateManualFeedGrowth(fixture, {
+        baseFeed: fixture.dataFeedMTBill.publicKey,
+        maxGrowthApr: parseUnits('90'),
+      });
+
+      await timeTravel(fixture.context, 3601n);
+
+      await updateManualFeedGrowthPrice(fixture, {
+        baseFeed: fixture.dataFeedMTBill.publicKey,
+        growthApr: parseUnits('90'),
+        price: parseUnits('1'),
+        priceTimestampDelta: -10 * 86400
+      });
+
+      await mintInstant(
+        fixture,
+        {},
+        {},
+        undefined,
+        {
+          revertedWith: DataFeedError.PriceIsHigherThanMax,
+        }
+      );
+    });
+
+    it('should fail: mint instant with manual feed growth when price is stale', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updateFeed(fixture, {
+        mode: 'manualGrowth',
+        feed: fixture.dataFeedMTBill.publicKey,
+        underlyingFeed: fixture.manualUnderlyingFeedGrowthMTBill,
+        maxStaleness: 100
+      });
+
+      await timeTravel(fixture.context, 3601n);
+
+      await updateManualFeedGrowthPrice(fixture, {
+        baseFeed: fixture.dataFeedMTBill.publicKey,
+        growthApr: parseUnits('5'),
+        price: parseUnits('1'),
+        priceTimestampDelta: -100
+      });
+
+      await timeTravel(fixture.context, 101n);
+
+      await mintInstant(
+        fixture,
+        {},
+        {},
+        undefined,
+        {
+          revertedWith: DataFeedError.PriceIsStale,
+        }
       );
     });
 

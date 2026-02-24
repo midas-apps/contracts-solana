@@ -82,4 +82,58 @@ pub mod data_feed {
     ) -> Result<()> {
         update_manual_feed_price::handle(ctx, price, is_safe)
     }
+
+    /* Manual Growth Underlying Feed instructions */
+
+    pub fn new_manual_feed_growth(
+        ctx: Context<NewManualFeedGrowth>,
+        initial_price: u64,
+        initial_price_timestamp: u32,
+        initial_growth_apr: i64,
+        decimals: u8,
+        max_answer_deviation: u64,
+        min_growth_apr: i64,
+        max_growth_apr: i64,
+        only_up: bool,
+    ) -> Result<()> {
+        new_manual_feed_growth::handle(
+            ctx,
+            initial_price,
+            initial_price_timestamp,
+            initial_growth_apr,
+            decimals,
+            max_answer_deviation,
+            min_growth_apr,
+            max_growth_apr,
+            only_up,
+        )
+    }
+
+    pub fn update_manual_feed_growth(
+        ctx: Context<UpdateManualFeedGrowth>,
+        decimals: Option<u8>,
+        max_answer_deviation: Option<u64>,
+        min_growth_apr: Option<i64>,
+        max_growth_apr: Option<i64>,
+        only_up: Option<bool>,
+    ) -> Result<()> {
+        update_manual_feed_growth::handle(
+            ctx,
+            decimals,
+            max_answer_deviation,
+            min_growth_apr,
+            max_growth_apr,
+            only_up,
+        )
+    }
+
+    pub fn update_manual_feed_growth_price(
+        ctx: Context<UpdateManualFeedGrowthPrice>,
+        price: u64,
+        price_timestamp: u32,
+        growth_apr: i64,
+        is_safe: bool,
+    ) -> Result<()> {
+        update_manual_feed_growth_price::handle(ctx, price, price_timestamp, growth_apr, is_safe)
+    }
 }

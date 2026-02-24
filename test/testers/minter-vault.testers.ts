@@ -392,12 +392,12 @@ export const mintInstant = async (
 
   expect(stateAfter.balanceFeeReceiverPaymentMint).toEqual(
     stateBefore.balanceFeeReceiverPaymentMint +
-      parseUnits((expected?.fee ?? 0).toString(), paymentMint.decimals),
+    parseUnits((expected?.fee ?? 0).toString(), paymentMint.decimals),
   );
 
   expect(stateAfter.balanceTokensReceiverPaymentMint).toEqual(
     stateBefore.balanceTokensReceiverPaymentMint +
-      parseUnits((amountToken - (expected?.fee ?? 0)).toString(), paymentMint.decimals),
+    parseUnits((amountToken - (expected?.fee ?? 0)).toString(), paymentMint.decimals),
   );
 
   return { stateAfter, clock };
@@ -607,12 +607,12 @@ export const mintRequest = async (
 
   expect(stateAfter.balanceFeeReceiverPaymentMint).toEqual(
     stateBefore.balanceFeeReceiverPaymentMint +
-      parseUnits((expected?.fee ?? 0).toString(), paymentMint.decimals),
+    parseUnits((expected?.fee ?? 0).toString(), paymentMint.decimals),
   );
 
   expect(stateAfter.balanceTokensReceiverPaymentMint).toEqual(
     stateBefore.balanceTokensReceiverPaymentMint +
-      parseUnits((amountToken - (expected?.fee ?? 0)).toString(), paymentMint.decimals),
+    parseUnits((amountToken - (expected?.fee ?? 0)).toString(), paymentMint.decimals),
   );
 
   return { stateAfter };

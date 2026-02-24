@@ -45,3 +45,27 @@ pub struct ManualFeedUpdatedEventV2 {
     /// New max answer deviation
     pub max_answer_deviation: Option<u64>,
 }
+
+#[event]
+pub struct ManualFeedGrowthUpdatedEvent {
+    /// `FeedState` account
+    pub base_feed: Pubkey,
+    /// Manual feed account
+    pub manual_feed_growth: Pubkey,
+    /// New Decimals
+    pub decimals: Option<u8>,
+    /// New price
+    pub price: Option<u64>,
+    /// New price timestamp
+    pub price_timestamp: Option<u32>,
+    /// New max answer deviation
+    pub max_answer_deviation: Option<u64>,
+    /// New growth apr %
+    pub growth_apr: Option<i64>,
+    /// New min growth apr %
+    pub min_growth_apr: Option<i64>,
+    /// New max growth apr %
+    pub max_growth_apr: Option<i64>,
+    /// New only up
+    pub only_up: Option<bool>,
+}

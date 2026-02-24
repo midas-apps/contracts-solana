@@ -10217,6 +10217,9 @@ export type MidasVaults = {
           },
           {
             "name": "chainlink"
+          },
+          {
+            "name": "manualGrowth"
           }
         ]
       }

@@ -1,6 +1,7 @@
 use crate::{
     constants::{
-        CHAINLINK_FEED_MAX_STALENESS, DEFAULT_PUBKEY, MANUAL_FEED_MAX_STALENESS, PYTH_FEED_MAX_STALENESS, SWITCHBOARD_FEED_MAX_STALENESS
+        CHAINLINK_FEED_MAX_STALENESS, DEFAULT_PUBKEY, MANUAL_FEED_MAX_STALENESS,
+        PYTH_FEED_MAX_STALENESS, SECONDS_IN_YEAR, SWITCHBOARD_FEED_MAX_STALENESS,
     },
     errors::DataFeedError,
     state::{FeedMode, ManualFeedGrowthState},
@@ -36,7 +37,7 @@ pub fn get_price_in_base_9<'info>(
     );
 
     let (raw_price, decimals) = match data_feed.mode {
-        FeedMode::MANUAL => {
+        FeedMode::Manual => {
             // parse manual feed
             let mut buf: &[u8] = &feed.try_borrow_mut_data()?[..];
             let feed_parsed = ManualFeedStateV2::try_deserialize(&mut buf).unwrap();
@@ -57,7 +58,36 @@ pub fn get_price_in_base_9<'info>(
 
             (feed_parsed.price as u128, feed_parsed.decimals)
         }
-        FeedMode::SWITCHBOARD => {
+        FeedMode::ManualGrowth => {
+            // parse manual feed
+            let mut buf: &[u8] = &feed.try_borrow_mut_data()?[..];
+            let feed_parsed = ManualFeedGrowthState::try_deserialize(&mut buf).unwrap();
+
+            let current_ts = get_current_ts()?;
+
+            if feed_parsed.last_updated_at > 0 {
+                let update_diff = current_ts
+                    .checked_sub(feed_parsed.last_updated_at)
+                    .ok_or(DataFeedError::ArithmeticOverflow)?;
+
+                require_gte!(
+                    data_feed.max_staleness,
+                    update_diff,
+                    DataFeedError::PriceIsStale
+                );
+            }
+
+            (
+                apply_growth_apr(
+                    feed_parsed.price as u128,
+                    feed_parsed.growth_apr,
+                    feed_parsed.price_timestamp,
+                    feed_parsed.decimals,
+                )?,
+                feed_parsed.decimals,
+            )
+        }
+        FeedMode::Switchboard => {
             // parse switchboard feed
             let feed_data = feed.data.borrow();
             let feed = PullFeedAccountData::parse(feed_data).unwrap();
@@ -72,7 +102,7 @@ pub fn get_price_in_base_9<'info>(
 
             (raw_price.mantissa() as u128, PRECISION.try_into().unwrap())
         }
-        FeedMode::PYTH => {
+        FeedMode::Pyth => {
             // parse pyth feed
             let mut buf: &[u8] = &feed.try_borrow_mut_data()?[..];
             let feed_parsed = PriceUpdateV2::try_deserialize(&mut buf).unwrap();
@@ -90,7 +120,7 @@ pub fn get_price_in_base_9<'info>(
                 raw_price.exponent.abs().try_into().unwrap(),
             )
         }
-        FeedMode::CHAINLINK => {
+        FeedMode::Chainlink => {
             // parse chainlink feed via direct account read (SDK v2)
             let data = feed.try_borrow_data()?;
             let result = read_feed_v2(data, feed.owner.to_bytes())
@@ -101,9 +131,9 @@ pub fn get_price_in_base_9<'info>(
                 .ok_or(DataFeedError::PriceIsStale)?;
 
             // enforce staleness using round.updated_at (seconds)
-            let now = Clock::get()?.unix_timestamp as u64;
+            let now = get_current_ts().unwrap() as u64;
             let age = now.checked_sub(round.timestamp as u64).unwrap_or(u64::MAX);
-            
+
             require_gte!(
                 data_feed.max_staleness as u64,
                 age,
@@ -182,29 +212,18 @@ pub fn update_feed(
         state.max_staleness = max_staleness;
     }
 
-    // TODO: refactor this
-    match state.mode {
-        FeedMode::MANUAL => require_gte!(
-            MANUAL_FEED_MAX_STALENESS,
-            state.max_staleness,
-            DataFeedError::ExceedsMaxStaleness
-        ),
-        FeedMode::PYTH => require_gte!(
-            PYTH_FEED_MAX_STALENESS,
-            state.max_staleness,
-            DataFeedError::ExceedsMaxStaleness
-        ),
-        FeedMode::SWITCHBOARD => require_gte!(
-            SWITCHBOARD_FEED_MAX_STALENESS,
-            state.max_staleness,
-            DataFeedError::ExceedsMaxStaleness
-        ),
-        FeedMode::CHAINLINK => require_gte!(
-            CHAINLINK_FEED_MAX_STALENESS,
-            state.max_staleness,
-            DataFeedError::ExceedsMaxStaleness
-        ),
-    }
+    let max_staleness = match state.mode {
+        FeedMode::Manual | FeedMode::ManualGrowth => MANUAL_FEED_MAX_STALENESS,
+        FeedMode::Pyth => PYTH_FEED_MAX_STALENESS,
+        FeedMode::Switchboard => SWITCHBOARD_FEED_MAX_STALENESS,
+        FeedMode::Chainlink => CHAINLINK_FEED_MAX_STALENESS,
+    };
+
+    require_gte!(
+        max_staleness,
+        state.max_staleness,
+        DataFeedError::ExceedsMaxStaleness
+    );
 
     Ok(())
 }
@@ -241,19 +260,69 @@ pub fn update_manual_feed(
 pub fn update_manual_feed_growth(
     state: &mut ManualFeedGrowthState,
     price: Option<u64>,
+    price_timestamp: Option<u32>,
     decimals: Option<u8>,
     max_answer_deviation: Option<u64>,
+    growth_apr: Option<i64>,
+    min_growth_apr: Option<i64>,
+    max_growth_apr: Option<i64>,
+    only_up: Option<bool>,
 ) -> Result<()> {
-    if let Some(price) = price {
-        state.price = price;
-    }
-
     if let Some(decimals) = decimals {
         state.decimals = decimals;
     }
 
     if let Some(max_answer_deviation) = max_answer_deviation {
         state.max_answer_deviation = max_answer_deviation;
+    }
+
+    if let Some(max_growth_apr) = max_growth_apr {
+        require_gte!(
+            max_growth_apr,
+            state.min_growth_apr,
+            DataFeedError::InvalidMaxGrowthApr
+        );
+        state.max_growth_apr = max_growth_apr;
+    }
+
+    if let Some(min_growth_apr) = min_growth_apr {
+        require_gte!(
+            state.max_growth_apr,
+            min_growth_apr,
+            DataFeedError::InvalidMinGrowthApr
+        );
+        state.min_growth_apr = min_growth_apr;
+    }
+
+    if let Some(only_up) = only_up {
+        state.only_up = only_up;
+    }
+
+    if let Some(price) = price {
+        state.price = price;
+    }
+
+    if let Some(growth_apr) = growth_apr {
+        require_gte!(
+            growth_apr,
+            state.min_growth_apr,
+            DataFeedError::InvalidGrowthApr
+        );
+        require_gte!(
+            state.max_growth_apr,
+            growth_apr,
+            DataFeedError::InvalidGrowthApr
+        );
+        state.growth_apr = growth_apr;
+    }
+
+    if let Some(price_timestamp) = price_timestamp {
+        require_gt!(
+            get_current_ts().unwrap() as i64,
+            price_timestamp as i64,
+            DataFeedError::InvalidPriceTimestamp
+        );
+        state.price_timestamp = price_timestamp;
     }
 
     if Option::is_some(&decimals) || Option::is_some(&price) {
@@ -263,25 +332,96 @@ pub fn update_manual_feed_growth(
     Ok(())
 }
 
+pub fn apply_growth_apr(
+    price: u128,
+    growth_apr: i64,
+    timestamp_from: u32,
+    decimals: u8,
+) -> Result<u128> {
+    let timestamp_to = get_current_ts().unwrap();
+    apply_growth_apr_impl(price, growth_apr, timestamp_from, timestamp_to, decimals)
+}
+
+pub(crate) fn apply_growth_apr_impl(
+    price: u128,
+    growth_apr: i64,
+    timestamp_from: u32,
+    timestamp_to: u32,
+    decimals: u8,
+) -> Result<u128> {
+    require_gte!(
+        timestamp_to,
+        timestamp_from,
+        DataFeedError::InvalidTimestamp
+    );
+
+    let passed_seconds = timestamp_to
+        .checked_sub(timestamp_from)
+        .ok_or(DataFeedError::ArithmeticOverflow)?;
+
+    let denominator = 10_u128
+        .checked_pow(decimals.into())
+        .ok_or(DataFeedError::ArithmeticOverflow)?
+        .checked_mul(SECONDS_IN_YEAR as u128)
+        .ok_or(DataFeedError::ArithmeticOverflow)?
+        .checked_mul(100u128)
+        .ok_or(DataFeedError::ArithmeticOverflow)?;
+
+    let interest = price
+        .checked_mul(passed_seconds as u128)
+        .ok_or(DataFeedError::ArithmeticOverflow)?
+        .checked_mul(growth_apr.abs() as u128)
+        .ok_or(DataFeedError::ArithmeticOverflow)?
+        .checked_div(denominator)
+        .ok_or(DataFeedError::ArithmeticOverflow)?;
+
+    let price_with_interest = if growth_apr > 0 {
+        price
+            .checked_add(interest)
+            .ok_or(DataFeedError::ArithmeticOverflow)?
+    } else {
+        price
+            .checked_sub(interest)
+            .ok_or(DataFeedError::ArithmeticOverflow)?
+    };
+
+    Ok(price_with_interest)
+}
+
 pub fn get_deviation(last_price: u128, new_price: u128, decimals: u8) -> Result<u128> {
     if new_price == 0 {
-        return Ok(100 * 10_u128.pow(decimals.into()));
+        return Ok(100u128
+            .checked_mul(10_u128.checked_pow(decimals.into()).unwrap())
+            .ok_or(DataFeedError::ArithmeticOverflow)?);
     }
 
-    let one = 10_i128.pow(decimals.into());
+    let one = 10_i128
+        .checked_pow(decimals.into())
+        .ok_or(DataFeedError::ArithmeticOverflow)?;
 
     let last_price_i: i128 = i128::try_from(last_price).unwrap();
     let new_price_i: i128 = i128::try_from(new_price).unwrap();
 
-    let price_dif: i128 = new_price_i - last_price_i;
+    let price_dif: i128 = new_price_i
+        .checked_sub(last_price_i)
+        .ok_or(DataFeedError::ArithmeticOverflow)?;
 
-    let deviation: i128 = (price_dif * one * 100).checked_div(last_price_i).unwrap();
-    Ok(deviation.abs().try_into().unwrap())
+    let deviation: i128 = (price_dif
+        .checked_mul(one)
+        .ok_or(DataFeedError::ArithmeticOverflow)?
+        .checked_mul(100)
+        .ok_or(DataFeedError::ArithmeticOverflow)?)
+    .checked_div(last_price_i)
+    .ok_or(DataFeedError::ArithmeticOverflow)?;
+
+    Ok(deviation.abs().try_into()?)
 }
 
 /// library for converting values from one decimal point precision to another
 pub mod decimals_conversion {
     use anchor_lang::Result;
+
+    use crate::errors::DataFeedError;
 
     /// converts `value` with `value_decimals` precision to a `value` with `target_decimals` precision
     /// # Arguments
@@ -299,9 +439,33 @@ pub mod decimals_conversion {
         }
 
         let adjusted_amount = if value_decimals > target_decimals {
-            value / (10 as u128).pow((value_decimals - target_decimals).into())
+            value
+                .checked_div(
+                    (10 as u128)
+                        .checked_pow(
+                            (value_decimals
+                                .checked_sub(target_decimals)
+                                .ok_or(DataFeedError::ArithmeticOverflow)?)
+                            .try_into()
+                            .unwrap(),
+                        )
+                        .ok_or(DataFeedError::ArithmeticOverflow)?,
+                )
+                .ok_or(DataFeedError::ArithmeticOverflow)?
         } else {
-            value * (10 as u128).pow((target_decimals - value_decimals).into())
+            value
+                .checked_mul(
+                    (10 as u128)
+                        .checked_pow(
+                            (target_decimals
+                                .checked_sub(value_decimals)
+                                .ok_or(DataFeedError::ArithmeticOverflow)?)
+                            .try_into()
+                            .unwrap(),
+                        )
+                        .ok_or(DataFeedError::ArithmeticOverflow)?,
+                )
+                .ok_or(DataFeedError::ArithmeticOverflow)?
         };
 
         Ok(adjusted_amount)
@@ -417,5 +581,101 @@ pub mod decimals_conversion {
                 convert_from_base_9_test(114f64, 9, 114000000000)
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod growth_and_deviation_tests {
+    use super::{apply_growth_apr_impl, get_deviation};
+    use crate::constants::SECONDS_IN_YEAR;
+
+    fn units(amount: f64, decimals: u8) -> u128 {
+        (amount * 10f64.powi(decimals as i32)).trunc() as u128
+    }
+
+    // ---------- get_deviation ----------
+
+    #[test]
+    fn get_deviation_zero_when_prices_equal() {
+        let last = units(100.0, 6);
+        assert_eq!(get_deviation(last, last, 6).unwrap(), 0);
+    }
+
+    #[test]
+    fn get_deviation_one_percent_up() {
+        let last = units(100.0, 6);
+        let new = units(101.0, 6);
+        assert_eq!(get_deviation(last, new, 6).unwrap(), 1_000_000);
+    }
+
+    #[test]
+    fn get_deviation_ten_percent_down() {
+        let last = units(100.0, 6);
+        let new = units(90.0, 6);
+        assert_eq!(get_deviation(last, new, 6).unwrap(), 10_000_000);
+    }
+
+    #[test]
+    fn get_deviation_when_new_price_zero_returns_100_percent() {
+        let last = units(100.0, 6);
+        assert_eq!(get_deviation(last, 0, 6).unwrap(), 100_000_000);
+    }
+
+    #[test]
+    fn get_deviation_different_decimals() {
+        let last = units(1.0, 9);
+        let new = units(1.05, 9);
+        assert_eq!(get_deviation(last, new, 9).unwrap(), 5_000_000_000);
+    }
+
+    // ---------- apply_growth_apr_impl ----------
+
+    #[test]
+    fn apply_growth_apr_zero_time_returns_unchanged_price() {
+        let price = units(100.0, 8);
+        let from = 1000u32;
+        let to = 1000u32;
+        assert_eq!(
+            apply_growth_apr_impl(price, 500, from, to, 8).unwrap(),
+            price
+        );
+    }
+
+    #[test]
+    fn apply_growth_apr_positive_apr_increases_price() {
+        let price = units(100.0, 8);
+        let from = 0u32;
+        let to = SECONDS_IN_YEAR;
+        let growth_apr = 500i64;
+        let result = apply_growth_apr_impl(price, growth_apr, from, to, 8).unwrap();
+        assert_eq!(result, units(105.0, 8));
+    }
+
+    #[test]
+    fn apply_growth_apr_negative_apr_decreases_price() {
+        let price = units(100.0, 8);
+        let from = 0u32;
+        let to = SECONDS_IN_YEAR;
+        let growth_apr = -500i64;
+        let result = apply_growth_apr_impl(price, growth_apr, from, to, 8).unwrap();
+        assert_eq!(result, units(95.0, 8));
+    }
+
+    #[test]
+    fn apply_growth_apr_half_year_half_interest() {
+        let price = units(100.0, 8);
+        let from = 0u32;
+        let to = SECONDS_IN_YEAR / 2;
+        let growth_apr = 1000i64;
+        let result = apply_growth_apr_impl(price, growth_apr, from, to, 8).unwrap();
+        assert_eq!(result, units(105.0, 8));
+    }
+
+    #[test]
+    fn apply_growth_apr_invalid_timestamp_to_before_from_errors() {
+        let price = units(100.0, 8);
+        let from = 1000u32;
+        let to = 999u32;
+        assert!(apply_growth_apr_impl(price, 500, from, to, 8).is_err());
     }
 }

@@ -11,16 +11,18 @@ pub struct ManualFeedGrowthState {
     pub price: u64,
     /// Current price decimals
     pub decimals: u8,
+    /// Price timestamp that was passed in the last price update
+    pub price_timestamp: u32,
     /// Last time when price was updated timestamp
     pub last_updated_at: u32,
     /// Max answer deviation
     pub max_answer_deviation: u64,
     // Growth apr % that will be applied to the answer
-    pub growth_apr: u64,
+    pub growth_apr: i64,
     /// Min growth apr %
-    pub min_growth_apr: u64,
+    pub min_growth_apr: i64,
     /// Max growth apr %
-    pub max_growth_apr: u64,
+    pub max_growth_apr: i64,
     /// If true - new price can only be > than the current price
     pub only_up: bool,
 }

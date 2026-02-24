@@ -264,6 +264,218 @@ export type DataFeed = {
       ]
     },
     {
+      "name": "newManualFeedGrowth",
+      "discriminator": [
+        17,
+        246,
+        7,
+        196,
+        252,
+        225,
+        141,
+        3
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "Account with Feed Admin role"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "manualFeedGrowth",
+          "docs": [
+            "New `ManualFeedGrowthState` instance"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  110,
+                  117,
+                  97,
+                  108,
+                  95,
+                  102,
+                  101,
+                  101,
+                  100,
+                  95,
+                  103,
+                  114,
+                  111,
+                  119,
+                  116,
+                  104,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "baseFeed"
+              }
+            ]
+          }
+        },
+        {
+          "name": "acRole",
+          "docs": [
+            "AccessControlRoles instance that is set in base_feed"
+          ]
+        },
+        {
+          "name": "authorityAcRole",
+          "docs": [
+            "Feed Admin AC role of `authority`"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99,
+                  95,
+                  114,
+                  111,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "acRole"
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  97,
+                  116,
+                  97,
+                  95,
+                  102,
+                  101,
+                  101,
+                  100,
+                  95,
+                  97,
+                  100,
+                  109,
+                  105,
+                  110
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
+        },
+        {
+          "name": "baseFeed",
+          "docs": [
+            "`DataFeed` account"
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "initialPrice",
+          "type": "u64"
+        },
+        {
+          "name": "initialPriceTimestamp",
+          "type": "u32"
+        },
+        {
+          "name": "initialGrowthApr",
+          "type": "i64"
+        },
+        {
+          "name": "decimals",
+          "type": "u8"
+        },
+        {
+          "name": "maxAnswerDeviation",
+          "type": "u64"
+        },
+        {
+          "name": "minGrowthApr",
+          "type": "i64"
+        },
+        {
+          "name": "maxGrowthApr",
+          "type": "i64"
+        },
+        {
+          "name": "onlyUp",
+          "type": "bool"
+        }
+      ]
+    },
+    {
       "name": "updateFeed",
       "discriminator": [
         222,
@@ -618,6 +830,404 @@ export type DataFeed = {
       ]
     },
     {
+      "name": "updateManualFeedGrowth",
+      "discriminator": [
+        11,
+        204,
+        213,
+        30,
+        197,
+        55,
+        136,
+        178
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "Account with Feed Admin role"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "manualFeedGrowth",
+          "docs": [
+            "`ManualFeedGrowthState` instance"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  110,
+                  117,
+                  97,
+                  108,
+                  95,
+                  102,
+                  101,
+                  101,
+                  100,
+                  95,
+                  103,
+                  114,
+                  111,
+                  119,
+                  116,
+                  104,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "baseFeed"
+              }
+            ]
+          }
+        },
+        {
+          "name": "acRole",
+          "docs": [
+            "AccessControlRoles instance that is set in base_feed"
+          ]
+        },
+        {
+          "name": "authorityAcRole",
+          "docs": [
+            "Feed Admin AC role of `authority`"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99,
+                  95,
+                  114,
+                  111,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "acRole"
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  97,
+                  116,
+                  97,
+                  95,
+                  102,
+                  101,
+                  101,
+                  100,
+                  95,
+                  97,
+                  100,
+                  109,
+                  105,
+                  110
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
+        },
+        {
+          "name": "baseFeed",
+          "docs": [
+            "`DataFeed` account"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "decimals",
+          "type": {
+            "option": "u8"
+          }
+        },
+        {
+          "name": "maxAnswerDeviation",
+          "type": {
+            "option": "u64"
+          }
+        },
+        {
+          "name": "minGrowthApr",
+          "type": {
+            "option": "i64"
+          }
+        },
+        {
+          "name": "maxGrowthApr",
+          "type": {
+            "option": "i64"
+          }
+        },
+        {
+          "name": "onlyUp",
+          "type": {
+            "option": "bool"
+          }
+        }
+      ]
+    },
+    {
+      "name": "updateManualFeedGrowthPrice",
+      "discriminator": [
+        168,
+        247,
+        180,
+        21,
+        130,
+        81,
+        37,
+        54
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "Account with Feed Admin role"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "manualFeedGrowth",
+          "docs": [
+            "`ManualFeedGrowthState` instance"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  110,
+                  117,
+                  97,
+                  108,
+                  95,
+                  102,
+                  101,
+                  101,
+                  100,
+                  95,
+                  103,
+                  114,
+                  111,
+                  119,
+                  116,
+                  104,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "baseFeed"
+              }
+            ]
+          }
+        },
+        {
+          "name": "acRole",
+          "docs": [
+            "AccessControlRoles instance that is set in base_feed"
+          ]
+        },
+        {
+          "name": "authorityAcRole",
+          "docs": [
+            "Feed Admin AC role of `authority`"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99,
+                  95,
+                  114,
+                  111,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "acRole"
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  97,
+                  116,
+                  97,
+                  95,
+                  102,
+                  101,
+                  101,
+                  100,
+                  95,
+                  97,
+                  100,
+                  109,
+                  105,
+                  110
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
+        },
+        {
+          "name": "baseFeed",
+          "docs": [
+            "`DataFeed` account"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "price",
+          "type": "u64"
+        },
+        {
+          "name": "priceTimestamp",
+          "type": "u32"
+        },
+        {
+          "name": "growthApr",
+          "type": "i64"
+        },
+        {
+          "name": "isSafe",
+          "type": "bool"
+        }
+      ]
+    },
+    {
       "name": "updateManualFeedPrice",
       "discriminator": [
         218,
@@ -836,6 +1446,19 @@ export type DataFeed = {
       ]
     },
     {
+      "name": "manualFeedGrowthState",
+      "discriminator": [
+        24,
+        102,
+        213,
+        97,
+        119,
+        223,
+        229,
+        212
+      ]
+    },
+    {
       "name": "manualFeedStateV2",
       "discriminator": [
         131,
@@ -861,6 +1484,19 @@ export type DataFeed = {
         110,
         85,
         61
+      ]
+    },
+    {
+      "name": "manualFeedGrowthUpdatedEvent",
+      "discriminator": [
+        144,
+        203,
+        147,
+        173,
+        2,
+        6,
+        83,
+        15
       ]
     },
     {
@@ -950,6 +1586,36 @@ export type DataFeed = {
       "code": 6011,
       "name": "deviationTooHigh",
       "msg": "Deviation is too high"
+    },
+    {
+      "code": 6012,
+      "name": "invalidMaxGrowthApr",
+      "msg": "Invalid max growth apr value"
+    },
+    {
+      "code": 6013,
+      "name": "invalidMinGrowthApr",
+      "msg": "Invalid min growth apr value"
+    },
+    {
+      "code": 6014,
+      "name": "invalidGrowthApr",
+      "msg": "Invalid growth apr value"
+    },
+    {
+      "code": 6015,
+      "name": "invalidPriceTimestamp",
+      "msg": "Invalid price timestamp"
+    },
+    {
+      "code": 6016,
+      "name": "invalidTimestamp",
+      "msg": "Invalid timestamp"
+    },
+    {
+      "code": 6017,
+      "name": "notEnoughTimeHasPassedSinceLastUpdate",
+      "msg": "Not enough time has passed since last update"
     }
   ],
   "types": [
@@ -1000,6 +1666,9 @@ export type DataFeed = {
           },
           {
             "name": "chainlink"
+          },
+          {
+            "name": "manualGrowth"
           }
         ]
       }
@@ -1132,6 +1801,174 @@ export type DataFeed = {
             ],
             "type": {
               "option": "u32"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "manualFeedGrowthState",
+      "docs": [
+        "Account that holds data of manual data feed growth",
+        "where the answer can be controlled by the",
+        "actors with sufficient access (has `FEED_ADMIN` role)",
+        "and growth apr % is applied to the answer"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "price",
+            "docs": [
+              "Current price"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "decimals",
+            "docs": [
+              "Current price decimals"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "priceTimestamp",
+            "docs": [
+              "Price timestamp that was passed in the last price update"
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "lastUpdatedAt",
+            "docs": [
+              "Last time when price was updated timestamp"
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "maxAnswerDeviation",
+            "docs": [
+              "Max answer deviation"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "growthApr",
+            "type": "i64"
+          },
+          {
+            "name": "minGrowthApr",
+            "docs": [
+              "Min growth apr %"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "maxGrowthApr",
+            "docs": [
+              "Max growth apr %"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "onlyUp",
+            "docs": [
+              "If true - new price can only be > than the current price"
+            ],
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "manualFeedGrowthUpdatedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "baseFeed",
+            "docs": [
+              "`FeedState` account"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "manualFeedGrowth",
+            "docs": [
+              "Manual feed account"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "decimals",
+            "docs": [
+              "New Decimals"
+            ],
+            "type": {
+              "option": "u8"
+            }
+          },
+          {
+            "name": "price",
+            "docs": [
+              "New price"
+            ],
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "priceTimestamp",
+            "docs": [
+              "New price timestamp"
+            ],
+            "type": {
+              "option": "u32"
+            }
+          },
+          {
+            "name": "maxAnswerDeviation",
+            "docs": [
+              "New max answer deviation"
+            ],
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "growthApr",
+            "docs": [
+              "New growth apr %"
+            ],
+            "type": {
+              "option": "i64"
+            }
+          },
+          {
+            "name": "minGrowthApr",
+            "docs": [
+              "New min growth apr %"
+            ],
+            "type": {
+              "option": "i64"
+            }
+          },
+          {
+            "name": "maxGrowthApr",
+            "docs": [
+              "New max growth apr %"
+            ],
+            "type": {
+              "option": "i64"
+            }
+          },
+          {
+            "name": "onlyUp",
+            "docs": [
+              "New only up"
+            ],
+            "type": {
+              "option": "bool"
             }
           }
         ]

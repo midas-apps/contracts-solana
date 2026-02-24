@@ -10201,16 +10201,19 @@
         "kind": "enum",
         "variants": [
           {
-            "name": "MANUAL"
+            "name": "Manual"
           },
           {
-            "name": "SWITCHBOARD"
+            "name": "Switchboard"
           },
           {
-            "name": "PYTH"
+            "name": "Pyth"
           },
           {
-            "name": "CHAINLINK"
+            "name": "Chainlink"
+          },
+          {
+            "name": "ManualGrowth"
           }
         ]
       }

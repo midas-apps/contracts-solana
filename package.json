@@ -2,7 +2,7 @@
   "type": "module",
   "scripts": {
     "build": "anchor build",
-    "test": "yarn test:anchor && yarn test:cargo",
+    "test": "NODE_OPTIONS=\"--max-old-space-size=4096\" yarn test:anchor && yarn test:cargo",
     "test:cargo": "anchor run test-cargo",
     "test:anchor": "anchor run test",
     "lint": "eslint .",

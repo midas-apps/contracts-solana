@@ -5,7 +5,11 @@ use access_control::{
 use anchor_lang::prelude::*;
 
 use crate::{
-    constants::ac_roles, errors::DataFeedError, events::ManualFeedUpdatedEventV2, state::{FeedState, ManualFeedStateV2}, utils::{get_deviation, update_manual_feed}
+    constants::{ac_roles, MAX_TIME_PASSED_SINCE_LAST_UPDATE_GROWTH_FEED},
+    errors::DataFeedError,
+    events::ManualFeedGrowthUpdatedEvent,
+    state::{FeedState, ManualFeedGrowthState},
+    utils::{apply_growth_apr, get_current_ts, get_deviation, update_manual_feed_growth},
 };
 
 #[derive(Accounts)]
@@ -14,13 +18,13 @@ pub struct UpdateManualFeedGrowthPrice<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    /// `ManualFeedStateV2` instance
+    /// `ManualFeedGrowthState` instance
     #[account(
         mut,
-        seeds = [ManualFeedStateV2::SEED, base_feed.key().as_ref()],
+        seeds = [ManualFeedGrowthState::SEED, base_feed.key().as_ref()],
         bump,
     )]
-    pub manual_feed: Account<'info, ManualFeedStateV2>,
+    pub manual_feed_growth: Account<'info, ManualFeedGrowthState>,
 
     /// AccessControlRoles instance that is set in base_feed
     #[account(
@@ -45,28 +49,83 @@ pub struct UpdateManualFeedGrowthPrice<'info> {
 ///
 /// # Arguments
 ///
-/// - `price` - new price value for `ManualFeedStateV2.price`
+/// - `price` - new price value for `ManualFeedGrowthState.price`
+/// - `price_timestamp` - new price timestamp value for `ManualFeedGrowthState.price_timestamp`
+/// - `growth_apr` - new growth apr value for `ManualFeedGrowthState.growth_apr`
 /// - `is_safe` - if true, the diviation between new price and current price will be checked if it is within the allowed deviation range
-pub fn handle(ctx: Context<UpdateManualFeedGrowthPrice>, price: u64, is_safe: bool) -> Result<()> {
-    let state = &mut ctx.accounts.manual_feed;
+pub fn handle(
+    ctx: Context<UpdateManualFeedGrowthPrice>,
+    price: u64,
+    price_timestamp: u32,
+    growth_apr: i64,
+    is_safe: bool,
+) -> Result<()> {
+    let state = &mut ctx.accounts.manual_feed_growth;
 
     if is_safe {
-        let deviation = get_deviation(state.price as u128, price as u128, state.decimals)?;
+        let last_price = apply_growth_apr(
+            state.price as u128,
+            state.growth_apr,
+            state.price_timestamp,
+            state.decimals,
+        )?;
+
+        let new_price =
+            apply_growth_apr(price as u128, growth_apr, price_timestamp, state.decimals)?;
+
+        let deviation = get_deviation(last_price, new_price, state.decimals)?;
+
         require_gte!(
             state.max_answer_deviation as u128,
             deviation,
             DataFeedError::DeviationTooHigh
         );
+
+        if state.only_up {
+            require_gte!(growth_apr, 0, DataFeedError::InvalidGrowthApr);
+        }
+
+        let current_timestamp = get_current_ts().unwrap();
+        let passed_seconds_since_last_update = current_timestamp
+            .checked_sub(state.last_updated_at)
+            .ok_or(DataFeedError::ArithmeticOverflow)?;
+
+        require_gt!(
+            passed_seconds_since_last_update,
+            MAX_TIME_PASSED_SINCE_LAST_UPDATE_GROWTH_FEED,
+            DataFeedError::NotEnoughTimeHasPassedSinceLastUpdate
+        );
+
+        require_gt!(
+            price_timestamp,
+            state.price_timestamp,
+            DataFeedError::InvalidPriceTimestamp
+        )
     }
 
-    update_manual_feed(state, Some(price), None, None)?;
+    update_manual_feed_growth(
+        state,
+        Some(price),
+        Some(price_timestamp),
+        None,
+        None,
+        Some(growth_apr),
+        None,
+        None,
+        None,
+    )?;
 
-    emit!(ManualFeedUpdatedEventV2 {
-        manual_feed: ctx.accounts.manual_feed.key(),
+    emit!(ManualFeedGrowthUpdatedEvent {
+        manual_feed_growth: ctx.accounts.manual_feed_growth.key(),
         base_feed: ctx.accounts.base_feed.key(),
         decimals: None,
         price: Some(price),
+        price_timestamp: Some(price_timestamp),
         max_answer_deviation: None,
+        growth_apr: Some(growth_apr),
+        min_growth_apr: None,
+        max_growth_apr: None,
+        only_up: None,
     });
 
     Ok(())

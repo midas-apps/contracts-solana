@@ -6,13 +6,15 @@ use crate::utils::get_price_in_base_9;
 /// Describes types of supported underlying feeds
 pub enum FeedMode {
     /// Indicates underlying_feed is `ManualFeedStateV2`
-    MANUAL,
+    Manual,
     /// Indicates underlying_feed is Switchboard's `PullFeedAccountData`
-    SWITCHBOARD,
+    Switchboard,
     /// Indicates underlying_feed is Pyth's `PriceUpdateV2`
-    PYTH,
+    Pyth,
     /// Indicates underlying_feed is Chainlink OCR2 feed account
-    CHAINLINK,
+    Chainlink,
+    /// Indicates underlying_feed is ManualFeedGrowthState
+    ManualGrowth,
 }
 
 #[account]

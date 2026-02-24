@@ -2,14 +2,18 @@ import { CommonError, DEFAULT_PUBKEY } from './constants/common.constants';
 import { DATA_FEED_PROGRAM_ID, DataFeedError } from './constants/data-feed.constants';
 import { dataFeedFixture } from './fixture/dafa-feed.fixture';
 import { vaultsFixture } from './fixture/vaults.fixture';
-import { parseUnits, setClockTime } from './helpers/common.helpers';
+import { parseUnits, setClockTime, timeTravel } from './helpers/common.helpers';
 import { updatePaymentToken } from './testers/common-vaults.testers';
 import {
   createDefaultDataFeed,
+  createDefaultManualFeedGrowth,
   createNewFeed,
   createNewManualFeed,
+  createNewManualFeedGrowth,
   updateFeed,
   updateManualFeed,
+  updateManualFeedGrowth,
+  updateManualFeedGrowthPrice,
   updateManualFeedPrice,
 } from './testers/data-feed.testers';
 import { mintInstant, prepareCommonMintTest } from './testers/minter-vault.testers';
@@ -118,6 +122,35 @@ describe('data-feed', () => {
       const feed = await createNewFeed(fixture, {});
 
       await createNewManualFeed(
+        fixture,
+        {
+          baseFeed: feed.publicKey,
+        },
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+  });
+
+  describe('new_manual_feed_growth', () => {
+    it('create new manual feed growth with default parameters', async () => {
+      const fixture = await dataFeedFixture();
+
+      const feed = await createNewFeed(fixture, {});
+
+      await createNewManualFeedGrowth(fixture, {
+        baseFeed: feed.publicKey,
+      });
+    });
+
+    it('should fail: call from non-authority', async () => {
+      const fixture = await dataFeedFixture();
+
+      const feed = await createNewFeed(fixture, {});
+
+      await createNewManualFeedGrowth(
         fixture,
         {
           baseFeed: feed.publicKey,
@@ -346,6 +379,144 @@ describe('data-feed', () => {
     });
   });
 
+  describe('update_manual_feed_growth', () => {
+    it('update decimals', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+
+      await updateManualFeedGrowth(fixture, {
+        baseFeed,
+        decimals: 2,
+      });
+    });
+
+    it('update max answer deviation', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+
+      await updateManualFeedGrowth(fixture, {
+        baseFeed,
+        maxAnswerDeviation: parseUnits('2', 2),
+      });
+    });
+
+    it('update min growth apr', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+
+      await updateManualFeedGrowth(fixture, {
+        baseFeed,
+        minGrowthApr: parseUnits('2', 2),
+      });
+    });
+
+    it('update min growth apr to equal to max growth apr', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+
+      await updateManualFeedGrowth(fixture, {
+        baseFeed,
+        minGrowthApr: parseUnits('10', 2),
+      });
+    });
+
+    it('update max growth apr', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+
+      await updateManualFeedGrowth(fixture, {
+        baseFeed,
+        maxGrowthApr: parseUnits('2', 2),
+      });
+    });
+
+    it('update max growth apr to equal to min growth apr', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+
+      await updateManualFeedGrowth(fixture, {
+        baseFeed,
+        maxGrowthApr: parseUnits('0', 2),
+      });
+    });
+
+    it('update only up', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+
+      await updateManualFeedGrowth(fixture, {
+        baseFeed,
+        onlyUp: true,
+      });
+    });
+
+    it('should fail: update from non-authority', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+
+      await updateManualFeedGrowth(
+        fixture,
+        {
+          baseFeed,
+        },
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('should fail: when new max growth apr is less than min growth apr', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+
+      await updateManualFeedGrowth(
+        fixture,
+        {
+          baseFeed,
+          minGrowthApr: parseUnits('3'),
+        }
+      );
+
+      await updateManualFeedGrowth(
+        fixture,
+        {
+          baseFeed,
+          maxGrowthApr: parseUnits('1'),
+        },
+        {
+          revertedWith: DataFeedError.InvalidMaxGrowthApr,
+        },
+      );
+    });
+
+    it('should fail: when new min growth apr is greater than max growth apr', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+
+      await updateManualFeedGrowth(
+        fixture,
+        {
+          baseFeed,
+          minGrowthApr: parseUnits('11'),
+        },
+        {
+          revertedWith: DataFeedError.InvalidMinGrowthApr,
+        },
+      );
+    });
+  });
+
   describe('update_manual_feed_price', () => {
     it('update price (unsafe)', async () => {
       const fixture = await dataFeedFixture();
@@ -398,6 +569,150 @@ describe('data-feed', () => {
         isSafe: true,
       }, {
         revertedWith: DataFeedError.DeviationTooHigh,
+      });
+    });
+  });
+
+  describe('update_manual_feed_growth_price', () => {
+    it('update growth price (unsafe)', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+
+      await updateManualFeedGrowthPrice(fixture, {
+        baseFeed,
+        price: parseUnits('1'),
+      });
+    });
+
+    it('update growth price (unsafe) when deviation is too high', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+
+      await updateManualFeedGrowthPrice(fixture, {
+        baseFeed,
+        price: parseUnits('1.2'),
+      });
+    });
+
+    it('update growth price (safe)', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+
+
+      await timeTravel(fixture.context, 3601n);
+
+      await updateManualFeedGrowthPrice(fixture, {
+        baseFeed,
+        price: parseUnits('1'),
+        isSafe: true,
+      });
+    });
+
+    it('should fail: update growth price (safe) when deviation is too high', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+
+      await timeTravel(fixture.context, 3601n);
+
+      await updateManualFeedGrowthPrice(fixture, {
+        baseFeed,
+        price: parseUnits('1'),
+        isSafe: true,
+      });
+
+      await timeTravel(fixture.context, 3601n);
+
+      await updateManualFeedGrowthPrice(fixture, {
+        baseFeed,
+        price: parseUnits('1.2'),
+        isSafe: true,
+      }, {
+        revertedWith: DataFeedError.DeviationTooHigh,
+      });
+    });
+
+    it('should fail: update growth price (safe) when growth apr is > max growth apr', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+
+      await timeTravel(fixture.context, 3601n);
+
+      await updateManualFeedGrowthPrice(fixture, {
+        baseFeed,
+        price: parseUnits('1.001'),
+        growthApr: parseUnits('10.1'),
+        isSafe: true,
+      }, {
+        revertedWith: DataFeedError.InvalidGrowthApr,
+      });
+    });
+
+    it('should fail: update growth price (safe) when growth apr is < min growth apr', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+
+      await timeTravel(fixture.context, 3601n);
+
+      await updateManualFeedGrowthPrice(fixture, {
+        baseFeed,
+        price: parseUnits('1.001'),
+        growthApr: parseUnits('-0.01'),
+        isSafe: true,
+      }, {
+        revertedWith: DataFeedError.InvalidGrowthApr,
+      });
+    });
+
+    it('should fail: update growth price (safe) when only_up is true and growth apr is < 0', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+
+      await updateManualFeedGrowth(fixture, {
+        baseFeed,
+        onlyUp: true,
+        minGrowthApr: parseUnits('-10'),
+      });
+
+      await timeTravel(fixture.context, 3601n);
+
+      await updateManualFeedGrowthPrice(fixture, {
+        baseFeed,
+        price: parseUnits('1.001'),
+        growthApr: parseUnits('-0.01'),
+        isSafe: true,
+      }, {
+        revertedWith: DataFeedError.InvalidGrowthApr,
+      });
+    });
+
+    it('should fail: update growth price (safe) when 1h is not passed since last update', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+
+      await timeTravel(fixture.context, 3601n);
+
+      await updateManualFeedGrowthPrice(fixture, {
+        baseFeed,
+        price: parseUnits('1'),
+        isSafe: true,
+      });
+
+      await timeTravel(fixture.context, 100n);
+
+      await updateManualFeedGrowthPrice(fixture, {
+        baseFeed,
+        price: parseUnits('1.01'),
+        isSafe: true,
+      }, {
+        revertedWith: DataFeedError.NotEnoughTimeHasPassedSinceLastUpdate,
       });
     });
   });

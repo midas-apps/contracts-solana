@@ -26,4 +26,16 @@ pub enum DataFeedError {
     ArithmeticOverflow,
     #[msg("Deviation is too high")]
     DeviationTooHigh,
+    #[msg("Invalid max growth apr value")]
+    InvalidMaxGrowthApr,
+    #[msg("Invalid min growth apr value")]
+    InvalidMinGrowthApr,
+    #[msg("Invalid growth apr value")]
+    InvalidGrowthApr,
+    #[msg("Invalid price timestamp")]
+    InvalidPriceTimestamp,
+    #[msg("Invalid timestamp")]
+    InvalidTimestamp,
+    #[msg("Not enough time has passed since last update")]
+    NotEnoughTimeHasPassedSinceLastUpdate,
 }
