@@ -30,6 +30,6 @@ pub mod reject_mint_request;
 #[allow(ambiguous_glob_reexports)]
 pub use reject_mint_request::*;
 
-pub mod migration;
+pub mod migrations;
 #[allow(ambiguous_glob_reexports)]
-pub use migration::*;
+pub use migrations::*;

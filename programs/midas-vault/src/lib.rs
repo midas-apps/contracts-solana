@@ -340,6 +340,6 @@ pub mod midas_vaults {
     pub fn migrate_minter_vault_state_to_v2(
         ctx: Context<MigrateMinterVaultStateToV2>,
     ) -> Result<()> {
-        minter_vault::migration::migrate_minter_vault_state_to_v2::handle(ctx)
+        minter_vault::migrations::migrate_minter_vault_state_to_v2::handle(ctx)
     }
 }

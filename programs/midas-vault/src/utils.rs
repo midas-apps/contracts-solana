@@ -56,7 +56,7 @@ pub fn close_account(
     **account.lamports.borrow_mut() = 0;
 
     account.assign(&system_program.key());
-    account.realloc(0, false)?;
+    account.resize(0)?;
 
     Ok(())
 }
