@@ -20,7 +20,7 @@ import { acRoleToBuffer, getAccountAcRoleStatePda } from '../helpers/ac.helpers'
 import {
   createMint,
   getOrCreateAta,
-  InitBankrunReturnType,
+  InitLiteSVMReturnType,
   parseUnits,
   processTransaction,
   toBN,
@@ -35,7 +35,7 @@ import {
 import { dataFeedFixture } from './dafa-feed.fixture';
 import { tokenAuthorityFixture } from './token-authority.fixture';
 
-export const vaultsFixture = async (fixture?: InitBankrunReturnType, initSlot?: bigint) => {
+export const vaultsFixture = async (fixture?: InitLiteSVMReturnType, initSlot?: bigint) => {
   const dfFixture = await dataFeedFixture(fixture, initSlot);
   const taFixture = await tokenAuthorityFixture(dfFixture);
 

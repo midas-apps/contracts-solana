@@ -2,7 +2,7 @@ import { Program } from '@coral-xyz/anchor';
 import { AccountMeta, Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction } from '@solana/web3.js';
 
 
-import { initBankrun, processTransaction } from '../helpers/common.helpers';
+import { initLiteSVM, processTransaction } from '../helpers/common.helpers';
 import { DAY } from '../constants/common.constants';
 import * as multisig from "@sqds/multisig";
 import { SQUADS_PROGRAM_ID } from '../constants/squads.constant';
@@ -120,7 +120,7 @@ const createMultisig = async (context: LiteSVM, {
 }
 
 export const squadsFixture = async (initSlot?: bigint) => {
-    const { provider, context, accounts } = await initBankrun(10, initSlot, true);
+    const { provider, context, accounts } = await initLiteSVM(10, initSlot, true);
 
     const [authority, ...regularAccounts] = accounts;
 

@@ -18,9 +18,9 @@ import {
   Connection,
   Signer,
 } from '@solana/web3.js';
-import { BanksTransactionMeta } from 'solana-bankrun';
 
 import { sendAndWaitForCustomSolanaTxSign, TxSignMetadata } from './solanaTxHelper';
+import { FailedTransactionMetadata, TransactionMetadata } from 'litesvm';
 
 // Define the extensions to be used by the mint
 const extensions = [ExtensionType.PermanentDelegate, ExtensionType.MetadataPointer];
@@ -29,7 +29,7 @@ type SendTransactionFn = (
   connection: Connection,
   transaction: Transaction,
   signers: Signer[],
-) => Promise<BanksTransactionMeta | string>;
+) => Promise<TransactionMetadata | FailedTransactionMetadata | string>;
 
 interface CreateMintBaseParams {
   mint?: Keypair;

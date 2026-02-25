@@ -8,7 +8,7 @@ import DATA_FEED_IDL from '../../target/idl/data_feed.json' with { type: 'json' 
 import { AC_ROLES } from '../constants/ac.constants';
 import { DATA_FEED_AC_ROLES } from '../constants/data-feed.constants';
 import { acRoleToBuffer, getAccountAcRoleStatePda } from '../helpers/ac.helpers';
-import { formatUnits, getTime, InitBankrunReturnType, parseUnits, processTransaction, toBN } from '../helpers/common.helpers';
+import { formatUnits, getTime, InitLiteSVMReturnType, parseUnits, processTransaction, toBN } from '../helpers/common.helpers';
 import {
   DataFeedMode,
   generateFeedAcccount,
@@ -92,7 +92,7 @@ const initMockedFeeds = async (context: LiteSVM) => {
   };
 };
 
-export const dataFeedFixture = async (fixture?: InitBankrunReturnType, initSlot?: bigint) => {
+export const dataFeedFixture = async (fixture?: InitLiteSVMReturnType, initSlot?: bigint) => {
   const acF = await acFixture(fixture, initSlot);
 
   const {

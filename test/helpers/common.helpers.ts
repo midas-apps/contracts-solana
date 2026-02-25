@@ -59,15 +59,15 @@ export function numToHex(decimalCode: number): string {
   return hexCode;
 }
 
-export type InitBankrunReturnType = {
+export type InitLiteSVMReturnType = {
   context: LiteSVM;
   provider: LiteSVMProvider;
   accounts: Keypair[];
 };
 
-let bunrunReturnCache: InitBankrunReturnType | null = null;
+let bunrunReturnCache: InitLiteSVMReturnType | null = null;
 
-export const initBankrun = async (numAccounts = 10, initSlot?: bigint, cacheContext = false) => {
+export const initLiteSVM = async (numAccounts = 10, initSlot?: bigint, cacheContext = false) => {
   if (cacheContext && bunrunReturnCache) {
     return bunrunReturnCache;
   }
