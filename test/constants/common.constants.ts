@@ -16,8 +16,8 @@ export const DEFAULT_PUBKEY = new PublicKey(0);
 
 export enum CommonError {
   AccountIsNotInitialized = 3012,
-  AccountIsAlreadyInitialized = 0,
   GenericError = 'Program failed to complete',
+  AccountIsAlreadyInitialized = 'custom program error: 0x0',
   SplInsufficientFunds = 'custom program error: 0x1',
   SplOwnerDoesNotMatch = 'custom program error: 0x4',
 }

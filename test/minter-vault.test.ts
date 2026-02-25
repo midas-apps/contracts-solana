@@ -619,8 +619,7 @@ describe('minter-vault', () => {
         {},
         {},
         {
-          // TODO: find a way to proxify errors
-          revertedWith: CommonError.GenericError,
+          revertedWith: DataFeedError.PriceIsLowerThanMin,
         },
       );
     });
@@ -1336,8 +1335,7 @@ describe('minter-vault', () => {
         {},
         {},
         {
-          // TODO: find a way to proxify errors
-          revertedWith: CommonError.GenericError,
+          revertedWith: DataFeedError.PriceIsLowerThanMin,
         },
       );
     });

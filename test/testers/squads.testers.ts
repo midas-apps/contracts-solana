@@ -1,6 +1,6 @@
 import { SquadsFixtureReturnType } from "../fixture/squads.fixture";
 import { AddressLookupTableAccount, Keypair, PublicKey, Transaction, TransactionInstruction, TransactionMessage, VersionedTransaction } from "@solana/web3.js";
-import { expectTxNotReverted, expectTxReverted, timeTravel } from "../helpers/common.helpers";
+import { expectTxNotReverted, expectTxReverted, getTime, timeTravel } from "../helpers/common.helpers";
 import * as multisig from "@sqds/multisig";
 import { DAY } from "../constants/common.constants";
 
@@ -32,7 +32,7 @@ const wrapTxWithSquadsSigner = async (fixture: SquadsFixtureReturnType, {
 
     const txMessage = new TransactionMessage({
         payerKey: vaultPda,
-        recentBlockhash: fixture.context.lastBlockhash,
+        recentBlockhash: fixture.context.latestBlockhash(),
         instructions: instructions,
     });
 
@@ -68,7 +68,7 @@ const wrapTxWithSquadsSigner = async (fixture: SquadsFixtureReturnType, {
 
         const txExecute = new VersionedTransaction(new TransactionMessage({
             payerKey: payer,
-            recentBlockhash: fixture.context.lastBlockhash,
+            recentBlockhash: fixture.context.latestBlockhash(),
             instructions: [instruction],
         }).compileToV0Message(lookupTableAccounts));
 
@@ -123,7 +123,7 @@ export const sendSquadsTxWithTimelock = async (fixture: SquadsFixtureReturnType,
     // Build a message with instructions we want to execute
     const txMessage = new TransactionMessage({
         payerKey: vaultPda,
-        recentBlockhash: fixture.context.lastBlockhash,
+        recentBlockhash: fixture.context.latestBlockhash(),
         instructions: instructions,
     });
 
@@ -196,7 +196,7 @@ export const sendSquadsTxWithTimelock = async (fixture: SquadsFixtureReturnType,
 
     let txExecute: Transaction | VersionedTransaction = new VersionedTransaction(new TransactionMessage({
         payerKey: fromExecute.publicKey,
-        recentBlockhash: fixture.context.lastBlockhash,
+        recentBlockhash: fixture.context.latestBlockhash(),
         instructions: [inxExecute.instruction],
     }).compileToV0Message(inxExecute.lookupTableAccounts));
 
@@ -215,7 +215,7 @@ export const sendSquadsTxWithTimelock = async (fixture: SquadsFixtureReturnType,
     }
 
     if (waitForTimelock) {
-        const currentTime = await fixture.context.banksClient.getClock().then(clock => clock.unixTimestamp);
+        const currentTime = await getTime(fixture.context);
         const txApprovedAt = BigInt(createdProposal.status.__kind === 'Approved' ? createdProposal.status.timestamp.toString() : 0);
         const timelockDuration = 2n * DAY;
         const timelockEndsAt = txApprovedAt + timelockDuration;
@@ -231,11 +231,11 @@ export const sendSquadsTxWithTimelock = async (fixture: SquadsFixtureReturnType,
         return;
     }
 
-    await expectTxNotReverted(fixture.context, txExecute, [fromExecute]);
+    await expectTxNotReverted(fixture.context, txExecute, [authority, fromExecute]);
 
     if (getTxExecuteExecute) {
         const txExecuteExecute = await getTxExecuteExecute();
-        await expectTxNotReverted(fixture.context, txExecuteExecute, [fromExecute]);
+        await expectTxNotReverted(fixture.context, txExecuteExecute, [authority, fromExecute]);
     }
 
     const proposalStatusAfter = await multisig.accounts.Proposal.fromAccountAddress(squadsConnection, proposalPda);
@@ -341,7 +341,7 @@ export const sendSquadsConfigurationTxWithTimelock = async (fixture: SquadsFixtu
 
 
     if (waitForTimelock) {
-        const currentTime = await fixture.context.banksClient.getClock().then(clock => clock.unixTimestamp);
+        const currentTime = await getTime(fixture.context);
         const txApprovedAt = BigInt(createdProposal.status.__kind === 'Approved' ? createdProposal.status.timestamp.toString() : 0);
         const timelockDuration = 2n * DAY;
         const timelockEndsAt = txApprovedAt + timelockDuration;

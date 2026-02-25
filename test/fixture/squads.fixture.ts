@@ -1,19 +1,71 @@
 import { Program } from '@coral-xyz/anchor';
-import { Keypair, PublicKey, Transaction } from '@solana/web3.js';
+import { AccountMeta, Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction } from '@solana/web3.js';
 
-import { AccessControl } from 'target/types/access_control';
 
-import ACCESS_CONTROL_IDL from '../../target/idl/access_control.json' with { type: 'json' };
-import { AC_ROLES } from '../constants/ac.constants';
-import { acRoleToBuffer, generateAcRoleAccount } from '../helpers/ac.helpers';
 import { initBankrun, processTransaction } from '../helpers/common.helpers';
-import { generateAcAccount } from '../helpers/vaults.helpers';
-import { ProgramTestContext } from 'solana-bankrun';
 import { DAY } from '../constants/common.constants';
 import * as multisig from "@sqds/multisig";
 import { SQUADS_PROGRAM_ID } from '../constants/squads.constant';
+import { LiteSVM } from 'litesvm';
 
-const createMultisig = async (context: ProgramTestContext, {
+
+export function createMultisigCreateV2Instruction(
+    accounts: multisig.generated.MultisigCreateV2InstructionAccounts,
+    args: multisig.generated.MultisigCreateV2InstructionArgs
+) {
+    const [data] = multisig.generated.multisigCreateV2Struct.serialize({
+        instructionDiscriminator: multisig.generated.multisigCreateV2InstructionDiscriminator,
+        ...args,
+    })
+    const keys: AccountMeta[] = [
+        {
+            pubkey: accounts.programConfig,
+            isWritable: false,
+            isSigner: false,
+        },
+        {
+            pubkey: accounts.treasury,
+            isWritable: true,
+            isSigner: false,
+        },
+        {
+            pubkey: accounts.multisig,
+            isWritable: true,
+            isSigner: false,
+        },
+        {
+            pubkey: accounts.createKey,
+            isWritable: true,
+            isSigner: true,
+        },
+        {
+            pubkey: accounts.creator,
+            isWritable: true,
+            isSigner: true,
+        },
+        {
+            pubkey: accounts.systemProgram ?? SystemProgram.programId,
+            isWritable: false,
+            isSigner: false,
+        },
+    ]
+
+    if (accounts.anchorRemainingAccounts != null) {
+        for (const acc of accounts.anchorRemainingAccounts) {
+            keys.push(acc)
+        }
+    }
+
+    const ix = new TransactionInstruction({
+        programId: multisig.PROGRAM_ID,
+        keys,
+        data,
+    })
+    return ix
+}
+
+
+const createMultisig = async (context: LiteSVM, {
     authority,
     timelock = 2n * DAY,
     connection,
@@ -39,32 +91,28 @@ const createMultisig = async (context: ProgramTestContext, {
 
     const configTreasury = programConfig.treasury;
 
-    await processTransaction(context, new Transaction().add(multisig.instructions.multisigCreateV2({
+    await processTransaction(context, new Transaction().add(createMultisigCreateV2Instruction({
         // Must sign the transaction, unless the .rpc method is used.
         createKey: createKey.publicKey,
         // The creator & fee payer
         creator: authority.publicKey,
         // The PDA of the multisig you are creating, derived by a random PublicKey
-        multisigPda,
-        // Here the config authority will be the system program
-        configAuthority: null,
-        // Create without any time-lock
-        timeLock: Number(timelock),
-        // List of the members to add to the multisig
-        members: [{
-            // Members Public Key
-            key: member ?? authority.publicKey,
-            // Granted Proposer, Voter, and Executor permissions
-            permissions: multisig.types.Permissions.all(),
-        },
-
-        ],
-        // This means that there needs to be 2 votes for a transaction proposal to be approved
-        threshold: 1,
+        multisig: multisigPda,
         // This is for the program config treasury account
         treasury: configTreasury,
-        // Rent reclaim account
-        rentCollector: null
+        programConfig: programConfigPda,
+    }, {
+        args: {
+            configAuthority: null,
+            threshold: 1,
+            members: [{
+                key: member ?? authority.publicKey,
+                permissions: multisig.types.Permissions.all(),
+            }],
+            timeLock: Number(timelock),
+            rentCollector: null,
+            memo: null
+        }
     })), [authority, createKey]);
 
     return multisigPda as PublicKey;
@@ -78,7 +126,7 @@ export const squadsFixture = async (initSlot?: bigint) => {
 
 
     const mockAccounts = [{
-        data: Buffer.from('xNJa55CVjD92Raz2HiWPdZHPcd7iP2i7V0ot8H6/wFdsT5Tc2zbKegAAAAAAAAAAPpPXMsRIJCeQ0tu1MaQKvRnxbFXjEyz/UnetydaTq1oAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 
+        data: Buffer.from('xNJa55CVjD92Raz2HiWPdZHPcd7iP2i7V0ot8H6/wFdsT5Tc2zbKegAAAAAAAAAAPpPXMsRIJCeQ0tu1MaQKvRnxbFXjEyz/UnetydaTq1oAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
             'base64'),
         publicKey: new PublicKey('BSTq9w3kZwNwpBXJEvTZz2G9ZTNyKBvoSeXMvwb4cNZr'),
         owner: SQUADS_PROGRAM_ID,

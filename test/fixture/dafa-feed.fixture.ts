@@ -1,6 +1,6 @@
 import { Program } from '@coral-xyz/anchor';
 import { Keypair, PublicKey, Transaction } from '@solana/web3.js';
-import { ProgramTestContext } from 'solana-bankrun';
+import { LiteSVM } from 'litesvm';
 
 import { DataFeed } from 'target/types/data_feed';
 
@@ -18,7 +18,7 @@ import {
 
 import { acFixture } from './ac.fixture';
 
-const initMockedFeeds = async (context: ProgramTestContext) => {
+const initMockedFeeds = async (context: LiteSVM) => {
   // mainnet pyth SOL/USD account
   const pythHealhyFeed = [
     Keypair.generate(),

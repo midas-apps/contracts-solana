@@ -777,7 +777,7 @@ describe('data-feed', () => {
           tokensMinted: parseUnits('0.044523197'),
         },
         {
-          revertedWith: CommonError.GenericError,
+          revertedWith: 'PriceTooOld',
         },
       );
     });
@@ -808,7 +808,7 @@ describe('data-feed', () => {
           tokensMinted: parseUnits('0.044523197'),
         },
         {
-          revertedWith: CommonError.GenericError,
+          revertedWith: DataFeedError.PriceIsHigherThanMax,
         },
       );
     });
@@ -840,7 +840,7 @@ describe('data-feed', () => {
           tokensMinted: parseUnits('0.044523197'),
         },
         {
-          revertedWith: CommonError.GenericError,
+          revertedWith: DataFeedError.PriceIsLowerThanMin,
         },
       );
     });
@@ -913,7 +913,7 @@ describe('data-feed', () => {
           tokensMinted: parseUnits('9.782628705'),
         },
         {
-          revertedWith: CommonError.GenericError,
+          revertedWith: 'NotEnoughSamples',
         },
       );
     });
@@ -948,7 +948,7 @@ describe('data-feed', () => {
           tokensMinted: parseUnits('9.782628705'),
         },
         {
-          revertedWith: CommonError.GenericError,
+          revertedWith: DataFeedError.PriceIsHigherThanMax,
         },
       );
     });
@@ -984,7 +984,7 @@ describe('data-feed', () => {
           tokensMinted: parseUnits('9.782628705'),
         },
         {
-          revertedWith: CommonError.GenericError,
+          revertedWith: DataFeedError.PriceIsLowerThanMin,
         },
       );
     });
@@ -1052,7 +1052,7 @@ describe('data-feed', () => {
       );
 
       await mintInstant(fixture, { minReceiveAmount: 0n }, {}, undefined, {
-        revertedWith: CommonError.GenericError,
+        revertedWith: DataFeedError.PriceIsStale,
       });
     });
 
@@ -1079,7 +1079,7 @@ describe('data-feed', () => {
       );
 
       await mintInstant(fixture, { minReceiveAmount: 0n }, {}, undefined, {
-        revertedWith: CommonError.GenericError,
+        revertedWith: DataFeedError.PriceIsHigherThanMax,
       });
     });
 
@@ -1108,7 +1108,7 @@ describe('data-feed', () => {
       );
 
       await mintInstant(fixture, { minReceiveAmount: 0n }, {}, undefined, {
-        revertedWith: CommonError.GenericError,
+        revertedWith: DataFeedError.PriceIsLowerThanMin,
       });
     });
   });

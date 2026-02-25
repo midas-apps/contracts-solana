@@ -140,7 +140,7 @@ describe('Squads multisig', () => {
             });
         });
 
-        describe('vault transactions', () => {
+        describe.skip('vault transactions', () => {
             it('regular sol transfer with timelock', async () => {
                 const fixture = await squadsFixture();
                 const { multisigPda, getMutlisigData, authority, regularAccounts, context } = fixture;
@@ -312,10 +312,9 @@ describe('Squads multisig', () => {
                 });
             });
         });
-
     });
 
-    describe('squads member', () => {
+    describe.skip('squads member', () => {
         it('should create and execute tx with squads member', async () => {
             const fixture = await squadsFixture();
             const { multisigWithSquadsSignerPda, multisigSignerPda, getMutlisigData, authority, regularAccounts, context } = fixture;

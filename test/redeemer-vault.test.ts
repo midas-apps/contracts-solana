@@ -1796,7 +1796,7 @@ describe('redeemer-vault', () => {
 
       for (let i = 1; i <= instructions.length; i++) {
         const tx = new Transaction();
-        tx.recentBlockhash = context.lastBlockhash;
+        tx.recentBlockhash = context.latestBlockhash();
         tx.feePayer = authority.publicKey;
 
         for (let j = 0; j < i; j++) {

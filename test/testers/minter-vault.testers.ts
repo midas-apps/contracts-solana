@@ -12,6 +12,7 @@ import {
   expectTxReverted,
   fromBN,
   getBalance,
+  getTime,
   OptionalCommonParams,
   parseUnits,
   toBN,
@@ -353,8 +354,8 @@ export const mintInstant = async (
     );
   }
 
-  const clock = await context.banksClient.getClock();
-  const currentDay = clock.unixTimestamp / 86400n;
+  const unixTimestamp = await getTime(context);
+  const currentDay = unixTimestamp / 86400n;
 
   const actualTokensMinted = expectedWasUndefined
     ? stateAfter.balanceFromMToken - stateBefore.balanceFromMToken
@@ -400,7 +401,7 @@ export const mintInstant = async (
     parseUnits((amountToken - (expected?.fee ?? 0)).toString(), paymentMint.decimals),
   );
 
-  return { stateAfter, clock };
+  return { stateAfter, unixTimestamp };
 };
 
 export const mintRequest = async (

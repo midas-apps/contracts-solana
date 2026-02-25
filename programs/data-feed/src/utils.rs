@@ -593,6 +593,11 @@ mod growth_and_deviation_tests {
         (amount * 10f64.powi(decimals as i32)).trunc() as u128
     }
 
+    /// growth_apr has decimals precision: e.g. 5% with 8 decimals = 5 * 10^8
+    fn growth_apr_percent(percent: f64, decimals: u8) -> i64 {
+        (percent * 10f64.powi(decimals as i32)).trunc() as i64
+    }
+
     // ---------- get_deviation ----------
 
     #[test]
@@ -636,7 +641,7 @@ mod growth_and_deviation_tests {
         let from = 1000u32;
         let to = 1000u32;
         assert_eq!(
-            apply_growth_apr_impl(price, 500, from, to, 8).unwrap(),
+            apply_growth_apr_impl(price, growth_apr_percent(5.0, 8), from, to, 8).unwrap(),
             price
         );
     }
@@ -646,7 +651,7 @@ mod growth_and_deviation_tests {
         let price = units(100.0, 8);
         let from = 0u32;
         let to = SECONDS_IN_YEAR;
-        let growth_apr = 500i64;
+        let growth_apr = growth_apr_percent(5.0, 8);
         let result = apply_growth_apr_impl(price, growth_apr, from, to, 8).unwrap();
         assert_eq!(result, units(105.0, 8));
     }
@@ -656,7 +661,7 @@ mod growth_and_deviation_tests {
         let price = units(100.0, 8);
         let from = 0u32;
         let to = SECONDS_IN_YEAR;
-        let growth_apr = -500i64;
+        let growth_apr = growth_apr_percent(-5.0, 8);
         let result = apply_growth_apr_impl(price, growth_apr, from, to, 8).unwrap();
         assert_eq!(result, units(95.0, 8));
     }
@@ -666,7 +671,7 @@ mod growth_and_deviation_tests {
         let price = units(100.0, 8);
         let from = 0u32;
         let to = SECONDS_IN_YEAR / 2;
-        let growth_apr = 1000i64;
+        let growth_apr = growth_apr_percent(10.0, 8);
         let result = apply_growth_apr_impl(price, growth_apr, from, to, 8).unwrap();
         assert_eq!(result, units(105.0, 8));
     }
@@ -676,6 +681,6 @@ mod growth_and_deviation_tests {
         let price = units(100.0, 8);
         let from = 1000u32;
         let to = 999u32;
-        assert!(apply_growth_apr_impl(price, 500, from, to, 8).is_err());
+        assert!(apply_growth_apr_impl(price, growth_apr_percent(5.0, 8), from, to, 8).is_err());
     }
 }
