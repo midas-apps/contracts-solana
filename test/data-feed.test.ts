@@ -3,6 +3,7 @@ import { DATA_FEED_PROGRAM_ID, DataFeedError } from './constants/data-feed.const
 import { dataFeedFixture } from './fixture/dafa-feed.fixture';
 import { vaultsFixture } from './fixture/vaults.fixture';
 import { parseUnits, setClockTime, timeTravel } from './helpers/common.helpers';
+import { getManualFeedStatePda } from './helpers/data-feed.helpers';
 import { updatePaymentToken } from './testers/common-vaults.testers';
 import {
   createDefaultDataFeed,
@@ -10,6 +11,7 @@ import {
   createNewFeed,
   createNewManualFeed,
   createNewManualFeedGrowth,
+  migrateManualFeedToV2,
   updateFeed,
   updateManualFeed,
   updateManualFeedGrowth,
@@ -376,6 +378,56 @@ describe('data-feed', () => {
           revertedWith: CommonError.AccountIsNotInitialized,
         },
       );
+    });
+  });
+
+  describe('migrate_manual_feed_to_v2', () => {
+    it('migrate manual feed to v2', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultDataFeed(fixture);
+
+      const manualFeedStatePda = getManualFeedStatePda(baseFeed);
+      const manualFeedStateData = await fixture.provider.connection.getAccountInfo(manualFeedStatePda);
+      const dataWithoutMaxAnswerDeviation = manualFeedStateData.data.slice(0, 21);
+
+      const lamports = await fixture.provider.connection.getMinimumBalanceForRentExemption(dataWithoutMaxAnswerDeviation.length);
+
+      fixture.context.setAccount(manualFeedStatePda, {
+        data: dataWithoutMaxAnswerDeviation,
+        executable: false,
+        owner: fixture.dataFeedProgram.programId,
+        lamports,
+      });
+
+      await migrateManualFeedToV2(fixture, {
+        baseFeed,
+      });
+    });
+
+    it('migrate manual feed to v2 from non-authority', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultDataFeed(fixture);
+
+      const manualFeedStatePda = getManualFeedStatePda(baseFeed);
+      const manualFeedStateData = await fixture.provider.connection.getAccountInfo(manualFeedStatePda);
+      const dataWithMaxAnswerDeviation = manualFeedStateData.data.slice(0, 21);
+
+      const lamports = await fixture.provider.connection.getMinimumBalanceForRentExemption(dataWithMaxAnswerDeviation.length);
+
+      fixture.context.setAccount(manualFeedStatePda, {
+        data: dataWithMaxAnswerDeviation,
+        executable: false,
+        owner: fixture.dataFeedProgram.programId,
+        lamports,
+      });
+
+      await migrateManualFeedToV2(fixture, {
+        baseFeed,
+      }, {
+        from: fixture.regularAccounts[0],
+      });
     });
   });
 

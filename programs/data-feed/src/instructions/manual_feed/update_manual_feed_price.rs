@@ -5,7 +5,7 @@ use access_control::{
 use anchor_lang::prelude::*;
 
 use crate::{
-    constants::ac_roles, errors::DataFeedError, events::ManualFeedUpdatedEventV2, state::{FeedState, ManualFeedStateV2}, utils::{get_deviation, update_manual_feed}
+    constants::ac_roles, errors::DataFeedError, events::ManualFeedUpdatedEventV2, state::{FeedState, ManualFeedState}, utils::{get_deviation, update_manual_feed}
 };
 
 #[derive(Accounts)]
@@ -14,13 +14,13 @@ pub struct UpdateManualFeedPrice<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    /// `ManualFeedStateV2` instance
+    /// `ManualFeedState` instance
     #[account(
         mut,
-        seeds = [ManualFeedStateV2::SEED, base_feed.key().as_ref()],
+        seeds = [ManualFeedState::SEED, base_feed.key().as_ref()],
         bump,
     )]
-    pub manual_feed: Account<'info, ManualFeedStateV2>,
+    pub manual_feed: Account<'info, ManualFeedState>,
 
     /// AccessControlRoles instance that is set in base_feed
     #[account(
@@ -45,7 +45,7 @@ pub struct UpdateManualFeedPrice<'info> {
 ///
 /// # Arguments
 ///
-/// - `price` - new price value for `ManualFeedStateV2.price`
+/// - `price` - new price value for `ManualFeedState.price`
 /// - `is_safe` - if true, the diviation between new price and current price will be checked if it is within the allowed deviation range
 pub fn handle(ctx: Context<UpdateManualFeedPrice>, price: u64, is_safe: bool) -> Result<()> {
     let state = &mut ctx.accounts.manual_feed;

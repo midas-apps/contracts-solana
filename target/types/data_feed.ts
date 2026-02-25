@@ -14,6 +14,77 @@ export type DataFeed = {
   },
   "instructions": [
     {
+      "name": "migrateManualFeedToV2",
+      "discriminator": [
+        87,
+        111,
+        161,
+        248,
+        245,
+        251,
+        10,
+        149
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "docs": [
+            "Payer for realloc (lamports for extra space)"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "baseFeed",
+          "docs": [
+            "Base feed state account"
+          ]
+        },
+        {
+          "name": "manualFeed",
+          "docs": [
+            "Manual feed state account - use UncheckedAccount to bypass deserialization"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  110,
+                  117,
+                  97,
+                  108,
+                  95,
+                  102,
+                  101,
+                  101,
+                  100,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "baseFeed"
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "newFeed",
       "discriminator": [
         177,
@@ -102,7 +173,7 @@ export type DataFeed = {
         {
           "name": "manualFeed",
           "docs": [
-            "New `ManualFeedStateV2` instance"
+            "New `ManualFeedState` instance"
           ],
           "writable": true,
           "pda": {
@@ -672,7 +743,7 @@ export type DataFeed = {
         {
           "name": "manualFeed",
           "docs": [
-            "`ManualFeedStateV2` instance"
+            "`ManualFeedState` instance"
           ],
           "writable": true,
           "pda": {
@@ -1251,7 +1322,7 @@ export type DataFeed = {
         {
           "name": "manualFeed",
           "docs": [
-            "`ManualFeedStateV2` instance"
+            "`ManualFeedState` instance"
           ],
           "writable": true,
           "pda": {
@@ -1459,16 +1530,16 @@ export type DataFeed = {
       ]
     },
     {
-      "name": "manualFeedStateV2",
+      "name": "manualFeedState",
       "discriminator": [
-        131,
-        4,
-        68,
-        70,
-        211,
-        81,
-        75,
-        61
+        85,
+        188,
+        133,
+        61,
+        170,
+        132,
+        192,
+        135
       ]
     }
   ],
@@ -1975,8 +2046,11 @@ export type DataFeed = {
       }
     },
     {
-      "name": "manualFeedStateV2",
+      "name": "manualFeedState",
       "docs": [
+        "Current version - V2",
+        "- Added max_answer_deviation field",
+        "",
         "Account that holds data of manual data feed",
         "where the answer can be controlled by the",
         "actors with sufficient access (has `FEED_ADMIN` role)"

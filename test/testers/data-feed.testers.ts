@@ -23,6 +23,7 @@ import {
   getManualFeedGrowthStatePda,
   getManualFeedStatePda,
 } from '../helpers/data-feed.helpers';
+import { MAX_U64 } from '../constants/common.constants';
 
 type CommonDataFeedParams = DataFeedFixtureReturnType;
 
@@ -105,6 +106,7 @@ export const createNewFeed = async (
 
   return feed;
 };
+
 
 export const updateFeed = async (
   fixture: CommonDataFeedParams,
@@ -274,6 +276,43 @@ export const createNewManualFeed = async (
 
   expect(feedFetched.decimals).toBe(decimals);
   expect(fromBN(feedFetched.price)).toBe(initialPrice);
+};
+
+export const migrateManualFeedToV2 = async (
+  fixture: CommonDataFeedParams,
+  {
+    baseFeed,
+  }: {
+    baseFeed?: PublicKey;
+  },
+  opt?: OptionalCommonParams,
+) => {
+  const { dataFeedProgram, authority: owner, context, dataFeedMTBill } = fixture;
+  baseFeed ??= dataFeedMTBill.publicKey;
+  const from = opt?.from ?? owner;
+  const feedPda = getManualFeedStatePda(baseFeed);
+
+  const stateBefore = await fixture.provider.connection.getAccountInfo(feedPda);
+  const dataWithMaxSupplyCapRaw = Buffer.concat([stateBefore.data, toBN(0n).toBuffer('le')]);
+  const manualFeedStateBefore = await dataFeedProgram.account.manualFeedState.coder.accounts.decode('manualFeedState', dataWithMaxSupplyCapRaw) as Awaited<ReturnType<typeof fetchManualFeedState>>;
+
+  const tx =
+    await dataFeedProgram.methods.migrateManualFeedToV2().accountsPartial({
+      baseFeed: baseFeed,
+      payer: from.publicKey,
+    }).transaction();
+
+  if (opt?.revertedWith !== undefined) {
+    await expectTxReverted(context, tx, [from], opt);
+    return;
+  }
+  await expectTxNotReverted(context, tx, [from]);
+
+  const feedFetchedAfter = await fetchManualFeedState(dataFeedProgram, feedPda);
+  expect(feedFetchedAfter.decimals).toBe(manualFeedStateBefore.decimals);
+  expect(feedFetchedAfter.lastUpdatedAt).toBe(manualFeedStateBefore.lastUpdatedAt);
+  expect(fromBN(feedFetchedAfter.price)).toBe(fromBN(manualFeedStateBefore.price));
+  expect(fromBN(feedFetchedAfter.maxAnswerDeviation)).toBe(MAX_U64);
 };
 
 export const createNewManualFeedGrowth = async (

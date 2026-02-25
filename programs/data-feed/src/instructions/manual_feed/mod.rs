@@ -9,3 +9,7 @@ pub use update_manual_feed::*;
 pub mod update_manual_feed_price;
 #[allow(ambiguous_glob_reexports)]
 pub use update_manual_feed_price::*;
+
+pub mod migration;
+#[allow(ambiguous_glob_reexports)]
+pub use migration::*;

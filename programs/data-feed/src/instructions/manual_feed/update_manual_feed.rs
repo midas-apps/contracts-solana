@@ -7,7 +7,7 @@ use anchor_lang::prelude::*;
 use crate::{
     constants::ac_roles,
     events::ManualFeedUpdatedEventV2,
-    state::{FeedState, ManualFeedStateV2},
+    state::{FeedState, ManualFeedState},
     utils::update_manual_feed,
 };
 
@@ -17,13 +17,13 @@ pub struct UpdateManualFeed<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    /// `ManualFeedStateV2` instance
+    /// `ManualFeedState` instance
     #[account(
         mut,
-        seeds = [ManualFeedStateV2::SEED, base_feed.key().as_ref()],
+        seeds = [ManualFeedState::SEED, base_feed.key().as_ref()],
         bump,
     )]
-    pub manual_feed: Account<'info, ManualFeedStateV2>,
+    pub manual_feed: Account<'info, ManualFeedState>,
 
     /// AccessControlRoles instance that is set in base_feed
     #[account(
@@ -49,8 +49,8 @@ pub struct UpdateManualFeed<'info> {
 ///
 /// # Arguments
 ///
-/// - `decimals` - new decimals value for `ManualFeedStateV2.decimals`
-/// - `max_answer_deviation` - new max answer deviation value for `ManualFeedStateV2.max_answer_deviation`
+/// - `decimals` - new decimals value for `ManualFeedState.decimals`
+/// - `max_answer_deviation` - new max answer deviation value for `ManualFeedState.max_answer_deviation`
 pub fn handle(
     ctx: Context<UpdateManualFeed>,
     decimals: Option<u8>,

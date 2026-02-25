@@ -11,7 +11,7 @@ use pyth_solana_receiver_sdk::price_update::PriceUpdateV2;
 
 use switchboard_on_demand::{PullFeedAccountData, PRECISION};
 
-use crate::state::{FeedState, ManualFeedStateV2};
+use crate::state::{FeedState, ManualFeedState};
 use chainlink_solana::v2::read_feed_v2;
 
 /// Parses the price from `feed` account and converts it
@@ -22,7 +22,7 @@ use chainlink_solana::v2::read_feed_v2;
 ///
 /// - `data_feed` - `FeedState` account
 /// - `feed` - account of the price feed. Currently supported types are:
-///     - `ManualFeedStateV2` (Manual feed account)
+///     - `ManualFeedState` (Manual feed account)
 ///     - `PullFeedAccountData` (Switchboard feed account)
 ///     - `PriceUpdateV2` (Pyth feed account)
 ///     - `Feed` (Chainlink OCR2 feed account)
@@ -40,7 +40,7 @@ pub fn get_price_in_base_9<'info>(
         FeedMode::Manual => {
             // parse manual feed
             let mut buf: &[u8] = &feed.try_borrow_mut_data()?[..];
-            let feed_parsed = ManualFeedStateV2::try_deserialize(&mut buf).unwrap();
+            let feed_parsed = ManualFeedState::try_deserialize(&mut buf).unwrap();
 
             let current_ts = get_current_ts()?;
 
@@ -228,10 +228,10 @@ pub fn update_feed(
     Ok(())
 }
 
-/// Updates `ManualFeedStateV2` values.
+/// Updates `ManualFeedState` values.
 /// If parameter value is None - it wont be updated
 pub fn update_manual_feed(
-    state: &mut ManualFeedStateV2,
+    state: &mut ManualFeedState,
     price: Option<u64>,
     decimals: Option<u8>,
     max_answer_deviation: Option<u64>,

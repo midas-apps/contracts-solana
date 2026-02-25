@@ -21,7 +21,7 @@ export const fetchDataFeedState = (program: DataFeedProgram, feed: PublicKey) =>
 };
 
 export const fetchManualFeedState = (program: DataFeedProgram, feed: PublicKey) => {
-  return program.account.manualFeedStateV2.fetchNullable(feed);
+  return program.account.manualFeedState.fetchNullable(feed);
 };
 
 export const fetchManualFeedGrowthState = (program: DataFeedProgram, feed: PublicKey) => {

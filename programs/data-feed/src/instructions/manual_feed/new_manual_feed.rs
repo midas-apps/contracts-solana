@@ -7,7 +7,7 @@ use anchor_lang::prelude::*;
 use crate::{
     constants::ac_roles,
     events::{ManualFeedUpdatedEventV2},
-    state::{FeedState, ManualFeedStateV2},
+    state::{FeedState, ManualFeedState},
     utils::update_manual_feed,
 };
 
@@ -17,15 +17,15 @@ pub struct NewManualFeed<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    /// New `ManualFeedStateV2` instance
+    /// New `ManualFeedState` instance
     #[account(
         init,
         payer = authority,
-        seeds = [ManualFeedStateV2::SEED, base_feed.key().as_ref()],
+        seeds = [ManualFeedState::SEED, base_feed.key().as_ref()],
         bump,
-        space = 8 + ManualFeedStateV2::INIT_SPACE
+        space = 8 + ManualFeedState::INIT_SPACE
     )]
-    pub manual_feed: Account<'info, ManualFeedStateV2>,
+    pub manual_feed: Account<'info, ManualFeedState>,
 
     /// AccessControlRoles instance that is set in base_feed
     #[account(
@@ -52,9 +52,9 @@ pub struct NewManualFeed<'info> {
 ///
 /// # Arguments
 ///
-/// - `initial_price` - initial value for `ManualFeedStateV2.price`
-/// - `decimals` - decimals value for `ManualFeedStateV2.decimals`
-/// - `max_answer_deviation` - max answer deviation value for `ManualFeedStateV2.max_answer_deviation`
+/// - `initial_price` - initial value for `ManualFeedState.price`
+/// - `decimals` - decimals value for `ManualFeedState.decimals`
+/// - `max_answer_deviation` - max answer deviation value for `ManualFeedState.max_answer_deviation`
 pub fn handle(
     ctx: Context<NewManualFeed>, 
     initial_price: u64, 

@@ -83,6 +83,10 @@ pub mod data_feed {
         update_manual_feed_price::handle(ctx, price, is_safe)
     }
 
+    pub fn migrate_manual_feed_to_v2(ctx: Context<MigrateManualFeedToV2>) -> Result<()> {
+        migrate_manual_feed_to_v2::handle(ctx)
+    }
+
     /* Manual Growth Underlying Feed instructions */
 
     pub fn new_manual_feed_growth(

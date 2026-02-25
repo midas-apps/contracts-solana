@@ -5,7 +5,7 @@ use crate::utils::get_price_in_base_9;
 #[derive(Clone, anchor_lang::InitSpace, AnchorSerialize, AnchorDeserialize)]
 /// Describes types of supported underlying feeds
 pub enum FeedMode {
-    /// Indicates underlying_feed is `ManualFeedStateV2`
+    /// Indicates underlying_feed is `ManualFeedState`
     Manual,
     /// Indicates underlying_feed is Switchboard's `PullFeedAccountData`
     Switchboard,

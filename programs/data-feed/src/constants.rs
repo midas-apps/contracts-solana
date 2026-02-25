@@ -18,6 +18,6 @@ pub const MAX_TIME_PASSED_SINCE_LAST_UPDATE_GROWTH_FEED: u32 = 3600;
 pub const SECONDS_IN_YEAR: u32 = 365 * 86400;
 
 pub mod ac_roles {
-    /// Holder of this role can update `FeedState` and `ManualFeedStateV2`
+    /// Holder of this role can update `FeedState` and `ManualFeedState`
     pub const FEED_ADMIN: &[u8; 15] = b"data_feed_admin";
 }
