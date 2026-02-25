@@ -69,7 +69,6 @@ class LiteSVMConnectionProxy implements ConnectionInterface {
 
 function sendWithErr(tx: Transaction | VersionedTransaction, client: LiteSVM) {
     const res = client.sendTransaction(tx);
-    this.logProgramLogs(res);
     if (res instanceof FailedTransactionMetadata) {
         const sigRaw = tx instanceof Transaction ? tx.signature : tx.signatures[0];
         const signature = bs58.encode(sigRaw);
@@ -123,8 +122,7 @@ export class LiteSVMProvider implements Provider {
             if (!tx.signature) throw new Error("Missing fee payer signature");
             signature = bs58.encode(tx.signature);
         }
-        const res = this.client.sendTransaction(tx);
-        this.logProgramLogs(res);
+        this.client.sendTransaction(tx);
         return signature;
     }
     async sendAndConfirm?(
@@ -234,11 +232,6 @@ export class LiteSVMProvider implements Provider {
             returnData,
         };
     }
-
-    private logProgramLogs(tx: FailedTransactionMetadata | TransactionMetadata) {
-        const logs = tx instanceof FailedTransactionMetadata ? tx.meta().logs() : tx.logs();
-        console.log(logs);
-    }
 }
 
 export function fromWorkspace(
@@ -253,7 +246,7 @@ export function fromWorkspace(
     const programs = (parsedToml["programs"] as TOML.JsonMap)[
         "localnet"
     ] as TOML.JsonMap;
-    
+
     const svm = new LiteSVM()
         .withDefaultPrograms()
         .withSysvars()

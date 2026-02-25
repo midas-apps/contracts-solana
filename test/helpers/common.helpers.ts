@@ -41,7 +41,8 @@ import { TokenAuthority } from '@/target/types/token_authority';
 import { DEFAULT_PUBKEY } from '../constants/common.constants';
 import { SQUADS_PROGRAM_ID } from '../constants/squads.constant';
 import { fromWorkspace, LiteSVMProvider } from './lite-svm';
-// import { ZERO_ADDRESS } from "test/constants/common.constants";
+
+const TESTS_LOG_LEVEL = process.env.TESTS_LOG_LEVEL as 'error' | 'debug' || 'error';
 
 export interface OptionalCommonParams {
   from?: Keypair;
@@ -328,8 +329,10 @@ export const processTransaction = async (
 
 const handleProcessedTransaction = (res: FailedTransactionMetadata | TransactionMetadata | SimulatedTransactionInfo) => {
   if (res instanceof FailedTransactionMetadata) {
-    // TODO: add log hiding by env flag
-    console.log(res.meta().logs());
+    if (TESTS_LOG_LEVEL === 'debug') {
+      console.log(res.meta().logs());
+    }
+
     let panicLog = res.meta().logs().find((log) => log.includes('Program log: panicked at'));
 
     if (!panicLog) {
@@ -341,7 +344,9 @@ const handleProcessedTransaction = (res: FailedTransactionMetadata | Transaction
     const errorLog = `Error: ${res.err().toString()}. ${panicLog ? `Panic log: ${panicLog}` : ''}`;
     throw new Error(errorLog);
   } else if (res instanceof TransactionMetadata) {
-    console.log(res.prettyLogs());
+    if (TESTS_LOG_LEVEL === 'debug') {
+      console.log(res.prettyLogs());
+    }
   }
 }
 

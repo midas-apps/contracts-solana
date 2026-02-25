@@ -90,6 +90,12 @@ To run all tests:
 yarn test
 ```
 
+To run all tests with program logging to console:
+
+```
+TESTS_LOG_LEVEL=debug yarn test
+```
+
 To run only cargo tests:
 
 ```
