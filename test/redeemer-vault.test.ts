@@ -418,7 +418,6 @@ describe('redeemer-vault', () => {
         {},
         {},
         {
-          // TODO: find a way to proxify errors
           revertedWith: DataFeedError.PriceIsLowerThanMin,
         },
       );
@@ -929,7 +928,6 @@ describe('redeemer-vault', () => {
         {},
         {},
         {
-          // TODO: find a way to proxify errors
           revertedWith: DataFeedError.PriceIsLowerThanMin,
         },
       );
