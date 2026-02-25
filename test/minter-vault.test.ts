@@ -3,6 +3,7 @@ import { DataFeedError } from './constants/data-feed.constants';
 import { VaultActionIds, VaultError, VAULTS_PROGRAM_ID } from './constants/vaults.constants';
 import { vaultsFixture } from './fixture/vaults.fixture';
 import { fromBN, parsePercent, parseUnits, timeTravel } from './helpers/common.helpers';
+import { getMinterVaultPda } from './helpers/vaults.helpers';
 import { updateAccountAc } from './testers/ac.testers';
 import {
   newVaultCommon,
@@ -14,6 +15,7 @@ import {
 import { updateFeed, updateManualFeedGrowth, updateManualFeedGrowthPrice, updateManualFeedPrice } from './testers/data-feed.testers';
 import {
   approveMintRequest,
+  migrateMinterVaultStateToV2,
   mintInstant,
   mintRequest,
   newMinterVault,
@@ -111,6 +113,56 @@ describe('minter-vault', () => {
           revertedWith: CommonError.AccountIsNotInitialized,
         },
       );
+    });
+  });
+
+  describe('migrate_minter_vault_state_to_v2', () => {
+    it('should migrate minter vault state to v2', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+
+      const minterVault = getMinterVaultPda(fixture.minterCommonVault.publicKey);
+      const minterVaultData = await fixture.provider.connection.getAccountInfo(minterVault);
+      const dataWithoutMaxSupplyCap = minterVaultData?.data.slice(0, 80);
+
+      const lamports = await fixture.provider.connection.getMinimumBalanceForRentExemption(dataWithoutMaxSupplyCap.length);
+
+      fixture.context.setAccount(minterVault, {
+        data: dataWithoutMaxSupplyCap,
+        executable: false,
+        owner: fixture.vaultsProgram.programId,
+        lamports,
+      });
+
+      await migrateMinterVaultStateToV2(fixture, {
+        commonVault: fixture.minterCommonVault.publicKey,
+      });
+    });
+
+    it('should migrate when called from non-authority', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+
+      const minterVault = getMinterVaultPda(fixture.minterCommonVault.publicKey);
+      const minterVaultData = await fixture.provider.connection.getAccountInfo(minterVault);
+      const dataWithoutMaxSupplyCap = minterVaultData?.data.slice(0, 80);
+
+      const lamports = await fixture.provider.connection.getMinimumBalanceForRentExemption(dataWithoutMaxSupplyCap.length);
+
+      fixture.context.setAccount(minterVault, {
+        data: dataWithoutMaxSupplyCap,
+        executable: false,
+        owner: fixture.vaultsProgram.programId,
+        lamports,
+      });
+
+      await migrateMinterVaultStateToV2(fixture, {
+        commonVault: fixture.minterCommonVault.publicKey,
+      }, {
+        from: fixture.regularAccounts[0],
+      });
     });
   });
 

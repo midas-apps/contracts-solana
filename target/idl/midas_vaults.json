@@ -1701,6 +1701,75 @@
       ]
     },
     {
+      "name": "migrate_minter_vault_state_to_v2",
+      "docs": [
+        "Migration Instructions"
+      ],
+      "discriminator": [
+        100,
+        91,
+        125,
+        36,
+        123,
+        115,
+        119,
+        94
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "docs": [
+            "Payer for realloc (lamports for extra space)"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "vault_common",
+          "docs": [
+            "Vault common state account"
+          ]
+        },
+        {
+          "name": "minter_vault",
+          "docs": [
+            "Minter vault state account - use UncheckedAccount to bypass deserialization"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  101,
+                  114,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault_common"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "mint_instant",
       "discriminator": [
         6,
@@ -9445,16 +9514,16 @@
       ]
     },
     {
-      "name": "MinterVaultStateV2",
+      "name": "MinterVaultState",
       "discriminator": [
-        51,
-        186,
-        118,
-        163,
-        101,
-        38,
-        195,
-        230
+        7,
+        226,
+        177,
+        77,
+        86,
+        188,
+        114,
+        219
       ]
     },
     {
@@ -10502,7 +10571,7 @@
       }
     },
     {
-      "name": "MinterVaultStateV2",
+      "name": "MinterVaultState",
       "docs": [
         "Minter Vault state definition",
         "Contains everything that is only",

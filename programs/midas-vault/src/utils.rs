@@ -7,7 +7,7 @@ use crate::{
     errors::MidasVaultsError,
     program::MidasVaults,
     state::{
-        MintVaultRequestState, MinterVaultStateV2, PauseInxState, PaymentMintState,
+        MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState,
         RedeemerVaultRequestState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState,
     },
 };
@@ -124,7 +124,7 @@ pub fn validate_common(
 pub fn require_and_update_min_amount(
     common: &VaultCommonState,
     common_account: &mut VaultCommonAccountState,
-    minter: Option<&MinterVaultStateV2>,
+    minter: Option<&MinterVaultState>,
     amount: u128,
 ) -> Result<()> {
     if common_account.free_from_min_amount {
@@ -169,7 +169,10 @@ pub fn require_and_update_allowance(
         MidasVaultsError::InsufficientAllowance
     );
 
-    mint_config.allowance -= amount;
+    mint_config.allowance = mint_config
+        .allowance
+        .checked_sub(amount)
+        .ok_or(MidasVaultsError::ArithmeticOverflow)?;
 
     Ok(())
 }
@@ -185,7 +188,8 @@ pub fn require_and_update_limit(common: &mut VaultCommonState, amount: u128) -> 
         .ok_or(MidasVaultsError::ArithmeticOverflow)?;
 
     let new_limit_used = if common.instant_last_day == current_day {
-        common.instant_daily_limit_used
+        common
+            .instant_daily_limit_used
             .checked_add(amount)
             .ok_or(MidasVaultsError::ArithmeticOverflow)?
     } else {
@@ -212,9 +216,13 @@ pub fn require_variation_tolerance(
     new_price: u128,
 ) -> Result<()> {
     let price_diff = if new_price >= price {
-        new_price - price
+        new_price
+            .checked_sub(price)
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?
     } else {
-        price - new_price
+        price
+            .checked_sub(new_price)
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?
     };
 
     let price_diff_percent = price_diff
@@ -236,7 +244,7 @@ pub fn require_variation_tolerance(
 /// To disable the cap (unlimited), set `max_supply_cap` to `u64::MAX`.
 pub fn validate_max_supply_cap(
     m_mint: &Mint,
-    minter: &MinterVaultStateV2,
+    minter: &MinterVaultState,
     mint_amount: u64,
 ) -> Result<bool> {
     let new_supply = m_mint
@@ -426,7 +434,7 @@ pub fn mint_token<'info>(
     amount: u64,
 ) -> Result<()> {
     let (_, vault_pda_bump_seed) = Pubkey::find_program_address(
-        &[MinterVaultStateV2::SEED, common_vault.as_ref()],
+        &[MinterVaultState::SEED, common_vault.as_ref()],
         &MidasVaults::id(),
     );
 
@@ -446,7 +454,7 @@ pub fn mint_token<'info>(
             token_authority_program.clone(),
             accounts,
             &[&[
-                MinterVaultStateV2::SEED,
+                MinterVaultState::SEED,
                 common_vault.as_ref(),
                 &[vault_pda_bump_seed],
             ]],
@@ -572,8 +580,7 @@ pub mod minter {
         mint_config: &mut PaymentMintState,
         common: &VaultCommonState,
         common_account: &mut VaultCommonAccountState,
-        minter: &mut MinterVaultStateV2,
-
+        minter: &mut MinterVaultState,
         payment_amount: u128,
         is_instant: bool,
     ) -> Result<CalcAndValidateDepositReturn> {
@@ -684,7 +691,7 @@ pub mod minter {
     pub fn approve_mint_request<'info>(
         request: &MintVaultRequestState,
         vault_common: &Account<'info, VaultCommonState>,
-        minter_vault: &Account<'info, MinterVaultStateV2>,
+        minter_vault: &Account<'info, MinterVaultState>,
         m_mint: &Box<InterfaceAccount<'info, Mint>>,
         m_mint_user_ata: &Box<InterfaceAccount<'info, TokenAccount>>,
         m_mint_token_program: &Interface<'info, TokenInterface>,

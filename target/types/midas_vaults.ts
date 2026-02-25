@@ -1707,6 +1707,75 @@ export type MidasVaults = {
       ]
     },
     {
+      "name": "migrateMinterVaultStateToV2",
+      "docs": [
+        "Migration Instructions"
+      ],
+      "discriminator": [
+        100,
+        91,
+        125,
+        36,
+        123,
+        115,
+        119,
+        94
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "docs": [
+            "Payer for realloc (lamports for extra space)"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "vaultCommon",
+          "docs": [
+            "Vault common state account"
+          ]
+        },
+        {
+          "name": "minterVault",
+          "docs": [
+            "Minter vault state account - use UncheckedAccount to bypass deserialization"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  101,
+                  114,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vaultCommon"
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "mintInstant",
       "discriminator": [
         6,
@@ -9451,16 +9520,16 @@ export type MidasVaults = {
       ]
     },
     {
-      "name": "minterVaultStateV2",
+      "name": "minterVaultState",
       "discriminator": [
-        51,
-        186,
-        118,
-        163,
-        101,
-        38,
-        195,
-        230
+        7,
+        226,
+        177,
+        77,
+        86,
+        188,
+        114,
+        219
       ]
     },
     {
@@ -10508,7 +10577,7 @@ export type MidasVaults = {
       }
     },
     {
-      "name": "minterVaultStateV2",
+      "name": "minterVaultState",
       "docs": [
         "Minter Vault state definition",
         "Contains everything that is only",

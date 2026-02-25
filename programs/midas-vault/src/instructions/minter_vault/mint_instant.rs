@@ -14,7 +14,7 @@ use crate::{
     errors::MidasVaultsError,
     events::MinterVaultInstantMintedEvent,
     state::{
-        MinterVaultStateV2, PauseInxState, PaymentMintState, VaultCommonAccountState,
+        MinterVaultState, PauseInxState, PaymentMintState, VaultCommonAccountState,
         VaultCommonState,
     },
     utils::{
@@ -65,10 +65,10 @@ pub struct MintInstant<'info> {
     /// Minter vault state account
     #[account(
         mut,
-        seeds = [MinterVaultStateV2::SEED, vault_common.key().as_ref()],
+        seeds = [MinterVaultState::SEED, vault_common.key().as_ref()],
         bump
     )]
-    pub minter_vault: Box<Account<'info, MinterVaultStateV2>>,
+    pub minter_vault: Box<Account<'info, MinterVaultState>>,
 
     /// AccessControlState account
     #[account(

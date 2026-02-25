@@ -334,4 +334,12 @@ pub mod midas_vaults {
     pub fn update_pause(ctx: Context<UpdatePause>, paused: bool) -> Result<()> {
         pause::update_pause::handle(ctx, paused)
     }
+
+    /** Migration Instructions */
+
+    pub fn migrate_minter_vault_state_to_v2(
+        ctx: Context<MigrateMinterVaultStateToV2>,
+    ) -> Result<()> {
+        minter_vault::migration::migrate_minter_vault_state_to_v2::handle(ctx)
+    }
 }

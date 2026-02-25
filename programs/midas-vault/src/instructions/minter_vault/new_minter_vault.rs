@@ -5,7 +5,7 @@ use token_authority::{program::TokenAuthority, state::TokenAuthorityState};
 use crate::{
     constants::ac_roles,
     events::MinterVaultUpdatedEventV2,
-    state::{MinterVaultStateV2, VaultCommonState},
+    state::{MinterVaultState, VaultCommonState},
 };
 
 #[derive(Accounts)]
@@ -30,11 +30,11 @@ pub struct NewMinterVault<'info> {
     #[account(
         init,
         payer = authority,
-        space = 8 + MinterVaultStateV2::INIT_SPACE,
-        seeds = [MinterVaultStateV2::SEED, vault_common.key().as_ref()],
+        space = 8 + MinterVaultState::INIT_SPACE,
+        seeds = [MinterVaultState::SEED, vault_common.key().as_ref()],
         bump
     )]
-    pub minter_vault: Account<'info, MinterVaultStateV2>,
+    pub minter_vault: Account<'info, MinterVaultState>,
 
     /// Token authority state account
     #[account(

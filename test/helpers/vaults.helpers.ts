@@ -44,7 +44,7 @@ export const fetchMinterVaultState = async (
   vault: PublicKey,
   allowNull = false,
 ) => {
-  return fetchAccountNullable(vault, program.account.minterVaultStateV2, allowNull);
+  return fetchAccountNullable(vault, program.account.minterVaultState, allowNull);
 };
 
 export const fetchRedeemerVaultState = async (

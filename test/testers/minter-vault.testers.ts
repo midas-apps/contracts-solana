@@ -112,6 +112,51 @@ export const newMinterVault = async (
   expect(fromBN(stateAfter.minter.maxSupplyCap)).toEqual(maxSupplyCap);
 };
 
+export const migrateMinterVaultStateToV2 = async (
+  fixture: CommonMinterVaultParams,
+  {
+    commonVault,
+  }: {
+    commonVault?: PublicKey;
+  },
+  opt?: OptionalCommonParams,
+) => {
+  const { vaultsProgram, authority: owner, context } = fixture;
+  const from = opt?.from ?? owner;
+
+  const minterVault = getMinterVaultPda(commonVault);
+
+  const minterVaultStateBefore = await fixture.provider.connection.getAccountInfo(minterVault);
+  const dataWithMaxSupplyCapRaw = Buffer.concat([minterVaultStateBefore.data, toBN(0n).toBuffer('le')]);
+
+  const stateBefore = await vaultsProgram.account.minterVaultState.coder.accounts.decode('minterVaultState', dataWithMaxSupplyCapRaw) as Awaited<ReturnType<typeof fetchMinterVaultState>>;
+
+  const tx = await vaultsProgram.methods
+    .migrateMinterVaultStateToV2()
+    .accountsPartial({
+      payer: from.publicKey,
+      vaultCommon: commonVault,
+      minterVault: minterVault,
+    })
+    .transaction();
+
+  if (opt?.revertedWith !== undefined) {
+    await expectTxReverted(context, tx, [from], opt);
+    return;
+  }
+
+  await expectTxNotReverted(context, tx, [from]);
+
+  const stateAfter = await fetchMinterVaultState(vaultsProgram, minterVault);
+
+  expect(fromBN(stateAfter.firstDepositMinMTokens)).toEqual(fromBN(stateBefore.firstDepositMinMTokens));
+  expect(stateAfter.mintAuthorityPda.equals(stateBefore.mintAuthorityPda)).toBe(true);
+  expect(stateAfter.commonVault.equals(commonVault)).toBe(true);
+
+  expect(fromBN(stateBefore.maxSupplyCap)).toEqual(0n);
+  expect(fromBN(stateAfter.maxSupplyCap)).toEqual(MAX_U64);
+};
+
 export const updateMinterVault = async (
   fixture: CommonMinterVaultParams,
   {

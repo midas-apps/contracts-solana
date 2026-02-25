@@ -1,25 +1,15 @@
 use anchor_lang::prelude::*;
 
-#[account]
+#[account()]
 #[derive(InitSpace)]
-/// Old MinterVaultState
-pub struct MinterVaultState {
-    /// minimal amount of mTokens that user should
-    /// acquire during the first mint
-    pub first_deposit_min_m_tokens: u64,
-    /// common-vault account
-    pub common_vault: Pubkey,
-    /// mint authority pda (token-authority program)
-    pub mint_authority_pda: Pubkey,
-}
-
-#[account]
-#[derive(InitSpace)]
+/// Current version - V2
+///     - Added max_supply_cap field
+/// 
 /// Minter Vault state definition
 /// Contains everything that is only
 /// minter-vault related, everything that can be shared
 /// with redeemer-vault should stay in common-vault
-pub struct MinterVaultStateV2 {
+pub struct MinterVaultState {
     /// minimal amount of mTokens that user should
     /// acquire during the first mint
     pub first_deposit_min_m_tokens: u64,
@@ -31,6 +21,6 @@ pub struct MinterVaultStateV2 {
     pub max_supply_cap: u64,
 }
 
-impl MinterVaultStateV2 {
+impl MinterVaultState {
     pub const SEED: &'static [u8; 12] = b"minter_vault";
 }
