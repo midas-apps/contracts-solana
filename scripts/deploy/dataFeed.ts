@@ -19,7 +19,7 @@ export const getDataFeedProgram = (provider: AnchorProvider) => {
   return new Program<DataFeed>(DATA_FEED_IDL as any, provider);
 };
 
-interface DeployDataFeedBaseConfig {
+export interface DeployDataFeedBaseConfig {
   acRole: PublicKey;
   feed?: Keypair;
   minPrice: bigint;
@@ -34,13 +34,13 @@ interface DeployDataFeedBaseConfig {
  */
 export type DeployDataFeedConfig =
   | (DeployDataFeedBaseConfig & {
-      mode: 'manual' | 'switchboard';
-      underlyingFeed?: PublicKey;
-    })
+    mode: 'manual' | 'manualGrowth' | 'switchboard';
+    underlyingFeed?: PublicKey;
+  })
   | (DeployDataFeedBaseConfig & {
-      mode: 'pyth' | 'chainlink';
-      underlyingFeed: PublicKey;
-    });
+    mode: 'pyth' | 'chainlink';
+    underlyingFeed: PublicKey;
+  });
 
 export const deployDataFeed = async (common: CommonParams, config: DeployDataFeedConfig) => {
   const {

@@ -1,13 +1,9 @@
 import { PublicKey } from '@solana/web3.js';
 
-import { deployDataFeed, DeployDataFeedConfig, CommonParams } from '../dataFeed';
+import { deployDataFeed, DeployDataFeedConfig, CommonParams, DeployDataFeedBaseConfig } from '../dataFeed';
 
 export interface DeployPythFeedParams {
-  acRole: PublicKey;
   underlyingFeed: PublicKey;
-  minPrice: bigint;
-  maxPrice: bigint;
-  maxStaleness: number;
 }
 
 /**
@@ -16,15 +12,13 @@ export interface DeployPythFeedParams {
  */
 export async function deployPythFeed(
   common: CommonParams,
+  paramsCommon: DeployDataFeedBaseConfig,
   params: DeployPythFeedParams,
 ): Promise<PublicKey> {
   const config: DeployDataFeedConfig = {
-    acRole: params.acRole,
+    ...paramsCommon,
     mode: 'pyth',
-    underlyingFeed: params.underlyingFeed,
-    minPrice: params.minPrice,
-    maxPrice: params.maxPrice,
-    maxStaleness: params.maxStaleness,
+    underlyingFeed: params.underlyingFeed
   };
 
   return await deployDataFeed(common, config);

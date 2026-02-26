@@ -4,12 +4,13 @@ import { getAddress } from 'viem';
 
 import { createUserError } from '@/common/errorHandler';
 import { DataFeedConfig } from '@/scripts/configs/types';
-import { PRICE_MULTIPLIER } from '@/scripts/constants/pricing';
+import { MANUAL_PRICE_MULTIPLIER, PRICE_MULTIPLIER } from '@/scripts/constants/pricing';
 
 import { deployDataFeed as deployDataFeedContract, getDataFeedProgram } from '../deploy/dataFeed';
-import { deployManualFeed } from '../deploy/feeds/manual';
+import { deployManualFeed, deployManualFeedGrowth } from '../deploy/feeds/manual';
 import { deployPythFeed } from '../deploy/feeds/pyth';
 import { deploySwitchboardFeed, verifySwitchboardFeed } from '../deploy/feeds/switchboard';
+import { deployChainlinkFeed } from '../deploy/feeds/chainlink';
 
 export interface DeployFeedParams {
   provider: AnchorProvider;
@@ -32,24 +33,21 @@ export async function deployFeedFromConfig({
   dataFeedConfig,
 }: DeployFeedParams): Promise<DeployFeedResult> {
   const mode = dataFeedConfig.mode;
-  const underlyingFeed = dataFeedConfig.underlyingFeed
-    ? new PublicKey(dataFeedConfig.underlyingFeed)
-    : undefined;
 
   const feedConfig = {
     acRole,
-    underlyingFeed,
     minPrice: BigInt(Math.floor(parseFloat(dataFeedConfig.minPrice) * PRICE_MULTIPLIER)),
     maxPrice: BigInt(Math.floor(parseFloat(dataFeedConfig.maxPrice) * PRICE_MULTIPLIER)),
     maxStaleness: dataFeedConfig.maxStaleness,
-    initialPrice: dataFeedConfig.initialPrice
-      ? BigInt(Math.floor(parseFloat(dataFeedConfig.initialPrice) * PRICE_MULTIPLIER))
-      : undefined,
   };
 
   switch (mode) {
     case 'switchboard': {
-      const { env, ethRpc, ethDataFeed, feedName } = dataFeedConfig.switchboard!;
+      if (!dataFeedConfig.switchboard)
+        throw createUserError('switchboard configuration is required for switchboard mode');
+
+      const { env, ethRpc, ethDataFeed, feedName, underlyingFeed: underlyingFeedAddress } = dataFeedConfig.switchboard!;
+      const underlyingFeed = underlyingFeedAddress ? new PublicKey(underlyingFeedAddress) : undefined;
 
       let switchboardFeed: PublicKey;
       if (underlyingFeed) {
@@ -89,10 +87,14 @@ export async function deployFeedFromConfig({
     }
 
     case 'pyth': {
-      if (!underlyingFeed) throw createUserError('underlyingFeed is required for pyth mode');
+      if (!dataFeedConfig.pyth)
+        throw createUserError('pyth configuration is required for pyth mode');
+
+      const underlyingFeed = new PublicKey(dataFeedConfig.pyth.underlyingFeed)
       const dataFeed = await deployPythFeed(
         { provider, payer, network },
-        { ...feedConfig, underlyingFeed },
+        feedConfig,
+        { underlyingFeed },
       );
       return {
         dataFeed,
@@ -100,24 +102,61 @@ export async function deployFeedFromConfig({
       };
     }
 
-    // case 'chainlink': {
-    //   if (!underlyingFeed) throw createUserError('underlyingFeed is required for chainlink mode');
-    //   const dataFeed = await deployChainlinkFeed(
-    //     { provider, payer, network },
-    //     { ...feedConfig, underlyingFeed },
-    //   );
-    //   return {
-    //     dataFeed,
-    //     underlyingFeed,
-    //   };
-    // }
+    case 'chainlink': {
+      if (!dataFeedConfig.chainlink)
+        throw createUserError('chainlink configuration is required for chainlink mode');
+
+      const underlyingFeed = new PublicKey(dataFeedConfig.chainlink.underlyingFeed)
+      const dataFeed = await deployChainlinkFeed(
+        { provider, payer, network },
+        feedConfig,
+        { underlyingFeed },
+      );
+      return {
+        dataFeed,
+        underlyingFeed,
+      };
+    }
 
     case 'manual': {
-      const dataFeed = await deployManualFeed({ provider, payer, network }, feedConfig);
+      const manualConfig = dataFeedConfig.manual;
+      if (!manualConfig)
+        throw createUserError('manual configuration is required for manual mode');
+
+      const dataFeed = await deployManualFeed({ provider, payer, network }, feedConfig, {
+        initialPrice: BigInt(Math.floor(parseFloat(manualConfig.initialPrice) * MANUAL_PRICE_MULTIPLIER)),
+        maxAnswerDeviation: BigInt(Math.floor(parseFloat(manualConfig.maxAnswerDeviation) * MANUAL_PRICE_MULTIPLIER)),
+      });
       // For manual feeds, the underlying feed is a PDA derived from the data feed
       const dataFeedProgram = getDataFeedProgram(provider);
       const [manualFeedPda] = PublicKey.findProgramAddressSync(
         [Buffer.from('manual_feed_state'), dataFeed.toBuffer()],
+        dataFeedProgram.programId,
+      );
+      return {
+        dataFeed,
+        underlyingFeed: manualFeedPda,
+      };
+    }
+
+    case 'manual-growth': {
+      const manualGrowthConfig = dataFeedConfig.manualGrowth;
+      if (!manualGrowthConfig)
+        throw createUserError('manualGrowth configuration is required for manual-growth mode');
+
+      const dataFeed = await deployManualFeedGrowth({ provider, payer, network }, feedConfig, {
+        initialPrice: BigInt(Math.floor(parseFloat(manualGrowthConfig.initialPrice) * MANUAL_PRICE_MULTIPLIER)),
+        initialPriceTimestamp: manualGrowthConfig.initialPriceTimestamp,
+        initialGrowthApr: BigInt(Math.floor(parseFloat(manualGrowthConfig.initialGrowthApr.toString()) * MANUAL_PRICE_MULTIPLIER)),
+        minGrowthApr: BigInt(Math.floor(parseFloat(manualGrowthConfig.minGrowthApr.toString()) * MANUAL_PRICE_MULTIPLIER)),
+        maxGrowthApr: BigInt(Math.floor(parseFloat(manualGrowthConfig.maxGrowthApr.toString()) * MANUAL_PRICE_MULTIPLIER)),
+        maxAnswerDeviation: BigInt(Math.floor(parseFloat(manualGrowthConfig.maxAnswerDeviation) * MANUAL_PRICE_MULTIPLIER)),
+        onlyUp: manualGrowthConfig.onlyUp,
+      });
+      // For manual feeds, the underlying feed is a PDA derived from the data feed
+      const dataFeedProgram = getDataFeedProgram(provider);
+      const [manualFeedPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from('manual_feed_growth_state'), dataFeed.toBuffer()],
         dataFeedProgram.programId,
       );
       return {
