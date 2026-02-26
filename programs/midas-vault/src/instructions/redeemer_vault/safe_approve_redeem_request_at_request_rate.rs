@@ -140,7 +140,7 @@ impl<'info> Closable for SafeApproveRedeemRequestAtRequestRate<'info> {
 ///
 /// - `request_id` - id of the redeem request
 /// - `safe_validate_liquidity` - if true, checks redeemer liquidity before transfer
-/// and skips processing (returns success) if insufficient
+///   and skips processing (returns success) if insufficient
 pub fn handle(
     ctx: Context<SafeApproveRedeemRequestAtRequestRate>,
     request_id: u64,

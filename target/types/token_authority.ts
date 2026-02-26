@@ -1268,9 +1268,6 @@ export type TokenAuthority = {
     },
     {
       "name": "tokenAuthorityState",
-      "docs": [
-        ""
-      ],
       "type": {
         "kind": "struct",
         "fields": [

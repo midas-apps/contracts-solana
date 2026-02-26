@@ -22,5 +22,5 @@ anchor-lang = "0.32.1"
 anchor-spl = "0.32.1"
 access-control = { path = "../access-control", features = ["no-entrypoint"] }
 
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))', 'cfg(feature, values("custom-heap", "custom-panic"))'] }
+[lints]
+workspace = true

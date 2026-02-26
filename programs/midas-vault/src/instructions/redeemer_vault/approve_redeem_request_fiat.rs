@@ -106,7 +106,7 @@ impl<'info> Closable for ApproveRedeemRequestFiat<'info> {
 ///
 /// - `request_id` - id of the request to approve
 /// - `new_m_token_rate` - new rate of mToken.
-/// Using this value admin can correct the output mToken amount.
+///   Using this value admin can correct the output mToken amount.
 /// - `is_safe` - if true, validates variation tolerance between request rate and new rate
 pub fn handle(
     ctx: Context<ApproveRedeemRequestFiat>,

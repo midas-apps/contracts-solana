@@ -28,9 +28,9 @@ pub struct NewFeed<'info> {
 /// # Arguments
 ///
 /// - `ac_role` - AccessControlRole instance that will be used to control access
-/// to management instructions of data-feed program
+///   to management instructions of data-feed program
 /// - `underlying_feed` - Account that holds the price. Currently it might be one of the
-/// next supported account types:
+///   next supported account types:
 /// - PriceUpdateV2 (PYTH)
 /// - PullFeedAccountData (Switchboard)
 /// - Chainlink OCR2 (Chainlink)

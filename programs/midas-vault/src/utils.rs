@@ -695,7 +695,6 @@ pub mod minter {
     }
 
     // Approves mint request. Returns Ok(true) on success, Ok(false) if skipped.
-    #[allow(clippy::too_many_arguments)]
     pub fn approve_mint_request<'info>(
         request: &MintVaultRequestState,
         vault_common: &Account<'info, VaultCommonState>,

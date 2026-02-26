@@ -9,9 +9,9 @@ pub const STABLECOIN_RATE: u64 = ONE;
 /// 100% with 2 decimals precision
 pub const ONE_HUNDRED_PERCENT: u64 = 100 * 100;
 /// Max u128 value
-pub const MAX_UINT128: u128 = u128::max_value();
+pub const MAX_UINT128: u128 = u128::MAX;
 /// Max u64 value
-pub const MAX_UINT64: u64 = u64::max_value();
+pub const MAX_UINT64: u64 = u64::MAX;
 
 pub mod seeds {
     pub const VAULT: &[u8; 5] = b"vault";

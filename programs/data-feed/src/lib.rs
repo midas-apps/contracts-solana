@@ -15,7 +15,7 @@ declare_id!("MDF1kkcgJqyizY8k3U1ESAxLBYFYmE3qTwxf2pmGE1s");
 pub mod data_feed {
     use super::*;
 
-    /* DataFeed instructions */
+    // DataFeed instructions
 
     pub fn new_feed(
         ctx: Context<NewFeed>,
@@ -56,7 +56,7 @@ pub mod data_feed {
             max_staleness,
         )
     }
-    /* Manual Underlying Feed instructions */
+    // Manual Underlying Feed instructions
 
     pub fn new_manual_feed(
         ctx: Context<NewManualFeed>,
@@ -87,7 +87,7 @@ pub mod data_feed {
         migrate_manual_feed_to_v2::handle(ctx)
     }
 
-    /* Manual Growth Underlying Feed instructions */
+    // Manual Growth Underlying Feed instructions
 
     pub fn new_manual_feed_growth(
         ctx: Context<NewManualFeedGrowth>,

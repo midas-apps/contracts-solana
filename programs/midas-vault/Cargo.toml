@@ -27,5 +27,5 @@ token-authority = { path = "../token-authority", features = [
     "cpi",
 ] }
 
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))', 'cfg(feature, values("custom-heap", "custom-panic"))'] }
+[lints]
+workspace = true

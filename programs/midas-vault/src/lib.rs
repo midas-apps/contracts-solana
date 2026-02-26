@@ -15,7 +15,7 @@ declare_id!("MidasZepq8k2oFNCCm1rm31rbbj68JSPJeXwqQu6NfZ");
 pub mod midas_vaults {
     use super::*;
 
-    /** Minter Vault Instructions */
+    // Minter Vault Instructions
 
     pub fn new_minter_vault(
         ctx: Context<NewMinterVault>,
@@ -102,7 +102,7 @@ pub mod midas_vaults {
         minter_vault::reject_mint_request::handle(context, request_id)
     }
 
-    /** Redeemer Vault Instructions */
+    // Redeemer Vault Instructions
 
     pub fn new_redeemer_vault(
         ctx: Context<NewRedeemerVault>,
@@ -209,7 +209,7 @@ pub mod midas_vaults {
         redeemer_vault::reject_redeem_request::handle(ctx, request_id)
     }
 
-    /** Common Vault Instructions */
+    // Common Vault Instructions
 
     pub fn new_common_vault(
         ctx: Context<NewVaultCommon>,
@@ -321,7 +321,7 @@ pub mod midas_vaults {
         vault_common::withdraw_tokens::handle(ctx, vault_seed, amount)
     }
 
-    /** Pause Instructions */
+    // Pause Instructions
 
     pub fn new_pause_inx(ctx: Context<NewPauseInx>, fn_id: u8) -> Result<()> {
         pause::new_pause_inx::handle(ctx, fn_id)
@@ -335,7 +335,7 @@ pub mod midas_vaults {
         pause::update_pause::handle(ctx, paused)
     }
 
-    /** Migration Instructions */
+    // Migration Instructions
 
     pub fn migrate_minter_vault_state_to_v2(
         ctx: Context<MigrateMinterVaultStateToV2>,

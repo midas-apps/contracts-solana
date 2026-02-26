@@ -120,7 +120,7 @@ impl<'info> Closable for ApproveMintRequest<'info> {
 ///
 /// - `request_id` - id of the mint request
 /// - `new_out_rate` - new out rate for the mint request.
-/// Using this value admin can correct the output mToken amount
+///   Using this value admin can correct the output mToken amount
 /// - `is_safe` - if true, will check variation tolerance before minting
 /// - `skip_on_supply_cap_exceeded` - if true, will skip minting and return success
 pub fn handle(

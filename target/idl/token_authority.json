@@ -1262,9 +1262,6 @@
     },
     {
       "name": "TokenAuthorityState",
-      "docs": [
-        ""
-      ],
       "type": {
         "kind": "struct",
         "fields": [

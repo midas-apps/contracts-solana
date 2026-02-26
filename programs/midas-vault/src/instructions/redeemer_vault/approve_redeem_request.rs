@@ -139,10 +139,10 @@ impl<'info> Closable for ApproveRedeemRequest<'info> {
 ///
 /// - `request_id` - ID of redeem request
 /// - `new_m_token_rate` - new mToken rate
-/// Using this value admin can correct the output mToken amount.
+///   Using this value admin can correct the output mToken amount.
 /// - `is_safe` - if true, validates variation tolerance between request rate and new rate
 /// - `safe_validate_liquidity` - if true, checks redeemer liquidity before transfer
-/// and skips processing (returns success) if insufficient
+///   and skips processing (returns success) if insufficient
 pub fn handle(
     ctx: Context<ApproveRedeemRequest>,
     request_id: u64,

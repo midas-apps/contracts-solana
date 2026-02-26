@@ -1702,9 +1702,6 @@
     },
     {
       "name": "migrate_minter_vault_state_to_v2",
-      "docs": [
-        "Migration Instructions"
-      ],
       "discriminator": [
         100,
         91,
@@ -2993,9 +2990,6 @@
     },
     {
       "name": "new_common_vault",
-      "docs": [
-        "Common Vault Instructions"
-      ],
       "discriminator": [
         247,
         150,
@@ -3166,9 +3160,6 @@
     },
     {
       "name": "new_minter_vault",
-      "docs": [
-        "Minter Vault Instructions"
-      ],
       "discriminator": [
         2,
         110,
@@ -3423,9 +3414,6 @@
     },
     {
       "name": "new_pause_inx",
-      "docs": [
-        "Pause Instructions"
-      ],
       "discriminator": [
         237,
         102,
@@ -3605,9 +3593,6 @@
     },
     {
       "name": "new_redeemer_vault",
-      "docs": [
-        "Redeemer Vault Instructions"
-      ],
       "discriminator": [
         76,
         3,
@@ -11246,9 +11231,6 @@
     },
     {
       "name": "TokenAuthorityState",
-      "docs": [
-        ""
-      ],
       "type": {
         "kind": "struct",
         "fields": [

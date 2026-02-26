@@ -1708,9 +1708,6 @@ export type MidasVaults = {
     },
     {
       "name": "migrateMinterVaultStateToV2",
-      "docs": [
-        "Migration Instructions"
-      ],
       "discriminator": [
         100,
         91,
@@ -2999,9 +2996,6 @@ export type MidasVaults = {
     },
     {
       "name": "newCommonVault",
-      "docs": [
-        "Common Vault Instructions"
-      ],
       "discriminator": [
         247,
         150,
@@ -3172,9 +3166,6 @@ export type MidasVaults = {
     },
     {
       "name": "newMinterVault",
-      "docs": [
-        "Minter Vault Instructions"
-      ],
       "discriminator": [
         2,
         110,
@@ -3429,9 +3420,6 @@ export type MidasVaults = {
     },
     {
       "name": "newPauseInx",
-      "docs": [
-        "Pause Instructions"
-      ],
       "discriminator": [
         237,
         102,
@@ -3611,9 +3599,6 @@ export type MidasVaults = {
     },
     {
       "name": "newRedeemerVault",
-      "docs": [
-        "Redeemer Vault Instructions"
-      ],
       "discriminator": [
         76,
         3,
@@ -11252,9 +11237,6 @@ export type MidasVaults = {
     },
     {
       "name": "tokenAuthorityState",
-      "docs": [
-        ""
-      ],
       "type": {
         "kind": "struct",
         "fields": [
