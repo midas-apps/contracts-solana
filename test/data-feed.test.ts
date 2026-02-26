@@ -388,10 +388,13 @@ describe('data-feed', () => {
       const baseFeed = await createDefaultDataFeed(fixture);
 
       const manualFeedStatePda = getManualFeedStatePda(baseFeed);
-      const manualFeedStateData = await fixture.provider.connection.getAccountInfo(manualFeedStatePda);
+      const manualFeedStateData =
+        await fixture.provider.connection.getAccountInfo(manualFeedStatePda);
       const dataWithoutMaxAnswerDeviation = manualFeedStateData.data.slice(0, 21);
 
-      const lamports = await fixture.provider.connection.getMinimumBalanceForRentExemption(dataWithoutMaxAnswerDeviation.length);
+      const lamports = await fixture.provider.connection.getMinimumBalanceForRentExemption(
+        dataWithoutMaxAnswerDeviation.length,
+      );
 
       fixture.context.setAccount(manualFeedStatePda, {
         data: dataWithoutMaxAnswerDeviation,
@@ -411,10 +414,13 @@ describe('data-feed', () => {
       const baseFeed = await createDefaultDataFeed(fixture);
 
       const manualFeedStatePda = getManualFeedStatePda(baseFeed);
-      const manualFeedStateData = await fixture.provider.connection.getAccountInfo(manualFeedStatePda);
+      const manualFeedStateData =
+        await fixture.provider.connection.getAccountInfo(manualFeedStatePda);
       const dataWithMaxAnswerDeviation = manualFeedStateData.data.slice(0, 21);
 
-      const lamports = await fixture.provider.connection.getMinimumBalanceForRentExemption(dataWithMaxAnswerDeviation.length);
+      const lamports = await fixture.provider.connection.getMinimumBalanceForRentExemption(
+        dataWithMaxAnswerDeviation.length,
+      );
 
       fixture.context.setAccount(manualFeedStatePda, {
         data: dataWithMaxAnswerDeviation,
@@ -423,11 +429,15 @@ describe('data-feed', () => {
         lamports,
       });
 
-      await migrateManualFeedToV2(fixture, {
-        baseFeed,
-      }, {
-        from: fixture.regularAccounts[0],
-      });
+      await migrateManualFeedToV2(
+        fixture,
+        {
+          baseFeed,
+        },
+        {
+          from: fixture.regularAccounts[0],
+        },
+      );
     });
   });
 
@@ -531,13 +541,10 @@ describe('data-feed', () => {
 
       const baseFeed = await createDefaultManualFeedGrowth(fixture);
 
-      await updateManualFeedGrowth(
-        fixture,
-        {
-          baseFeed,
-          minGrowthApr: parseUnits('3'),
-        }
-      );
+      await updateManualFeedGrowth(fixture, {
+        baseFeed,
+        minGrowthApr: parseUnits('3'),
+      });
 
       await updateManualFeedGrowth(
         fixture,
@@ -615,13 +622,17 @@ describe('data-feed', () => {
         isSafe: true,
       });
 
-      await updateManualFeedPrice(fixture, {
-        baseFeed,
-        price: parseUnits('1.2'),
-        isSafe: true,
-      }, {
-        revertedWith: DataFeedError.DeviationTooHigh,
-      });
+      await updateManualFeedPrice(
+        fixture,
+        {
+          baseFeed,
+          price: parseUnits('1.2'),
+          isSafe: true,
+        },
+        {
+          revertedWith: DataFeedError.DeviationTooHigh,
+        },
+      );
     });
   });
 
@@ -653,7 +664,6 @@ describe('data-feed', () => {
 
       const baseFeed = await createDefaultManualFeedGrowth(fixture);
 
-
       await timeTravel(fixture.context, 3601n);
 
       await updateManualFeedGrowthPrice(fixture, {
@@ -678,13 +688,17 @@ describe('data-feed', () => {
 
       await timeTravel(fixture.context, 3601n);
 
-      await updateManualFeedGrowthPrice(fixture, {
-        baseFeed,
-        price: parseUnits('1.2'),
-        isSafe: true,
-      }, {
-        revertedWith: DataFeedError.DeviationTooHigh,
-      });
+      await updateManualFeedGrowthPrice(
+        fixture,
+        {
+          baseFeed,
+          price: parseUnits('1.2'),
+          isSafe: true,
+        },
+        {
+          revertedWith: DataFeedError.DeviationTooHigh,
+        },
+      );
     });
 
     it('should fail: update growth price (safe) when growth apr is > max growth apr', async () => {
@@ -694,14 +708,18 @@ describe('data-feed', () => {
 
       await timeTravel(fixture.context, 3601n);
 
-      await updateManualFeedGrowthPrice(fixture, {
-        baseFeed,
-        price: parseUnits('1.001'),
-        growthApr: parseUnits('10.1'),
-        isSafe: true,
-      }, {
-        revertedWith: DataFeedError.InvalidGrowthApr,
-      });
+      await updateManualFeedGrowthPrice(
+        fixture,
+        {
+          baseFeed,
+          price: parseUnits('1.001'),
+          growthApr: parseUnits('10.1'),
+          isSafe: true,
+        },
+        {
+          revertedWith: DataFeedError.InvalidGrowthApr,
+        },
+      );
     });
 
     it('should fail: update growth price (safe) when growth apr is < min growth apr', async () => {
@@ -711,14 +729,18 @@ describe('data-feed', () => {
 
       await timeTravel(fixture.context, 3601n);
 
-      await updateManualFeedGrowthPrice(fixture, {
-        baseFeed,
-        price: parseUnits('1.001'),
-        growthApr: parseUnits('-0.01'),
-        isSafe: true,
-      }, {
-        revertedWith: DataFeedError.InvalidGrowthApr,
-      });
+      await updateManualFeedGrowthPrice(
+        fixture,
+        {
+          baseFeed,
+          price: parseUnits('1.001'),
+          growthApr: parseUnits('-0.01'),
+          isSafe: true,
+        },
+        {
+          revertedWith: DataFeedError.InvalidGrowthApr,
+        },
+      );
     });
 
     it('should fail: update growth price (safe) when only_up is true and growth apr is < 0', async () => {
@@ -734,14 +756,18 @@ describe('data-feed', () => {
 
       await timeTravel(fixture.context, 3601n);
 
-      await updateManualFeedGrowthPrice(fixture, {
-        baseFeed,
-        price: parseUnits('1.001'),
-        growthApr: parseUnits('-0.01'),
-        isSafe: true,
-      }, {
-        revertedWith: DataFeedError.InvalidGrowthApr,
-      });
+      await updateManualFeedGrowthPrice(
+        fixture,
+        {
+          baseFeed,
+          price: parseUnits('1.001'),
+          growthApr: parseUnits('-0.01'),
+          isSafe: true,
+        },
+        {
+          revertedWith: DataFeedError.InvalidGrowthApr,
+        },
+      );
     });
 
     it('should fail: update growth price (safe) when 1h is not passed since last update', async () => {
@@ -759,13 +785,17 @@ describe('data-feed', () => {
 
       await timeTravel(fixture.context, 100n);
 
-      await updateManualFeedGrowthPrice(fixture, {
-        baseFeed,
-        price: parseUnits('1.01'),
-        isSafe: true,
-      }, {
-        revertedWith: DataFeedError.NotEnoughTimeHasPassedSinceLastUpdate,
-      });
+      await updateManualFeedGrowthPrice(
+        fixture,
+        {
+          baseFeed,
+          price: parseUnits('1.01'),
+          isSafe: true,
+        },
+        {
+          revertedWith: DataFeedError.NotEnoughTimeHasPassedSinceLastUpdate,
+        },
+      );
     });
   });
 
@@ -1042,19 +1072,19 @@ describe('data-feed', () => {
     });
   });
 
-  describe("Chainlink underlying ", () => {
-    it("when underlying Chainlink feed is valid", async () => {
+  describe('Chainlink underlying ', () => {
+    it('when underlying Chainlink feed is valid', async () => {
       const fixture = await vaultsFixture();
 
       const feed = await createNewFeed(fixture, {
-        mode: "chainlink",
+        mode: 'chainlink',
         underlyingFeed: fixture.mockedFeeds.chainlink.account,
         maxPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()),
         maxStaleness: 5 * 60,
       });
 
       await updateFeed(fixture, {
-        mode: "chainlink",
+        mode: 'chainlink',
         underlyingFeed: fixture.mockedFeeds.chainlink.account,
         maxPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()),
         maxStaleness: 5 * 60,
@@ -1067,25 +1097,22 @@ describe('data-feed', () => {
       });
 
       // align clock with embedded chainlink timestamp to avoid staleness
-      await setClockTime(
-        fixture.context,
-        BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs)
-      );
+      await setClockTime(fixture.context, BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs));
 
       await mintInstant(
         fixture,
         { minReceiveAmount: 0n },
         {},
         // do not assert exact minted amount; just ensure success
-        undefined
+        undefined,
       );
     });
 
-    it("should fail: when underlying Chainlink feed is stale", async () => {
+    it('should fail: when underlying Chainlink feed is stale', async () => {
       const fixture = await vaultsFixture();
 
       const feed = await createNewFeed(fixture, {
-        mode: "chainlink",
+        mode: 'chainlink',
         underlyingFeed: fixture.mockedFeeds.chainlink.account,
         maxPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()),
         maxStaleness: 5 * 60,
@@ -1100,7 +1127,7 @@ describe('data-feed', () => {
       // move clock beyond maxStaleness
       await setClockTime(
         fixture.context,
-        BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs + 301)
+        BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs + 301),
       );
 
       await mintInstant(fixture, { minReceiveAmount: 0n }, {}, undefined, {
@@ -1108,14 +1135,13 @@ describe('data-feed', () => {
       });
     });
 
-    it("should fail: when price is > max price", async () => {
+    it('should fail: when price is > max price', async () => {
       const fixture = await vaultsFixture();
 
       const feed = await createNewFeed(fixture, {
-        mode: "chainlink",
+        mode: 'chainlink',
         underlyingFeed: fixture.mockedFeeds.chainlink.account,
-        maxPrice:
-          parseUnits(fixture.mockedFeeds.chainlink.price.toString()) - 1n,
+        maxPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()) - 1n,
         maxStaleness: 5 * 60,
       });
 
@@ -1125,26 +1151,21 @@ describe('data-feed', () => {
         dataFeed: feed.publicKey,
       });
 
-      await setClockTime(
-        fixture.context,
-        BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs)
-      );
+      await setClockTime(fixture.context, BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs));
 
       await mintInstant(fixture, { minReceiveAmount: 0n }, {}, undefined, {
         revertedWith: DataFeedError.PriceIsHigherThanMax,
       });
     });
 
-    it("should fail: when price is < min price", async () => {
+    it('should fail: when price is < min price', async () => {
       const fixture = await vaultsFixture();
 
       const feed = await createNewFeed(fixture, {
-        mode: "chainlink",
+        mode: 'chainlink',
         underlyingFeed: fixture.mockedFeeds.chainlink.account,
-        maxPrice:
-          parseUnits(fixture.mockedFeeds.chainlink.price.toString()) + 2n,
-        minPrice:
-          parseUnits(fixture.mockedFeeds.chainlink.price.toString()) + 1n,
+        maxPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()) + 2n,
+        minPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()) + 1n,
         maxStaleness: 5 * 60,
       });
 
@@ -1154,10 +1175,7 @@ describe('data-feed', () => {
         dataFeed: feed.publicKey,
       });
 
-      await setClockTime(
-        fixture.context,
-        BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs)
-      );
+      await setClockTime(fixture.context, BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs));
 
       await mintInstant(fixture, { minReceiveAmount: 0n }, {}, undefined, {
         revertedWith: DataFeedError.PriceIsLowerThanMin,

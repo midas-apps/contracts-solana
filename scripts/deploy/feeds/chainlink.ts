@@ -1,6 +1,11 @@
 import { PublicKey } from '@solana/web3.js';
 
-import { deployDataFeed, DeployDataFeedConfig, CommonParams, DeployDataFeedBaseConfig } from '../dataFeed';
+import {
+  deployDataFeed,
+  DeployDataFeedConfig,
+  CommonParams,
+  DeployDataFeedBaseConfig,
+} from '../dataFeed';
 
 export interface DeployChainlinkFeedParams {
   underlyingFeed: PublicKey;

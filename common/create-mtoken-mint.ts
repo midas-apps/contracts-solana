@@ -18,9 +18,9 @@ import {
   Connection,
   Signer,
 } from '@solana/web3.js';
+import { FailedTransactionMetadata, TransactionMetadata } from 'litesvm';
 
 import { sendAndWaitForCustomSolanaTxSign, TxSignMetadata } from './solanaTxHelper';
-import { FailedTransactionMetadata, TransactionMetadata } from 'litesvm';
 
 // Define the extensions to be used by the mint
 const extensions = [ExtensionType.PermanentDelegate, ExtensionType.MetadataPointer];

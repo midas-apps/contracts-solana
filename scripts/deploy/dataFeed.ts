@@ -34,13 +34,13 @@ export interface DeployDataFeedBaseConfig {
  */
 export type DeployDataFeedConfig =
   | (DeployDataFeedBaseConfig & {
-    mode: 'manual' | 'manualGrowth' | 'switchboard';
-    underlyingFeed?: PublicKey;
-  })
+      mode: 'manual' | 'manualGrowth' | 'switchboard';
+      underlyingFeed?: PublicKey;
+    })
   | (DeployDataFeedBaseConfig & {
-    mode: 'pyth' | 'chainlink';
-    underlyingFeed: PublicKey;
-  });
+      mode: 'pyth' | 'chainlink';
+      underlyingFeed: PublicKey;
+    });
 
 export const deployDataFeed = async (common: CommonParams, config: DeployDataFeedConfig) => {
   const {

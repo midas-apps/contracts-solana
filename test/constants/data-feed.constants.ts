@@ -11,7 +11,7 @@ export const DATA_FEED_SEEDS = {
 
 export const SWITCHBOARD_FEEDS = {};
 
-export enum DataFeedMode { }
+export enum DataFeedMode {}
 
 export const DATA_FEED_AC_ROLES = {
   FEED_ADMIN: 'data_feed_admin',

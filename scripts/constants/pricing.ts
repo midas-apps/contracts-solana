@@ -12,7 +12,6 @@ import { MAX_U128 } from '@/test/constants/common.constants';
  */
 export const PRICE_DECIMALS = 9;
 
-
 /**
  * Number of decimal places used for manual price representation
  * Prices are stored as integers with 8 decimal places

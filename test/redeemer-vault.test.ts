@@ -39,7 +39,7 @@ import {
   updateVaultCommon,
   updateVaultCommonAccount,
 } from './testers/common-vaults.testers';
-import { updateFeed, updateManualFeed, updateManualFeedPrice } from './testers/data-feed.testers';
+import { updateFeed, updateManualFeedPrice } from './testers/data-feed.testers';
 import {
   approveRedeemRequest,
   mintPaymentTokenAndApprove,

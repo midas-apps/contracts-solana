@@ -127,9 +127,15 @@ export const migrateMinterVaultStateToV2 = async (
   const minterVault = getMinterVaultPda(commonVault);
 
   const minterVaultStateBefore = await fixture.provider.connection.getAccountInfo(minterVault);
-  const dataWithMaxSupplyCapRaw = Buffer.concat([minterVaultStateBefore.data, toBN(0n).toBuffer('le')]);
+  const dataWithMaxSupplyCapRaw = Buffer.concat([
+    minterVaultStateBefore.data,
+    toBN(0n).toBuffer('le'),
+  ]);
 
-  const stateBefore = await vaultsProgram.account.minterVaultState.coder.accounts.decode('minterVaultState', dataWithMaxSupplyCapRaw) as Awaited<ReturnType<typeof fetchMinterVaultState>>;
+  const stateBefore = (await vaultsProgram.account.minterVaultState.coder.accounts.decode(
+    'minterVaultState',
+    dataWithMaxSupplyCapRaw,
+  )) as Awaited<ReturnType<typeof fetchMinterVaultState>>;
 
   const tx = await vaultsProgram.methods
     .migrateMinterVaultStateToV2()
@@ -149,7 +155,9 @@ export const migrateMinterVaultStateToV2 = async (
 
   const stateAfter = await fetchMinterVaultState(vaultsProgram, minterVault);
 
-  expect(fromBN(stateAfter.firstDepositMinMTokens)).toEqual(fromBN(stateBefore.firstDepositMinMTokens));
+  expect(fromBN(stateAfter.firstDepositMinMTokens)).toEqual(
+    fromBN(stateBefore.firstDepositMinMTokens),
+  );
   expect(stateAfter.mintAuthorityPda.equals(stateBefore.mintAuthorityPda)).toBe(true);
   expect(stateAfter.commonVault.equals(commonVault)).toBe(true);
 
@@ -438,12 +446,12 @@ export const mintInstant = async (
 
   expect(stateAfter.balanceFeeReceiverPaymentMint).toEqual(
     stateBefore.balanceFeeReceiverPaymentMint +
-    parseUnits((expected?.fee ?? 0).toString(), paymentMint.decimals),
+      parseUnits((expected?.fee ?? 0).toString(), paymentMint.decimals),
   );
 
   expect(stateAfter.balanceTokensReceiverPaymentMint).toEqual(
     stateBefore.balanceTokensReceiverPaymentMint +
-    parseUnits((amountToken - (expected?.fee ?? 0)).toString(), paymentMint.decimals),
+      parseUnits((amountToken - (expected?.fee ?? 0)).toString(), paymentMint.decimals),
   );
 
   return { stateAfter, unixTimestamp };
@@ -653,12 +661,12 @@ export const mintRequest = async (
 
   expect(stateAfter.balanceFeeReceiverPaymentMint).toEqual(
     stateBefore.balanceFeeReceiverPaymentMint +
-    parseUnits((expected?.fee ?? 0).toString(), paymentMint.decimals),
+      parseUnits((expected?.fee ?? 0).toString(), paymentMint.decimals),
   );
 
   expect(stateAfter.balanceTokensReceiverPaymentMint).toEqual(
     stateBefore.balanceTokensReceiverPaymentMint +
-    parseUnits((amountToken - (expected?.fee ?? 0)).toString(), paymentMint.decimals),
+      parseUnits((amountToken - (expected?.fee ?? 0)).toString(), paymentMint.decimals),
   );
 
   return { stateAfter };

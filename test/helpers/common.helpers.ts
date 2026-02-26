@@ -1,4 +1,4 @@
-import { Idl, Program, web3 } from '@coral-xyz/anchor';
+import { Idl, Program } from '@coral-xyz/anchor';
 import * as anchor from '@coral-xyz/anchor';
 import {
   createApproveInstruction,
@@ -29,7 +29,7 @@ import {
   FailedTransactionMetadata,
   LiteSVM,
   SimulatedTransactionInfo,
-  TransactionMetadata
+  TransactionMetadata,
 } from 'litesvm';
 import { parseUnits as parseUnitsViem, formatUnits as formatUnitsViem } from 'viem';
 
@@ -40,9 +40,10 @@ import { TokenAuthority } from '@/target/types/token_authority';
 
 import { DEFAULT_PUBKEY } from '../constants/common.constants';
 import { SQUADS_PROGRAM_ID } from '../constants/squads.constant';
+
 import { fromWorkspace, LiteSVMProvider } from './lite-svm';
 
-const TESTS_LOG_LEVEL = process.env.TESTS_LOG_LEVEL as 'error' | 'debug' || 'error';
+const TESTS_LOG_LEVEL = (process.env.TESTS_LOG_LEVEL as 'error' | 'debug') || 'error';
 
 export interface OptionalCommonParams {
   from?: Keypair;
@@ -60,11 +61,11 @@ export function numToHex(decimalCode: number): string {
   return hexCode;
 }
 
-export type InitLiteSVMReturnType = {
+export interface InitLiteSVMReturnType {
   context: LiteSVM;
   provider: LiteSVMProvider;
   accounts: Keypair[];
-};
+}
 
 let bunrunReturnCache: InitLiteSVMReturnType | null = null;
 
@@ -80,10 +81,16 @@ export const initLiteSVM = async (numAccounts = 10, initSlot?: bigint, cacheCont
     accounts.push(keypair);
   }
 
-  const context = fromWorkspace('.', [{
-    name: 'external/squads',
-    programId: SQUADS_PROGRAM_ID,
-  }], [...accounts]);
+  const context = fromWorkspace(
+    '.',
+    [
+      {
+        name: 'external/squads',
+        programId: SQUADS_PROGRAM_ID,
+      },
+    ],
+    [...accounts],
+  );
 
   if (initSlot) {
     await warpToSlot(context, initSlot);
@@ -169,9 +176,11 @@ export const expectEvents = async <TProgram extends Idl>(
 ) => {
   const parser = new anchor.EventParser(program.programId, new anchor.BorshCoder(program.idl));
 
-  const logs = Array.isArray(txResult) ? txResult :
-    txResult instanceof FailedTransactionMetadata ?
-      txResult.meta().logs() : txResult.logs();
+  const logs = Array.isArray(txResult)
+    ? txResult
+    : txResult instanceof FailedTransactionMetadata
+      ? txResult.meta().logs()
+      : txResult.logs();
 
   const events = parser.parseLogs(logs);
 
@@ -227,7 +236,7 @@ export const expectTxNotReverted = async (
   try {
     return await processTransaction(ctx, transaction, signers);
   } catch (err) {
-    console.log(err)
+    console.log(err);
     expect(true, `Expected tx to not revert, but it reverted. Err: ${err.toString()}`).toEqual(
       false,
     );
@@ -238,16 +247,16 @@ export const warpToSlot = async (ctx: LiteSVM, slot: bigint) => {
   ctx.warpToSlot(slot);
 };
 
-const getRequiredSignerKeysVersionedTransaction = (
+export const getRequiredSignerKeysVersionedTransaction = (
   tx: VersionedTransaction,
-  addressLookupTableAccounts?: AddressLookupTableAccount[] | null
+  addressLookupTableAccounts?: AddressLookupTableAccount[] | null,
 ): PublicKey[] => {
   const message = tx.message;
   const accountKeys =
-    "addressTableLookups" in message && message.addressTableLookups?.length
+    'addressTableLookups' in message && message.addressTableLookups?.length
       ? message.getAccountKeys({
-        addressLookupTableAccounts: addressLookupTableAccounts ?? undefined,
-      })
+          addressLookupTableAccounts: addressLookupTableAccounts ?? undefined,
+        })
       : message.getAccountKeys();
 
   const signerKeys = new Set<string>();
@@ -257,23 +266,21 @@ const getRequiredSignerKeysVersionedTransaction = (
       if (key) signerKeys.add(key.toBase58());
     }
   }
-  return Array.from(signerKeys.values()).map(v => new PublicKey(v));
-}
+  return Array.from(signerKeys.values()).map((v) => new PublicKey(v));
+};
 
-const getRequiredSignerKeysTransaction = (
-  tx: Transaction
-) => {
-  const accountKeys = tx.instructions.map(v => v.keys).flat();
+export const getRequiredSignerKeysTransaction = (tx: Transaction) => {
+  const accountKeys = tx.instructions.map((v) => v.keys).flat();
 
   const signerKeys = new Set<string>();
-  for (let account of accountKeys) {
+  for (const account of accountKeys) {
     if (account.isSigner) {
       signerKeys.add(account.pubkey.toBase58());
     }
   }
 
-  return Array.from(signerKeys.values()).map(v => new PublicKey(v));
-}
+  return Array.from(signerKeys.values()).map((v) => new PublicKey(v));
+};
 
 export const processTransaction = async (
   ctx: LiteSVM,
@@ -282,16 +289,22 @@ export const processTransaction = async (
 ) => {
   const signersSet: (Keypair | Signer)[] = [];
 
-  const signersFormatted = signers.map((signer) => signer instanceof Keypair ? {
-    publicKey: signer.publicKey,
-    secretKey: signer.secretKey,
-  } : signer).filter((signer) => {
-    if (!signersSet.some((s) => s.publicKey.equals(signer.publicKey))) {
-      signersSet.push(signer);
-      return true;
-    }
-    return false;
-  });
+  const signersFormatted = signers
+    .map((signer) =>
+      signer instanceof Keypair
+        ? {
+            publicKey: signer.publicKey,
+            secretKey: signer.secretKey,
+          }
+        : signer,
+    )
+    .filter((signer) => {
+      if (!signersSet.some((s) => s.publicKey.equals(signer.publicKey))) {
+        signersSet.push(signer);
+        return true;
+      }
+      return false;
+    });
 
   // Need to generate new blockhash
   ctx.expireBlockhash();
@@ -327,17 +340,25 @@ export const processTransaction = async (
   return res;
 };
 
-const handleProcessedTransaction = (res: FailedTransactionMetadata | TransactionMetadata | SimulatedTransactionInfo) => {
+const handleProcessedTransaction = (
+  res: FailedTransactionMetadata | TransactionMetadata | SimulatedTransactionInfo,
+) => {
   if (res instanceof FailedTransactionMetadata) {
     if (TESTS_LOG_LEVEL === 'debug') {
       console.log(res.meta().logs());
     }
 
-    let panicLog = res.meta().logs().find((log) => log.includes('Program log: panicked at'));
+    let panicLog = res
+      .meta()
+      .logs()
+      .find((log) => log.includes('Program log: panicked at'));
 
     if (!panicLog) {
-      const prefix = "custom program error: ";
-      const line = res.meta().logs().find((line) => line.indexOf(prefix) !== -1);
+      const prefix = 'custom program error: ';
+      const line = res
+        .meta()
+        .logs()
+        .find((line) => line.indexOf(prefix) !== -1);
       const idx = line?.indexOf(prefix);
       panicLog = idx !== -1 ? line?.slice(idx).trim() : null;
     }
@@ -348,7 +369,7 @@ const handleProcessedTransaction = (res: FailedTransactionMetadata | Transaction
       console.log(res.prettyLogs());
     }
   }
-}
+};
 
 export const parseUnits = (n: string, decimals = 9) => {
   return parseUnitsViem(n, decimals);

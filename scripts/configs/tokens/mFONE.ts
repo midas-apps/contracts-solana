@@ -24,7 +24,7 @@ export const mFONEConfig: TokenConfigWithNetworks = {
         maxStaleness: 2592000,
         manual: {
           initialPrice: '1.04757758',
-          maxAnswerDeviation: '0.4'
+          maxAnswerDeviation: '0.4',
         },
       },
       minter: {

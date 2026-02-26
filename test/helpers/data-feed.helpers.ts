@@ -34,6 +34,9 @@ export const getManualFeedStatePda = (feedPda: PublicKey) => {
 };
 
 export const getManualFeedGrowthStatePda = (feedPda: PublicKey) => {
-  const [pda] = findPDA([DATA_FEED_SEEDS.MANUAL_FEED_GROWTH_STATE_SEED, feedPda], DATA_FEED_PROGRAM_ID);
+  const [pda] = findPDA(
+    [DATA_FEED_SEEDS.MANUAL_FEED_GROWTH_STATE_SEED, feedPda],
+    DATA_FEED_PROGRAM_ID,
+  );
   return pda;
 };

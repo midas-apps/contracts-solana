@@ -40,7 +40,13 @@ const ethereumAddressSchema = z.string().refine((val) => /^0x[a-fA-F0-9]{40}$/.t
   message: 'Must be a valid Ethereum address (0x followed by 40 hex characters)',
 });
 
-export const dataFeedModeSchema = z.enum(['switchboard', 'pyth', 'manual', 'manual-growth', 'chainlink']);
+export const dataFeedModeSchema = z.enum([
+  'switchboard',
+  'pyth',
+  'manual',
+  'manual-growth',
+  'chainlink',
+]);
 
 export const switchboardConfigSchema = z.object({
   env: z.enum(['devnet', 'mainnet']),
@@ -143,8 +149,14 @@ export const dataFeedConfigSchema = z
   .refine(
     (data) => {
       // Ensure initialPrice is within [minPrice, maxPrice] when provided
-      if (data?.manual?.initialPrice === undefined && data?.manualGrowth?.initialPrice === undefined) return true;
-      const initial = parseFloat(data?.manual?.initialPrice || data?.manualGrowth?.initialPrice || '0');
+      if (
+        data?.manual?.initialPrice === undefined &&
+        data?.manualGrowth?.initialPrice === undefined
+      )
+        return true;
+      const initial = parseFloat(
+        data?.manual?.initialPrice || data?.manualGrowth?.initialPrice || '0',
+      );
       const min = parseFloat(data.minPrice);
       const max = parseFloat(data.maxPrice);
       return initial >= min && initial <= max;
@@ -286,10 +298,11 @@ export const paymentTokenConfigWithNetworksSchema = z.object({
   networks: z.record(z.string(), paymentTokenNetworkConfigSchema),
 });
 
-export const networkConfigSchema = z.record(z.string(),
+export const networkConfigSchema = z.record(
+  z.string(),
   z.object({
     timelock: timelockConfigSchema.optional(),
-  })
+  }),
 );
 
 export type NetworkConfig = z.infer<typeof networkConfigSchema>;

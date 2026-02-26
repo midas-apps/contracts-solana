@@ -12,7 +12,12 @@ import {
   updateVaultCommon,
   updateVaultCommonAccount,
 } from './testers/common-vaults.testers';
-import { updateFeed, updateManualFeedGrowth, updateManualFeedGrowthPrice, updateManualFeedPrice } from './testers/data-feed.testers';
+import {
+  updateFeed,
+  updateManualFeedGrowth,
+  updateManualFeedGrowthPrice,
+  updateManualFeedPrice,
+} from './testers/data-feed.testers';
 import {
   approveMintRequest,
   migrateMinterVaultStateToV2,
@@ -126,7 +131,9 @@ describe('minter-vault', () => {
       const minterVaultData = await fixture.provider.connection.getAccountInfo(minterVault);
       const dataWithoutMaxSupplyCap = minterVaultData?.data.slice(0, 80);
 
-      const lamports = await fixture.provider.connection.getMinimumBalanceForRentExemption(dataWithoutMaxSupplyCap.length);
+      const lamports = await fixture.provider.connection.getMinimumBalanceForRentExemption(
+        dataWithoutMaxSupplyCap.length,
+      );
 
       fixture.context.setAccount(minterVault, {
         data: dataWithoutMaxSupplyCap,
@@ -149,7 +156,9 @@ describe('minter-vault', () => {
       const minterVaultData = await fixture.provider.connection.getAccountInfo(minterVault);
       const dataWithoutMaxSupplyCap = minterVaultData?.data.slice(0, 80);
 
-      const lamports = await fixture.provider.connection.getMinimumBalanceForRentExemption(dataWithoutMaxSupplyCap.length);
+      const lamports = await fixture.provider.connection.getMinimumBalanceForRentExemption(
+        dataWithoutMaxSupplyCap.length,
+      );
 
       fixture.context.setAccount(minterVault, {
         data: dataWithoutMaxSupplyCap,
@@ -158,11 +167,15 @@ describe('minter-vault', () => {
         lamports,
       });
 
-      await migrateMinterVaultStateToV2(fixture, {
-        commonVault: fixture.minterCommonVault.publicKey,
-      }, {
-        from: fixture.regularAccounts[0],
-      });
+      await migrateMinterVaultStateToV2(
+        fixture,
+        {
+          commonVault: fixture.minterCommonVault.publicKey,
+        },
+        {
+          from: fixture.regularAccounts[0],
+        },
+      );
     });
   });
 
@@ -217,7 +230,7 @@ describe('minter-vault', () => {
         baseFeed: fixture.dataFeedMTBill.publicKey,
         growthApr: parseUnits('5'),
         price: parseUnits('1'),
-        priceTimestampDelta: -100
+        priceTimestampDelta: -100,
       });
 
       await mintInstant(
@@ -252,7 +265,7 @@ describe('minter-vault', () => {
         baseFeed: fixture.dataFeedMTBill.publicKey,
         growthApr: -1n * parseUnits('5'),
         price: parseUnits('1'),
-        priceTimestampDelta: -100
+        priceTimestampDelta: -100,
       });
       await timeTravel(fixture.context, 10n);
 
@@ -275,7 +288,7 @@ describe('minter-vault', () => {
         mode: 'manualGrowth',
         feed: fixture.dataFeedMTBill.publicKey,
         underlyingFeed: fixture.manualUnderlyingFeedGrowthMTBill,
-        maxStaleness: 3600
+        maxStaleness: 3600,
       });
 
       await timeTravel(fixture.context, 3601n);
@@ -283,15 +296,11 @@ describe('minter-vault', () => {
       await updateManualFeedGrowthPrice(fixture, {
         baseFeed: fixture.dataFeedMTBill.publicKey,
         price: parseUnits('1'),
-        priceTimestampDelta: -7200
+        priceTimestampDelta: -7200,
       });
       await timeTravel(fixture.context, 3000n);
 
-      await mintInstant(
-        fixture,
-        {},
-        {},
-      );
+      await mintInstant(fixture, {}, {});
     });
 
     it('when green list enabled and user is in green list', async () => {
@@ -931,18 +940,12 @@ describe('minter-vault', () => {
         baseFeed: fixture.dataFeedMTBill.publicKey,
         growthApr: -1n * parseUnits('90'),
         price: parseUnits('1'),
-        priceTimestampDelta: -10 * 86400
+        priceTimestampDelta: -10 * 86400,
       });
 
-      await mintInstant(
-        fixture,
-        {},
-        {},
-        undefined,
-        {
-          revertedWith: DataFeedError.PriceIsLowerThanMin,
-        }
-      );
+      await mintInstant(fixture, {}, {}, undefined, {
+        revertedWith: DataFeedError.PriceIsLowerThanMin,
+      });
     });
 
     it('should fail: mint instant with manual feed growth with growth apr set to 90%, timestamp is 10d in past and price exceeds max bound', async () => {
@@ -967,18 +970,12 @@ describe('minter-vault', () => {
         baseFeed: fixture.dataFeedMTBill.publicKey,
         growthApr: parseUnits('90'),
         price: parseUnits('1'),
-        priceTimestampDelta: -10 * 86400
+        priceTimestampDelta: -10 * 86400,
       });
 
-      await mintInstant(
-        fixture,
-        {},
-        {},
-        undefined,
-        {
-          revertedWith: DataFeedError.PriceIsHigherThanMax,
-        }
-      );
+      await mintInstant(fixture, {}, {}, undefined, {
+        revertedWith: DataFeedError.PriceIsHigherThanMax,
+      });
     });
 
     it('should fail: mint instant with manual feed growth when price is stale', async () => {
@@ -989,7 +986,7 @@ describe('minter-vault', () => {
         mode: 'manualGrowth',
         feed: fixture.dataFeedMTBill.publicKey,
         underlyingFeed: fixture.manualUnderlyingFeedGrowthMTBill,
-        maxStaleness: 100
+        maxStaleness: 100,
       });
 
       await timeTravel(fixture.context, 3601n);
@@ -998,20 +995,14 @@ describe('minter-vault', () => {
         baseFeed: fixture.dataFeedMTBill.publicKey,
         growthApr: parseUnits('5'),
         price: parseUnits('1'),
-        priceTimestampDelta: -100
+        priceTimestampDelta: -100,
       });
 
       await timeTravel(fixture.context, 101n);
 
-      await mintInstant(
-        fixture,
-        {},
-        {},
-        undefined,
-        {
-          revertedWith: DataFeedError.PriceIsStale,
-        }
-      );
+      await mintInstant(fixture, {}, {}, undefined, {
+        revertedWith: DataFeedError.PriceIsStale,
+      });
     });
 
     it('mint instant with exact cap match', async () => {

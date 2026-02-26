@@ -10,7 +10,7 @@ import { initLiteSVM, InitLiteSVMReturnType, processTransaction } from '../helpe
 import { generateAcAccount } from '../helpers/vaults.helpers';
 
 export const acFixture = async (fixture?: InitLiteSVMReturnType, initSlot?: bigint) => {
-  const { provider, context, accounts } = fixture ?? await initLiteSVM(10, initSlot);
+  const { provider, context, accounts } = fixture ?? (await initLiteSVM(10, initSlot));
   const [authority, ...regularAccounts] = accounts;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

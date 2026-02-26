@@ -1,7 +1,7 @@
 import { createUserError } from '@/common/errorHandler';
 
-import { NetworkConfig, networkConfigSchema} from './types';
 import { networkConfigs } from './network-config';
+import { NetworkConfig, networkConfigSchema } from './types';
 
 export function loadNetworkConfig(network: string): NetworkConfig[string] {
   const config = networkConfigSchema.parse(networkConfigs);

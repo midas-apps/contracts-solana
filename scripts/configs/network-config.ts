@@ -1,4 +1,4 @@
-import { NetworkConfig } from "./types";
+import { NetworkConfig } from './types';
 
 export const networkConfigs: NetworkConfig = {
   devnet: {

@@ -6,7 +6,10 @@ import { AC_ROLES } from '@/test/constants/ac.constants';
 import { DATA_FEED_AC_ROLES } from '@/test/constants/data-feed.constants';
 import { getAccountAcRoleStatePda, acRoleToBuffer } from '@/test/helpers/ac.helpers';
 import { toBN } from '@/test/helpers/common.helpers';
-import { getManualFeedGrowthStatePda, getManualFeedStatePda } from '@/test/helpers/data-feed.helpers';
+import {
+  getManualFeedGrowthStatePda,
+  getManualFeedStatePda,
+} from '@/test/helpers/data-feed.helpers';
 
 import { getAcProgram } from '../ac';
 import {
@@ -149,7 +152,6 @@ export async function deployManualFeed(
 
   return await deployDataFeed(common, config);
 }
-
 
 /**
  * Deploy a data feed using manual feed mode

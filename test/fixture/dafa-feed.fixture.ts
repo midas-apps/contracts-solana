@@ -8,7 +8,14 @@ import DATA_FEED_IDL from '../../target/idl/data_feed.json' with { type: 'json' 
 import { AC_ROLES } from '../constants/ac.constants';
 import { DATA_FEED_AC_ROLES } from '../constants/data-feed.constants';
 import { acRoleToBuffer, getAccountAcRoleStatePda } from '../helpers/ac.helpers';
-import { formatUnits, getTime, InitLiteSVMReturnType, parseUnits, processTransaction, toBN } from '../helpers/common.helpers';
+import {
+  formatUnits,
+  getTime,
+  InitLiteSVMReturnType,
+  parseUnits,
+  processTransaction,
+  toBN,
+} from '../helpers/common.helpers';
 import {
   DataFeedMode,
   generateFeedAcccount,
@@ -44,8 +51,8 @@ const initMockedFeeds = async (context: LiteSVM) => {
   const chainlinkHealthyFeed = [
     Keypair.generate(),
     Buffer.from(
-      "YLNFQoCBSXUCAZnJra7sYZIu5E6pd0qvi+y5Fd9sZVr/6Cm3RMr8b2YSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFVTREMgLyBVU0QgICAgICAgICAgICAgICAgICAgICAgCAAAAAABAAAAAQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADNcA2kAAAAAwJ7mBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      "base64"
+      'YLNFQoCBSXUCAZnJra7sYZIu5E6pd0qvi+y5Fd9sZVr/6Cm3RMr8b2YSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFVTREMgLyBVU0QgICAgICAgICAgICAgICAgICAgICAgCAAAAAABAAAAAQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADNcA2kAAAAAwJ7mBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+      'base64',
     ),
     1761827891,
   ] as const;
@@ -64,7 +71,7 @@ const initMockedFeeds = async (context: LiteSVM) => {
     executable: false,
     // Chainlink v2 SDK checks the owner is the Chainlink OCR2 program id,
     // so we must set the real program id here or parsing will fail.
-    owner: new PublicKey("HEvSKofvBgfaexv23kMabbYqxasxU3mQ4ibBMEmJWHny"),
+    owner: new PublicKey('HEvSKofvBgfaexv23kMabbYqxasxU3mQ4ibBMEmJWHny'),
     lamports: 10000,
     data: chainlinkHealthyFeed[1],
   });
@@ -205,7 +212,7 @@ export const dataFeedFixture = async (fixture?: InitLiteSVMReturnType, initSlot?
           toBN(parseUnits('1', 2)),
           toBN(minGrowthApr),
           toBN(maxGrowthApr),
-          onlyUp
+          onlyUp,
         )
         .accountsPartial({
           baseFeed: feed.publicKey,
@@ -235,11 +242,15 @@ export const dataFeedFixture = async (fixture?: InitLiteSVMReturnType, initSlot?
     maxPrice: parseUnits('1.05'),
   });
 
-  const manualUnderlyingFeedGrowthMTBill = await createManualUnderlyingFeedGrowth(dataFeedMTBill, acRoleMTbill.publicKey, {
-    minGrowthApr: parseUnits('0'),
-    maxGrowthApr: parseUnits('10'),
-    onlyUp: false,
-  });
+  const manualUnderlyingFeedGrowthMTBill = await createManualUnderlyingFeedGrowth(
+    dataFeedMTBill,
+    acRoleMTbill.publicKey,
+    {
+      minGrowthApr: parseUnits('0'),
+      maxGrowthApr: parseUnits('10'),
+      onlyUp: false,
+    },
+  );
 
   return {
     ...acF,

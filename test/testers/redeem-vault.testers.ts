@@ -516,42 +516,42 @@ export const redeemRequest = async (
 
   const tx = isFiat
     ? await vaultsProgram.methods
-      .redeemRequestFiat(toBN(amountMToken))
-      .accountsPartial({
-        ...baseAccounts,
-        mMintFeed: stateBefore.mMintFeed.underlyingFeed,
-        mMintDataFeed: stateBefore.commonVaultState.mMintFeed,
-        signer: from.publicKey,
-        redeemRequest: getRedeemerVaultRequestPda(
-          getRedeemerVaultPda(baseAccounts.vaultCommon),
-          fromBN(stateBefore.commonVaultState.requestsCount),
-        ),
-        mMint: stateBefore.commonVaultState.mMint,
-        mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
-        accountAc: getAccountAcStatePda(baseAccounts.ac, from.publicKey),
-      })
-      .transaction()
+        .redeemRequestFiat(toBN(amountMToken))
+        .accountsPartial({
+          ...baseAccounts,
+          mMintFeed: stateBefore.mMintFeed.underlyingFeed,
+          mMintDataFeed: stateBefore.commonVaultState.mMintFeed,
+          signer: from.publicKey,
+          redeemRequest: getRedeemerVaultRequestPda(
+            getRedeemerVaultPda(baseAccounts.vaultCommon),
+            fromBN(stateBefore.commonVaultState.requestsCount),
+          ),
+          mMint: stateBefore.commonVaultState.mMint,
+          mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
+          accountAc: getAccountAcStatePda(baseAccounts.ac, from.publicKey),
+        })
+        .transaction()
     : await vaultsProgram.methods
-      .redeemRequest(toBN(amountMToken))
-      .accountsPartial({
-        ...baseAccounts,
+        .redeemRequest(toBN(amountMToken))
+        .accountsPartial({
+          ...baseAccounts,
 
-        mMintFeed: stateBefore.mMintFeed.underlyingFeed,
-        mMintDataFeed: stateBefore.commonVaultState.mMintFeed,
-        signer: from.publicKey,
-        paymentMint: paymentMint.mint,
-        paymentMintDataFeed: stateBefore.paymentTokenState.dataFeed,
-        paymentMintFeed: stateBefore.paymentTokenFeed.underlyingFeed,
-        paymentMintTokenProgram: TOKEN_PROGRAM_ID,
-        redeemRequest: getRedeemerVaultRequestPda(
-          getRedeemerVaultPda(baseAccounts.vaultCommon),
-          fromBN(stateBefore.commonVaultState.requestsCount),
-        ),
-        mMint: stateBefore.commonVaultState.mMint,
-        mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
-        accountAc: getAccountAcStatePda(baseAccounts.ac, from.publicKey),
-      })
-      .transaction();
+          mMintFeed: stateBefore.mMintFeed.underlyingFeed,
+          mMintDataFeed: stateBefore.commonVaultState.mMintFeed,
+          signer: from.publicKey,
+          paymentMint: paymentMint.mint,
+          paymentMintDataFeed: stateBefore.paymentTokenState.dataFeed,
+          paymentMintFeed: stateBefore.paymentTokenFeed.underlyingFeed,
+          paymentMintTokenProgram: TOKEN_PROGRAM_ID,
+          redeemRequest: getRedeemerVaultRequestPda(
+            getRedeemerVaultPda(baseAccounts.vaultCommon),
+            fromBN(stateBefore.commonVaultState.requestsCount),
+          ),
+          mMint: stateBefore.commonVaultState.mMint,
+          mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
+          accountAc: getAccountAcStatePda(baseAccounts.ac, from.publicKey),
+        })
+        .transaction();
 
   if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);
@@ -760,46 +760,46 @@ export const approveRedeemRequest = async (
 
   const tx = isFiat
     ? await vaultsProgram.methods
-      .approveRedeemRequestFiat(toBN(requestId), toBN(newRate), isSafe)
-      .accountsPartial({
-        ...baseAccounts,
-        authority: from.publicKey,
-        redeemRequest: getRedeemerVaultRequestPda(
-          getRedeemerVaultPda(baseAccounts.vaultCommon),
-          requestId,
-        ),
-        userAccount: user,
-        mMint: stateBefore.commonVaultState.mMint,
-        mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
-        authorityAcRole: getAccountAcRoleStatePda(
-          stateBefore.commonVaultState.acRole,
-          from.publicKey,
-          VAULT_AC_ROLES.VAULT_ADMIN,
-        ),
-      })
-      .transaction()
+        .approveRedeemRequestFiat(toBN(requestId), toBN(newRate), isSafe)
+        .accountsPartial({
+          ...baseAccounts,
+          authority: from.publicKey,
+          redeemRequest: getRedeemerVaultRequestPda(
+            getRedeemerVaultPda(baseAccounts.vaultCommon),
+            requestId,
+          ),
+          userAccount: user,
+          mMint: stateBefore.commonVaultState.mMint,
+          mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
+          authorityAcRole: getAccountAcRoleStatePda(
+            stateBefore.commonVaultState.acRole,
+            from.publicKey,
+            VAULT_AC_ROLES.VAULT_ADMIN,
+          ),
+        })
+        .transaction()
     : await vaultsProgram.methods
-      .approveRedeemRequest(toBN(requestId), toBN(newRate), isSafe, safeValidateLiquidity)
-      .accountsPartial({
-        ...baseAccounts,
-        authority: from.publicKey,
-        redeemRequest: getRedeemerVaultRequestPda(
-          getRedeemerVaultPda(baseAccounts.vaultCommon),
-          requestId,
-        ),
-        userAccount: user,
-        mMint: stateBefore.commonVaultState.mMint,
-        mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
-        paymentMint: stateBefore.requestState.paymentMint,
-        paymentMintTokenProgram: TOKEN_PROGRAM_ID,
-        requestRedeemer: stateBefore.redeemerVaultState.requestRedeemer,
-        authorityAcRole: getAccountAcRoleStatePda(
-          stateBefore.commonVaultState.acRole,
-          from.publicKey,
-          VAULT_AC_ROLES.VAULT_ADMIN,
-        ),
-      })
-      .transaction();
+        .approveRedeemRequest(toBN(requestId), toBN(newRate), isSafe, safeValidateLiquidity)
+        .accountsPartial({
+          ...baseAccounts,
+          authority: from.publicKey,
+          redeemRequest: getRedeemerVaultRequestPda(
+            getRedeemerVaultPda(baseAccounts.vaultCommon),
+            requestId,
+          ),
+          userAccount: user,
+          mMint: stateBefore.commonVaultState.mMint,
+          mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
+          paymentMint: stateBefore.requestState.paymentMint,
+          paymentMintTokenProgram: TOKEN_PROGRAM_ID,
+          requestRedeemer: stateBefore.redeemerVaultState.requestRedeemer,
+          authorityAcRole: getAccountAcRoleStatePda(
+            stateBefore.commonVaultState.acRole,
+            from.publicKey,
+            VAULT_AC_ROLES.VAULT_ADMIN,
+          ),
+        })
+        .transaction();
 
   if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);
@@ -820,7 +820,7 @@ export const approveRedeemRequest = async (
   if (fromBN(stateBefore.paymentTokenState.allowance) !== MAX_U128) {
     expect(fromBN(stateAfter.paymentTokenState.allowance)).toEqual(
       fromBN(stateBefore.paymentTokenState.allowance) -
-      parseUnits((expected.tokensReceived ?? 0n).toString()),
+        parseUnits((expected.tokensReceived ?? 0n).toString()),
     );
   }
 
@@ -1037,7 +1037,7 @@ export const safeApproveRedeemRequestAtCurrentRate = async (
   if (fromBN(stateBefore.paymentTokenState.allowance) !== MAX_U128) {
     expect(fromBN(stateAfter.paymentTokenState.allowance)).toEqual(
       fromBN(stateBefore.paymentTokenState.allowance) -
-      parseUnits((expected.tokensReceived ?? 0n).toString()),
+        parseUnits((expected.tokensReceived ?? 0n).toString()),
     );
   }
 
@@ -1252,7 +1252,7 @@ export const safeApproveRedeemRequestAtRequestRate = async (
   if (fromBN(stateBefore.paymentTokenState.allowance) !== MAX_U128) {
     expect(fromBN(stateAfter.paymentTokenState.allowance)).toEqual(
       fromBN(stateBefore.paymentTokenState.allowance) -
-      parseUnits((expected.tokensReceived ?? 0n).toString()),
+        parseUnits((expected.tokensReceived ?? 0n).toString()),
     );
   }
 

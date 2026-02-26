@@ -1,6 +1,11 @@
 import { PublicKey } from '@solana/web3.js';
 
-import { deployDataFeed, DeployDataFeedConfig, CommonParams, DeployDataFeedBaseConfig } from '../dataFeed';
+import {
+  deployDataFeed,
+  DeployDataFeedConfig,
+  CommonParams,
+  DeployDataFeedBaseConfig,
+} from '../dataFeed';
 
 export interface DeployPythFeedParams {
   underlyingFeed: PublicKey;
@@ -18,7 +23,7 @@ export async function deployPythFeed(
   const config: DeployDataFeedConfig = {
     ...paramsCommon,
     mode: 'pyth',
-    underlyingFeed: params.underlyingFeed
+    underlyingFeed: params.underlyingFeed,
   };
 
   return await deployDataFeed(common, config);

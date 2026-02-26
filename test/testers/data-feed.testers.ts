@@ -1,5 +1,6 @@
 import { Keypair, PublicKey } from '@solana/web3.js';
 
+import { MAX_U64 } from '../constants/common.constants';
 import { DATA_FEED_AC_ROLES } from '../constants/data-feed.constants';
 import { DataFeedFixtureReturnType } from '../fixture/dafa-feed.fixture';
 import { getAccountAcRoleStatePda } from '../helpers/ac.helpers';
@@ -23,7 +24,6 @@ import {
   getManualFeedGrowthStatePda,
   getManualFeedStatePda,
 } from '../helpers/data-feed.helpers';
-import { MAX_U64 } from '../constants/common.constants';
 
 type CommonDataFeedParams = DataFeedFixtureReturnType;
 
@@ -106,7 +106,6 @@ export const createNewFeed = async (
 
   return feed;
 };
-
 
 export const updateFeed = async (
   fixture: CommonDataFeedParams,
@@ -294,13 +293,19 @@ export const migrateManualFeedToV2 = async (
 
   const stateBefore = await fixture.provider.connection.getAccountInfo(feedPda);
   const dataWithMaxSupplyCapRaw = Buffer.concat([stateBefore.data, toBN(0n).toBuffer('le')]);
-  const manualFeedStateBefore = await dataFeedProgram.account.manualFeedState.coder.accounts.decode('manualFeedState', dataWithMaxSupplyCapRaw) as Awaited<ReturnType<typeof fetchManualFeedState>>;
+  const manualFeedStateBefore =
+    (await dataFeedProgram.account.manualFeedState.coder.accounts.decode(
+      'manualFeedState',
+      dataWithMaxSupplyCapRaw,
+    )) as Awaited<ReturnType<typeof fetchManualFeedState>>;
 
-  const tx =
-    await dataFeedProgram.methods.migrateManualFeedToV2().accountsPartial({
+  const tx = await dataFeedProgram.methods
+    .migrateManualFeedToV2()
+    .accountsPartial({
       baseFeed: baseFeed,
       payer: from.publicKey,
-    }).transaction();
+    })
+    .transaction();
 
   if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);
@@ -366,7 +371,7 @@ export const createNewManualFeedGrowth = async (
       toBN(maxAnswerDeviation),
       toBN(minGrowthApr),
       toBN(maxGrowthApr),
-      onlyUp
+      onlyUp,
     )
     .accountsPartial({
       baseFeed: baseFeed,
@@ -416,13 +421,12 @@ export const createNewManualFeedGrowth = async (
   expect(feedFetched.onlyUp).toBe(onlyUp);
 };
 
-
 export const updateManualFeed = async (
   fixture: CommonDataFeedParams,
   {
     baseFeed,
     decimals,
-    maxAnswerDeviation
+    maxAnswerDeviation,
   }: {
     baseFeed?: PublicKey;
     decimals?: number;
@@ -501,7 +505,7 @@ export const updateManualFeedGrowth = async (
   }: {
     baseFeed?: PublicKey;
     decimals?: number;
-    maxAnswerDeviation?: bigint
+    maxAnswerDeviation?: bigint;
     minGrowthApr?: bigint;
     maxGrowthApr?: bigint;
     onlyUp?: boolean;
@@ -528,7 +532,7 @@ export const updateManualFeedGrowth = async (
       toBNNullable(maxAnswerDeviation),
       toBNNullable(minGrowthApr),
       toBNNullable(maxGrowthApr),
-      onlyUp
+      onlyUp,
     )
     .accountsPartial({
       baseFeed: baseFeed,
@@ -599,7 +603,6 @@ export const updateManualFeedGrowth = async (
   expect(fromBN(feedFetchedAfter.growthApr)).toBe(fromBN(feedFetchedBefore.growthApr));
 };
 
-
 export const updateManualFeedPrice = async (
   fixture: CommonDataFeedParams,
   {
@@ -651,7 +654,7 @@ export const updateManualFeedPrice = async (
         manualFeed: getManualFeedStatePda(baseFeed),
         decimals: null,
         maxAnswerDeviation: null,
-        price
+        price,
       },
     },
   ]);
@@ -699,12 +702,7 @@ export const updateManualFeedGrowthPrice = async (
   const baseFeedStateBefore = await fetchDataFeedState(dataFeedProgram, baseFeed);
 
   const tx = await dataFeedProgram.methods
-    .updateManualFeedGrowthPrice(
-      toBN(price),
-      priceTimestamp,
-      toBN(growthApr),
-      isSafe
-    )
+    .updateManualFeedGrowthPrice(toBN(price), priceTimestamp, toBN(growthApr), isSafe)
     .accountsPartial({
       baseFeed: baseFeed,
       authority: from.publicKey,
@@ -751,7 +749,6 @@ export const updateManualFeedGrowthPrice = async (
   expect(BigInt(feedFetched.lastUpdatedAt)).toBe(currentTs);
 };
 
-
 export const createDefaultDataFeed = async (fixture: CommonDataFeedParams) => {
   const feed = await createNewFeed(fixture, {});
   await createNewManualFeed(fixture, {
@@ -767,4 +764,3 @@ export const createDefaultManualFeedGrowth = async (fixture: CommonDataFeedParam
   });
   return feed.publicKey;
 };
-

@@ -11,10 +11,10 @@ export interface NetworkAddresses {
   feeds?: Partial<Record<PaymentToken, DataFeed>>;
 }
 
-export type TimelockAddresses = {
+export interface TimelockAddresses {
   multisig: PublicKey;
   vault: PublicKey;
-};
+}
 
 export interface DataFeed {
   token?: PublicKey;
