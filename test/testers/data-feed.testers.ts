@@ -758,7 +758,7 @@ export const createDefaultDataFeed = async (fixture: CommonDataFeedParams) => {
 };
 
 export const createDefaultManualFeedGrowth = async (fixture: CommonDataFeedParams) => {
-  const feed = await createNewFeed(fixture, {});
+  const feed = await createNewFeed(fixture, { mode: 'manualGrowth' });
   await createNewManualFeedGrowth(fixture, {
     baseFeed: feed.publicKey,
   });

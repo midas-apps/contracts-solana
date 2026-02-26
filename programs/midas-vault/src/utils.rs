@@ -247,8 +247,16 @@ pub fn validate_max_supply_cap(
     minter: &MinterVaultState,
     mint_amount: u64,
 ) -> Result<bool> {
-    let new_supply = m_mint
-        .supply
+    validate_max_supply_cap_with_supply(m_mint.supply, minter, mint_amount)
+}
+
+/// Inner logic for max supply cap check
+pub(crate) fn validate_max_supply_cap_with_supply(
+    current_supply: u64,
+    minter: &MinterVaultState,
+    mint_amount: u64,
+) -> Result<bool> {
+    let new_supply = current_supply
         .checked_add(mint_amount)
         .ok_or(MidasVaultsError::ArithmeticOverflow)?;
     Ok(minter.max_supply_cap >= new_supply)
@@ -1228,4 +1236,207 @@ pub fn truncate(value: u128, decimals: u8) -> Result<u128> {
         decimals_conversion::convert_from_base_9(value, decimals)?,
         decimals,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use anchor_lang::prelude::Pubkey;
+    fn default_pubkey() -> Pubkey {
+        Pubkey::new_from_array([0u8; 32])
+    }
+
+    fn vault_common(
+        paused: bool,
+        greenlist_enforced: bool,
+        variation_tolerance: u64,
+        instant_fee: u64,
+    ) -> VaultCommonState {
+        VaultCommonState {
+            ac: default_pubkey(),
+            paused,
+            greenlist_enforced,
+            requests_count: 0,
+            m_mint: default_pubkey(),
+            m_mint_feed: default_pubkey(),
+            ac_role: default_pubkey(),
+            tokens_receiver: default_pubkey(),
+            fee_receiver: default_pubkey(),
+            instant_fee,
+            instant_daily_limit: 0,
+            variation_tolerance,
+            min_amount: 0,
+            instant_last_day: 0,
+            instant_daily_limit_used: 0,
+        }
+    }
+
+    fn account_ac(green_listed: bool, black_listed: bool) -> AccountAccessControlState {
+        AccountAccessControlState {
+            green_listed,
+            black_listed,
+        }
+    }
+
+    fn pause_inx(paused: bool) -> PauseInxState {
+        PauseInxState { paused }
+    }
+
+    fn minter_vault_state(max_supply_cap: u64) -> MinterVaultState {
+        MinterVaultState {
+            first_deposit_min_m_tokens: 0,
+            common_vault: default_pubkey(),
+            mint_authority_pda: default_pubkey(),
+            max_supply_cap,
+        }
+    }
+
+    #[test]
+    fn test_validate_green_listed_skips_when_both_false() {
+        let common = vault_common(false, false, 0, 0);
+        let ac = account_ac(false, false);
+        assert!(validate_green_listed(&common, &ac, false).is_ok());
+    }
+
+    #[test]
+    fn test_validate_green_listed_requires_when_enforced() {
+        let common = vault_common(false, true, 0, 0);
+        let ac = account_ac(false, false);
+        assert!(validate_green_listed(&common, &ac, false).is_err());
+        let ac = account_ac(true, false);
+        assert!(validate_green_listed(&common, &ac, false).is_ok());
+    }
+
+    #[test]
+    fn test_validate_green_listed_requires_when_require_green_list_true() {
+        let common = vault_common(false, false, 0, 0);
+        let ac = account_ac(false, false);
+        assert!(validate_green_listed(&common, &ac, true).is_err());
+        let ac = account_ac(true, false);
+        assert!(validate_green_listed(&common, &ac, true).is_ok());
+    }
+
+    #[test]
+    fn test_validate_black_listed_ok_when_not_blacklisted() {
+        let ac = account_ac(true, false);
+        assert!(validate_black_listed(&ac).is_ok());
+    }
+
+    #[test]
+    fn test_validate_black_listed_err_when_blacklisted() {
+        let ac = account_ac(true, true);
+        assert!(validate_black_listed(&ac).is_err());
+    }
+
+    #[test]
+    fn test_validate_paused_ok_when_not_paused() {
+        let common = vault_common(false, false, 0, 0);
+        let pause_inx = pause_inx(false);
+        assert!(validate_paused(&common, &pause_inx).is_ok());
+    }
+
+    #[test]
+    fn test_validate_paused_err_when_vault_paused() {
+        let common = vault_common(true, false, 0, 0);
+        let pause_inx = pause_inx(false);
+        assert!(validate_paused(&common, &pause_inx).is_err());
+    }
+
+    #[test]
+    fn test_validate_paused_err_when_inx_paused() {
+        let common = vault_common(false, false, 0, 0);
+        let pause_inx = pause_inx(true);
+        assert!(validate_paused(&common, &pause_inx).is_err());
+    }
+
+    #[test]
+    fn test_validate_common_ok_when_all_pass() {
+        let common = vault_common(false, false, 0, 0);
+        let ac = account_ac(true, false);
+        let pause_inx = pause_inx(false);
+        assert!(validate_common(&common, &ac, &pause_inx, false).is_ok());
+    }
+
+    #[test]
+    fn test_validate_common_fails_green_list() {
+        let common = vault_common(false, true, 0, 0);
+        let ac = account_ac(false, false);
+        let pause_inx = pause_inx(false);
+        assert!(validate_common(&common, &ac, &pause_inx, false).is_err());
+    }
+
+    #[test]
+    fn test_validate_common_fails_black_list() {
+        let common = vault_common(false, false, 0, 0);
+        let ac = account_ac(true, true);
+        let pause_inx = pause_inx(false);
+        assert!(validate_common(&common, &ac, &pause_inx, false).is_err());
+    }
+
+    #[test]
+    fn test_validate_common_fails_paused() {
+        let common = vault_common(true, false, 0, 0);
+        let ac = account_ac(true, false);
+        let pause_inx = pause_inx(false);
+        assert!(validate_common(&common, &ac, &pause_inx, false).is_err());
+    }
+
+    #[test]
+    fn test_validate_max_supply_cap_within_cap() {
+        let minter = minter_vault_state(200);
+        assert!(validate_max_supply_cap_with_supply(100, &minter, 50).unwrap());
+    }
+
+    #[test]
+    fn test_validate_max_supply_cap_exceeds_cap() {
+        let minter = minter_vault_state(150);
+        assert!(!validate_max_supply_cap_with_supply(100, &minter, 60).unwrap());
+    }
+
+    #[test]
+    fn test_validate_max_supply_cap_at_cap() {
+        let minter = minter_vault_state(100);
+        assert!(validate_max_supply_cap_with_supply(100, &minter, 0).unwrap());
+    }
+
+    #[test]
+    fn test_validate_fee_valid() {
+        assert!(validate_fee(0, false).is_ok());
+        assert!(validate_fee(ONE_HUNDRED_PERCENT, false).is_ok());
+        assert!(validate_fee(5000, false).is_ok());
+    }
+
+    #[test]
+    fn test_validate_fee_with_min_check() {
+        assert!(validate_fee(0, true).is_err());
+        assert!(validate_fee(1, true).is_ok());
+        assert!(validate_fee(ONE_HUNDRED_PERCENT, true).is_ok());
+    }
+
+    #[test]
+    fn test_validate_fee_exceeds_100_percent() {
+        assert!(validate_fee(ONE_HUNDRED_PERCENT + 1, false).is_err());
+    }
+
+    #[test]
+    fn test_truncate_example_from_doc() {
+        let value = 123_456_789u128;
+        let decimals = 6;
+        let truncated = truncate(value, decimals).unwrap();
+        assert_eq!(truncated, 123_456_000);
+    }
+
+    #[test]
+    fn test_truncate_base_9_no_change() {
+        let value = 1_000_000_000u128; // 1.0 in base 9
+        let truncated = truncate(value, 9).unwrap();
+        assert_eq!(truncated, value);
+    }
+
+    #[test]
+    fn test_truncate_reduces_precision() {
+        let value = 1_234_567_890u128; // 1.234567890 in base 9
+        let truncated = truncate(value, 6).unwrap();
+        assert_eq!(truncated, 1_234_567_000);
+    }
 }

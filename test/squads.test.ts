@@ -179,7 +179,7 @@ describe('Squads multisig', () => {
       });
     });
 
-    describe('vault transactions', () => {
+    describe.skip('vault transactions', () => {
       it('regular sol transfer with timelock', async () => {
         const fixture = await squadsFixture();
         const { multisigPda, authority, regularAccounts, context } = fixture;

@@ -296,7 +296,7 @@ describe('data-feed', () => {
       );
     });
 
-    it('should fail: update max_staleness when value is 0 and mode is manual', async () => {
+    it('should fail: update max_staleness when value is 365 days and mode is manual', async () => {
       const fixture = await dataFeedFixture();
 
       const feed = await createDefaultDataFeed(fixture);
@@ -311,7 +311,53 @@ describe('data-feed', () => {
       );
     });
 
+    it('should fail: update max_staleness when value is 0 and mode is manualGrowth', async () => {
+      const fixture = await dataFeedFixture();
+
+      const feed = await createDefaultManualFeedGrowth(fixture);
+
+      await updateFeed(
+        fixture,
+        {
+          mode: 'manualGrowth',
+          feed,
+          maxStaleness: 0,
+        },
+        { revertedWith: DataFeedError.InvalidStaleness },
+      );
+    });
+
+    it('should fail: update max_staleness when value is 365 days and mode is manualGrowth', async () => {
+      const fixture = await dataFeedFixture();
+
+      const feed = await createDefaultManualFeedGrowth(fixture);
+
+      await updateFeed(
+        fixture,
+        {
+          mode: 'manualGrowth',
+          feed,
+          maxStaleness: 1 + 365 * 86400,
+        },
+        { revertedWith: DataFeedError.ExceedsMaxStaleness },
+      );
+    });
+
     it('should fail: update max_staleness when value is 0 and mode is pyth', async () => {
+      const fixture = await dataFeedFixture();
+
+      await updateFeed(
+        fixture,
+        {
+          mode: 'pyth',
+          underlyingFeed: fixture.mockedFeeds.pyth.account,
+          maxStaleness: 0,
+        },
+        { revertedWith: DataFeedError.InvalidStaleness },
+      );
+    });
+
+    it('should fail: update max_staleness when value is 5 minutes and mode is pyth', async () => {
       const fixture = await dataFeedFixture();
 
       await updateFeed(
@@ -334,6 +380,48 @@ describe('data-feed', () => {
           mode: 'switchboard',
           underlyingFeed: fixture.mockedFeeds.switchboard.account,
           maxStaleness: 1 + 216000,
+        },
+        { revertedWith: DataFeedError.ExceedsMaxStaleness },
+      );
+    });
+
+    it('should fail: update max_staleness when value is 216000 slots and mode is switchboard', async () => {
+      const fixture = await dataFeedFixture();
+
+      await updateFeed(
+        fixture,
+        {
+          mode: 'switchboard',
+          underlyingFeed: fixture.mockedFeeds.switchboard.account,
+          maxStaleness: 1 + 216000,
+        },
+        { revertedWith: DataFeedError.ExceedsMaxStaleness },
+      );
+    });
+
+    it('should fail: update max_staleness when value is 0 and mode is chainlink', async () => {
+      const fixture = await dataFeedFixture();
+
+      await updateFeed(
+        fixture,
+        {
+          mode: 'chainlink',
+          underlyingFeed: fixture.mockedFeeds.chainlink.account,
+          maxStaleness: 0,
+        },
+        { revertedWith: DataFeedError.InvalidStaleness },
+      );
+    });
+
+    it('should fail: update max_staleness when value is 5 minutes and mode is chainlink', async () => {
+      const fixture = await dataFeedFixture();
+
+      await updateFeed(
+        fixture,
+        {
+          mode: 'chainlink',
+          underlyingFeed: fixture.mockedFeeds.chainlink.account,
+          maxStaleness: 1 + 5 * 60,
         },
         { revertedWith: DataFeedError.ExceedsMaxStaleness },
       );
@@ -611,6 +699,24 @@ describe('data-feed', () => {
       });
     });
 
+    it('should fail: call from non-authority', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultDataFeed(fixture);
+
+      await updateManualFeedPrice(
+        fixture,
+        {
+          baseFeed,
+          price: parseUnits('1.2'),
+        },
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
     it('should fail: update price (safe) when deviation is too high', async () => {
       const fixture = await dataFeedFixture();
 
@@ -671,6 +777,38 @@ describe('data-feed', () => {
         price: parseUnits('1'),
         isSafe: true,
       });
+    });
+
+    it('update price (unsafe) when new price timestamp is lower than current price timestamp', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+      await timeTravel(fixture.context, 3601n);
+
+      await updateManualFeedGrowthPrice(fixture, {
+        baseFeed,
+        price: parseUnits('1.2'),
+        priceTimestamp: 100,
+        isSafe: false,
+      });
+    });
+
+    it('should fail: call from non-authority', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+
+      await updateManualFeedGrowthPrice(
+        fixture,
+        {
+          baseFeed,
+          price: parseUnits('1.2'),
+        },
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
     });
 
     it('should fail: update growth price (safe) when deviation is too high', async () => {
@@ -794,6 +932,27 @@ describe('data-feed', () => {
         },
         {
           revertedWith: DataFeedError.NotEnoughTimeHasPassedSinceLastUpdate,
+        },
+      );
+    });
+
+    it('should fail: update price (safe) when new price timestamp is lower than current price timestamp', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+
+      await timeTravel(fixture.context, 3601n);
+
+      await updateManualFeedGrowthPrice(
+        fixture,
+        {
+          baseFeed,
+          price: parseUnits('1.001'),
+          priceTimestamp: 100,
+          isSafe: true,
+        },
+        {
+          revertedWith: DataFeedError.InvalidPriceTimestamp,
         },
       );
     });
