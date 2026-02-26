@@ -25,4 +25,4 @@ pyth-solana-receiver-sdk = "1.1.0"
 chainlink_solana = "2.0.8"
 
 [lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))', 'cfg(feature, values("custom-heap", "custom-panic"))'] }

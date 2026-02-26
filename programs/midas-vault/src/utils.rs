@@ -953,7 +953,7 @@ pub mod redeemer {
                 &m_mint,
                 &signer.to_account_info(),
                 &m_mint_signer_ata,
-                &m_mint_fee_receiver_ata,
+                m_mint_fee_receiver_ata,
                 params.fee_amount,
             )?;
         }
