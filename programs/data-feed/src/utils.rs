@@ -93,7 +93,7 @@ pub fn get_price_in_base_9<'info>(
             let feed = PullFeedAccountData::parse(feed_data).unwrap();
             let raw_price = feed
                 .get_value(
-                    Clock::get().unwrap().slot.into(),
+                    Clock::get().unwrap().slot,
                     data_feed.max_staleness.into(),
                     feed.min_sample_size.into(),
                     true,
@@ -144,7 +144,7 @@ pub fn get_price_in_base_9<'info>(
         }
     };
 
-    let price = decimals_conversion::convert_to_base_9(raw_price.into(), decimals)?;
+    let price = decimals_conversion::convert_to_base_9(raw_price, decimals)?;
 
     msg!("price: {}, {}", raw_price, price);
 
@@ -370,7 +370,7 @@ pub(crate) fn apply_growth_apr_impl(
     let interest = price
         .checked_mul(passed_seconds as u128)
         .ok_or(DataFeedError::ArithmeticOverflow)?
-        .checked_mul(growth_apr.abs() as u128)
+        .checked_mul(growth_apr.unsigned_abs() as u128)
         .ok_or(DataFeedError::ArithmeticOverflow)?
         .checked_div(denominator)
         .ok_or(DataFeedError::ArithmeticOverflow)?;
@@ -441,13 +441,12 @@ pub mod decimals_conversion {
         let adjusted_amount = if value_decimals > target_decimals {
             value
                 .checked_div(
-                    (10 as u128)
+                    10_u128
                         .checked_pow(
                             (value_decimals
                                 .checked_sub(target_decimals)
                                 .ok_or(DataFeedError::ArithmeticOverflow)?)
-                            .try_into()
-                            .unwrap(),
+                            .into(),
                         )
                         .ok_or(DataFeedError::ArithmeticOverflow)?,
                 )
@@ -455,13 +454,12 @@ pub mod decimals_conversion {
         } else {
             value
                 .checked_mul(
-                    (10 as u128)
+                    10_u128
                         .checked_pow(
                             (target_decimals
                                 .checked_sub(value_decimals)
                                 .ok_or(DataFeedError::ArithmeticOverflow)?)
-                            .try_into()
-                            .unwrap(),
+                            .into(),
                         )
                         .ok_or(DataFeedError::ArithmeticOverflow)?,
                 )

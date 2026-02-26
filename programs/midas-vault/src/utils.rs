@@ -870,7 +870,7 @@ pub mod redeemer {
         min_fiat_redeem_amount: Option<u64>,
         fiat_flat_fee: Option<u64>,
     ) -> Result<()> {
-        vault.common_vault = common_vault.clone();
+        vault.common_vault = *common_vault;
 
         if let Some(min_fiat_redeem_amount) = min_fiat_redeem_amount {
             vault.min_fiat_redeem_amount = min_fiat_redeem_amount;
@@ -921,38 +921,38 @@ pub mod redeemer {
             vault_common,
             vault_common_signer,
             redeemer_vault,
-            amount_m_token.into(),
+            amount_m_token,
             false,
             is_fiat,
         )?;
 
         let payment_mint_rate = if !is_fiat {
             get_token_rate(
-                &payment_mint_data_feed.unwrap(),
-                &payment_mint_feed.unwrap(),
+                payment_mint_data_feed.unwrap(),
+                payment_mint_feed.unwrap(),
                 payment_mint_state.stable,
             )?
         } else {
             ONE as u128
         };
 
-        let m_token_rate = get_token_rate(&m_mint_data_feed, &m_mint_feed, false)?;
+        let m_token_rate = get_token_rate(m_mint_data_feed, m_mint_feed, false)?;
 
         transfer_token(
-            &m_mint_token_program,
-            &m_mint,
+            m_mint_token_program,
+            m_mint,
             &signer.to_account_info(),
-            &m_mint_signer_ata,
-            &m_mint_vault_ata,
+            m_mint_signer_ata,
+            m_mint_vault_ata,
             params.m_token_amount_wo_fee,
         )?;
 
         if params.fee_amount > 0 {
             transfer_token(
-                &m_mint_token_program,
-                &m_mint,
+                m_mint_token_program,
+                m_mint,
                 &signer.to_account_info(),
-                &m_mint_signer_ata,
+                m_mint_signer_ata,
                 m_mint_fee_receiver_ata,
                 params.fee_amount,
             )?;
@@ -1137,10 +1137,8 @@ pub mod redeemer {
             is_instant,
         )?;
 
-        if is_fiat {
-            if !common_account.waived_fee {
-                fee_amount += redeemer.fiat_flat_fee as u128;
-            }
+        if is_fiat && !common_account.waived_fee {
+            fee_amount += redeemer.fiat_flat_fee as u128;
         }
 
         require_gt!(
@@ -1226,8 +1224,8 @@ pub fn get_current_ts() -> Result<u32> {
 /// Truncated value in base 9
 ///
 pub fn truncate(value: u128, decimals: u8) -> Result<u128> {
-    return decimals_conversion::convert_to_base_9(
+    decimals_conversion::convert_to_base_9(
         decimals_conversion::convert_from_base_9(value, decimals)?,
         decimals,
-    );
+    )
 }

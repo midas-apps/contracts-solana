@@ -73,7 +73,8 @@ pub fn handle(ctx: Context<MigrateManualFeedToV2>) -> Result<()> {
     // Write max_answer_deviation (u64::MAX) at the end of existing data
     let mut data = manual_feed.try_borrow_mut_data()?;
     let max_answer_deviation_bytes = u64::MAX.to_le_bytes();
-    data[OLD_MANUAL_FEED_SIZE..OLD_MANUAL_FEED_SIZE + 8].copy_from_slice(&max_answer_deviation_bytes);
+    data[OLD_MANUAL_FEED_SIZE..OLD_MANUAL_FEED_SIZE + 8]
+        .copy_from_slice(&max_answer_deviation_bytes);
 
     msg!(
         "Migrated manual feed from {} to {} bytes, set max_answer_deviation to u64::MAX",

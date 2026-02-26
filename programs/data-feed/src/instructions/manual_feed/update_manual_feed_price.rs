@@ -5,7 +5,11 @@ use access_control::{
 use anchor_lang::prelude::*;
 
 use crate::{
-    constants::ac_roles, errors::DataFeedError, events::ManualFeedUpdatedEventV2, state::{FeedState, ManualFeedState}, utils::{get_deviation, update_manual_feed}
+    constants::ac_roles,
+    errors::DataFeedError,
+    events::ManualFeedUpdatedEventV2,
+    state::{FeedState, ManualFeedState},
+    utils::{get_deviation, update_manual_feed},
 };
 
 #[derive(Accounts)]

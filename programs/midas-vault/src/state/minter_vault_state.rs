@@ -4,7 +4,7 @@ use anchor_lang::prelude::*;
 #[derive(InitSpace)]
 /// Current version - V2
 ///     - Added max_supply_cap field
-/// 
+///
 /// Minter Vault state definition
 /// Contains everything that is only
 /// minter-vault related, everything that can be shared

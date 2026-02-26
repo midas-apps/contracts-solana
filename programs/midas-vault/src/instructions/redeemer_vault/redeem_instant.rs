@@ -189,10 +189,10 @@ pub fn handle(
     min_receive_amount: u64,
 ) -> Result<()> {
     let params = redeemer::calc_and_validate_redeem(
-        &mut ctx.accounts.payment_mint_state,
+        &ctx.accounts.payment_mint_state,
         &ctx.accounts.vault_common,
-        &mut ctx.accounts.vault_common_signer,
-        &mut ctx.accounts.redeemer_vault,
+        &ctx.accounts.vault_common_signer,
+        &ctx.accounts.redeemer_vault,
         amount_m_token.into(),
         true,
         false,

@@ -271,7 +271,7 @@ pub fn handle(
     mint_token(
         &ctx.accounts.vault_common.key(),
         &ctx.accounts.minter_vault.to_account_info(),
-        &&ctx.accounts.signer.to_account_info(),
+        &ctx.accounts.signer.to_account_info(),
         &ctx.accounts.token_authority.to_account_info(),
         &ctx.accounts.vault_minter_role.to_account_info(),
         &ctx.accounts.m_mint.to_account_info(),
