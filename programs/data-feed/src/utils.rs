@@ -412,6 +412,10 @@ pub fn get_deviation(last_price: u128, new_price: u128, decimals: u8) -> Result<
             .ok_or(DataFeedError::ArithmeticOverflow)?);
     }
 
+    if last_price == 0 {
+        return Err(DataFeedError::InvalidPrice.into());
+    }
+
     let one = 10_i128
         .checked_pow(decimals.into())
         .ok_or(DataFeedError::ArithmeticOverflow)?;
