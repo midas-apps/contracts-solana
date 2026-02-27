@@ -70,6 +70,12 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
     );
   }
 
+  if (!currentAuthority.equals(timelock.vault) && !currentAuthority.equals(payer.publicKey)) {
+    throw createUserError(
+      `Current authority is not the timelock vault or the payer, it's ${currentAuthority.toBase58()}`,
+    );
+  }
+
   const inx = getSetAuthorityInstructionIx({
     bufferOrProgramDataAccount: programDataPda,
     currentAuthority: currentAuthority,
