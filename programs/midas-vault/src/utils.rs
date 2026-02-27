@@ -225,15 +225,17 @@ pub fn require_variation_tolerance(
             .ok_or(MidasVaultsError::ArithmeticOverflow)?
     };
 
-    let price_diff_percent = price_diff
+    let price_diff_percent: u64 = price_diff
         .checked_mul(ONE_HUNDRED_PERCENT.into())
         .ok_or(MidasVaultsError::ArithmeticOverflow)?
         .checked_div(price)
-        .ok_or(MidasVaultsError::ArithmeticOverflow)?;
+        .ok_or(MidasVaultsError::ArithmeticOverflow)?
+        .try_into()
+        .map_err(|_| MidasVaultsError::ArithmeticOverflow)?;
 
     require_gte!(
         common.variation_tolerance,
-        price_diff_percent as u64,
+        price_diff_percent,
         MidasVaultsError::VariationToleranceExceeded
     );
 
@@ -745,7 +747,9 @@ pub mod minter {
 
         emit!(MinterVaultRequestApprovedEvent {
             common_vault: vault_common.key(),
-            new_out_rate: new_out_rate as u64,
+            new_out_rate: new_out_rate
+                .try_into()
+                .map_err(|_| MidasVaultsError::ArithmeticOverflow)?,
             request_id
         });
 
@@ -1103,7 +1107,9 @@ pub mod redeemer {
         emit!(RedeemerVaultRequestApprovedEvent {
             request_id,
             common_vault: vault_common.key(),
-            new_out_rate: new_m_token_rate as u64
+            new_out_rate: new_m_token_rate
+                .try_into()
+                .map_err(|_| MidasVaultsError::ArithmeticOverflow)?,
         });
         Ok(true)
     }
@@ -1210,7 +1216,11 @@ pub mod redeemer {
 
 /// Returns current unix timestamp from the clock
 pub fn get_current_ts() -> Result<u32> {
-    Ok(Clock::get().unwrap().unix_timestamp as u32)
+    Ok(Clock::get()
+        .unwrap()
+        .unix_timestamp
+        .try_into()
+        .map_err(|_| MidasVaultsError::ArithmeticOverflow)?)
 }
 
 /// Truncates value to a given number of decimals and returns
