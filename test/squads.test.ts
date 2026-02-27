@@ -179,7 +179,7 @@ describe('Squads multisig', () => {
       });
     });
 
-    describe.skip('vault transactions', () => {
+    describe('vault transactions', () => {
       it('regular sol transfer with timelock', async () => {
         const fixture = await squadsFixture();
         const { multisigPda, authority, regularAccounts, context } = fixture;
@@ -384,6 +384,7 @@ describe('Squads multisig', () => {
     });
   });
 
+  // Skipped: create tx lists PDA (multisigSignerPda) as signer; client cannot sign PDAs. Works on bankrun.
   describe.skip('squads member', () => {
     it('should create and execute tx with squads member', async () => {
       const fixture = await squadsFixture();
