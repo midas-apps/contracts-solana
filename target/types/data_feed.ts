@@ -1687,6 +1687,11 @@ export type DataFeed = {
       "code": 6017,
       "name": "notEnoughTimeHasPassedSinceLastUpdate",
       "msg": "Not enough time has passed since last update"
+    },
+    {
+      "code": 6018,
+      "name": "invalidPrice",
+      "msg": "Invalid price"
     }
   ],
   "types": [

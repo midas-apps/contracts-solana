@@ -38,4 +38,6 @@ pub enum DataFeedError {
     InvalidTimestamp,
     #[msg("Not enough time has passed since last update")]
     NotEnoughTimeHasPassedSinceLastUpdate,
+    #[msg("Invalid price")]
+    InvalidPrice,
 }

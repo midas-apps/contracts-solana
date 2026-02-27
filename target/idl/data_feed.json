@@ -1681,6 +1681,11 @@
       "code": 6017,
       "name": "NotEnoughTimeHasPassedSinceLastUpdate",
       "msg": "Not enough time has passed since last update"
+    },
+    {
+      "code": 6018,
+      "name": "InvalidPrice",
+      "msg": "Invalid price"
     }
   ],
   "types": [

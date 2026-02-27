@@ -1018,7 +1018,36 @@ describe('data-feed', () => {
           tokensMinted: parseUnits('0.044523197'),
         },
         {
-          revertedWith: 'PriceTooOld',
+          revertedWith: DataFeedError.PriceIsStale,
+        },
+      );
+    });
+
+    it('should fail: when underlying feed is invalid', async () => {
+      const fixture = await vaultsFixture();
+
+      const feed = await createNewFeed(fixture, {
+        mode: 'pyth',
+        underlyingFeed: fixture.mockedFeeds.chainlink.account,
+        maxPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()),
+      });
+
+      await prepareCommonMintTest(fixture);
+
+      await updatePaymentToken(fixture, {
+        dataFeed: feed.publicKey,
+      });
+
+      await mintInstant(
+        fixture,
+        { minReceiveAmount: 0n },
+        {},
+        {
+          fee: 0.1,
+          tokensMinted: parseUnits('0.044523197'),
+        },
+        {
+          revertedWith: DataFeedError.InvalidUnderlyingFeedProvided,
         },
       );
     });
@@ -1154,7 +1183,36 @@ describe('data-feed', () => {
           tokensMinted: parseUnits('9.782628705'),
         },
         {
-          revertedWith: 'NotEnoughSamples',
+          revertedWith: DataFeedError.PriceIsStale,
+        },
+      );
+    });
+
+    it('should fail: when underlying feed is invalid', async () => {
+      const fixture = await vaultsFixture();
+
+      const feed = await createNewFeed(fixture, {
+        mode: 'switchboard',
+        underlyingFeed: fixture.mockedFeeds.chainlink.account,
+        maxPrice: parseUnits(fixture.mockedFeeds.switchboard.price.toString()),
+      });
+
+      await prepareCommonMintTest(fixture);
+
+      await updatePaymentToken(fixture, {
+        dataFeed: feed.publicKey,
+      });
+
+      await mintInstant(
+        fixture,
+        { minReceiveAmount: 0n },
+        {},
+        {
+          fee: 0.1,
+          tokensMinted: parseUnits('9.782628705'),
+        },
+        {
+          revertedWith: DataFeedError.InvalidUnderlyingFeedProvided,
         },
       );
     });
@@ -1291,6 +1349,26 @@ describe('data-feed', () => {
 
       await mintInstant(fixture, { minReceiveAmount: 0n }, {}, undefined, {
         revertedWith: DataFeedError.PriceIsStale,
+      });
+    });
+
+    it('should fail: when underlying feed is invalid', async () => {
+      const fixture = await vaultsFixture();
+
+      const feed = await createNewFeed(fixture, {
+        mode: 'chainlink',
+        underlyingFeed: fixture.mockedFeeds.switchboard.account,
+        maxPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()),
+      });
+
+      await prepareCommonMintTest(fixture);
+
+      await updatePaymentToken(fixture, {
+        dataFeed: feed.publicKey,
+      });
+
+      await mintInstant(fixture, { minReceiveAmount: 0n }, {}, undefined, {
+        revertedWith: DataFeedError.InvalidUnderlyingFeedProvided,
       });
     });
 

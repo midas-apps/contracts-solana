@@ -418,7 +418,7 @@ describe('redeemer-vault', () => {
         {},
         {},
         {
-          revertedWith: DataFeedError.PriceIsLowerThanMin,
+          revertedWith: DataFeedError.InvalidPrice,
         },
       );
     });
@@ -928,7 +928,7 @@ describe('redeemer-vault', () => {
         {},
         {},
         {
-          revertedWith: DataFeedError.PriceIsLowerThanMin,
+          revertedWith: DataFeedError.InvalidPrice,
         },
       );
     });

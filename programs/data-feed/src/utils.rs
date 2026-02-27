@@ -40,42 +40,40 @@ pub fn get_price_in_base_9<'info>(
         FeedMode::Manual => {
             // parse manual feed
             let mut buf: &[u8] = &feed.try_borrow_mut_data()?[..];
-            let feed_parsed = ManualFeedState::try_deserialize(&mut buf).unwrap();
+            let feed_parsed = ManualFeedState::try_deserialize(&mut buf)
+                .map_err(|_| DataFeedError::InvalidUnderlyingFeedProvided)?;
 
             let current_ts = get_current_ts()?;
 
-            if feed_parsed.last_updated_at > 0 {
-                let update_diff = current_ts
-                    .checked_sub(feed_parsed.last_updated_at)
-                    .ok_or(DataFeedError::ArithmeticOverflow)?;
+            let update_diff = current_ts
+                .checked_sub(feed_parsed.last_updated_at)
+                .ok_or(DataFeedError::ArithmeticOverflow)?;
 
-                require_gte!(
-                    data_feed.max_staleness,
-                    update_diff,
-                    DataFeedError::PriceIsStale
-                );
-            }
+            require_gte!(
+                data_feed.max_staleness,
+                update_diff,
+                DataFeedError::PriceIsStale
+            );
 
             (feed_parsed.price as u128, feed_parsed.decimals)
         }
         FeedMode::ManualGrowth => {
             // parse manual feed
             let mut buf: &[u8] = &feed.try_borrow_mut_data()?[..];
-            let feed_parsed = ManualFeedGrowthState::try_deserialize(&mut buf).unwrap();
+            let feed_parsed = ManualFeedGrowthState::try_deserialize(&mut buf)
+                .map_err(|_| DataFeedError::InvalidUnderlyingFeedProvided)?;
 
             let current_ts = get_current_ts()?;
 
-            if feed_parsed.last_updated_at > 0 {
-                let update_diff = current_ts
-                    .checked_sub(feed_parsed.last_updated_at)
-                    .ok_or(DataFeedError::ArithmeticOverflow)?;
+            let update_diff = current_ts
+                .checked_sub(feed_parsed.last_updated_at)
+                .ok_or(DataFeedError::ArithmeticOverflow)?;
 
-                require_gte!(
-                    data_feed.max_staleness,
-                    update_diff,
-                    DataFeedError::PriceIsStale
-                );
-            }
+            require_gte!(
+                data_feed.max_staleness,
+                update_diff,
+                DataFeedError::PriceIsStale
+            );
 
             (
                 apply_growth_apr(
@@ -90,7 +88,8 @@ pub fn get_price_in_base_9<'info>(
         FeedMode::Switchboard => {
             // parse switchboard feed
             let feed_data = feed.data.borrow();
-            let feed = PullFeedAccountData::parse(feed_data).unwrap();
+            let feed = PullFeedAccountData::parse(feed_data)
+                .map_err(|_| DataFeedError::InvalidUnderlyingFeedProvided)?;
             let raw_price = feed
                 .get_value(
                     Clock::get().unwrap().slot,
@@ -98,14 +97,21 @@ pub fn get_price_in_base_9<'info>(
                     feed.min_sample_size.into(),
                     true,
                 )
-                .unwrap();
+                .map_err(|_| DataFeedError::PriceIsStale)?;
 
-            (raw_price.mantissa() as u128, PRECISION.try_into().unwrap())
+            (
+                raw_price
+                    .mantissa()
+                    .try_into()
+                    .map_err(|_| DataFeedError::InvalidPrice)?,
+                PRECISION.try_into().unwrap(),
+            )
         }
         FeedMode::Pyth => {
             // parse pyth feed
             let mut buf: &[u8] = &feed.try_borrow_mut_data()?[..];
-            let feed_parsed = PriceUpdateV2::try_deserialize(&mut buf).unwrap();
+            let feed_parsed = PriceUpdateV2::try_deserialize(&mut buf)
+                .map_err(|_| DataFeedError::InvalidUnderlyingFeedProvided)?;
 
             let raw_price = feed_parsed
                 .get_price_no_older_than(
@@ -113,10 +119,13 @@ pub fn get_price_in_base_9<'info>(
                     data_feed.max_staleness.into(),
                     &feed_parsed.price_message.feed_id,
                 )
-                .unwrap();
+                .map_err(|_| DataFeedError::PriceIsStale)?;
 
             (
-                raw_price.price as u128,
+                raw_price
+                    .price
+                    .try_into()
+                    .map_err(|_| DataFeedError::InvalidPrice)?,
                 raw_price.exponent.abs().try_into().unwrap(),
             )
         }
@@ -128,7 +137,7 @@ pub fn get_price_in_base_9<'info>(
 
             let round = result
                 .latest_round_data()
-                .ok_or(DataFeedError::PriceIsStale)?;
+                .ok_or(DataFeedError::InvalidPrice)?;
 
             // enforce staleness using round.updated_at (seconds)
             let now = get_current_ts().unwrap() as u64;
@@ -140,9 +149,17 @@ pub fn get_price_in_base_9<'info>(
                 DataFeedError::PriceIsStale
             );
 
-            (round.answer as u128, result.decimals())
+            (
+                round
+                    .answer
+                    .try_into()
+                    .map_err(|_| DataFeedError::InvalidPrice)?,
+                result.decimals(),
+            )
         }
     };
+
+    require_gt!(raw_price, 0, DataFeedError::InvalidPrice);
 
     let price = decimals_conversion::convert_to_base_9(raw_price, decimals)?;
 

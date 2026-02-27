@@ -36,4 +36,5 @@ export enum DataFeedError {
   InvalidPriceTimestamp,
   InvalidTimestamp,
   NotEnoughTimeHasPassedSinceLastUpdate,
+  InvalidPrice,
 }

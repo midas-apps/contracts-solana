@@ -680,7 +680,7 @@ describe('minter-vault', () => {
         {},
         {},
         {
-          revertedWith: DataFeedError.PriceIsLowerThanMin,
+          revertedWith: DataFeedError.InvalidPrice,
         },
       );
     });
@@ -1378,7 +1378,7 @@ describe('minter-vault', () => {
         {},
         {},
         {
-          revertedWith: DataFeedError.PriceIsLowerThanMin,
+          revertedWith: DataFeedError.InvalidPrice,
         },
       );
     });
