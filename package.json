@@ -16,7 +16,7 @@
     "lint": "yarn ts:lint && yarn rust:lint",
     "lint:fix": "yarn ts:lint:fix && yarn rust:lint:fix",
     "format": "yarn ts:format && yarn rust:format",
-    "format:fix": "yarn tx:format:fix && yarn rust:format:fix",
+    "format:fix": "yarn ts:format:fix && yarn rust:format:fix",
     "codestyle": "yarn lint && yarn format",
     "codestyle:fix": "yarn lint:fix && yarn format:fix",
     "docgen": "cargo doc",
