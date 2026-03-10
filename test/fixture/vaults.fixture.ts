@@ -177,6 +177,24 @@ export const vaultsFixture = async (fixture?: InitLiteSVMReturnType, initSlot?: 
         })
         .instruction(),
       await acProgram.methods
+        .grantRole(acRoleToBuffer(VAULT_AC_ROLES.REQUEST_MANAGER))
+        .accountsPartial({
+          account: authority.publicKey,
+          acRole: acRoleMTbill.publicKey,
+          authority: authority.publicKey,
+          authorityAcAdminRole: getAccountAcRoleStatePda(
+            acRoleMTbill.publicKey,
+            authority.publicKey,
+            AC_ROLES.ADMIN,
+          ),
+          accountAcRole: getAccountAcRoleStatePda(
+            acRoleMTbill.publicKey,
+            authority.publicKey,
+            VAULT_AC_ROLES.REQUEST_MANAGER,
+          ),
+        })
+        .instruction(),
+      await acProgram.methods
         .grantRole(acRoleToBuffer(VAULT_AC_ROLES.VAULT_PAUSER))
         .accountsPartial({
           account: authority.publicKey,

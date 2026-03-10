@@ -1122,7 +1122,7 @@ export type DataFeed = {
         {
           "name": "authority",
           "docs": [
-            "Account with Feed Admin role"
+            "Account with Price Updater role"
           ],
           "writable": true,
           "signer": true
@@ -1180,7 +1180,7 @@ export type DataFeed = {
         {
           "name": "authorityAcRole",
           "docs": [
-            "Feed Admin AC role of `authority`"
+            "Price Updater AC role of `authority`"
           ],
           "pda": {
             "seeds": [
@@ -1215,21 +1215,19 @@ export type DataFeed = {
               {
                 "kind": "const",
                 "value": [
+                  112,
+                  114,
+                  105,
+                  99,
+                  101,
+                  95,
+                  117,
+                  112,
                   100,
                   97,
                   116,
-                  97,
-                  95,
-                  102,
                   101,
-                  101,
-                  100,
-                  95,
-                  97,
-                  100,
-                  109,
-                  105,
-                  110
+                  114
                 ]
               }
             ],
@@ -1314,7 +1312,7 @@ export type DataFeed = {
         {
           "name": "authority",
           "docs": [
-            "Account with Feed Admin role"
+            "Account with Price Updater role"
           ],
           "writable": true,
           "signer": true
@@ -1365,7 +1363,7 @@ export type DataFeed = {
         {
           "name": "authorityAcRole",
           "docs": [
-            "Feed Admin AC role of `authority`"
+            "Price Updater AC role of `authority`"
           ],
           "pda": {
             "seeds": [
@@ -1400,21 +1398,19 @@ export type DataFeed = {
               {
                 "kind": "const",
                 "value": [
+                  112,
+                  114,
+                  105,
+                  99,
+                  101,
+                  95,
+                  117,
+                  112,
                   100,
                   97,
                   116,
-                  97,
-                  95,
-                  102,
                   101,
-                  101,
-                  100,
-                  95,
-                  97,
-                  100,
-                  109,
-                  105,
-                  110
+                  114
                 ]
               }
             ],

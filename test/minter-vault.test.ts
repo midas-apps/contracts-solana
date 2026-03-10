@@ -1,10 +1,15 @@
 import { CommonError } from './constants/common.constants';
 import { DataFeedError } from './constants/data-feed.constants';
-import { VaultActionIds, VaultError, VAULTS_PROGRAM_ID } from './constants/vaults.constants';
+import {
+  VaultActionIds,
+  VaultError,
+  VAULT_AC_ROLES,
+  VAULTS_PROGRAM_ID,
+} from './constants/vaults.constants';
 import { vaultsFixture } from './fixture/vaults.fixture';
 import { fromBN, parsePercent, parseUnits, timeTravel } from './helpers/common.helpers';
-import { getMinterVaultPda } from './helpers/vaults.helpers';
-import { updateAccountAc } from './testers/ac.testers';
+import { fetchVaultCommonState, getMinterVaultPda } from './helpers/vaults.helpers';
+import { grantRole, updateAccountAc } from './testers/ac.testers';
 import {
   newVaultCommon,
   updatePause,
@@ -1605,6 +1610,34 @@ describe('minter-vault', () => {
       );
     });
 
+    it('should fail: call from non-authority that has vault admin role', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      const commonState = await fetchVaultCommonState(
+        fixture.vaultsProgram,
+        fixture.minterCommonVault.publicKey,
+      );
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: VAULT_AC_ROLES.VAULT_ADMIN,
+        acRole: commonState.acRole,
+      });
+
+      await approveMintRequest(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
     it('should fail: when safe is passed and new rate exceeds allowed deviation', async () => {
       const fixture = await vaultsFixture();
 
@@ -1736,6 +1769,34 @@ describe('minter-vault', () => {
       );
     });
 
+    it('should fail: call from non-authority that has vault admin role', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      const commonState = await fetchVaultCommonState(
+        fixture.vaultsProgram,
+        fixture.minterCommonVault.publicKey,
+      );
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: VAULT_AC_ROLES.VAULT_ADMIN,
+        acRole: commonState.acRole,
+      });
+
+      await safeApproveMintRequestAtCurrentRate(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
     it('should fail: max supply cap exceeded', async () => {
       const fixture = await vaultsFixture();
 
@@ -1823,6 +1884,34 @@ describe('minter-vault', () => {
         },
       );
     });
+
+    it('should fail: call from non-authority that has vault admin role', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      const commonState = await fetchVaultCommonState(
+        fixture.vaultsProgram,
+        fixture.minterCommonVault.publicKey,
+      );
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: VAULT_AC_ROLES.VAULT_ADMIN,
+        acRole: commonState.acRole,
+      });
+
+      await safeApproveMintRequestAtRequestRate(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
   });
 
   describe('reject_mint_request', () => {
@@ -1840,6 +1929,33 @@ describe('minter-vault', () => {
 
       await prepareCommonMintTest(fixture, {});
       await mintRequest(fixture, {}, {});
+
+      await rejectMintRequest(
+        fixture,
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('should fail: call from non-authority that has vault admin role', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      const commonState = await fetchVaultCommonState(
+        fixture.vaultsProgram,
+        fixture.minterCommonVault.publicKey,
+      );
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: VAULT_AC_ROLES.VAULT_ADMIN,
+        acRole: commonState.acRole,
+      });
 
       await rejectMintRequest(
         fixture,

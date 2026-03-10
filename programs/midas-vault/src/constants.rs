@@ -22,4 +22,6 @@ pub mod ac_roles {
     pub const VAULT_ADMIN: &[u8; 16] = b"vault_admin_role";
     /// Holder of this role can pause whole vault or specific instruction
     pub const VAULT_PAUSER: &[u8; 17] = b"vault_pauser_role";
+    /// Holder of this role can approve/reject mint/redeem requests
+    pub const REQUEST_MANAGER: &[u8; 20] = b"request_manager_role";
 }

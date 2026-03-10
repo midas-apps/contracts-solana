@@ -819,7 +819,7 @@ export const approveMintRequest = async (
       authorityAcRole: getAccountAcRoleStatePda(
         stateBefore.commonVaultState.acRole,
         from.publicKey,
-        VAULT_AC_ROLES.VAULT_ADMIN,
+        VAULT_AC_ROLES.REQUEST_MANAGER,
       ),
       vaultMinterRole: getAccountAcRoleStatePda(
         stateBefore.mintAuthorityState.acRole,
@@ -1018,7 +1018,7 @@ export const safeApproveMintRequestAtCurrentRate = async (
       authorityAcRole: getAccountAcRoleStatePda(
         stateBefore.commonVaultState.acRole,
         from.publicKey,
-        VAULT_AC_ROLES.VAULT_ADMIN,
+        VAULT_AC_ROLES.REQUEST_MANAGER,
       ),
       vaultMinterRole: getAccountAcRoleStatePda(
         stateBefore.mintAuthorityState.acRole,
@@ -1210,7 +1210,7 @@ export const safeApproveMintRequestAtRequestRate = async (
       authorityAcRole: getAccountAcRoleStatePda(
         stateBefore.commonVaultState.acRole,
         from.publicKey,
-        VAULT_AC_ROLES.VAULT_ADMIN,
+        VAULT_AC_ROLES.REQUEST_MANAGER,
       ),
       vaultMinterRole: getAccountAcRoleStatePda(
         stateBefore.mintAuthorityState.acRole,
@@ -1329,7 +1329,7 @@ export const rejectMintRequest = async (
       authorityAcRole: getAccountAcRoleStatePda(
         stateBefore.commonVaultState.acRole,
         from.publicKey,
-        VAULT_AC_ROLES.VAULT_ADMIN,
+        VAULT_AC_ROLES.REQUEST_MANAGER,
       ),
     })
     .transaction();

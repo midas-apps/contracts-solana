@@ -29,7 +29,7 @@ import {
   getRedeemerVaultPda,
   getRedeemerVaultRequestPda,
 } from './helpers/vaults.helpers';
-import { newAccountAc, updateAccountAc } from './testers/ac.testers';
+import { grantRole, newAccountAc, updateAccountAc } from './testers/ac.testers';
 import {
   addPaymentToken,
   newVaultCommon,
@@ -1357,6 +1357,34 @@ describe('redeemer-vault', () => {
       );
     });
 
+    it('should fail: call from non-authority that has vault admin role', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {});
+      await redeemRequest(fixture, {}, {});
+
+      const commonState = await fetchVaultCommonState(
+        fixture.vaultsProgram,
+        fixture.redeemerCommonVault.publicKey,
+      );
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: VAULT_AC_ROLES.VAULT_ADMIN,
+        acRole: commonState.acRole,
+      });
+
+      await approveRedeemRequest(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
     it('should fail: when request redeemer approve is insufficient', async () => {
       const fixture = await vaultsFixture();
 
@@ -1546,6 +1574,38 @@ describe('redeemer-vault', () => {
       );
     });
 
+    it('should fail: call from non-authority that has vault admin role', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        mintPaymentTokenAndApprove: {
+          to: fixture.requestRedeemer.publicKey,
+        },
+      });
+      await redeemRequest(fixture, {}, {});
+
+      const commonState = await fetchVaultCommonState(
+        fixture.vaultsProgram,
+        fixture.redeemerCommonVault.publicKey,
+      );
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: VAULT_AC_ROLES.VAULT_ADMIN,
+        acRole: commonState.acRole,
+      });
+
+      await safeApproveRedeemRequestAtCurrentRate(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
     it('should process bulk approvals with safeValidateLiquidity=true, skipping requests with insufficient liquidity', async () => {
       const fixture = await vaultsFixture();
       const {
@@ -1639,7 +1699,7 @@ describe('redeemer-vault', () => {
             authorityAcRole: getAccountAcRoleStatePda(
               commonVaultState.acRole,
               authority.publicKey,
-              VAULT_AC_ROLES.VAULT_ADMIN,
+              VAULT_AC_ROLES.REQUEST_MANAGER,
             ),
           })
           .instruction();
@@ -1778,7 +1838,7 @@ describe('redeemer-vault', () => {
             authorityAcRole: getAccountAcRoleStatePda(
               commonVaultState.acRole,
               authority.publicKey,
-              VAULT_AC_ROLES.VAULT_ADMIN,
+              VAULT_AC_ROLES.REQUEST_MANAGER,
             ),
           })
           .instruction();
@@ -1929,6 +1989,38 @@ describe('redeemer-vault', () => {
         },
       );
     });
+
+    it('should fail: call from non-authority that has vault admin role', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        mintPaymentTokenAndApprove: {
+          to: fixture.requestRedeemer.publicKey,
+        },
+      });
+      await redeemRequest(fixture, {}, {});
+
+      const commonState = await fetchVaultCommonState(
+        fixture.vaultsProgram,
+        fixture.redeemerCommonVault.publicKey,
+      );
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: VAULT_AC_ROLES.VAULT_ADMIN,
+        acRole: commonState.acRole,
+      });
+
+      await safeApproveRedeemRequestAtRequestRate(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
   });
 
   describe('reject_redeem_request', () => {
@@ -1953,6 +2045,33 @@ describe('redeemer-vault', () => {
 
       await prepareCommonRedeemTest(fixture, {});
       await redeemRequest(fixture, {}, {});
+      await rejectRedeemRequest(
+        fixture,
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('should fail: call from non-authority that has vault admin role', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {});
+      await redeemRequest(fixture, {}, {});
+
+      const commonState = await fetchVaultCommonState(
+        fixture.vaultsProgram,
+        fixture.redeemerCommonVault.publicKey,
+      );
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: VAULT_AC_ROLES.VAULT_ADMIN,
+        acRole: commonState.acRole,
+      });
+
       await rejectRedeemRequest(
         fixture,
         {},

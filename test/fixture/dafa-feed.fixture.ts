@@ -155,6 +155,24 @@ export const dataFeedFixture = async (fixture?: InitLiteSVMReturnType, initSlot?
           ),
         })
         .instruction(),
+      await acProgram.methods
+        .grantRole(acRoleToBuffer(DATA_FEED_AC_ROLES.PRICE_UPDATER))
+        .accountsPartial({
+          account: authority.publicKey,
+          acRole: acRole,
+          authority: authority.publicKey,
+          authorityAcAdminRole: getAccountAcRoleStatePda(
+            acRole,
+            authority.publicKey,
+            AC_ROLES.ADMIN,
+          ),
+          accountAcRole: getAccountAcRoleStatePda(
+            acRole,
+            authority.publicKey,
+            DATA_FEED_AC_ROLES.PRICE_UPDATER,
+          ),
+        })
+        .instruction(),
       await dataFeedProgram.methods
         .newFeed(
           acRole,

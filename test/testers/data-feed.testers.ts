@@ -636,7 +636,7 @@ export const updateManualFeedPrice = async (
       authorityAcRole: getAccountAcRoleStatePda(
         baseFeedStateBefore.acRole,
         from.publicKey,
-        DATA_FEED_AC_ROLES.FEED_ADMIN,
+        DATA_FEED_AC_ROLES.PRICE_UPDATER,
       ),
     })
     .transaction();
@@ -711,7 +711,7 @@ export const updateManualFeedGrowthPrice = async (
       authorityAcRole: getAccountAcRoleStatePda(
         baseFeedStateBefore.acRole,
         from.publicKey,
-        DATA_FEED_AC_ROLES.FEED_ADMIN,
+        DATA_FEED_AC_ROLES.PRICE_UPDATER,
       ),
     })
     .transaction();

@@ -1,9 +1,14 @@
 import { CommonError, DEFAULT_PUBKEY } from './constants/common.constants';
-import { DATA_FEED_PROGRAM_ID, DataFeedError } from './constants/data-feed.constants';
+import {
+  DATA_FEED_AC_ROLES,
+  DATA_FEED_PROGRAM_ID,
+  DataFeedError,
+} from './constants/data-feed.constants';
 import { dataFeedFixture } from './fixture/dafa-feed.fixture';
 import { vaultsFixture } from './fixture/vaults.fixture';
 import { parseUnits, setClockTime, timeTravel } from './helpers/common.helpers';
-import { getManualFeedStatePda } from './helpers/data-feed.helpers';
+import { fetchDataFeedState, getManualFeedStatePda } from './helpers/data-feed.helpers';
+import { grantRole } from './testers/ac.testers';
 import { updatePaymentToken } from './testers/common-vaults.testers';
 import {
   createDefaultDataFeed,
@@ -266,6 +271,30 @@ describe('data-feed', () => {
       );
     });
 
+    it('should fail: update from non-authority that has price updater role', async () => {
+      const fixture = await dataFeedFixture();
+
+      const feed = await createDefaultDataFeed(fixture);
+
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: DATA_FEED_AC_ROLES.PRICE_UPDATER,
+        acRole: (await fetchDataFeedState(fixture.dataFeedProgram, feed)).acRole,
+      });
+
+      await updateFeed(
+        fixture,
+        {
+          feed,
+          mode: 'switchboard',
+        },
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
     it('should fail: update underlying feed to default pubkey', async () => {
       const fixture = await dataFeedFixture();
 
@@ -467,6 +496,29 @@ describe('data-feed', () => {
         },
       );
     });
+
+    it('should fail: update from non-authority that has price updater role', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultDataFeed(fixture);
+
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: DATA_FEED_AC_ROLES.PRICE_UPDATER,
+        acRole: (await fetchDataFeedState(fixture.dataFeedProgram, baseFeed)).acRole,
+      });
+
+      await updateManualFeed(
+        fixture,
+        {
+          baseFeed,
+        },
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
   });
 
   describe('migrate_manual_feed_to_v2', () => {
@@ -624,6 +676,29 @@ describe('data-feed', () => {
       );
     });
 
+    it('should fail: update from non-authority that has price updater role', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: DATA_FEED_AC_ROLES.PRICE_UPDATER,
+        acRole: (await fetchDataFeedState(fixture.dataFeedProgram, baseFeed)).acRole,
+      });
+
+      await updateManualFeedGrowth(
+        fixture,
+        {
+          baseFeed,
+        },
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
     it('should fail: when new max growth apr is less than min growth apr', async () => {
       const fixture = await dataFeedFixture();
 
@@ -713,6 +788,30 @@ describe('data-feed', () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('should fail: call from non-authority that has feed admin role', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultDataFeed(fixture);
+
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: DATA_FEED_AC_ROLES.FEED_ADMIN,
+        acRole: (await fetchDataFeedState(fixture.dataFeedProgram, baseFeed)).acRole,
+      });
+
+      await updateManualFeedPrice(
+        fixture,
+        {
+          baseFeed,
+          price: parseUnits('1.2'),
+        },
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AnchorSeedConstraintViolated,
         },
       );
     });
@@ -807,6 +906,30 @@ describe('data-feed', () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('should fail: call from non-authority that has feed admin role', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultManualFeedGrowth(fixture);
+
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: DATA_FEED_AC_ROLES.FEED_ADMIN,
+        acRole: (await fetchDataFeedState(fixture.dataFeedProgram, baseFeed)).acRole,
+      });
+
+      await updateManualFeedGrowthPrice(
+        fixture,
+        {
+          baseFeed,
+          price: parseUnits('1.2'),
+        },
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AnchorSeedConstraintViolated,
         },
       );
     });

@@ -446,7 +446,7 @@ export type MidasVaults = {
         {
           "name": "authority",
           "docs": [
-            "Account with vault admin role"
+            "Account with request manager role"
           ],
           "writable": true,
           "signer": true
@@ -467,7 +467,7 @@ export type MidasVaults = {
         {
           "name": "authorityAcRole",
           "docs": [
-            "Admin role of authority"
+            "Request manager role of authority"
           ],
           "pda": {
             "seeds": [
@@ -503,17 +503,21 @@ export type MidasVaults = {
               {
                 "kind": "const",
                 "value": [
-                  118,
-                  97,
+                  114,
+                  101,
+                  113,
                   117,
-                  108,
+                  101,
+                  115,
                   116,
                   95,
-                  97,
-                  100,
                   109,
-                  105,
+                  97,
                   110,
+                  97,
+                  103,
+                  101,
+                  114,
                   95,
                   114,
                   111,
@@ -859,7 +863,7 @@ export type MidasVaults = {
         {
           "name": "authority",
           "docs": [
-            "Account with vault admin role"
+            "Account with request manager role"
           ],
           "writable": true,
           "signer": true
@@ -887,7 +891,7 @@ export type MidasVaults = {
         {
           "name": "authorityAcRole",
           "docs": [
-            "Admin role of authority"
+            "Request manager role of authority"
           ],
           "pda": {
             "seeds": [
@@ -923,17 +927,21 @@ export type MidasVaults = {
               {
                 "kind": "const",
                 "value": [
-                  118,
-                  97,
+                  114,
+                  101,
+                  113,
                   117,
-                  108,
+                  101,
+                  115,
                   116,
                   95,
-                  97,
-                  100,
                   109,
-                  105,
+                  97,
                   110,
+                  97,
+                  103,
+                  101,
+                  114,
                   95,
                   114,
                   111,
@@ -1346,7 +1354,7 @@ export type MidasVaults = {
         {
           "name": "authority",
           "docs": [
-            "Account with vault admin role"
+            "Account with request manager role"
           ],
           "writable": true,
           "signer": true
@@ -1367,7 +1375,7 @@ export type MidasVaults = {
         {
           "name": "authorityAcRole",
           "docs": [
-            "Admin role of authority"
+            "Request manager role of authority"
           ],
           "pda": {
             "seeds": [
@@ -1403,17 +1411,21 @@ export type MidasVaults = {
               {
                 "kind": "const",
                 "value": [
-                  118,
-                  97,
+                  114,
+                  101,
+                  113,
                   117,
-                  108,
+                  101,
+                  115,
                   116,
                   95,
-                  97,
-                  100,
                   109,
-                  105,
+                  97,
                   110,
+                  97,
+                  103,
+                  101,
+                  114,
                   95,
                   114,
                   111,
@@ -5467,7 +5479,7 @@ export type MidasVaults = {
         {
           "name": "authority",
           "docs": [
-            "Account with vault admin role"
+            "Account with request manager role"
           ],
           "writable": true,
           "signer": true
@@ -5488,7 +5500,7 @@ export type MidasVaults = {
         {
           "name": "authorityAcRole",
           "docs": [
-            "Admin role of authority"
+            "Request manager role of authority"
           ],
           "pda": {
             "seeds": [
@@ -5524,17 +5536,21 @@ export type MidasVaults = {
               {
                 "kind": "const",
                 "value": [
-                  118,
-                  97,
+                  114,
+                  101,
+                  113,
                   117,
-                  108,
+                  101,
+                  115,
                   116,
                   95,
-                  97,
-                  100,
                   109,
-                  105,
+                  97,
                   110,
+                  97,
+                  103,
+                  101,
+                  114,
                   95,
                   114,
                   111,
@@ -5687,7 +5703,7 @@ export type MidasVaults = {
         {
           "name": "authority",
           "docs": [
-            "Account with vault admin role"
+            "Account with request manager role"
           ],
           "writable": true,
           "signer": true
@@ -5708,7 +5724,7 @@ export type MidasVaults = {
         {
           "name": "authorityAcRole",
           "docs": [
-            "Admin role of authority"
+            "Request manager role of authority"
           ],
           "pda": {
             "seeds": [
@@ -5744,17 +5760,21 @@ export type MidasVaults = {
               {
                 "kind": "const",
                 "value": [
-                  118,
-                  97,
+                  114,
+                  101,
+                  113,
                   117,
-                  108,
+                  101,
+                  115,
                   116,
                   95,
-                  97,
-                  100,
                   109,
-                  105,
+                  97,
                   110,
+                  97,
+                  103,
+                  101,
+                  114,
                   95,
                   114,
                   111,
@@ -6088,7 +6108,7 @@ export type MidasVaults = {
         {
           "name": "authority",
           "docs": [
-            "Account with vault admin role"
+            "Account with request manager role"
           ],
           "writable": true,
           "signer": true
@@ -6109,7 +6129,7 @@ export type MidasVaults = {
         {
           "name": "authorityAcRole",
           "docs": [
-            "Admin role of authority"
+            "Request manager role of authority"
           ],
           "pda": {
             "seeds": [
@@ -6145,17 +6165,21 @@ export type MidasVaults = {
               {
                 "kind": "const",
                 "value": [
-                  118,
-                  97,
+                  114,
+                  101,
+                  113,
                   117,
-                  108,
+                  101,
+                  115,
                   116,
                   95,
-                  97,
-                  100,
                   109,
-                  105,
+                  97,
                   110,
+                  97,
+                  103,
+                  101,
+                  114,
                   95,
                   114,
                   111,
@@ -6505,7 +6529,7 @@ export type MidasVaults = {
         {
           "name": "authority",
           "docs": [
-            "Account with vault admin role"
+            "Account with request manager role"
           ],
           "writable": true,
           "signer": true
@@ -6526,7 +6550,7 @@ export type MidasVaults = {
         {
           "name": "authorityAcRole",
           "docs": [
-            "Admin role of authority"
+            "Request manager role of authority"
           ],
           "pda": {
             "seeds": [
@@ -6562,17 +6586,21 @@ export type MidasVaults = {
               {
                 "kind": "const",
                 "value": [
-                  118,
-                  97,
+                  114,
+                  101,
+                  113,
                   117,
-                  108,
+                  101,
+                  115,
                   116,
                   95,
-                  97,
-                  100,
                   109,
-                  105,
+                  97,
                   110,
+                  97,
+                  103,
+                  101,
+                  114,
                   95,
                   114,
                   111,
@@ -6910,7 +6938,7 @@ export type MidasVaults = {
         {
           "name": "authority",
           "docs": [
-            "Account with vault admin role"
+            "Account with request manager role"
           ],
           "writable": true,
           "signer": true
@@ -6938,7 +6966,7 @@ export type MidasVaults = {
         {
           "name": "authorityAcRole",
           "docs": [
-            "Admin role of authority"
+            "Request manager role of authority"
           ],
           "pda": {
             "seeds": [
@@ -6974,17 +7002,21 @@ export type MidasVaults = {
               {
                 "kind": "const",
                 "value": [
-                  118,
-                  97,
+                  114,
+                  101,
+                  113,
                   117,
-                  108,
+                  101,
+                  115,
                   116,
                   95,
-                  97,
-                  100,
                   109,
-                  105,
+                  97,
                   110,
+                  97,
+                  103,
+                  101,
+                  114,
                   95,
                   114,
                   111,
@@ -7401,7 +7433,7 @@ export type MidasVaults = {
         {
           "name": "authority",
           "docs": [
-            "Account with vault admin role"
+            "Account with request manager role"
           ],
           "writable": true,
           "signer": true
@@ -7429,7 +7461,7 @@ export type MidasVaults = {
         {
           "name": "authorityAcRole",
           "docs": [
-            "Admin role of authority"
+            "Request manager role of authority"
           ],
           "pda": {
             "seeds": [
@@ -7465,17 +7497,21 @@ export type MidasVaults = {
               {
                 "kind": "const",
                 "value": [
-                  118,
-                  97,
+                  114,
+                  101,
+                  113,
                   117,
-                  108,
+                  101,
+                  115,
                   116,
                   95,
-                  97,
-                  100,
                   109,
-                  105,
+                  97,
                   110,
+                  97,
+                  103,
+                  101,
+                  114,
                   95,
                   114,
                   111,

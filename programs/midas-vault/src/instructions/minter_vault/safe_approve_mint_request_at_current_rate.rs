@@ -16,7 +16,7 @@ use crate::{
 #[derive(Accounts)]
 #[instruction(request_id: u64)]
 pub struct SafeApproveMintRequestAtCurrentRate<'info> {
-    /// Account with vault admin role
+    /// Account with request manager role
     #[account(mut)]
     pub authority: Signer<'info>,
 
@@ -34,9 +34,9 @@ pub struct SafeApproveMintRequestAtCurrentRate<'info> {
     )]
     pub vault_common: Box<Account<'info, VaultCommonState>>,
 
-    /// Admin role of authority
+    /// Request manager role of authority
     #[account(
-        seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::VAULT_ADMIN],
+        seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::REQUEST_MANAGER],
         seeds::program = AccessControl::id(),
         bump,
     )]

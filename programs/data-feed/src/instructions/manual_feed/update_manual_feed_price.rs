@@ -14,7 +14,7 @@ use crate::{
 
 #[derive(Accounts)]
 pub struct UpdateManualFeedPrice<'info> {
-    /// Account with Feed Admin role
+    /// Account with Price Updater role
     #[account(mut)]
     pub authority: Signer<'info>,
 
@@ -32,9 +32,9 @@ pub struct UpdateManualFeedPrice<'info> {
     )]
     pub ac_role: Account<'info, AccessControlRoleState>,
 
-    /// Feed Admin AC role of `authority`
+    /// Price Updater AC role of `authority`
     #[account(
-        seeds = [AccountAccessControlRoleState::SEED, ac_role.key().as_ref(), authority.key().as_ref(), ac_roles::FEED_ADMIN],
+        seeds = [AccountAccessControlRoleState::SEED, ac_role.key().as_ref(), authority.key().as_ref(), ac_roles::PRICE_UPDATER],
         seeds::program = AccessControl::id(),
         bump,
     )]

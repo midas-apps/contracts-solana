@@ -90,6 +90,10 @@ export const addresses: Record<string, NetworkAddresses> = {
   mainnet: {
     acRoleGlobal: new PublicKey('39tDSAtrYuy7cA6ipj1N9c8jzs5kRPbWAj5ztmW3sMa6'),
     ac: new PublicKey('2dGjhqtMhDk1zuhv8NhiTS52fDudaSQt8DHhPbtrit3a'),
+    timelock: {
+      multisig: new PublicKey('6AaFVmJxfeY8Tkt8jNRiVehVwPMMsVHYgzQxZNKxG5Ai'),
+      vault: new PublicKey('41LYQG4Kzi2Z7ksRyh4Dch8gjrYMsWNp6vURmZot7GEB'),
+    },
     tokens: {
       [MProduct.MFONE]: {
         acRole: new PublicKey('CVUnxqMxQGeUyEn1Pd7DXmZawQMpGruWGLikFe2E7u5k'),

@@ -774,7 +774,7 @@ export const approveRedeemRequest = async (
           authorityAcRole: getAccountAcRoleStatePda(
             stateBefore.commonVaultState.acRole,
             from.publicKey,
-            VAULT_AC_ROLES.VAULT_ADMIN,
+            VAULT_AC_ROLES.REQUEST_MANAGER,
           ),
         })
         .transaction()
@@ -796,7 +796,7 @@ export const approveRedeemRequest = async (
           authorityAcRole: getAccountAcRoleStatePda(
             stateBefore.commonVaultState.acRole,
             from.publicKey,
-            VAULT_AC_ROLES.VAULT_ADMIN,
+            VAULT_AC_ROLES.REQUEST_MANAGER,
           ),
         })
         .transaction();
@@ -1013,7 +1013,7 @@ export const safeApproveRedeemRequestAtCurrentRate = async (
       authorityAcRole: getAccountAcRoleStatePda(
         stateBefore.commonVaultState.acRole,
         from.publicKey,
-        VAULT_AC_ROLES.VAULT_ADMIN,
+        VAULT_AC_ROLES.REQUEST_MANAGER,
       ),
     })
     .transaction();
@@ -1228,7 +1228,7 @@ export const safeApproveRedeemRequestAtRequestRate = async (
       authorityAcRole: getAccountAcRoleStatePda(
         stateBefore.commonVaultState.acRole,
         from.publicKey,
-        VAULT_AC_ROLES.VAULT_ADMIN,
+        VAULT_AC_ROLES.REQUEST_MANAGER,
       ),
     })
     .transaction();
@@ -1355,7 +1355,7 @@ export const rejectRedeemRequest = async (
       authorityAcRole: getAccountAcRoleStatePda(
         stateBefore.commonVaultState.acRole,
         from.publicKey,
-        VAULT_AC_ROLES.VAULT_ADMIN,
+        VAULT_AC_ROLES.REQUEST_MANAGER,
       ),
     })
     .transaction();
