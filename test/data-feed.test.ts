@@ -811,7 +811,7 @@ describe('data-feed', () => {
         },
         {
           from: fixture.regularAccounts[0],
-          revertedWith: CommonError.AnchorSeedConstraintViolated,
+          revertedWith: CommonError.AccountIsNotInitialized,
         },
       );
     });
@@ -929,7 +929,7 @@ describe('data-feed', () => {
         },
         {
           from: fixture.regularAccounts[0],
-          revertedWith: CommonError.AnchorSeedConstraintViolated,
+          revertedWith: CommonError.AccountIsNotInitialized,
         },
       );
     });
