@@ -12,6 +12,7 @@ export interface CommonParams {
   provider: AnchorProvider;
   payer: Wallet;
   network: string;
+  action?: string;
 }
 
 export const getDataFeedProgram = (provider: AnchorProvider) => {

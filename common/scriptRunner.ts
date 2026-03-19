@@ -26,9 +26,30 @@ async function loadCustomSignerModule(): Promise<CustomSignerModule> {
   return {
     signSolanaTransaction: module.signSolanaTransaction,
     getSolanaWalletAddressForAction: module.getSolanaWalletAddressForAction,
+    createSolanaAddressBookContract: module.createSolanaAddressBookContract,
   };
 }
 
+export const createCustomSignerProvider = async (
+  network: string,
+  action?: string,
+  mtoken?: string,
+) => {
+  const isLocalnet = network.toLowerCase() === 'localnet';
+  const useFordefi = !isLocalnet && !!action;
+
+  const customSignerModule = useFordefi ? await loadCustomSignerModule() : undefined;
+  initCustomSigner(customSignerModule, network);
+
+  const { provider, payer } = await createNetworkProvider(
+    network,
+    customSignerModule,
+    action,
+    mtoken,
+  );
+
+  return { provider, payer, customSignerModule };
+};
 /**
  * Run a script with the appropriate wallet:
  * - localnet: always uses WALLET_PATH keypair
@@ -41,21 +62,32 @@ export async function executeNetworkScript(
   mtoken?: string,
 ): Promise<void> {
   try {
-    const isLocalnet = network.toLowerCase() === 'localnet';
-    const useFordefi = !isLocalnet && !!action;
-
-    const customSignerModule = useFordefi ? await loadCustomSignerModule() : undefined;
-    initCustomSigner(customSignerModule, network);
-
-    const { provider, payer } = await createNetworkProvider(
-      network,
-      customSignerModule,
-      action,
-      mtoken,
-    );
-
+    const { provider, payer } = await createCustomSignerProvider(network, action, mtoken);
     await scriptFn(provider, payer, network);
   } catch (error) {
     handleError(error);
   }
 }
+
+export const createSolanaAddressBookContract = async ({
+  network,
+  address,
+  contractName,
+  mToken,
+  contractTag,
+}: {
+  network: string;
+  address: string;
+  contractName: string;
+  mToken: string;
+  contractTag?: string;
+}) => {
+  const { customSignerModule } = await createCustomSignerProvider(network, 'deployer');
+  return await customSignerModule.createSolanaAddressBookContract({
+    address,
+    contractName,
+    mToken,
+    chain: network,
+    contractTag,
+  });
+};

@@ -30,6 +30,16 @@ function formatTokenAuthority(
   ]);
 }
 
+function formatAcGlobalOverride(
+  acGlobalOverride: { ac?: PublicKey; acRole: PublicKey } | undefined,
+): string {
+  if (!acGlobalOverride) return '';
+  return formatObject([
+    `ac: ${acGlobalOverride.ac ? formatPublicKey(acGlobalOverride.ac) : 'undefined'}`,
+    `acRole: ${formatPublicKey(acGlobalOverride.acRole)}`,
+  ]);
+}
+
 function formatVault(vault: { commonVault: PublicKey; account: PublicKey } | undefined): string {
   if (!vault) return '';
   return formatObject([
@@ -57,6 +67,8 @@ function formatDataFeed(feed: DataFeed | undefined): string {
 function generateTokenAddressesCode(tokenAddrs: TokenAddresses, indent = '      '): string {
   const parts: string[] = [];
   if (tokenAddrs.acRole) parts.push(`acRole: ${formatPublicKey(tokenAddrs.acRole)}`);
+  if (tokenAddrs.acGlobalOverride)
+    parts.push(`acGlobalOverride: ${formatAcGlobalOverride(tokenAddrs.acGlobalOverride)}`);
   if (tokenAddrs.mToken) parts.push(`mToken: ${formatPublicKey(tokenAddrs.mToken)}`);
   if (tokenAddrs.tokenAuthority) {
     parts.push(`tokenAuthority: ${formatTokenAuthority(tokenAddrs.tokenAuthority)}`);
@@ -171,6 +183,10 @@ export interface DataFeed {
 
 export interface TokenAddresses {
   acRole?: PublicKey;
+  acGlobalOverride?: {
+    ac: PublicKey;
+    acRole: PublicKey;
+  };
   mToken?: PublicKey;
   tokenAuthority?: {
     seed: string;

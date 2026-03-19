@@ -4,6 +4,7 @@ import { PublicKey, Transaction } from '@solana/web3.js';
 import { createUserError } from '@/common/errorHandler';
 import { executeNetworkScript } from '@/common/scriptRunner';
 import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
+import { networkRolesConfigs } from '@/scripts/configs/network-roles';
 import { AC_ROLES } from '@/test/constants/ac.constants';
 import {
   acRoleToBuffer,
@@ -69,7 +70,8 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   console.log(`  Vaults Manager: ${vaultsManagerAddress.toString()}`);
   console.log(`  Oracle Manager: ${oracleManagerAddress.toString()}\n`);
 
-  const roleGrants: { account: PublicKey; role: string; category: string }[] = [];
+  const roleGrants: { account: PublicKey; role: string; category: string; acRole?: PublicKey }[] =
+    [];
 
   for (const role of ROLE_GROUPS.TOKEN_MANAGER) {
     roleGrants.push({ account: tokenManagerAddress, role, category: 'Token' });
@@ -79,6 +81,21 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   }
   for (const role of ROLE_GROUPS.ORACLE_MANAGER) {
     roleGrants.push({ account: oracleManagerAddress, role, category: 'Oracle' });
+  }
+
+  roleGrants.push({
+    account: new PublicKey(networkRolesConfigs[network].accessControlAdminAddress),
+    role: AC_ROLES.UPDATE_ACCOUNT_AC,
+    category: 'Access Control Admin',
+  });
+
+  if (tokenAddrs.acGlobalOverride?.acRole) {
+    roleGrants.push({
+      account: new PublicKey(networkRolesConfigs[network].accessControlAdminAddress),
+      acRole: tokenAddrs.acGlobalOverride.acRole,
+      role: AC_ROLES.UPDATE_ACCOUNT_AC,
+      category: 'Access Control Admin (Global AC Override)',
+    });
   }
 
   const toGrant: typeof roleGrants = [];
@@ -114,10 +131,18 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
         .grantRole(acRoleToBuffer(grant.role))
         .accountsPartial({
           account: grant.account,
-          acRole: acRole,
+          acRole: grant.acRole ?? acRole,
           authority: payer.publicKey,
-          authorityAcAdminRole: getAccountAcRoleStatePda(acRole, payer.publicKey, AC_ROLES.ADMIN),
-          accountAcRole: getAccountAcRoleStatePda(acRole, grant.account, grant.role),
+          authorityAcAdminRole: getAccountAcRoleStatePda(
+            grant.acRole ?? acRole,
+            payer.publicKey,
+            AC_ROLES.ADMIN,
+          ),
+          accountAcRole: getAccountAcRoleStatePda(
+            grant.acRole ?? acRole,
+            grant.account,
+            grant.role,
+          ),
         })
         .instruction(),
     );
@@ -126,7 +151,6 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const result = await sendAndWaitForCustomSolanaTxSign(provider, tx, [], {
     action: 'update-ac',
     comment: `Grant operational ${mtoken} roles`,
-    mToken: mtoken,
     waitForTx: false,
   });
 

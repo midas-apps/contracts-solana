@@ -33,11 +33,9 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   }
 
   // Check if data feed already exists
-  if (existingAddresses?.dataFeed) {
+  if (existingAddresses?.dataFeed && existingAddresses.underlyingFeed) {
     console.log(`✓ Data feed already exists: ${existingAddresses.dataFeed.toString()}`);
-    if (existingAddresses.underlyingFeed) {
-      console.log(`✓ Underlying feed: ${existingAddresses.underlyingFeed.toString()}`);
-    }
+    console.log(`✓ Underlying feed: ${existingAddresses.underlyingFeed.toString()}`);
     console.log('\nℹ️  Payment token feed already deployed. Skipping...');
     return;
   }
@@ -50,6 +48,8 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
     network,
     acRole: acRoleGlobal,
     dataFeedConfig: config.dataFeed,
+    existingDataFeed: existingAddresses?.dataFeed,
+    isPaymentToken: true,
   });
 
   console.log(`✅ Data feed deployed: ${dataFeed.toString()}`);

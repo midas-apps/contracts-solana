@@ -19,6 +19,10 @@ export interface DataFeed {
 
 export interface TokenAddresses {
   acRole?: PublicKey;
+  acGlobalOverride?: {
+    ac: PublicKey;
+    acRole: PublicKey;
+  };
   mToken?: PublicKey;
   tokenAuthority?: {
     seed: string;
@@ -99,6 +103,28 @@ export const addresses: Record<string, NetworkAddresses> = {
           account: new PublicKey('DNJMfdgrrVHKp1nFY5Qoqq14erqzdJoMve5THgKpCkrb'),
         },
       },
+      [MProduct.PSV]: {
+        acRole: new PublicKey('77YMLUMHD5Pdq2qvYCjTNL5oP1Z5hKPK4yuak2EaLJya'),
+        acGlobalOverride: {
+          ac: new PublicKey('6kGJVtfqxi2Jv5Ejb7W8UwWd9yuhckA69u9zjpRnVQiW'),
+          acRole: new PublicKey('9LWZYKZdNN6cBFf8Tu2NLUujgqZ2HZQ8ZsYJVUvnuHHr'),
+        },
+        mToken: new PublicKey('H4hLpHyvjMiDytckLgAhRyTzHAoSYg2eQ9RGTUissayx'),
+        tokenAuthority: {
+          account: new PublicKey('AEk5FmQYH6uqxsiQRX6yUkyugLd9QVheSsP4eKFhZYyK'),
+          seed: 'psv-token-authority',
+        },
+        mTokenDataFeed: new PublicKey('K5CPdTisCUonoqzjJH2NBiHRY7gU7oPxSS5wymmU78z'),
+        mTokenUnderlyingFeed: new PublicKey('3JQuSWEyd8CwcniXWfSWGgzrUQfcsTsgtGHe92pVaTHi'),
+        minter: {
+          commonVault: new PublicKey('GgmNCBisHT3SQ6aVyabPXyJE6ss8v4s23JFnBXJBzasz'),
+          account: new PublicKey('6FqbTK8xSiQPA5BLyzTkR2hjXPNN1jrut8qU333o8hea'),
+        },
+        redeemer: {
+          commonVault: new PublicKey('93Qpf7sfihJr5a6HdZ5N53jqe7ieevxuEmLqdAVBRrK8'),
+          account: new PublicKey('DKp86fdtsZMbegJNcxH3ea9eGhahXDWsxaSXCe79MYXZ'),
+        },
+      },
     },
     feeds: {
       [PaymentToken.USDC]: {
@@ -106,6 +132,12 @@ export const addresses: Record<string, NetworkAddresses> = {
         tokenProgram: TOKEN_PROGRAM_ID,
         dataFeed: new PublicKey('EY9TeqHx3QbKfSbZW7vZPNeg6Y8nwprsa9rm6okGCKpn'),
         underlyingFeed: new PublicKey('Dpw1EAVrSB1ibxiDQyTAW6Zip3J4Btk2x4SgApQCeFbX'),
+      },
+      [PaymentToken.wSOL]: {
+        token: new PublicKey('So11111111111111111111111111111111111111112'),
+        tokenProgram: TOKEN_PROGRAM_ID,
+        dataFeed: new PublicKey('3XCjjrbWFkiUmUs1i3MKk9GbXSAGQw7vZAhJb6XH3xCH'),
+        underlyingFeed: new PublicKey('H1kJWEqotQcdg2fiMNby1Fhtp44EZnCLFbuvwk7fmTBy'),
       },
     },
   },

@@ -20,6 +20,11 @@ Run once per network before deploying any tokens:
 
 ### Token Deployment
 
+If you need separated greenlist for a token, first deploy ac global overrides:
+
+1. `yarn deploy:token-ac-role:global-override --mtoken <token> --network <network>`
+2. `yarn deploy:token-ac:global-override --mtoken <token> --network <network>`
+
 Run in order for each token:
 
 1. `yarn deploy:token-ac-role --mtoken <token> --network <network>`

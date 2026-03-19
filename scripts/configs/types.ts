@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { PaymentToken } from '@/common/tokenTypes';
+import { VaultActionIds } from '@/test/constants/vaults.constants';
 
 import { publicKeySchema } from './common-schemas';
 import { grantRolesConfigSchema } from './roles-types';
@@ -169,6 +170,11 @@ export const redeemerVaultConfigSchema = z.object({
   paymentTokens: z.array(paymentTokenConfigSchema),
 });
 
+export const pauseFunctionsConfigSchema = z.object({
+  minter: z.array(z.enum(VaultActionIds)).optional(),
+  redeemer: z.array(z.enum(VaultActionIds)).optional(),
+});
+
 export const tokenConfigSchema = z.object({
   metadata: tokenMetadataSchema,
   tokenAuthority: tokenAuthorityConfigSchema,
@@ -176,6 +182,7 @@ export const tokenConfigSchema = z.object({
   minter: minterVaultConfigSchema,
   redeemer: redeemerVaultConfigSchema,
   grantRoles: grantRolesConfigSchema.optional(),
+  pauseFunctions: pauseFunctionsConfigSchema.optional(),
 });
 
 export const networkSpecificConfigSchema = z.object({
@@ -183,6 +190,7 @@ export const networkSpecificConfigSchema = z.object({
   minter: minterVaultConfigSchema,
   redeemer: redeemerVaultConfigSchema,
   grantRoles: grantRolesConfigSchema.optional(),
+  pauseFunctions: pauseFunctionsConfigSchema.optional(),
 });
 
 export const tokenConfigWithNetworksSchema = z.object({

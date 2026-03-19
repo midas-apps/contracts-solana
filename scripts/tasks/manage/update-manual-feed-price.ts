@@ -61,7 +61,7 @@ async function main(provider: AnchorProvider, payer: Wallet) {
   }
 
   // Convert price to base-9 format if provided
-  const priceBase9 = price !== null ? toBN(BigInt(Math.round(price * 1e9))) : null;
+  const priceBase9 = price !== null ? toBN(BigInt(Math.round(price * 1e8))) : null;
 
   // Get manual feed PDA
   const manualFeedPda = getManualFeedStatePda(tokenAddrs.mTokenDataFeed);
