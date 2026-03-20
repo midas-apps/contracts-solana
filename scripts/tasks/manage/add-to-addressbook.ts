@@ -22,10 +22,10 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
 
     if (key === 'redeemer') {
       contractName = 'Redemption Vault';
-      address = tokenAddresses.redeemer.commonVault.toBase58();
+      address = tokenAddresses.redeemer.account.toBase58();
     } else if (key.startsWith('minter')) {
       contractName = 'Minter Vault';
-      address = tokenAddresses.minter.commonVault.toBase58();
+      address = tokenAddresses.minter.account.toBase58();
     } else if (key === 'mTokenUnderlyingFeed') {
       contractName = 'Oracle';
       address = tokenAddresses.mTokenUnderlyingFeed.toBase58();

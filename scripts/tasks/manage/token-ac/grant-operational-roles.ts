@@ -126,6 +126,14 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
 
   const tx = new Transaction();
   for (const grant of toGrant) {
+    const rolePda = getAccountAcRoleStatePda(grant.acRole ?? acRole, grant.account, grant.role);
+    const role = await fetchAccountAcRoleState(acProgram, rolePda, true);
+
+    if (role) {
+      console.log(`✓ ${grant.role.replace('_role', '')} already granted`);
+      continue;
+    }
+
     tx.add(
       await acProgram.methods
         .grantRole(acRoleToBuffer(grant.role))
