@@ -25,7 +25,7 @@ import { getMtoken, getNetwork, getOptionalArg } from '../../utils/argumentParse
  * - The ManualFeedState PDA doesn't exist but FeedState does
  *
  * Usage:
- *   yarn tsx scripts/tasks/manage/init-manual-feed.ts --mtoken mFONE --network mainnet --price 1.05 --decimals 9
+ *   yarn tsx scripts/tasks/manage/init-manual-feed.ts --mtoken solmFONE --network mainnet --price 1.05 --decimals 9
  */
 async function main(provider: AnchorProvider, payer: Wallet) {
   const mtoken = getMtoken();
@@ -153,4 +153,4 @@ const network = getNetwork();
 const mtoken = getOptionalArg('mtoken') || getOptionalArg('m');
 executeNetworkScript(network, main, 'update-feed-mtoken', mtoken);
 
-// Usage: yarn tsx scripts/tasks/manage/init-manual-feed.ts --mtoken mFONE --network mainnet --price 1.04757758 --decimals 8
+// Usage: yarn tsx scripts/tasks/manage/init-manual-feed.ts --mtoken solmFONE --network mainnet --price 1.04757758 --decimals 8
