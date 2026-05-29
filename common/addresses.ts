@@ -41,7 +41,7 @@ export const addresses: Record<string, NetworkAddresses> = {
     acRoleGlobal: new PublicKey('BW95RL5v9685QqxvuRGjXiM3f6Td9k5QEBiGkXMHwsx1'),
     ac: new PublicKey('5cMcz3NsbJy6AyvGPpMupBXFiQkwC9qRuMxkTPiTb3Qu'),
     tokens: {
-      [MProduct.MFONE]: {
+      [MProduct.SOLMFONE]: {
         acRole: new PublicKey('2SAaMSzZd9DuNsR3QWNy8mZjNJPnMqdsC4rXz8wgnfFR'),
         mToken: new PublicKey('Ds5juQNpMUwZamY8fbynBrCyBNR8dGnSy2yeFAD3YKRq'),
         tokenAuthority: {
@@ -81,7 +81,7 @@ export const addresses: Record<string, NetworkAddresses> = {
     acRoleGlobal: new PublicKey('39tDSAtrYuy7cA6ipj1N9c8jzs5kRPbWAj5ztmW3sMa6'),
     ac: new PublicKey('2dGjhqtMhDk1zuhv8NhiTS52fDudaSQt8DHhPbtrit3a'),
     tokens: {
-      [MProduct.MFONE]: {
+      [MProduct.SOLMFONE]: {
         acRole: new PublicKey('CVUnxqMxQGeUyEn1Pd7DXmZawQMpGruWGLikFe2E7u5k'),
         mToken: new PublicKey('ESS9fuAbDiyDXy6y1ZAt9VSaiGPSqG8NwaWVX7dePdR7'),
         tokenAuthority: {

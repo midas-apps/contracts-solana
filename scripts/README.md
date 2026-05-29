@@ -70,10 +70,10 @@ Deployed addresses saved to `common/addresses.ts`.
 
 ### Role Management
 
-- `yarn grant:role --mtoken <token> --network <network> --role <role>`
-- `yarn grant:admin-role --mtoken <token> --network <network>`
-- `yarn grant:operational-roles --mtoken <token> --network <network>`
-- `yarn revoke:deployer-roles --mtoken <token> --network <network>`
+- `yarn token-ac:grant-role --mtoken <token> --network <network> --role <role>`
+- `yarn token-ac:grant-admin --mtoken <token> --network <network>`
+- `yarn token-ac:grant-operational --mtoken <token> --network <network>`
+- `yarn token-ac:revoke-deployer --mtoken <token> --network <network>`
 
 Roles: `admin`, `update_account_ac`, `vault_admin`, `vault_pauser`, `m_minter`, `m_burner`, `m_freezer`, `feed_admin`
 
@@ -82,22 +82,28 @@ Roles: `admin`, `update_account_ac`, `vault_admin`, `vault_pauser`, `m_minter`, 
 - `yarn add:payment-token --mtoken <token> --network <network> --payment-token <payment>`
 - `yarn delegate --mtoken <token> --network <network>`
 - `yarn transfer:authority --mtoken <token> --network <network>`
+- `yarn transfer:token-metadata-authority --mtoken <token> --network <network> --new-authority <pubkey>`
 
 ### Feed Management
 
 - `yarn update:data-feed --mtoken <token> --network <network> --new-mode <mode>`
+- `yarn update:token-metadata --mtoken <token> --network <network> --symbol <symbol> [--name <name>] [--uri <uri>]`
 - `yarn update:manual-feed-price --mtoken <token> --network <network> --price <price> [--decimals <dec>]`
 
 ## Verification
 
-- `yarn verify:deployment --mtoken <token> --network <network>`
-- `yarn verify:roles --mtoken <token> --network <network> [--address <pubkey>]`
-- `yarn export:addresses --network <network>`
+- `yarn verify:token-metadata --mtoken <token> --network <network>`
+- `yarn tsx scripts/tasks/verify/verify-roles.ts --mtoken <token> --network <network> [--address <pubkey>]`
+- `yarn tsx scripts/verify/verify-no-roles.ts --network <network> --address <pubkey>`
+- `yarn tsx scripts/tasks/verify/verify-mtoken-state.ts --mtoken <token> --network <network>`
+- `yarn tsx scripts/tasks/verify/verify-feed.ts --mtoken <token> --network <network>`
+- `yarn tsx scripts/tasks/verify/verify-payment-tokens.ts --mtoken <token> --network <network>`
+- `yarn tsx scripts/tasks/verify/verify-redeem-request.ts --mtoken <token> --network <network> --request-id <id>`
 
-**Local test utilities** (run with `tsx scripts/local-test-utils/<script>.ts`):
+**Direct verification utilities** (run with `yarn tsx scripts/tasks/verify/<script>.ts`):
 
 - `verify-feed.ts` - Verify data feed configuration
-- `verify-mint-state.ts` - Verify minter vault state
+- `verify-mtoken-state.ts` - Verify mToken state
 - `verify-payment-tokens.ts` - Verify payment token setup
 - `verify-redeem-request.ts` - Verify redeem request state
 - `get-all-requests.ts` - List all pending requests
