@@ -23,7 +23,7 @@ const grantAdminRole = async (
   payer: Wallet,
   network: string,
   mtoken: MProduct,
-  acRole?: PublicKey,
+  acRole: PublicKey,
 ) => {
   const accessControlAdminAddress = new PublicKey(
     networkRolesConfigs[network].accessControlAdminAddress,

@@ -83,6 +83,11 @@ export const createSolanaAddressBookContract = async ({
   contractTag?: string;
 }) => {
   const { customSignerModule } = await createCustomSignerProvider(network, 'deployer');
+  if (!customSignerModule) {
+    console.log('No custom signer module available. Skipping address book registration.');
+    return { sent: false };
+  }
+
   return await customSignerModule.createSolanaAddressBookContract({
     address,
     contractName,

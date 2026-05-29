@@ -20,7 +20,7 @@ export interface DataFeed {
 export interface TokenAddresses {
   acRole?: PublicKey;
   acGlobalOverride?: {
-    ac: PublicKey;
+    ac?: PublicKey;
     acRole: PublicKey;
   };
   mToken?: PublicKey;

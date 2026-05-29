@@ -34,10 +34,12 @@ function formatAcGlobalOverride(
   acGlobalOverride: { ac?: PublicKey; acRole: PublicKey } | undefined,
 ): string {
   if (!acGlobalOverride) return '';
-  return formatObject([
-    `ac: ${acGlobalOverride.ac ? formatPublicKey(acGlobalOverride.ac) : 'undefined'}`,
-    `acRole: ${formatPublicKey(acGlobalOverride.acRole)}`,
-  ]);
+  const parts: string[] = [];
+  if (acGlobalOverride.ac) {
+    parts.push(`ac: ${formatPublicKey(acGlobalOverride.ac)}`);
+  }
+  parts.push(`acRole: ${formatPublicKey(acGlobalOverride.acRole)}`);
+  return formatObject(parts);
 }
 
 function formatVault(vault: { commonVault: PublicKey; account: PublicKey } | undefined): string {
@@ -184,7 +186,7 @@ export interface DataFeed {
 export interface TokenAddresses {
   acRole?: PublicKey;
   acGlobalOverride?: {
-    ac: PublicKey;
+    ac?: PublicKey;
     acRole: PublicKey;
   };
   mToken?: PublicKey;

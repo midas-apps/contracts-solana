@@ -20,19 +20,19 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
     let contractName = '';
     let contractTag: string | undefined;
 
-    if (key === 'redeemer') {
+    if (key === 'redeemer' && tokenAddresses.redeemer) {
       contractName = 'Redemption Vault';
       address = tokenAddresses.redeemer.account.toBase58();
-    } else if (key.startsWith('minter')) {
+    } else if (key === 'minter' && tokenAddresses.minter) {
       contractName = 'Minter Vault';
       address = tokenAddresses.minter.account.toBase58();
-    } else if (key === 'mTokenUnderlyingFeed') {
+    } else if (key === 'mTokenUnderlyingFeed' && tokenAddresses.mTokenUnderlyingFeed) {
       contractName = 'Oracle';
       address = tokenAddresses.mTokenUnderlyingFeed.toBase58();
-    } else if (key === 'mToken') {
+    } else if (key === 'mToken' && tokenAddresses.mToken) {
       contractName = mtoken;
       address = tokenAddresses.mToken.toBase58();
-    } else if (key === 'mTokenDataFeed') {
+    } else if (key === 'mTokenDataFeed' && tokenAddresses.mTokenDataFeed) {
       contractName = 'Oracle';
       contractTag = 'datafeed';
       address = tokenAddresses.mTokenDataFeed.toBase58();

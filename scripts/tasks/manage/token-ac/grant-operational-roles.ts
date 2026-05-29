@@ -26,6 +26,7 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
 
   const config = loadTokenConfig(mtoken, network);
   const grantRolesConfig = config.grantRoles;
+  const networkRolesConfig = networkRolesConfigs[network];
 
   if (
     !grantRolesConfig ||
@@ -34,6 +35,10 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
     !grantRolesConfig.oracleManagerAddress
   ) {
     throw createUserError('Missing grantRoles config - check token config');
+  }
+
+  if (!networkRolesConfig) {
+    throw createUserError(`Network roles config not found: ${network}`);
   }
 
   const tokenAddrs = getTokenAddresses(network, mtoken);
@@ -84,14 +89,14 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   }
 
   roleGrants.push({
-    account: new PublicKey(networkRolesConfigs[network].accessControlAdminAddress),
+    account: new PublicKey(networkRolesConfig.accessControlAdminAddress),
     role: AC_ROLES.UPDATE_ACCOUNT_AC,
     category: 'Access Control Admin',
   });
 
   if (tokenAddrs.acGlobalOverride?.acRole) {
     roleGrants.push({
-      account: new PublicKey(networkRolesConfigs[network].accessControlAdminAddress),
+      account: new PublicKey(networkRolesConfig.accessControlAdminAddress),
       acRole: tokenAddrs.acGlobalOverride.acRole,
       role: AC_ROLES.UPDATE_ACCOUNT_AC,
       category: 'Access Control Admin (Global AC Override)',
@@ -102,7 +107,8 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const alreadyGranted: typeof roleGrants = [];
 
   for (const grant of roleGrants) {
-    const accountAcRolePda = getAccountAcRoleStatePda(acRole, grant.account, grant.role);
+    const roleAcRole = grant.acRole ?? acRole;
+    const accountAcRolePda = getAccountAcRoleStatePda(roleAcRole, grant.account, grant.role);
     const existing = await fetchAccountAcRoleState(acProgram, accountAcRolePda, true);
 
     if (existing !== null) {
