@@ -2,11 +2,13 @@ export enum MProduct {
   MTBILL = 'mTBILL',
   SOLMFONE = 'solmFONE',
   SOLMHYPER = 'solmHYPER',
+  PSV = 'pSV',
 }
 
 export enum PaymentToken {
   USDC = 'USDC',
   USDT = 'USDT',
+  wSOL = 'wSOL',
 }
 
 export function isMProduct(value: string): value is MProduct {

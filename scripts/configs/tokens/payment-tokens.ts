@@ -45,4 +45,23 @@ export const paymentTokenConfigs: Partial<Record<PaymentToken, PaymentTokenConfi
       },
     },
   },
+  [PaymentToken.wSOL]: {
+    metadata: {
+      name: 'Wrapped SOL',
+      symbol: 'wSOL',
+      decimals: 9,
+    },
+    networks: {
+      mainnet: {
+        tokenAddress: 'So11111111111111111111111111111111111111112',
+        dataFeed: {
+          mode: 'manual',
+          maxPrice: '1.00',
+          minPrice: '0.9999',
+          initialPrice: '1',
+          maxStaleness: 365 * 86400,
+        },
+      },
+    },
+  },
 };

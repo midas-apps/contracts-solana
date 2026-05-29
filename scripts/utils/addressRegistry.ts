@@ -135,6 +135,7 @@ function validateComponentValue<K extends keyof TokenAddresses>(
 function mapComponentToStateName<K extends keyof TokenAddresses>(component: K): ComponentName {
   const mapping: Partial<Record<keyof TokenAddresses, ComponentName>> = {
     acRole: 'acRole',
+    acGlobalOverride: 'acGlobalOverride',
     mToken: 'mToken',
     mTokenDataFeed: 'dataFeed',
     tokenAuthority: 'tokenAuthority',

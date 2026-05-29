@@ -14,6 +14,8 @@
     "deploy:global-ac-role": "tsx scripts/tasks/deploy/network/deploy-global-ac-role.ts",
     "deploy:global-ac": "tsx scripts/tasks/deploy/network/deploy-global-ac.ts",
     "deploy:token-ac-role": "tsx scripts/tasks/deploy/deploy-token-ac-role.ts",
+    "deploy:token-ac:global-override": "tsx scripts/tasks/deploy/deploy-global-ac-override.ts",
+    "deploy:token-ac-role:global-override": "tsx scripts/tasks/deploy/deploy-global-ac-role-override.ts",
     "deploy:token-mint": "tsx scripts/tasks/deploy/deploy-token-mint.ts",
     "deploy:token-authority": "tsx scripts/tasks/deploy/deploy-token-authority.ts",
     "deploy:token-datafeed": "tsx scripts/tasks/deploy/deploy-token-datafeed.ts",
@@ -34,8 +36,9 @@
     "update:data-feed": "tsx scripts/tasks/manage/update-data-feed.ts",
     "update:token-metadata": "tsx scripts/tasks/manage/update-token-metadata.ts",
     "update:manual-feed-price": "tsx scripts/tasks/manage/update-manual-feed-price.ts",
+    "delegate": "tsx scripts/tasks/manage/delegate.ts",
     "verify:token-metadata": "tsx scripts/tasks/verify/verify-token-metadata.ts",
-    "delegate": "tsx scripts/tasks/manage/delegate.ts"
+    "add:to-addressbook": "tsx scripts/tasks/manage/add-to-addressbook.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "0.30.1",

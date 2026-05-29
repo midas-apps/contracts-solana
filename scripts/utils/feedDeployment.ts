@@ -17,6 +17,9 @@ export interface DeployFeedParams {
   network: string;
   acRole: PublicKey;
   dataFeedConfig: DataFeedConfig;
+  action?: string;
+  isPaymentToken?: boolean;
+  existingDataFeed?: PublicKey;
 }
 
 export interface DeployFeedResult {
@@ -30,6 +33,9 @@ export async function deployFeedFromConfig({
   network,
   acRole,
   dataFeedConfig,
+  action,
+  existingDataFeed,
+  isPaymentToken,
 }: DeployFeedParams): Promise<DeployFeedResult> {
   const mode = dataFeedConfig.mode;
   const underlyingFeed = dataFeedConfig.underlyingFeed
@@ -38,12 +44,14 @@ export async function deployFeedFromConfig({
 
   const feedConfig = {
     acRole,
+    isPaymentToken: !!isPaymentToken,
     underlyingFeed,
+    existingDataFeed,
     minPrice: BigInt(Math.floor(parseFloat(dataFeedConfig.minPrice) * PRICE_MULTIPLIER)),
     maxPrice: BigInt(Math.floor(parseFloat(dataFeedConfig.maxPrice) * PRICE_MULTIPLIER)),
     maxStaleness: dataFeedConfig.maxStaleness,
     initialPrice: dataFeedConfig.initialPrice
-      ? BigInt(Math.floor(parseFloat(dataFeedConfig.initialPrice) * PRICE_MULTIPLIER))
+      ? BigInt(Math.floor(parseFloat(dataFeedConfig.initialPrice) * 10 ** 8))
       : undefined,
   };
 
@@ -113,7 +121,10 @@ export async function deployFeedFromConfig({
     // }
 
     case 'manual': {
-      const dataFeed = await deployManualFeed({ provider, payer, network }, feedConfig);
+      const dataFeed = await deployManualFeed(
+        { provider, payer, network, action },
+        { ...feedConfig, isPaymentToken, existingDataFeed },
+      );
       // For manual feeds, the underlying feed is a PDA derived from the data feed
       const dataFeedProgram = getDataFeedProgram(provider);
       const [manualFeedPda] = PublicKey.findProgramAddressSync(

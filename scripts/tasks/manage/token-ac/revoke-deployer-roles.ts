@@ -4,6 +4,7 @@ import { PublicKey, Transaction } from '@solana/web3.js';
 import { createUserError } from '@/common/errorHandler';
 import { executeNetworkScript } from '@/common/scriptRunner';
 import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
+import { MProduct } from '@/common/tokenTypes';
 import { AC_ROLES } from '@/test/constants/ac.constants';
 import {
   acRoleToBuffer,
@@ -17,28 +18,18 @@ import { getAcProgram } from '../../../deploy/ac';
 import { getTokenAddresses } from '../../../utils/addressQueries';
 import { getMtoken, getNetwork } from '../../../utils/argumentParser';
 
-async function main(provider: AnchorProvider, payer: Wallet, network: string) {
-  const mtoken = getMtoken();
-
-  console.log(`\n━━━ Step 2/3: Revoke Deployer Roles ━━━`);
-  console.log(`Token: ${mtoken} | Network: ${network}\n`);
-
-  const networkRolesConfig = networkRolesConfigs[network];
-  if (!networkRolesConfig) {
-    throw createUserError(`Network roles config not found: ${network}`);
-  }
-
-  const accessControlAdminAddress = new PublicKey(networkRolesConfig.accessControlAdminAddress);
-
-  const tokenAddrs = getTokenAddresses(network, mtoken);
-  if (!tokenAddrs?.acRole) {
-    throw createUserError(`AC Role not found for ${mtoken} on ${network}`, [
-      `Run: yarn deploy:token-ac-role --mtoken ${mtoken} --network ${network}`,
-    ]);
-  }
+const revokeDeployerRoles = async (
+  provider: AnchorProvider,
+  payer: Wallet,
+  network: string,
+  mtoken: MProduct,
+  acRole: PublicKey,
+) => {
+  const accessControlAdminAddress = new PublicKey(
+    networkRolesConfigs[network].accessControlAdminAddress,
+  );
 
   const acProgram = getAcProgram(provider);
-  const acRole = tokenAddrs.acRole;
 
   console.log(`Deployer:  ${payer.publicKey.toString()}`);
   console.log(`AC Admin:  ${accessControlAdminAddress.toString()}\n`);
@@ -126,7 +117,6 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const result = await sendAndWaitForCustomSolanaTxSign(provider, tx, [], {
     action: 'deployer',
     comment: `Revoke deployer roles for ${mtoken}`,
-    mToken: mtoken,
     waitForTx: false,
   });
 
@@ -141,6 +131,32 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   console.log(
     `\n→ Next: yarn token-ac:grant-operational --mtoken ${mtoken} --network ${network}\n`,
   );
+};
+
+async function main(provider: AnchorProvider, payer: Wallet, network: string) {
+  const mtoken = getMtoken();
+  console.log(`\n━━━ Step 2/3: Revoke Deployer Roles ━━━`);
+  console.log(`Token: ${mtoken} | Network: ${network}\n`);
+
+  const networkRolesConfig = networkRolesConfigs[network];
+  if (!networkRolesConfig) {
+    throw createUserError(`Network roles config not found: ${network}`);
+  }
+  const tokenAddrs = getTokenAddresses(network, mtoken);
+  if (!tokenAddrs?.acRole) {
+    throw createUserError(`AC Role not found for ${mtoken} on ${network}`, [
+      `Run: yarn deploy:token-ac-role --mtoken ${mtoken} --network ${network}`,
+    ]);
+  }
+  const acRole = tokenAddrs.acRole;
+  await revokeDeployerRoles(provider, payer, network, mtoken, acRole);
+
+  if (tokenAddrs.acGlobalOverride?.acRole) {
+    console.log(
+      `Revoking deployer roles from global AC role override: ${tokenAddrs.acGlobalOverride.acRole.toString()}`,
+    );
+    await revokeDeployerRoles(provider, payer, network, mtoken, tokenAddrs.acGlobalOverride.acRole);
+  }
 }
 
 const network = getNetwork();
