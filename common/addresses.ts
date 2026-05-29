@@ -99,6 +99,24 @@ export const addresses: Record<string, NetworkAddresses> = {
           account: new PublicKey('DNJMfdgrrVHKp1nFY5Qoqq14erqzdJoMve5THgKpCkrb'),
         },
       },
+      [MProduct.SOLMHYPER]: {
+        acRole: new PublicKey('66uBL5bq5nXg8SKGUzgCvuQ73HWg1TmnSkEGkHBXVWW'),
+        mToken: new PublicKey('2svm1UkdXq5sygCm7gJmUDS7qa9DCshsj8KSVKZimHpp'),
+        tokenAuthority: {
+          account: new PublicKey('GctLcDKKVWmwaFz4AkCQGdZLoyPVHKkB7MFAXtBrbpnB'),
+          seed: 'mhyper-token-authority',
+        },
+        mTokenDataFeed: new PublicKey('BqhYhduxQ4hMsAh5ysuPjAxpcDTMgGkqoXwpbAXcosjb'),
+        mTokenUnderlyingFeed: new PublicKey('8jbaPPDuFzUnSJxTVaU7zWwburP5RDGHfS6nbrb2sEkv'),
+        minter: {
+          commonVault: new PublicKey('5EWyEBBMUK31KGXjDimVgLfLEjjSrvDDRpXR6oAQJKT3'),
+          account: new PublicKey('eR8rty5KUuAQYncdGq5epNmwHm8nXCHzKv6cR3rbDsV'),
+        },
+        redeemer: {
+          commonVault: new PublicKey('GJ23UDbiRTu7foXjWaTimaPdmVT3KFYs8YdVdB5ecFsS'),
+          account: new PublicKey('DesvLajywoN5bR8rsGXSgtbmDBwKtxdcpdcMguhqabJo'),
+        },
+      },
     },
     feeds: {
       [PaymentToken.USDC]: {

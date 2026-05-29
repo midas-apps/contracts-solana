@@ -3,8 +3,10 @@ import { TokenConfigWithNetworks } from '@/scripts/configs/types';
 
 import { mTBILLConfig } from './mTBILL';
 import { solmFONEConfig } from './solmFONE';
+import { solmHYPERConfig } from './solmHYPER';
 
 export const tokenConfigs: Partial<Record<MProduct, TokenConfigWithNetworks>> = {
   [MProduct.MTBILL]: mTBILLConfig,
   [MProduct.SOLMFONE]: solmFONEConfig,
+  [MProduct.SOLMHYPER]: solmHYPERConfig,
 };

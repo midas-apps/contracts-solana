@@ -44,11 +44,11 @@ export const ROLE_GROUPS = {
     SOLANA_ROLES.M_MINTER, // Manual mint tokens
     SOLANA_ROLES.M_BURNER, // Manual burn tokens
     SOLANA_ROLES.M_FREEZER, // Freeze/thaw accounts
-    SOLANA_ROLES.VAULT_PAUSER, // Pause vault operations
   ],
 
   VAULTS_MANAGER: [
     SOLANA_ROLES.VAULT_ADMIN, // Manage both minter and redeemer vaults
+    SOLANA_ROLES.VAULT_PAUSER, // Pause vault operations
   ],
 
   ORACLE_MANAGER: [

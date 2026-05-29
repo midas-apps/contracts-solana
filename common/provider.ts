@@ -47,6 +47,10 @@ function createFordefiProvider(
   const chainId = getFordefiChainId(network);
   const walletAddress = signer.getSolanaWalletAddressForAction(action, mtoken, chainId);
 
+  console.log(
+    `Fordefi vault wallet: ${walletAddress} (action: ${action}, chain: ${chainId}${mtoken ? `, mtoken: ${mtoken}` : ''})`,
+  );
+
   // Fordefi wallet: public key only, signing handled by solanaTxHelper
   const payer: Wallet = {
     publicKey: new PublicKey(walletAddress),

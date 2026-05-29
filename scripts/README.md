@@ -29,6 +29,18 @@ Run in order for each token:
 5. `yarn deploy:minter-vault --mtoken <token> --network <network>`
 6. `yarn deploy:redeemer-vault --mtoken <token> --network <network>`
 
+### Post-Deployment Order
+
+After the core deployment, grant access-control roles before running management actions such as adding payment tokens, updating vault pause state, or updating feeds.
+
+1. `yarn token-ac:grant-admin --mtoken <token> --network <network>`
+2. `yarn token-ac:revoke-deployer --mtoken <token> --network <network>`
+3. `yarn token-ac:grant-operational --mtoken <token> --network <network>`
+4. `yarn transfer:authority --mtoken <token> --network <network>`
+5. Run token management tasks, for example `add:payment-token` and `update:vault-pause`.
+
+Wait for any pending Fordefi approval to settle before continuing to a dependent step. Vault management tasks require the signer to already hold the relevant role: `vault_admin_role` for payment-token updates and `vault_pauser_role` for pause updates.
+
 ### Payment Token Deployment
 
 - `yarn deploy:payment-token-feed --network <network> --payment-token <token>`
@@ -72,8 +84,8 @@ Deployed addresses saved to `common/addresses.ts`.
 
 - `yarn token-ac:grant-role --mtoken <token> --network <network> --role <role>`
 - `yarn token-ac:grant-admin --mtoken <token> --network <network>`
-- `yarn token-ac:grant-operational --mtoken <token> --network <network>`
 - `yarn token-ac:revoke-deployer --mtoken <token> --network <network>`
+- `yarn token-ac:grant-operational --mtoken <token> --network <network>`
 
 Roles: `admin`, `update_account_ac`, `vault_admin`, `vault_pauser`, `m_minter`, `m_burner`, `m_freezer`, `feed_admin`
 
@@ -81,6 +93,8 @@ Roles: `admin`, `update_account_ac`, `vault_admin`, `vault_pauser`, `m_minter`, 
 
 - `yarn add:payment-token --mtoken <token> --network <network> --payment-token <payment>`
 - `yarn delegate --mtoken <token> --network <network>`
+- `yarn update:vault-pause --mtoken <token> --network <network> --vault <minter|redeemer> --action <action> --paused <true|false>`
+- `yarn update:vault-pause --mtoken <token> --network <network> --paused <true|false>` - Apply configured `postDeploy.pauseFunctions`
 - `yarn transfer:authority --mtoken <token> --network <network>`
 - `yarn transfer:token-metadata-authority --mtoken <token> --network <network> --new-authority <pubkey>`
 
