@@ -25,6 +25,10 @@ export interface DataFeed {
 
 export interface TokenAddresses {
   acRole?: PublicKey;
+  acGlobalOverride?: {
+    ac?: PublicKey;
+    acRole: PublicKey;
+  };
   mToken?: PublicKey;
   tokenAuthority?: {
     seed: string;
@@ -51,7 +55,7 @@ export const addresses: Record<string, NetworkAddresses> = {
       vault: new PublicKey('3XeBT7F1H3cbSETdHvTFDr8Wz47yNZZ6dYZsQJScdm9u'),
     },
     tokens: {
-      [MProduct.MFONE]: {
+      [MProduct.SOLMFONE]: {
         acRole: new PublicKey('2SAaMSzZd9DuNsR3QWNy8mZjNJPnMqdsC4rXz8wgnfFR'),
         mToken: new PublicKey('Ds5juQNpMUwZamY8fbynBrCyBNR8dGnSy2yeFAD3YKRq'),
         tokenAuthority: {
@@ -91,7 +95,7 @@ export const addresses: Record<string, NetworkAddresses> = {
     acRoleGlobal: new PublicKey('39tDSAtrYuy7cA6ipj1N9c8jzs5kRPbWAj5ztmW3sMa6'),
     ac: new PublicKey('2dGjhqtMhDk1zuhv8NhiTS52fDudaSQt8DHhPbtrit3a'),
     tokens: {
-      [MProduct.MFONE]: {
+      [MProduct.SOLMFONE]: {
         acRole: new PublicKey('CVUnxqMxQGeUyEn1Pd7DXmZawQMpGruWGLikFe2E7u5k'),
         mToken: new PublicKey('ESS9fuAbDiyDXy6y1ZAt9VSaiGPSqG8NwaWVX7dePdR7'),
         tokenAuthority: {
@@ -109,6 +113,46 @@ export const addresses: Record<string, NetworkAddresses> = {
           account: new PublicKey('DNJMfdgrrVHKp1nFY5Qoqq14erqzdJoMve5THgKpCkrb'),
         },
       },
+      [MProduct.PSV]: {
+        acRole: new PublicKey('77YMLUMHD5Pdq2qvYCjTNL5oP1Z5hKPK4yuak2EaLJya'),
+        acGlobalOverride: {
+          ac: new PublicKey('6kGJVtfqxi2Jv5Ejb7W8UwWd9yuhckA69u9zjpRnVQiW'),
+          acRole: new PublicKey('9LWZYKZdNN6cBFf8Tu2NLUujgqZ2HZQ8ZsYJVUvnuHHr'),
+        },
+        mToken: new PublicKey('H4hLpHyvjMiDytckLgAhRyTzHAoSYg2eQ9RGTUissayx'),
+        tokenAuthority: {
+          account: new PublicKey('AEk5FmQYH6uqxsiQRX6yUkyugLd9QVheSsP4eKFhZYyK'),
+          seed: 'psv-token-authority',
+        },
+        mTokenDataFeed: new PublicKey('K5CPdTisCUonoqzjJH2NBiHRY7gU7oPxSS5wymmU78z'),
+        mTokenUnderlyingFeed: new PublicKey('3JQuSWEyd8CwcniXWfSWGgzrUQfcsTsgtGHe92pVaTHi'),
+        minter: {
+          commonVault: new PublicKey('GgmNCBisHT3SQ6aVyabPXyJE6ss8v4s23JFnBXJBzasz'),
+          account: new PublicKey('6FqbTK8xSiQPA5BLyzTkR2hjXPNN1jrut8qU333o8hea'),
+        },
+        redeemer: {
+          commonVault: new PublicKey('93Qpf7sfihJr5a6HdZ5N53jqe7ieevxuEmLqdAVBRrK8'),
+          account: new PublicKey('DKp86fdtsZMbegJNcxH3ea9eGhahXDWsxaSXCe79MYXZ'),
+        },
+      },
+      [MProduct.SOLMHYPER]: {
+        acRole: new PublicKey('66uBL5bq5nXg8SKGUzgCvuQ73HWg1TmnSkEGkHBXVWW'),
+        mToken: new PublicKey('2svm1UkdXq5sygCm7gJmUDS7qa9DCshsj8KSVKZimHpp'),
+        tokenAuthority: {
+          account: new PublicKey('GctLcDKKVWmwaFz4AkCQGdZLoyPVHKkB7MFAXtBrbpnB'),
+          seed: 'mhyper-token-authority',
+        },
+        mTokenDataFeed: new PublicKey('BqhYhduxQ4hMsAh5ysuPjAxpcDTMgGkqoXwpbAXcosjb'),
+        mTokenUnderlyingFeed: new PublicKey('8jbaPPDuFzUnSJxTVaU7zWwburP5RDGHfS6nbrb2sEkv'),
+        minter: {
+          commonVault: new PublicKey('5EWyEBBMUK31KGXjDimVgLfLEjjSrvDDRpXR6oAQJKT3'),
+          account: new PublicKey('eR8rty5KUuAQYncdGq5epNmwHm8nXCHzKv6cR3rbDsV'),
+        },
+        redeemer: {
+          commonVault: new PublicKey('GJ23UDbiRTu7foXjWaTimaPdmVT3KFYs8YdVdB5ecFsS'),
+          account: new PublicKey('DesvLajywoN5bR8rsGXSgtbmDBwKtxdcpdcMguhqabJo'),
+        },
+      },
     },
     feeds: {
       [PaymentToken.USDC]: {
@@ -116,6 +160,12 @@ export const addresses: Record<string, NetworkAddresses> = {
         tokenProgram: TOKEN_PROGRAM_ID,
         dataFeed: new PublicKey('EY9TeqHx3QbKfSbZW7vZPNeg6Y8nwprsa9rm6okGCKpn'),
         underlyingFeed: new PublicKey('Dpw1EAVrSB1ibxiDQyTAW6Zip3J4Btk2x4SgApQCeFbX'),
+      },
+      [PaymentToken.wSOL]: {
+        token: new PublicKey('So11111111111111111111111111111111111111112'),
+        tokenProgram: TOKEN_PROGRAM_ID,
+        dataFeed: new PublicKey('3XCjjrbWFkiUmUs1i3MKk9GbXSAGQw7vZAhJb6XH3xCH'),
+        underlyingFeed: new PublicKey('H1kJWEqotQcdg2fiMNby1Fhtp44EZnCLFbuvwk7fmTBy'),
       },
     },
   },

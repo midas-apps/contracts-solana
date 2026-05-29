@@ -26,6 +26,28 @@ export interface CustomSignerModule {
     string | { sent: boolean; txId?: string; signedTransaction?: string; signature?: string }
   >;
   getSolanaWalletAddressForAction: (action: string, mtoken?: string, chainId?: string) => string;
+  createSolanaAddressBookContract: ({
+    address,
+    contractName,
+    mToken,
+    chain,
+    contractTag,
+  }: {
+    address: string;
+    contractName: string;
+    mToken: string;
+    chain?: string;
+    contractTag?: string;
+  }) => Promise<
+    | {
+        sent: boolean;
+        txId?: undefined;
+      }
+    | {
+        sent: boolean;
+        txId: string;
+      }
+  >;
 }
 
 function createProvider(network: string, wallet: Wallet): AnchorProvider {
@@ -46,6 +68,10 @@ function createFordefiProvider(
 ): { provider: AnchorProvider; payer: Wallet } {
   const chainId = getFordefiChainId(network);
   const walletAddress = signer.getSolanaWalletAddressForAction(action, mtoken, chainId);
+
+  console.log(
+    `Fordefi vault wallet: ${walletAddress} (action: ${action}, chain: ${chainId}${mtoken ? `, mtoken: ${mtoken}` : ''})`,
+  );
 
   // Fordefi wallet: public key only, signing handled by solanaTxHelper
   const payer: Wallet = {

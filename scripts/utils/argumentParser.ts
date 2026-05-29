@@ -1,12 +1,12 @@
+import { PublicKey } from '@solana/web3.js';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { createUserError } from '@/common/errorHandler';
+import { programAddresses } from '@/common/programs';
 import { MProduct, isMProduct, PaymentToken, isPaymentToken } from '@/common/tokenTypes';
 
 import { getAvailableNetworks } from './getAvailableNetworks';
-import { PublicKey } from '@solana/web3.js';
-import { programAddresses } from '@/common/programs';
 
 /** Simple cached parser - parses all args once */
 let parsedArgs: Record<string, unknown> | null = null;
@@ -76,7 +76,7 @@ export function getBufferAccount(): PublicKey {
 }
 
 /** Get network from arguments */
-export function getProgram(): keyof (typeof programAddresses) {
+export function getProgram(): keyof typeof programAddresses {
   const argv = getParsedArgs();
   const program = (argv.program || argv.p) as string | undefined;
 
@@ -88,16 +88,15 @@ export function getProgram(): keyof (typeof programAddresses) {
   }
 
   const availablePrograms = Object.keys(programAddresses);
-  
+
   if (!availablePrograms.includes(program)) {
     throw createUserError(`Invalid program '${program}'`, [
       `Must be one of: ${availablePrograms.join(', ')}`,
     ]);
   }
-  
-  return program as keyof (typeof programAddresses);
-}
 
+  return program as keyof typeof programAddresses;
+}
 
 /** Get network from arguments */
 export function getAdditionalBytes(): number {
@@ -122,7 +121,7 @@ export function getAdditionalBytes(): number {
 /** Get network from arguments */
 export function getMultisigTxIndex(): number {
   const argv = getParsedArgs();
-  const multisigTxIndex = (argv['multisig-tx-index']) as string | undefined;
+  const multisigTxIndex = argv['multisig-tx-index'] as string | undefined;
 
   if (!multisigTxIndex) {
     throw createUserError('Multisig tx index is required', [
@@ -132,7 +131,7 @@ export function getMultisigTxIndex(): number {
   }
 
   const v = parseInt(multisigTxIndex);
-  
+
   if (isNaN(v)) {
     throw createUserError(`Invalid multisig tx index '${multisigTxIndex}'`, [
       'Must be a valid number',
@@ -143,11 +142,13 @@ export function getMultisigTxIndex(): number {
 }
 
 /** Get network from arguments */
-export function getAuthority<T extends boolean = true>(required?: T): T extends true ? PublicKey : PublicKey | undefined {
+export function getAuthority<T extends boolean = true>(
+  required?: T,
+): T extends true ? PublicKey : PublicKey | undefined {
   required ??= true as T;
-  
+
   const argv = getParsedArgs();
-  const authority = (argv['authority']) as string | undefined;
+  const authority = argv.authority as string | undefined;
 
   if (required && !authority) {
     throw createUserError('Authority is required', [
@@ -156,19 +157,16 @@ export function getAuthority<T extends boolean = true>(required?: T): T extends 
     ]);
   }
 
-  if(!authority) {
-    return undefined
-  } 
+  if (!authority) {
+    return undefined as T extends true ? PublicKey : PublicKey | undefined;
+  }
 
   try {
-    return new PublicKey(authority);
+    return new PublicKey(authority) as T extends true ? PublicKey : PublicKey | undefined;
   } catch {
-    throw createUserError(`Invalid authority '${authority}'`, [
-      'Must be a valid PublicKey',
-    ]);
+    throw createUserError(`Invalid authority '${authority}'`, ['Must be a valid PublicKey']);
   }
 }
-
 
 /** Get payment token from arguments (optional) */
 export function getPaymentToken(): PaymentToken {
@@ -230,6 +228,50 @@ export function getOptionalArg(key: string): string | undefined {
   return argv[key] as string | undefined;
 }
 
+/** Get optional argument as a string list. Supports repeated flags and comma-separated values. */
+export function getOptionalStringArrayArg(key: string): string[] | undefined {
+  const argv = getParsedArgs();
+  const value = argv[key] as string | string[] | undefined;
+  if (value === undefined) return undefined;
+
+  const values = Array.isArray(value) ? value : [value];
+  const parsed = values
+    .flatMap((item) => String(item).split(','))
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+
+  return parsed.length > 0 ? parsed : undefined;
+}
+
+export function parseBooleanArg(
+  value: string | boolean | number | undefined,
+  label: string,
+): boolean {
+  if (value === undefined) return false;
+  if (typeof value === 'boolean') return value;
+
+  const normalized = String(value).toLowerCase();
+  if (['true', '1', 'yes', 'y'].includes(normalized)) return true;
+  if (['false', '0', 'no', 'n'].includes(normalized)) return false;
+
+  throw createUserError(`Invalid boolean value for --${label}: ${value}`, [
+    `Use --${label} true or --${label} false`,
+  ]);
+}
+
+/** Get optional boolean argument. */
+export function getBooleanArg(key: string): boolean {
+  const argv = getParsedArgs();
+  return parseBooleanArg(argv[key] as string | boolean | number | undefined, key);
+}
+
+export function parsePublicKey(value: string, label: string): PublicKey {
+  try {
+    return new PublicKey(value);
+  } catch {
+    throw createUserError(`Invalid ${label}: ${value}`);
+  }
+}
 
 /** Get optional vaults array from arguments */
 export function getOptionalVaults(): ('minter' | 'redeemer')[] | undefined {

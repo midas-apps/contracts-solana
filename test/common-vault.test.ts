@@ -374,7 +374,7 @@ describe('common-vault', () => {
         { paused: false },
         { commonVault },
         {
-          revertedWith: VaultError.ValueDidtnChange,
+          revertedWith: VaultError.ValueDidntChange,
         },
       );
     });
@@ -439,7 +439,7 @@ describe('common-vault', () => {
         { paused: false },
         { commonVault },
         {
-          revertedWith: VaultError.ValueDidtnChange,
+          revertedWith: VaultError.ValueDidntChange,
         },
       );
     });

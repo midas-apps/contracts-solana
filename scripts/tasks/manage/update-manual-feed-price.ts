@@ -60,8 +60,8 @@ async function main(provider: AnchorProvider, payer: Wallet) {
     throw createUserError('Invalid decimals value', ['Decimals must be between 0 and 18']);
   }
 
-  // Convert price to base-9 format if provided
-  const priceBase9 = price !== null ? toBN(BigInt(Math.round(price * 1e9))) : null;
+  // Convert price to base-8 format if provided
+  const priceBase9 = price !== null ? toBN(BigInt(Math.round(price * 1e8))) : null;
 
   // Get manual feed PDA
   const manualFeedPda = getManualFeedStatePda(tokenAddrs.mTokenDataFeed);
@@ -94,7 +94,7 @@ async function main(provider: AnchorProvider, payer: Wallet) {
   );
 
   const txResult = await sendAndWaitForCustomSolanaTxSign(provider, tx, [], {
-    action: 'update-feed-ptoken',
+    action: 'update-feed-mtoken',
     comment: `Update manual feed price for ${mtoken}`,
     mToken: mtoken,
     waitForTx: false,
@@ -113,4 +113,5 @@ async function main(provider: AnchorProvider, payer: Wallet) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main, 'update-feed-ptoken');
+const mtoken = getMtoken();
+executeNetworkScript(network, main, 'update-feed-mtoken', mtoken);

@@ -44,7 +44,6 @@ async function main(provider: AnchorProvider, payer: Wallet) {
     manual: DataFeedMode.manual,
     switchboard: DataFeedMode.switchboard,
     pyth: DataFeedMode.pyth,
-    chainlink: DataFeedMode.chainlink,
   };
 
   const newModeEnum = newMode ? modeMap[newMode] : null;

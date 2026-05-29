@@ -22,6 +22,7 @@ export interface DeploymentState {
 
 export const VALID_COMPONENTS = [
   'acRole',
+  'acGlobalOverride',
   'mToken',
   'tokenAuthority',
   'dataFeed',
