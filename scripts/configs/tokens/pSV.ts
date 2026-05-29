@@ -1,7 +1,6 @@
 import { PaymentToken } from '@/common/tokenTypes';
 import { TokenConfigWithNetworks } from '@/scripts/configs/types';
 import { UNLIMITED } from '@/scripts/constants/pricing';
-import { VaultActionIds } from '@/test/constants/vaults.constants';
 
 export const pSVConfig: TokenConfigWithNetworks = {
   // Shared configuration (same across all networks)
@@ -71,9 +70,11 @@ export const pSVConfig: TokenConfigWithNetworks = {
         oracleManagerAddress: '28pe6ahpsFAo5DConqyw46Z1qAKtMNcqSKQ6iwwBYBcD',
         metadataAuthority: '77F5WP7E9PE3cRbUXGZ8W8S2zvSGvb2WS7QuVGYpavug',
       },
-      pauseFunctions: {
-        redeemer: [VaultActionIds.REDEEM_REQUEST_FIAT],
-        minter: [VaultActionIds.MINT_REQUEST],
+      postDeploy: {
+        pauseFunctions: {
+          redeemer: ['redeemFiatRequest'],
+          minter: ['depositRequest'],
+        },
       },
     },
   },

@@ -1,3 +1,4 @@
+import { PublicKey } from '@solana/web3.js';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
@@ -110,6 +111,51 @@ export function getAuthorityType():
 export function getOptionalArg(key: string): string | undefined {
   const argv = getParsedArgs();
   return argv[key] as string | undefined;
+}
+
+/** Get optional argument as a string list. Supports repeated flags and comma-separated values. */
+export function getOptionalStringArrayArg(key: string): string[] | undefined {
+  const argv = getParsedArgs();
+  const value = argv[key] as string | string[] | undefined;
+  if (value === undefined) return undefined;
+
+  const values = Array.isArray(value) ? value : [value];
+  const parsed = values
+    .flatMap((item) => String(item).split(','))
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+
+  return parsed.length > 0 ? parsed : undefined;
+}
+
+export function parseBooleanArg(
+  value: string | boolean | number | undefined,
+  label: string,
+): boolean {
+  if (value === undefined) return false;
+  if (typeof value === 'boolean') return value;
+
+  const normalized = String(value).toLowerCase();
+  if (['true', '1', 'yes', 'y'].includes(normalized)) return true;
+  if (['false', '0', 'no', 'n'].includes(normalized)) return false;
+
+  throw createUserError(`Invalid boolean value for --${label}: ${value}`, [
+    `Use --${label} true or --${label} false`,
+  ]);
+}
+
+/** Get optional boolean argument. */
+export function getBooleanArg(key: string): boolean {
+  const argv = getParsedArgs();
+  return parseBooleanArg(argv[key] as string | boolean | number | undefined, key);
+}
+
+export function parsePublicKey(value: string, label: string): PublicKey {
+  try {
+    return new PublicKey(value);
+  } catch {
+    throw createUserError(`Invalid ${label}: ${value}`);
+  }
 }
 
 /** Get authority public key from arguments */

@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
 import { PaymentToken } from '@/common/tokenTypes';
-import { VaultActionIds } from '@/test/constants/vaults.constants';
 
 import { publicKeySchema } from './common-schemas';
 import { grantRolesConfigSchema } from './roles-types';
@@ -144,6 +143,26 @@ export const paymentTokenConfigSchema = z.object({
   isFiat: z.boolean().default(false),
 });
 
+export const vaultFunctionNameSchema = z.enum([
+  'mintInstant',
+  'depositInstant',
+  'mintRequest',
+  'depositRequest',
+  'redeemInstant',
+  'redeemRequest',
+  'redeemFiatRequest',
+  'redeemRequestFiat',
+]);
+
+export const pauseFunctionsConfigSchema = z.object({
+  minter: z.array(vaultFunctionNameSchema).optional(),
+  redeemer: z.array(vaultFunctionNameSchema).optional(),
+});
+
+export const postDeployConfigSchema = z.object({
+  pauseFunctions: pauseFunctionsConfigSchema.optional(),
+});
+
 export const minterVaultConfigSchema = z.object({
   instantFee: monetaryAmountSchema,
   instantDailyLimit: monetaryAmountSchema,
@@ -170,11 +189,6 @@ export const redeemerVaultConfigSchema = z.object({
   paymentTokens: z.array(paymentTokenConfigSchema),
 });
 
-export const pauseFunctionsConfigSchema = z.object({
-  minter: z.array(z.enum(VaultActionIds)).optional(),
-  redeemer: z.array(z.enum(VaultActionIds)).optional(),
-});
-
 export const tokenConfigSchema = z.object({
   metadata: tokenMetadataSchema,
   tokenAuthority: tokenAuthorityConfigSchema,
@@ -182,7 +196,7 @@ export const tokenConfigSchema = z.object({
   minter: minterVaultConfigSchema,
   redeemer: redeemerVaultConfigSchema,
   grantRoles: grantRolesConfigSchema.optional(),
-  pauseFunctions: pauseFunctionsConfigSchema.optional(),
+  postDeploy: postDeployConfigSchema.optional(),
 });
 
 export const networkSpecificConfigSchema = z.object({
@@ -190,7 +204,7 @@ export const networkSpecificConfigSchema = z.object({
   minter: minterVaultConfigSchema,
   redeemer: redeemerVaultConfigSchema,
   grantRoles: grantRolesConfigSchema.optional(),
-  pauseFunctions: pauseFunctionsConfigSchema.optional(),
+  postDeploy: postDeployConfigSchema.optional(),
 });
 
 export const tokenConfigWithNetworksSchema = z.object({
@@ -222,6 +236,9 @@ export const paymentTokenConfigWithNetworksSchema = z.object({
 });
 
 export type DataFeedConfig = z.infer<typeof dataFeedConfigSchema>;
+export type VaultFunctionName = z.infer<typeof vaultFunctionNameSchema>;
+export type PauseFunctionsConfig = z.infer<typeof pauseFunctionsConfigSchema>;
+export type PostDeployConfig = z.infer<typeof postDeployConfigSchema>;
 export type TokenConfig = z.infer<typeof tokenConfigSchema>;
 export type TokenConfigWithNetworks = z.infer<typeof tokenConfigWithNetworksSchema>;
 export type PaymentTokenDeploymentConfig = z.infer<typeof paymentTokenDeploymentConfigSchema>;

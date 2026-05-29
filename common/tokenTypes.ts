@@ -1,6 +1,7 @@
 export enum MProduct {
   MTBILL = 'mTBILL',
-  MFONE = 'mFONE',
+  SOLMFONE = 'solmFONE',
+  SOLMHYPER = 'solmHYPER',
   PSV = 'pSV',
 }
 
