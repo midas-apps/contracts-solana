@@ -48,5 +48,5 @@ export enum VaultError {
   InvalidPaymentMint,
   InvalidSeedProvided,
   InvalidVaultProvided,
-  ValueDidtnChange,
+  ValueDidntChange,
 }

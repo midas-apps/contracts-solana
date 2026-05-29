@@ -30,6 +30,7 @@
     "token-ac:grant-role": "tsx scripts/tasks/manage/token-ac/grant-role.ts",
     "transfer:authority": "tsx scripts/tasks/manage/transfer-authority.ts",
     "transfer:token-metadata-authority": "tsx scripts/tasks/manage/transfer-token-metadata-authority.ts",
+    "update:vault-pause": "tsx scripts/tasks/manage/update-vault-pause.ts",
     "update:data-feed": "tsx scripts/tasks/manage/update-data-feed.ts",
     "update:token-metadata": "tsx scripts/tasks/manage/update-token-metadata.ts",
     "update:manual-feed-price": "tsx scripts/tasks/manage/update-manual-feed-price.ts",
