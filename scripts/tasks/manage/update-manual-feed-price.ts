@@ -13,18 +13,18 @@ import { getDataFeedProgram } from '../../deploy/dataFeed';
 import { getTokenAddresses } from '../../utils/addressQueries';
 import { getMtoken, getNetwork, getOptionalArg } from '../../utils/argumentParser';
 
+// Manual feeds always store prices with 8 decimals. The on-chain program
+// normalizes to base-9 using the feed's own `decimals`, so price and decimals
+// must always be written together to stay consistent.
+const MANUAL_FEED_DECIMALS = 8;
+
 async function main(provider: AnchorProvider, payer: Wallet) {
   const mtoken = getMtoken();
   const network = getNetwork();
   const priceArg = getOptionalArg('price');
-  const decimalsArg = getOptionalArg('decimals');
 
-  if (!priceArg && !decimalsArg) {
-    throw createUserError('At least one of --price or --decimals is required', [
-      'Example: --price 1.05',
-      'Example: --decimals 9',
-      'Example: --price 1.05 --decimals 9',
-    ]);
+  if (!priceArg) {
+    throw createUserError('--price is required', ['Example: --price 1.05']);
   }
 
   console.log(`\n🔄 Updating manual feed price for ${mtoken} on ${network}`);
@@ -48,20 +48,13 @@ async function main(provider: AnchorProvider, payer: Wallet) {
     ]);
   }
 
-  // Parse arguments
-  const price = priceArg ? parseFloat(priceArg) : null;
-  const decimals = decimalsArg ? parseInt(decimalsArg) : null;
-
-  if (price !== null && (isNaN(price) || price < 0)) {
+  // Parse price
+  const price = parseFloat(priceArg);
+  if (isNaN(price) || price < 0) {
     throw createUserError('Invalid price value', ['Price must be a positive number']);
   }
 
-  if (decimals !== null && (isNaN(decimals) || decimals < 0 || decimals > 18)) {
-    throw createUserError('Invalid decimals value', ['Decimals must be between 0 and 18']);
-  }
-
-  // Convert price to base-8 format if provided
-  const priceBase9 = price !== null ? toBN(BigInt(Math.round(price * 1e8))) : null;
+  const priceRaw = toBN(BigInt(Math.round(price * 10 ** MANUAL_FEED_DECIMALS)));
 
   // Get manual feed PDA
   const manualFeedPda = getManualFeedStatePda(tokenAddrs.mTokenDataFeed);
@@ -69,16 +62,12 @@ async function main(provider: AnchorProvider, payer: Wallet) {
   console.log('\n📋 Update Details:');
   console.log(`   Data Feed: ${tokenAddrs.mTokenDataFeed.toString()}`);
   console.log(`   Manual Feed PDA: ${manualFeedPda.toString()}`);
-  if (price !== null) {
-    console.log(`   New Price: $${price} (raw: ${priceBase9?.toString()})`);
-  }
-  if (decimals !== null) {
-    console.log(`   New Decimals: ${decimals}`);
-  }
+  console.log(`   New Price: $${price} (raw: ${priceRaw.toString()})`);
+  console.log(`   Decimals: ${MANUAL_FEED_DECIMALS}`);
 
   const tx = new Transaction().add(
     await feedProgram.methods
-      .updateManualFeed(priceBase9, decimals)
+      .updateManualFeed(priceRaw, MANUAL_FEED_DECIMALS)
       .accountsPartial({
         authority: payer.publicKey,
         manualFeed: manualFeedPda,

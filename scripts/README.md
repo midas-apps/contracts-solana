@@ -108,7 +108,7 @@ Roles: `admin`, `update_account_ac`, `vault_admin`, `vault_pauser`, `m_minter`, 
 
 - `yarn update:data-feed --mtoken <token> --network <network> --new-mode <mode>`
 - `yarn update:token-metadata --mtoken <token> --network <network> --symbol <symbol> [--name <name>] [--uri <uri>]`
-- `yarn update:manual-feed-price --mtoken <token> --network <network> --price <price> [--decimals <dec>]`
+- `yarn update:manual-feed-price --mtoken <token> --network <network> --price <price>`
 
 ## Verification
 
