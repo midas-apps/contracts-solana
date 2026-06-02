@@ -189,6 +189,11 @@ export const redeemerVaultConfigSchema = z.object({
   paymentTokens: z.array(paymentTokenConfigSchema),
 });
 
+export const timelockConfigSchema = z.object({
+  delay: z.number().int().positive(),
+  member: publicKeySchema,
+});
+
 export const tokenConfigSchema = z.object({
   metadata: tokenMetadataSchema,
   tokenAuthority: tokenAuthorityConfigSchema,
@@ -235,6 +240,13 @@ export const paymentTokenConfigWithNetworksSchema = z.object({
   networks: z.record(z.string(), paymentTokenNetworkConfigSchema),
 });
 
+export const networkConfigSchema = z.record(z.string(),
+  z.object({
+    timelock: timelockConfigSchema.optional(),
+  })
+);
+
+export type NetworkConfig = z.infer<typeof networkConfigSchema>;
 export type DataFeedConfig = z.infer<typeof dataFeedConfigSchema>;
 export type VaultFunctionName = z.infer<typeof vaultFunctionNameSchema>;
 export type PauseFunctionsConfig = z.infer<typeof pauseFunctionsConfigSchema>;

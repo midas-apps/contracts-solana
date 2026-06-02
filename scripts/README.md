@@ -15,8 +15,9 @@ anchor deploy --provider.cluster <network>
 
 Run once per network before deploying any tokens:
 
-1. `yarn deploy:global-ac-role --network <network>` - Deploy Global AC Role
-2. `yarn deploy:global-ac --network <network>` - Deploy Global AC
+1. `yarn deploy:timelock --network <network>` - Deploy Timelock for upgrade authority
+2. `yarn deploy:global-ac-role --network <network>` - Deploy Global AC Role
+3. `yarn deploy:global-ac --network <network>` - Deploy Global AC
 
 ### Token Deployment
 
@@ -107,7 +108,7 @@ Roles: `admin`, `update_account_ac`, `vault_admin`, `vault_pauser`, `m_minter`, 
 
 - `yarn update:data-feed --mtoken <token> --network <network> --new-mode <mode>`
 - `yarn update:token-metadata --mtoken <token> --network <network> --symbol <symbol> [--name <name>] [--uri <uri>]`
-- `yarn update:manual-feed-price --mtoken <token> --network <network> --price <price> [--decimals <dec>]`
+- `yarn update:manual-feed-price --mtoken <token> --network <network> --price <price>`
 
 ## Verification
 

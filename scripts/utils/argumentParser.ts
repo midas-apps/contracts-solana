@@ -3,6 +3,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { createUserError } from '@/common/errorHandler';
+import { programAddresses } from '@/common/programs';
 import { MProduct, isMProduct, PaymentToken, isPaymentToken } from '@/common/tokenTypes';
 
 import { getAvailableNetworks } from './getAvailableNetworks';
@@ -51,6 +52,120 @@ export function getNetwork(): string {
     ]);
   }
   return network;
+}
+
+/** Get network from arguments */
+export function getBufferAccount(): PublicKey {
+  const argv = getParsedArgs();
+  const bufferAccount = (argv.buffer || argv.ba) as string | undefined;
+
+  if (!bufferAccount) {
+    throw createUserError('Buffer account is required', [
+      'Use --buffer or -b to specify the buffer account',
+      'Example: --buffer 33vVYcpTkv7HyEnkFHQVY1ndUSfHNFHxyG9PBqy2MCwmc',
+    ]);
+  }
+
+  try {
+    return new PublicKey(bufferAccount);
+  } catch {
+    throw createUserError(`Invalid buffer account '${bufferAccount}'`, [
+      'Must be a valid PublicKey',
+    ]);
+  }
+}
+
+/** Get network from arguments */
+export function getProgram(): keyof typeof programAddresses {
+  const argv = getParsedArgs();
+  const program = (argv.program || argv.p) as string | undefined;
+
+  if (!program) {
+    throw createUserError('Program is required', [
+      'Use --program or -p to specify the program',
+      'Example: --program access_control',
+    ]);
+  }
+
+  const availablePrograms = Object.keys(programAddresses);
+
+  if (!availablePrograms.includes(program)) {
+    throw createUserError(`Invalid program '${program}'`, [
+      `Must be one of: ${availablePrograms.join(', ')}`,
+    ]);
+  }
+
+  return program as keyof typeof programAddresses;
+}
+
+/** Get network from arguments */
+export function getAdditionalBytes(): number {
+  const argv = getParsedArgs();
+  const additionalBytes = (argv['additional-bytes'] || argv.ab) as string | undefined;
+
+  if (!additionalBytes) {
+    return 0;
+  }
+
+  const v = parseInt(additionalBytes);
+
+  if (isNaN(v)) {
+    throw createUserError(`Invalid additional bytes '${additionalBytes}'`, [
+      'Must be a valid number',
+    ]);
+  }
+
+  return v;
+}
+
+/** Get network from arguments */
+export function getMultisigTxIndex(): number {
+  const argv = getParsedArgs();
+  const multisigTxIndex = argv['multisig-tx-index'] as string | undefined;
+
+  if (!multisigTxIndex) {
+    throw createUserError('Multisig tx index is required', [
+      'Use --multisig-tx-index to specify the multisig tx index',
+      'Example: --multisig-tx-index 1',
+    ]);
+  }
+
+  const v = parseInt(multisigTxIndex);
+
+  if (isNaN(v)) {
+    throw createUserError(`Invalid multisig tx index '${multisigTxIndex}'`, [
+      'Must be a valid number',
+    ]);
+  }
+
+  return v;
+}
+
+/** Get network from arguments */
+export function getAuthority<T extends boolean = true>(
+  required?: T,
+): T extends true ? PublicKey : PublicKey | undefined {
+  required ??= true as T;
+
+  const argv = getParsedArgs();
+  const authority = argv.authority as string | undefined;
+
+  if (required && !authority) {
+    throw createUserError('Authority is required', [
+      'Use --authority to specify the authority public key',
+      'Example: --authority 33vVYcpTkv7HyEnkFHQVY1ndUSfHNFHxyG9PBqy2MCwmc',
+    ]);
+  }
+
+  if (!authority) {
+    return undefined as T extends true ? PublicKey : PublicKey | undefined;
+  }
+
+  try {
+    return new PublicKey(authority) as T extends true ? PublicKey : PublicKey | undefined;
+  } catch {
+    throw createUserError(`Invalid authority '${authority}'`, ['Must be a valid PublicKey']);
+  }
 }
 
 /** Get payment token from arguments (optional) */
@@ -156,18 +271,6 @@ export function parsePublicKey(value: string, label: string): PublicKey {
   } catch {
     throw createUserError(`Invalid ${label}: ${value}`);
   }
-}
-
-/** Get authority public key from arguments */
-export function getAuthority(): string {
-  const argv = getParsedArgs();
-  const authority = argv.authority as string | undefined;
-  if (!authority) {
-    throw createUserError('Authority is required', [
-      'Use --authority to specify the authority public key (Fordefi vault address)',
-    ]);
-  }
-  return authority;
 }
 
 /** Get optional vaults array from arguments */

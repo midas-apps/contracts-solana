@@ -1,5 +1,6 @@
 [toolchain]
 anchor_version = "0.30.1"
+package_manager = "yarn"
 
 [features]
 resolution = true
@@ -41,3 +42,4 @@ test-feed = "yarn vitest run test/data-feed.test.ts"
 test-minter = "yarn vitest run test/minter-vault.test.ts"
 test-redeemer = "yarn vitest run test/redeemer-vault.test.ts"
 test-tokens = "yarn vitest run test/mtokens.test.ts"
+test-squads= "yarn vitest run test/squads.test.ts"

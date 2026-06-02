@@ -6,8 +6,14 @@ import { MProduct, PaymentToken } from './tokenTypes';
 export interface NetworkAddresses {
   acRoleGlobal?: PublicKey;
   ac?: PublicKey;
+  timelock?: TimelockAddresses;
   tokens?: Partial<Record<MProduct, TokenAddresses>>;
   feeds?: Partial<Record<PaymentToken, DataFeed>>;
+}
+
+export interface TimelockAddresses {
+  multisig: PublicKey;
+  vault: PublicKey;
 }
 
 export interface DataFeed {
@@ -44,6 +50,10 @@ export const addresses: Record<string, NetworkAddresses> = {
   devnet: {
     acRoleGlobal: new PublicKey('BW95RL5v9685QqxvuRGjXiM3f6Td9k5QEBiGkXMHwsx1'),
     ac: new PublicKey('5cMcz3NsbJy6AyvGPpMupBXFiQkwC9qRuMxkTPiTb3Qu'),
+    timelock: {
+      multisig: new PublicKey('CNM9uFrjXTun2zk6w7FkXKgryURXezBMZJZ4RSh8NLt3'),
+      vault: new PublicKey('3XeBT7F1H3cbSETdHvTFDr8Wz47yNZZ6dYZsQJScdm9u'),
+    },
     tokens: {
       [MProduct.SOLMFONE]: {
         acRole: new PublicKey('2SAaMSzZd9DuNsR3QWNy8mZjNJPnMqdsC4rXz8wgnfFR'),
