@@ -227,11 +227,13 @@ export const paymentTokenMetadataSchema = z.object({
 export const paymentTokenDeploymentConfigSchema = z.object({
   metadata: paymentTokenMetadataSchema,
   tokenAddress: publicKeySchema,
+  tokenProgram: publicKeySchema,
   dataFeed: dataFeedConfigSchema,
 });
 
 export const paymentTokenNetworkConfigSchema = z.object({
   tokenAddress: publicKeySchema.optional(),
+  tokenProgram: publicKeySchema.optional(),
   dataFeed: dataFeedConfigSchema,
 });
 
@@ -240,10 +242,11 @@ export const paymentTokenConfigWithNetworksSchema = z.object({
   networks: z.record(z.string(), paymentTokenNetworkConfigSchema),
 });
 
-export const networkConfigSchema = z.record(z.string(),
+export const networkConfigSchema = z.record(
+  z.string(),
   z.object({
     timelock: timelockConfigSchema.optional(),
-  })
+  }),
 );
 
 export type NetworkConfig = z.infer<typeof networkConfigSchema>;

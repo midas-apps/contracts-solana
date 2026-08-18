@@ -9,6 +9,7 @@ export enum PaymentToken {
   USDC = 'USDC',
   USDT = 'USDT',
   wSOL = 'wSOL',
+  USDG = 'USDG',
 }
 
 export function isMProduct(value: string): value is MProduct {

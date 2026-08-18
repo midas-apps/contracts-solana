@@ -1,3 +1,5 @@
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+
 import { createUserError } from '@/common/errorHandler';
 import { PaymentToken } from '@/common/tokenTypes';
 import { paymentTokenConfigs } from '@/scripts/configs/tokens/payment-tokens';
@@ -57,5 +59,6 @@ export function loadPaymentTokenConfig(
     metadata: configParseResult.data.metadata,
     tokenAddress,
     dataFeed: networkParseResult.data.dataFeed,
+    tokenProgram: networkParseResult.data.tokenProgram ?? TOKEN_PROGRAM_ID.toBase58(),
   };
 }

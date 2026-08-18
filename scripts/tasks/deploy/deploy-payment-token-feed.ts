@@ -23,12 +23,14 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   // Check if token already exists in addresses.ts (e.g., from mock deployment)
   const existingAddresses = getFeedAddresses(network, paymentToken);
   let mintPublicKey: PublicKey;
-
+  let tokenProgram: PublicKey;
   if (existingAddresses?.token) {
     mintPublicKey = existingAddresses.token;
+    tokenProgram = existingAddresses.tokenProgram!;
     console.log(`✓ Using existing token from addresses.ts: ${mintPublicKey.toString()}`);
   } else {
     mintPublicKey = new PublicKey(config.tokenAddress);
+    tokenProgram = new PublicKey(config.tokenProgram!);
     console.log(`✓ Using token from config: ${mintPublicKey.toString()}`);
   }
 
@@ -66,7 +68,7 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   registerPaymentTokenFeed(network, paymentToken, {
     token: mintPublicKey,
     dataFeed: dataFeed,
-    tokenProgram: TOKEN_PROGRAM_ID,
+    tokenProgram: tokenProgram,
     underlyingFeed: underlyingFeedPublicKey,
   });
 

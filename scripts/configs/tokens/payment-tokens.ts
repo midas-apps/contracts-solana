@@ -1,3 +1,5 @@
+import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
+
 import { PaymentToken } from '@/common/tokenTypes';
 import { PaymentTokenConfigWithNetworks } from '@/scripts/configs/types';
 
@@ -41,6 +43,29 @@ export const paymentTokenConfigs: Partial<Record<PaymentToken, PaymentTokenConfi
           minPrice: '0.99',
           maxPrice: '1.01',
           maxStaleness: 86400,
+        },
+      },
+    },
+  },
+  [PaymentToken.USDG]: {
+    metadata: {
+      name: 'Global Dollar',
+      symbol: 'USDG',
+      decimals: 6,
+    },
+    networks: {
+      mainnet: {
+        tokenAddress: '2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH',
+        tokenProgram: TOKEN_2022_PROGRAM_ID.toBase58(),
+        dataFeed: {
+          mode: 'pyth',
+          // Pyth USDG/USD price feed on Solana mainnet
+          // Price feed ID: daa58c6a3ce7d4b9c46c32a6e646012c17c4a2b24c08dd8c5e476118b855a7da
+          // Source: https://docs.pyth.network/price-feeds/core/push-feeds/solana
+          underlyingFeed: '6JkZmXGgWnzsyTQaqRARzP64iFYnpMNT4siiuUDUaB8s',
+          minPrice: '0.997',
+          maxPrice: '1.003',
+          maxStaleness: 300,
         },
       },
     },

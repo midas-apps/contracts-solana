@@ -1,4 +1,4 @@
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { PublicKey } from '@solana/web3.js';
 
 import { MProduct, PaymentToken } from './tokenTypes';
@@ -160,6 +160,12 @@ export const addresses: Record<string, NetworkAddresses> = {
         tokenProgram: TOKEN_PROGRAM_ID,
         dataFeed: new PublicKey('EY9TeqHx3QbKfSbZW7vZPNeg6Y8nwprsa9rm6okGCKpn'),
         underlyingFeed: new PublicKey('Dpw1EAVrSB1ibxiDQyTAW6Zip3J4Btk2x4SgApQCeFbX'),
+      },
+      [PaymentToken.USDG]: {
+        token: new PublicKey('2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH'),
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+        dataFeed: new PublicKey('7Dzy2jzuJFPJiXQyiVVAZ1VLovgHKVh2uGw98P7wXCh3'),
+        underlyingFeed: new PublicKey('6JkZmXGgWnzsyTQaqRARzP64iFYnpMNT4siiuUDUaB8s'),
       },
       [PaymentToken.wSOL]: {
         token: new PublicKey('So11111111111111111111111111111111111111112'),
