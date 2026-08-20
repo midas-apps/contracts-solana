@@ -2,13 +2,29 @@ name: Static Checks
 
 on:
   pull_request: {}
+  push:
+    branches: [main] # keep the default-branch caches warm for PRs
   workflow_dispatch: {}
+
+# Cancel superseded runs on the same ref so we never pay for stale work.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
+env:
+  SOLANA_VERSION: 2.1.16
+  ANCHOR_VERSION: 0.30.1
+  RUST_NIGHTLY: nightly-2024-05-09
+
 jobs:
-  static-checks:
+  # ---------------------------------------------------------------------------
+  # Fast lane: TypeScript lint + format. No Rust toolchain, finishes in minutes.
+  # ---------------------------------------------------------------------------
+  ts-checks:
+    name: TS lint & format
     runs-on: ubuntu-latest
     steps:
       - name: Harden the runner
@@ -24,7 +40,7 @@ jobs:
 
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # 6.4.0
         with:
-          node-version: '24'
+          node-version: '20'
           cache: 'yarn'
 
       - name: Setup safe-chain v1.5.3
@@ -33,7 +49,147 @@ jobs:
           curl -fsSL https://github.com/AikidoSec/safe-chain/releases/download/1.5.3/install-safe-chain.sh -o install-safe-chain.sh
           echo "0107cbbbf90159379756157e902acae512d62ffbd174307e42c5fe9f266792d3  install-safe-chain.sh" | sha256sum -c -
           sh install-safe-chain.sh --ci
+
       - name: Install dependencies
         run: yarn
 
-      # TODO: add lint, build, format checks
+      - name: ESLint
+        run: yarn lint
+
+      - name: Prettier
+        run: yarn format:check
+
+  # ---------------------------------------------------------------------------
+  # Medium lane: Rust lint, format and *host* unit tests. These compile the
+  # crates for the host target only (no BPF/Solana toolchain), so with a warm
+  # cargo cache this stays fast.
+  # ---------------------------------------------------------------------------
+  rust-checks:
+    name: Rust lint, format & unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        with:
+          use-policy-store: true
+          api-key: ${{ secrets.STEP_SECURITY_API_KEY }}
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # 6.0.2
+
+      - name: Install Rust toolchain
+        run: |
+          rustup toolchain install "$RUST_NIGHTLY" --profile minimal --component clippy rustfmt
+          rustup override set "$RUST_NIGHTLY"
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@63fed3e2fecf6f7b51dc6f043341b79ef82a9ae7 # v2.9.2
+        with:
+          shared-key: rust-host
+
+      - name: Format check
+        run: cargo fmt --all --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Unit tests
+        run: cargo test --workspace
+
+  # ---------------------------------------------------------------------------
+  # Heavy lane: build the Anchor programs and run the bankrun integration tests.
+  # This is the expensive one, so:
+  #   * the Solana + Anchor toolchains are cached (only rebuilt when versions
+  #     change), turning a ~30 min cold install into seconds on warm runs;
+  #   * the compiled program `.so`s are cached keyed on the program sources, so
+  #     `anchor build` is skipped entirely when only TS/tests changed.
+  # ---------------------------------------------------------------------------
+  build-and-test:
+    name: Anchor build & bankrun tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        with:
+          use-policy-store: true
+          api-key: ${{ secrets.STEP_SECURITY_API_KEY }}
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # 6.0.2
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # 6.4.0
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Setup safe-chain v1.5.3
+        shell: bash
+        run: |
+          curl -fsSL https://github.com/AikidoSec/safe-chain/releases/download/1.5.3/install-safe-chain.sh -o install-safe-chain.sh
+          echo "0107cbbbf90159379756157e902acae512d62ffbd174307e42c5fe9f266792d3  install-safe-chain.sh" | sha256sum -c -
+          sh install-safe-chain.sh --ci
+
+      - name: Install dependencies
+        run: yarn
+
+      - name: Install Rust toolchain
+        run: rustup toolchain install "$RUST_NIGHTLY" --profile minimal
+
+      # --- Solana CLI (cached) ---------------------------------------------
+      - name: Cache Solana CLI
+        id: cache-solana
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.local/share/solana/install
+          key: solana-cli-${{ runner.os }}-${{ env.SOLANA_VERSION }}
+
+      - name: Install Solana CLI
+        if: steps.cache-solana.outputs.cache-hit != 'true'
+        run: sh -c "$(curl -sSfL https://release.anza.xyz/v${SOLANA_VERSION}/install)"
+
+      - name: Add Solana to PATH
+        run: echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+
+      # --- Anchor CLI (cached) ---------------------------------------------
+      - name: Cache Anchor CLI
+        id: cache-anchor
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.avm
+            ~/.cargo/bin/avm
+            ~/.cargo/bin/anchor
+          key: anchor-cli-${{ runner.os }}-${{ env.ANCHOR_VERSION }}
+
+      - name: Install Anchor CLI
+        if: steps.cache-anchor.outputs.cache-hit != 'true'
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor --tag "v${ANCHOR_VERSION}" avm --locked --force
+          avm install "$ANCHOR_VERSION"
+          avm use "$ANCHOR_VERSION"
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@63fed3e2fecf6f7b51dc6f043341b79ef82a9ae7 # v2.9.2
+        with:
+          shared-key: anchor-build
+
+      # --- Program binaries (cached, keyed on program sources) -------------
+      - name: Cache program binaries
+        id: cache-programs
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            target/deploy
+            target/idl
+            target/types
+          key: anchor-programs-${{ runner.os }}-${{ hashFiles('programs/**/*.rs', 'programs/**/Cargo.toml', 'Cargo.lock', 'Anchor.toml') }}
+
+      - name: Build programs
+        if: steps.cache-programs.outputs.cache-hit != 'true'
+        env:
+          RUSTUP_TOOLCHAIN: ${{ env.RUST_NIGHTLY }}
+        run: anchor build
+
+      - name: Bankrun integration tests
+        run: yarn test:anchor
