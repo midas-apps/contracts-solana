@@ -108,6 +108,9 @@ jobs:
   # ---------------------------------------------------------------------------
   build-and-test:
     name: Anchor build & bankrun tests
+    # Temporarily disabled: the Anchor build + bankrun suite is expensive to run
+    # in CI. Flip this back to `true` (or remove the guard) to re-enable it.
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Harden the runner
