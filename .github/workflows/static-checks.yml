@@ -78,7 +78,7 @@ jobs:
 
       - name: Install Rust toolchain
         run: |
-          rustup toolchain install "$RUST_NIGHTLY" --profile minimal --component clippy rustfmt
+          rustup toolchain install "$RUST_NIGHTLY" --profile minimal --component clippy --component rustfmt
           rustup override set "$RUST_NIGHTLY"
 
       - name: Cache cargo build
