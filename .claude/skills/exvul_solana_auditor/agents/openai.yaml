@@ -1,0 +1,4 @@
+interface:
+  display_name: 'exvul_solana_auditor'
+  short_description: 'Prompt-only Solana audit with index-first checklist planning, sink-first deep sweep, and adversarial triage'
+  default_prompt: 'Use $exvul_solana_auditor to run full Solana audit with index-first checklist planning, sink-first deep sweep, adversarial false-positive triage, and output exvul_solana_auditor.md.'
