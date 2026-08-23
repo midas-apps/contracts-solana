@@ -22,4 +22,7 @@ pub enum DataFeedError {
     PriceIsLowerThanMin,
     #[msg("Price is higher than max.")]
     PriceIsHigherThanMax,
+    #[msg("Decimal conversion overflow")]
+    DecimalConversionOverflow,
+
 }
