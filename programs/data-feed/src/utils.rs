@@ -202,7 +202,9 @@ pub fn update_manual_feed(
 
 /// library for converting values from one decimal point precision to another
 pub mod decimals_conversion {
-    use anchor_lang::Result;
+    use anchor_lang::prelude::*;
+
+    use crate::errors::DataFeedError;
 
     /// converts `value` with `value_decimals` precision to a `value` with `target_decimals` precision
     /// # Arguments
@@ -219,13 +221,25 @@ pub mod decimals_conversion {
             return Ok(value);
         }
 
-        let adjusted_amount = if value_decimals > target_decimals {
-            value / (10 as u128).pow((value_decimals - target_decimals).into())
+        let exponent = if value_decimals > target_decimals {
+            value_decimals - target_decimals
         } else {
-            value * (10 as u128).pow((target_decimals - value_decimals).into())
+            target_decimals - value_decimals
+        };
+        let scale = 10u128
+            .checked_pow(exponent.into())
+            .ok_or_else(|| error!(DataFeedError::DecimalConversionOverflow))?;
+
+        let adjusted_amount = if value_decimals > target_decimals {
+            value / scale
+        } else {
+            value
+                .checked_mul(scale)
+                .ok_or_else(|| error!(DataFeedError::DecimalConversionOverflow))?
         };
 
         Ok(adjusted_amount)
+
     }
 
     /// converts `value` with `value_decimals` precision to a `value` with 9 decimals precision
@@ -291,6 +305,11 @@ pub mod decimals_conversion {
             #[test]
             fn when_original_decimals_9() {
                 convert_to_base_9_test(114f64, 9, 114000000000)
+            }
+
+            #[test]
+            fn returns_error_on_overflow() {
+                assert!(decimals_conversion::convert_to_base_9(u128::MAX, 0).is_err());
             }
         }
 
