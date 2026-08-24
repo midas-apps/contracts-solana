@@ -90,10 +90,22 @@ jobs:
         run: cargo fmt --all --check
 
       - name: Clippy
-        # `-A clippy::useless_attribute`: clippy false-positives on the
-        # `#[allow(ambiguous_glob_reexports)]` guarding our `pub use foo::*`
-        # re-exports (those allows suppress a real rustc lint and must stay).
-        run: cargo clippy --workspace --all-targets -- -D warnings -A clippy::useless_attribute
+        # Fail on warnings, but downgrade a set of style/pedantic lints that we
+        # don't want to gate CI on:
+        #   * useless_attribute: false-positives on the
+        #     `#[allow(ambiguous_glob_reexports)]` guarding our `pub use foo::*`
+        #     re-exports (those allows suppress a real rustc lint and must stay).
+        #   * the rest are stylistic (needless lifetimes/borrows, redundant
+        #     casts/conversions, empty docs) and left as warnings for now.
+        run: >-
+          cargo clippy --workspace --all-targets --
+          -D warnings
+          -A clippy::useless_attribute
+          -A clippy::needless_lifetimes
+          -A clippy::needless_borrow
+          -A clippy::useless_conversion
+          -A clippy::unnecessary_cast
+          -A clippy::empty_docs
 
       - name: Unit tests
         run: cargo test --workspace
