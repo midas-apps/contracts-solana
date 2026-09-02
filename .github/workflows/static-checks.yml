@@ -222,3 +222,29 @@ jobs:
 
       - name: Bankrun integration tests
         run: yarn test:anchor
+
+  # ---------------------------------------------------------------------------
+  # Aggregate gate: a single required status check the org branch-protection
+  # rule can key on. It succeeds only when every upstream lane succeeded (or
+  # was intentionally skipped, e.g. the disabled Anchor lane) and fails if any
+  # of them failed or was cancelled. `if: always()` ensures it still runs to
+  # report a red status when an upstream job fails.
+  # ---------------------------------------------------------------------------
+  static-checks:
+    name: static-checks
+    if: always()
+    needs: [ts-checks, rust-checks, build-and-test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate upstream results
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Upstream job results: $RESULTS"
+          for result in $RESULTS; do
+            if [ "$result" != "success" ] && [ "$result" != "skipped" ]; then
+              echo "::error::A required check did not pass (result: $result)."
+              exit 1
+            fi
+          done
+          echo "All required checks passed."
