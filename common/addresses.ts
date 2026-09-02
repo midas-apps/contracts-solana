@@ -1,4 +1,4 @@
-import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { PublicKey } from '@solana/web3.js';
 
 import { MProduct, PaymentToken } from './tokenTypes';
@@ -81,6 +81,12 @@ export const addresses: Record<string, NetworkAddresses> = {
         dataFeed: new PublicKey('DB3b426GZ63vkrmuv21Jr2gZfyuoHSPpfbUhWm1nHugw'),
         underlyingFeed: new PublicKey('Dpw1EAVrSB1ibxiDQyTAW6Zip3J4Btk2x4SgApQCeFbX'),
       },
+      [PaymentToken.USDG]: {
+        token: new PublicKey('HLLPLxkSJoWmHMtzXWtJHYY87eGybWxSLX5jxatEC1CM'),
+        tokenProgram: TOKEN_PROGRAM_ID,
+        dataFeed: new PublicKey('ETxmyv6EZVe5a2ZCaARfga1ThD4r9FLnTz5YZq97JQpk'),
+        underlyingFeed: new PublicKey('6JkZmXGgWnzsyTQaqRARzP64iFYnpMNT4siiuUDUaB8s'),
+      },
       [PaymentToken.USDT]: {
         token: new PublicKey('CDvXCVLE5DHUk4FCYaJjpqNcjL8heCDLezDXE6MKSQoe'),
         tokenProgram: TOKEN_PROGRAM_ID,
@@ -95,24 +101,6 @@ export const addresses: Record<string, NetworkAddresses> = {
     acRoleGlobal: new PublicKey('39tDSAtrYuy7cA6ipj1N9c8jzs5kRPbWAj5ztmW3sMa6'),
     ac: new PublicKey('2dGjhqtMhDk1zuhv8NhiTS52fDudaSQt8DHhPbtrit3a'),
     tokens: {
-      [MProduct.SOLMFONE]: {
-        acRole: new PublicKey('CVUnxqMxQGeUyEn1Pd7DXmZawQMpGruWGLikFe2E7u5k'),
-        mToken: new PublicKey('ESS9fuAbDiyDXy6y1ZAt9VSaiGPSqG8NwaWVX7dePdR7'),
-        tokenAuthority: {
-          account: new PublicKey('4ZifxnpKCVVi6tJLktGJC3dZQWvkXtSzkEVNSE4szMsb'),
-          seed: 'mfone-token-authority',
-        },
-        mTokenDataFeed: new PublicKey('7UVwLrMTEDVvzQRaitJi7YLJcxFY8RTmXrHvSPMjTGDm'),
-        mTokenUnderlyingFeed: new PublicKey('HHwwM9t8eEeNDnGpXQnkHth2xHHxkD531qqBqz5H7meX'),
-        minter: {
-          commonVault: new PublicKey('BzKC2gazYSmB9QE2yUKGZe8K2iedFREYpGZesCHEqRbg'),
-          account: new PublicKey('EaXc6FVh6m7R4cEZp1T4h6At95qguP8b8UNFe3pbYoH1'),
-        },
-        redeemer: {
-          commonVault: new PublicKey('Gzu6rgQ6ezGkNYExQ2WZJvV7Y9LidUKSUAjUZWb5v1c2'),
-          account: new PublicKey('DNJMfdgrrVHKp1nFY5Qoqq14erqzdJoMve5THgKpCkrb'),
-        },
-      },
       [MProduct.PSV]: {
         acRole: new PublicKey('77YMLUMHD5Pdq2qvYCjTNL5oP1Z5hKPK4yuak2EaLJya'),
         acGlobalOverride: {
@@ -133,6 +121,24 @@ export const addresses: Record<string, NetworkAddresses> = {
         redeemer: {
           commonVault: new PublicKey('93Qpf7sfihJr5a6HdZ5N53jqe7ieevxuEmLqdAVBRrK8'),
           account: new PublicKey('DKp86fdtsZMbegJNcxH3ea9eGhahXDWsxaSXCe79MYXZ'),
+        },
+      },
+      [MProduct.SOLMFONE]: {
+        acRole: new PublicKey('CVUnxqMxQGeUyEn1Pd7DXmZawQMpGruWGLikFe2E7u5k'),
+        mToken: new PublicKey('ESS9fuAbDiyDXy6y1ZAt9VSaiGPSqG8NwaWVX7dePdR7'),
+        tokenAuthority: {
+          account: new PublicKey('4ZifxnpKCVVi6tJLktGJC3dZQWvkXtSzkEVNSE4szMsb'),
+          seed: 'mfone-token-authority',
+        },
+        mTokenDataFeed: new PublicKey('7UVwLrMTEDVvzQRaitJi7YLJcxFY8RTmXrHvSPMjTGDm'),
+        mTokenUnderlyingFeed: new PublicKey('HHwwM9t8eEeNDnGpXQnkHth2xHHxkD531qqBqz5H7meX'),
+        minter: {
+          commonVault: new PublicKey('BzKC2gazYSmB9QE2yUKGZe8K2iedFREYpGZesCHEqRbg'),
+          account: new PublicKey('EaXc6FVh6m7R4cEZp1T4h6At95qguP8b8UNFe3pbYoH1'),
+        },
+        redeemer: {
+          commonVault: new PublicKey('Gzu6rgQ6ezGkNYExQ2WZJvV7Y9LidUKSUAjUZWb5v1c2'),
+          account: new PublicKey('DNJMfdgrrVHKp1nFY5Qoqq14erqzdJoMve5THgKpCkrb'),
         },
       },
       [MProduct.SOLMHYPER]: {
@@ -163,9 +169,9 @@ export const addresses: Record<string, NetworkAddresses> = {
       },
       [PaymentToken.USDG]: {
         token: new PublicKey('2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH'),
-        tokenProgram: TOKEN_2022_PROGRAM_ID,
-        dataFeed: new PublicKey('7Dzy2jzuJFPJiXQyiVVAZ1VLovgHKVh2uGw98P7wXCh3'),
-        underlyingFeed: new PublicKey('6JkZmXGgWnzsyTQaqRARzP64iFYnpMNT4siiuUDUaB8s'),
+        tokenProgram: new PublicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'),
+        dataFeed: new PublicKey('2UFi3c1kCRkNBwC2yKbCVDSq23oBkWsbFUmRTCu3DNoc'),
+        underlyingFeed: new PublicKey('4ABmrG44CfsiJJ1w3BfDzXimbFVkhkQV5abYCC7YwjHQ'),
       },
       [PaymentToken.wSOL]: {
         token: new PublicKey('So11111111111111111111111111111111111111112'),

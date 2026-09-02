@@ -41,6 +41,13 @@ export const solmFONEConfig: TokenConfigWithNetworks = {
             stable: true,
             isFiat: false,
           },
+          {
+            symbol: PaymentToken.USDG,
+            fee: '0',
+            allowance: '2000000',
+            stable: true,
+            isFiat: false,
+          },
         ],
       },
       redeemer: {
@@ -59,6 +66,13 @@ export const solmFONEConfig: TokenConfigWithNetworks = {
             symbol: PaymentToken.USDC,
             fee: '0',
             allowance: '50000',
+            stable: true,
+            isFiat: false,
+          },
+          {
+            symbol: PaymentToken.USDG,
+            fee: '0',
+            allowance: '2000000',
             stable: true,
             isFiat: false,
           },

@@ -1,3 +1,4 @@
+import { devnet } from '@solana/kit';
 import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 
 import { PaymentToken } from '@/common/tokenTypes';
@@ -57,6 +58,16 @@ export const paymentTokenConfigs: Partial<Record<PaymentToken, PaymentTokenConfi
       mainnet: {
         tokenAddress: '2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH',
         tokenProgram: TOKEN_2022_PROGRAM_ID.toBase58(),
+        dataFeed: {
+          mode: 'manual',
+          maxPrice: '1.00',
+          minPrice: '0.9999',
+          initialPrice: '1',
+          maxStaleness: 365 * 86400,
+        },
+      },
+      devnet: {
+        tokenAddress: 'HLLPLxkSJoWmHMtzXWtJHYY87eGybWxSLX5jxatEC1CM',
         dataFeed: {
           mode: 'pyth',
           // Pyth USDG/USD price feed on Solana mainnet
