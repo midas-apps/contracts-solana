@@ -22,7 +22,7 @@ What kind of project is this?
 - [ ] Gaming / metaverse
 - [ ] Social / identity
 - [ ] Infrastructure / tooling
-- [ ] Other: ******\_\_\_******
+- [ ] Other: **\*\***\_\_\_**\*\***
 
 ### Q2. Blockchain
 
@@ -32,7 +32,7 @@ Which blockchain(s) does this project target?
 - [ ] Ethereum / EVM
 - [ ] Multiple chains (cross-chain)
 - [ ] None (off-chain only)
-- [ ] Other: ******\_\_\_******
+- [ ] Other: **\*\***\_\_\_**\*\***
 
 ### Q3. Smart contract framework
 
@@ -43,7 +43,7 @@ If on-chain code exists, what framework is used?
 - [ ] Solidity / Hardhat / Foundry
 - [ ] Rust (non-Solana)
 - [ ] Not applicable (no smart contracts)
-- [ ] Other: ******\_\_\_******
+- [ ] Other: **\*\***\_\_\_**\*\***
 
 ### Q4. Backend framework
 
@@ -54,7 +54,7 @@ If on-chain code exists, what framework is used?
 - [ ] Go (net/http, Gin, Fiber)
 - [ ] Ruby on Rails
 - [ ] No backend
-- [ ] Other: ****\_****ts**\_\_**
+- [ ] Other: \***\*\_\*\***ts**\_\_**
 
 ### Q5. Frontend framework
 
@@ -63,7 +63,7 @@ If on-chain code exists, what framework is used?
 - [ ] Vue / Nuxt
 - [ ] Svelte / SvelteKit
 - [ ] No frontend
-- [ ] Other: ******\_\_\_******
+- [ ] Other: **\*\***\_\_\_**\*\***
 
 ### Q6. Database
 
@@ -74,13 +74,13 @@ If on-chain code exists, what framework is used?
 - [ ] Supabase
 - [ ] Redis only
 - [ ] No database
-- [ ] Other: ******\_\_\_******
+- [ ] Other: **\*\***\_\_\_**\*\***
 
 ### Q7. Monorepo structure?
 
 - [ ] Yes — monorepo (Turborepo, Nx, Lerna, or workspace)
 - [ ] No — single package
-- [ ] Multiple repos (list them): ******\_\_\_******
+- [ ] Multiple repos (list them): **\*\***\_\_\_**\*\***
 
 ---
 
@@ -101,7 +101,7 @@ If on-chain code exists, what framework is used?
 - [ ] GCP
 - [ ] Heroku
 - [ ] Self-hosted VPS
-- [ ] Other: ******\_\_\_******
+- [ ] Other: **\*\***\_\_\_**\*\***
 
 ### Q10. Total Value Locked (TVL) or funds at risk
 
@@ -144,14 +144,14 @@ How much value does the protocol currently manage?
 - [ ] API keys
 - [ ] Session cookies
 - [ ] No authentication
-- [ ] Multiple: ******\_\_\_******
+- [ ] Multiple: **\*\***\_\_\_**\*\***
 
 ### Q14. Are there different user roles?
 
 - [ ] Yes — admin/manager and regular users
 - [ ] Yes — multiple tiers (admin, manager, investor, viewer, etc.)
 - [ ] No — all users have equal access
-- [ ] Describe roles: ******\_\_\_******
+- [ ] Describe roles: **\*\***\_\_\_**\*\***
 
 ### Q15. Is there an admin panel or admin API?
 
@@ -182,7 +182,7 @@ How much value does the protocol currently manage?
 ### Q18. What tokens are supported?
 
 - [ ] SOL / WSOL only
-- [ ] SOL + specific SPL tokens (list): ******\_\_\_******
+- [ ] SOL + specific SPL tokens (list): **\*\***\_\_\_**\*\***
 - [ ] Any SPL token
 - [ ] Token-2022 (token extensions) supported
 - [ ] ERC-20 tokens
@@ -195,7 +195,7 @@ How much value does the protocol currently manage?
 - [ ] Yes — Orca
 - [ ] Yes — Uniswap / Sushiswap (EVM)
 - [ ] No DEX integration
-- [ ] Other: ******\_\_\_******
+- [ ] Other: **\*\***\_\_\_**\*\***
 
 ### Q20. Does the protocol charge fees?
 
@@ -204,7 +204,7 @@ How much value does the protocol currently manage?
 - [ ] Yes — transaction/swap fee
 - [ ] Yes — withdrawal fee
 - [ ] No fees
-- [ ] Describe fee structure: ******\_\_\_******
+- [ ] Describe fee structure: **\*\***\_\_\_**\*\***
 
 ### Q21. Is there a withdrawal process?
 
@@ -213,7 +213,7 @@ How much value does the protocol currently manage?
 - [ ] Time-locked withdrawal (cooldown period)
 - [ ] Admin-approved withdrawal
 - [ ] No withdrawals (one-way deposit)
-- [ ] Describe: ******\_\_\_******
+- [ ] Describe: **\*\***\_\_\_**\*\***
 
 ---
 
@@ -230,7 +230,7 @@ How much value does the protocol currently manage?
 - [ ] Analytics (Mixpanel, Amplitude, etc.)
 - [ ] Error tracking (Sentry, etc.)
 - [ ] None
-- [ ] Other: ******\_\_\_******
+- [ ] Other: **\*\***\_\_\_**\*\***
 
 ### Q23. Does the protocol use oracles for pricing?
 
@@ -247,7 +247,7 @@ How much value does the protocol currently manage?
 - [ ] Yes — Associated Token Program
 - [ ] Yes — DEX program (Jupiter, Raydium, etc.)
 - [ ] Yes — Staking program
-- [ ] Yes — Other: ******\_\_\_******
+- [ ] Yes — Other: **\*\***\_\_\_**\*\***
 - [ ] No CPI
 - [ ] Not applicable (no smart contract)
 
@@ -257,14 +257,14 @@ How much value does the protocol currently manage?
 
 ### Q25. Has this code been audited before?
 
-- [ ] Yes — by a professional audit firm (name): ******\_\_\_******
+- [ ] Yes — by a professional audit firm (name): **\*\***\_\_\_**\*\***
 - [ ] Yes — internal review only
-- [ ] Yes — automated tools only (name): ******\_\_\_******
+- [ ] Yes — automated tools only (name): **\*\***\_\_\_**\*\***
 - [ ] No — first audit
 
 ### Q26. Has the protocol experienced any security incidents?
 
-- [ ] Yes — fund loss (amount): ******\_\_\_******
+- [ ] Yes — fund loss (amount): **\*\***\_\_\_**\*\***
 - [ ] Yes — exploit attempt (blocked successfully)
 - [ ] Yes — data breach
 - [ ] No known incidents
@@ -272,7 +272,7 @@ How much value does the protocol currently manage?
 
 ### Q27. Is there a bug bounty program?
 
-- [ ] Yes — public (platform): ******\_\_\_******
+- [ ] Yes — public (platform): **\*\***\_\_\_**\*\***
 - [ ] Yes — private/invite-only
 - [ ] No — planning to create one
 - [ ] No
@@ -306,7 +306,7 @@ How much value does the protocol currently manage?
 
 - [ ] Yes — GitHub Actions
 - [ ] Yes — GitLab CI
-- [ ] Yes — Other: ******\_\_\_******
+- [ ] Yes — Other: **\*\***\_\_\_**\*\***
 - [ ] No CI/CD
 
 ### Q32. Do you run automated tests?
@@ -344,7 +344,7 @@ How much value does the protocol currently manage?
 - [ ] GDPR (EU data privacy)
 - [ ] SOC 2
 - [ ] DORA (EU digital resilience)
-- [ ] Other: ******\_\_\_******
+- [ ] Other: **\*\***\_\_\_**\*\***
 
 ### Q36. Do you collect personally identifiable information (PII)?
 
@@ -352,7 +352,7 @@ How much value does the protocol currently manage?
 - [ ] Yes — email addresses
 - [ ] Yes — names / identity documents (KYC)
 - [ ] Yes — financial data beyond on-chain
-- [ ] Describe: ******\_\_\_******
+- [ ] Describe: **\*\***\_\_\_**\*\***
 
 ### Q37. Do you have a privacy policy?
 
@@ -383,7 +383,7 @@ Select all that apply, or choose "Full":
 - [ ] DevOps / infrastructure only
 - [ ] Secrets & key management only
 - [ ] Supply chain / dependencies only
-- [ ] Specific files/modules: ******\_\_\_******
+- [ ] Specific files/modules: **\*\***\_\_\_**\*\***
 
 ### Q40. What are your top security concerns?
 
@@ -397,7 +397,7 @@ Rank your top 3:
 - [3 ] Supply chain attack
 - [ ] Insider threat
 - [ ] Operational security
-- [ ] Other: ******\_\_\_******
+- [ ] Other: **\*\***\_\_\_**\*\***
 
 ### Q41. Desired audit depth
 
