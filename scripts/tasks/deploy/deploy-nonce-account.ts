@@ -1,5 +1,4 @@
 import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
-import { PublicKey } from '@solana/web3.js';
 
 import { executeNetworkScript } from '@/common/scriptRunner';
 

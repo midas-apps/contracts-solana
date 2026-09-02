@@ -240,10 +240,11 @@ export const paymentTokenConfigWithNetworksSchema = z.object({
   networks: z.record(z.string(), paymentTokenNetworkConfigSchema),
 });
 
-export const networkConfigSchema = z.record(z.string(),
+export const networkConfigSchema = z.record(
+  z.string(),
   z.object({
     timelock: timelockConfigSchema.optional(),
-  })
+  }),
 );
 
 export type NetworkConfig = z.infer<typeof networkConfigSchema>;

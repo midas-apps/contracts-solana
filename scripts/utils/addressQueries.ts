@@ -1,6 +1,12 @@
 import { PublicKey } from '@solana/web3.js';
 
-import { addresses, NetworkAddresses, TokenAddresses, DataFeed, TimelockAddresses } from '@/common/addresses';
+import {
+  addresses,
+  NetworkAddresses,
+  TokenAddresses,
+  DataFeed,
+  TimelockAddresses,
+} from '@/common/addresses';
 import { MProduct, PaymentToken } from '@/common/tokenTypes';
 
 // Address getters (return undefined if not found)

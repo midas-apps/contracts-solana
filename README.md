@@ -3,7 +3,7 @@ The license applies to the entire codebase, including all prior revisions.
 
 # Midas Solana programs repository
 
-This repository contains all Solana programs related to the [midas.app](https://midas.app) project.
+This repository contains all Solana programs related to the [midas.app](https://midas.app) project
 
 Midas Solana programs trying to mimic everything that was previously developed for EVM-based chains, but some features currently were not implemented due to either blockchain limitations or missing on-chain data.
 
