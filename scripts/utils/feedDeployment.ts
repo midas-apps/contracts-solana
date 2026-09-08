@@ -8,7 +8,7 @@ import { MANUAL_PRICE_MULTIPLIER, PRICE_MULTIPLIER } from '@/scripts/constants/p
 
 import { deployDataFeed as deployDataFeedContract, getDataFeedProgram } from '../deploy/dataFeed';
 import { deployChainlinkFeed } from '../deploy/feeds/chainlink';
-import { deployManualFeed, deployManualFeedGrowth } from '../deploy/feeds/manual';
+import { deployManualFeed } from '../deploy/feeds/manual';
 import { deployPythFeed } from '../deploy/feeds/pyth';
 import { deploySwitchboardFeed, verifySwitchboardFeed } from '../deploy/feeds/switchboard';
 
@@ -144,48 +144,6 @@ export async function deployFeedFromConfig({
       const dataFeedProgram = getDataFeedProgram(provider);
       const [manualFeedPda] = PublicKey.findProgramAddressSync(
         [Buffer.from('manual_feed_state'), dataFeed.toBuffer()],
-        dataFeedProgram.programId,
-      );
-      return {
-        dataFeed,
-        underlyingFeed: manualFeedPda,
-      };
-    }
-
-    case 'manual-growth': {
-      const manualGrowthConfig = dataFeedConfig.manualGrowth;
-      if (!manualGrowthConfig)
-        throw createUserError('manualGrowth configuration is required for manual-growth mode');
-
-      const dataFeed = await deployManualFeedGrowth({ provider, payer, network }, feedConfig, {
-        initialPrice: BigInt(
-          Math.floor(parseFloat(manualGrowthConfig.initialPrice) * MANUAL_PRICE_MULTIPLIER),
-        ),
-        initialPriceTimestamp: manualGrowthConfig.initialPriceTimestamp,
-        initialGrowthApr: BigInt(
-          Math.floor(
-            parseFloat(manualGrowthConfig.initialGrowthApr.toString()) * MANUAL_PRICE_MULTIPLIER,
-          ),
-        ),
-        minGrowthApr: BigInt(
-          Math.floor(
-            parseFloat(manualGrowthConfig.minGrowthApr.toString()) * MANUAL_PRICE_MULTIPLIER,
-          ),
-        ),
-        maxGrowthApr: BigInt(
-          Math.floor(
-            parseFloat(manualGrowthConfig.maxGrowthApr.toString()) * MANUAL_PRICE_MULTIPLIER,
-          ),
-        ),
-        maxAnswerDeviation: BigInt(
-          Math.floor(parseFloat(manualGrowthConfig.maxAnswerDeviation) * MANUAL_PRICE_MULTIPLIER),
-        ),
-        onlyUp: manualGrowthConfig.onlyUp,
-      });
-      // For manual feeds, the underlying feed is a PDA derived from the data feed
-      const dataFeedProgram = getDataFeedProgram(provider);
-      const [manualFeedPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('manual_feed_growth_state'), dataFeed.toBuffer()],
         dataFeedProgram.programId,
       );
       return {

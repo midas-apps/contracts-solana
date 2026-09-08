@@ -35,7 +35,7 @@ export interface DeployDataFeedBaseConfig {
  */
 export type DeployDataFeedConfig =
   | (DeployDataFeedBaseConfig & {
-      mode: 'manual' | 'manualGrowth' | 'switchboard';
+      mode: 'manual' | 'switchboard';
       underlyingFeed?: PublicKey;
     })
   | (DeployDataFeedBaseConfig & {
@@ -65,7 +65,7 @@ export const deployDataFeed = async (common: CommonParams, config: DeployDataFee
     await dataFeedProgram.methods
       .newFeed(
         acRole,
-        underlyingFeed,
+        underlyingFeed!,
         DataFeedMode[mode],
         toBN(minPrice),
         toBN(maxPrice),

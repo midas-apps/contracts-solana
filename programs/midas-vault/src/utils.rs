@@ -1400,6 +1400,38 @@ mod tests {
     }
 
     #[test]
+    fn test_validate_common_skips_pause_when_pause_inx_none() {
+        // Vault is paused, but pause_inx is None, so the pause check is skipped.
+        let common = vault_common(true, false, 0, 0);
+        let ac = account_ac(true, false);
+        assert!(validate_common(&common, &ac, None, false).is_ok());
+    }
+
+    #[test]
+    fn test_validate_common_none_still_checks_black_list() {
+        // pause_inx is None but blacklist is still enforced.
+        let common = vault_common(false, false, 0, 0);
+        let ac = account_ac(true, true);
+        assert!(validate_common(&common, &ac, None, false).is_err());
+    }
+
+    #[test]
+    fn test_validate_common_none_still_checks_green_list() {
+        // pause_inx is None but greenlist is still enforced.
+        let common = vault_common(false, true, 0, 0);
+        let ac = account_ac(false, false);
+        assert!(validate_common(&common, &ac, None, false).is_err());
+    }
+
+    #[test]
+    fn test_validate_common_none_ok_when_user_valid() {
+        // pause_inx is None and the user passes greenlist/blacklist checks.
+        let common = vault_common(false, true, 0, 0);
+        let ac = account_ac(true, false);
+        assert!(validate_common(&common, &ac, None, false).is_ok());
+    }
+
+    #[test]
     fn test_validate_max_supply_cap_within_cap() {
         let minter = minter_vault_state(200);
         assert!(validate_max_supply_cap_with_supply(100, &minter, 50).unwrap());

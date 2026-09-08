@@ -6,7 +6,6 @@ export const DATA_FEED_PROGRAM_ID = new PublicKey(DATA_FEED_IDL.address);
 
 export const DATA_FEED_SEEDS = {
   MANUAL_FEED_STATE_SEED: 'manual_feed_state',
-  MANUAL_FEED_GROWTH_STATE_SEED: 'manual_feed_growth_state',
 };
 
 export const SWITCHBOARD_FEEDS = {};
@@ -31,9 +30,6 @@ export enum DataFeedError {
   PriceIsHigherThanMax,
   ArithmeticOverflow,
   DeviationTooHigh,
-  InvalidMaxGrowthApr,
-  InvalidMinGrowthApr,
-  InvalidGrowthApr,
   InvalidPriceTimestamp,
   InvalidTimestamp,
   NotEnoughTimeHasPassedSinceLastUpdate,

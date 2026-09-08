@@ -814,6 +814,7 @@ export const approveMintRequest = async (
       mintRequest: getMinterVaultRequestPda(getMinterVaultPda(baseAccounts.vaultCommon), requestId),
       tokenAuthority: stateBefore.minterVaultState.mintAuthorityPda,
       userAccount: user,
+      accountAc: getAccountAcStatePda(stateBefore.commonVaultState.ac, user),
       mMint: stateBefore.commonVaultState.mMint,
       mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
       authorityAcRole: getAccountAcRoleStatePda(
@@ -1011,6 +1012,7 @@ export const safeApproveMintRequestAtCurrentRate = async (
       mintRequest: getMinterVaultRequestPda(getMinterVaultPda(baseAccounts.vaultCommon), requestId),
       tokenAuthority: stateBefore.minterVaultState.mintAuthorityPda,
       userAccount: user,
+      accountAc: getAccountAcStatePda(stateBefore.commonVaultState.ac, user),
       mMint: stateBefore.commonVaultState.mMint,
       mMintFeed: stateBefore.mMintFeed.underlyingFeed,
       mMintDataFeed: stateBefore.commonVaultState.mMintFeed,
@@ -1205,6 +1207,7 @@ export const safeApproveMintRequestAtRequestRate = async (
       mintRequest: getMinterVaultRequestPda(getMinterVaultPda(baseAccounts.vaultCommon), requestId),
       tokenAuthority: stateBefore.minterVaultState.mintAuthorityPda,
       userAccount: user,
+      accountAc: getAccountAcStatePda(stateBefore.commonVaultState.ac, user),
       mMint: stateBefore.commonVaultState.mMint,
       mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
       authorityAcRole: getAccountAcRoleStatePda(

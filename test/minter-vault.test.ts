@@ -17,12 +17,7 @@ import {
   updateVaultCommon,
   updateVaultCommonAccount,
 } from './testers/common-vaults.testers';
-import {
-  updateFeed,
-  updateManualFeedGrowth,
-  updateManualFeedGrowthPrice,
-  updateManualFeedPrice,
-} from './testers/data-feed.testers';
+import { updateFeed, updateManualFeedPrice } from './testers/data-feed.testers';
 import {
   approveMintRequest,
   migrateMinterVaultStateToV2,
@@ -198,114 +193,6 @@ describe('minter-vault', () => {
           tokensMinted: parseUnits('9.9'),
         },
       );
-    });
-
-    it('should mint instant with manual feed growth', async () => {
-      const fixture = await vaultsFixture();
-
-      await prepareCommonMintTest(fixture);
-      await updateFeed(fixture, {
-        mode: 'manualGrowth',
-        feed: fixture.dataFeedMTBill.publicKey,
-        underlyingFeed: fixture.manualUnderlyingFeedGrowthMTBill,
-      });
-      await mintInstant(
-        fixture,
-        {},
-        {},
-        {
-          fee: 0.1,
-          tokensMinted: parseUnits('9.9'),
-        },
-      );
-    });
-
-    it('should mint instant with manual feed growth with growth apr set to 5%, timestamp is 100s in past', async () => {
-      const fixture = await vaultsFixture();
-
-      await prepareCommonMintTest(fixture);
-      await updateFeed(fixture, {
-        mode: 'manualGrowth',
-        feed: fixture.dataFeedMTBill.publicKey,
-        underlyingFeed: fixture.manualUnderlyingFeedGrowthMTBill,
-      });
-
-      await timeTravel(fixture.context, 3601n);
-      await updateManualFeedGrowthPrice(fixture, {
-        baseFeed: fixture.dataFeedMTBill.publicKey,
-        growthApr: parseUnits('5'),
-        price: parseUnits('1'),
-        priceTimestampDelta: -100,
-      });
-
-      await mintInstant(
-        fixture,
-        {},
-        {},
-        {
-          fee: 0.1,
-          tokensMinted: parseUnits('9.899998416'),
-        },
-      );
-    });
-
-    it('should mint instant with manual feed growth with growth apr set to -5%, timestamp is 100s in past', async () => {
-      const fixture = await vaultsFixture();
-
-      await prepareCommonMintTest(fixture);
-      await updateFeed(fixture, {
-        mode: 'manualGrowth',
-        feed: fixture.dataFeedMTBill.publicKey,
-        underlyingFeed: fixture.manualUnderlyingFeedGrowthMTBill,
-      });
-
-      await updateManualFeedGrowth(fixture, {
-        baseFeed: fixture.dataFeedMTBill.publicKey,
-        minGrowthApr: -1n * parseUnits('5'),
-      });
-
-      await timeTravel(fixture.context, 3601n);
-
-      await updateManualFeedGrowthPrice(fixture, {
-        baseFeed: fixture.dataFeedMTBill.publicKey,
-        growthApr: -1n * parseUnits('5'),
-        price: parseUnits('1'),
-        priceTimestampDelta: -100,
-      });
-      await timeTravel(fixture.context, 10n);
-
-      await mintInstant(
-        fixture,
-        {},
-        {},
-        {
-          fee: 0.1,
-          tokensMinted: parseUnits('9.900001732'),
-        },
-      );
-    });
-
-    it('with manual feed with growth, price_timestamp should not affect the staleness check', async () => {
-      const fixture = await vaultsFixture();
-
-      await prepareCommonMintTest(fixture);
-      await updateFeed(fixture, {
-        mode: 'manualGrowth',
-        feed: fixture.dataFeedMTBill.publicKey,
-        underlyingFeed: fixture.manualUnderlyingFeedGrowthMTBill,
-        maxStaleness: 3600,
-      });
-
-      await timeTravel(fixture.context, 3601n);
-
-      await updateManualFeedGrowthPrice(fixture, {
-        baseFeed: fixture.dataFeedMTBill.publicKey,
-        price: parseUnits('1'),
-        priceTimestampDelta: -7200,
-      });
-      await timeTravel(fixture.context, 3000n);
-
-      await mintInstant(fixture, {}, {});
     });
 
     it('when green list enabled and user is in green list', async () => {
@@ -931,93 +818,6 @@ describe('minter-vault', () => {
           revertedWith: VaultError.MaxSupplyCapExceeded,
         },
       );
-    });
-
-    it('should fail: mint instant with manual feed growth with growth apr set to -90%, timestamp is 10d in past and price exceeds min bound', async () => {
-      const fixture = await vaultsFixture();
-
-      await prepareCommonMintTest(fixture);
-      await updateFeed(fixture, {
-        mode: 'manualGrowth',
-        feed: fixture.dataFeedMTBill.publicKey,
-        underlyingFeed: fixture.manualUnderlyingFeedGrowthMTBill,
-        minPrice: parseUnits('0.99'),
-      });
-
-      await updateManualFeedGrowth(fixture, {
-        baseFeed: fixture.dataFeedMTBill.publicKey,
-        minGrowthApr: -1n * parseUnits('90'),
-      });
-
-      await timeTravel(fixture.context, 3601n);
-
-      await updateManualFeedGrowthPrice(fixture, {
-        baseFeed: fixture.dataFeedMTBill.publicKey,
-        growthApr: -1n * parseUnits('90'),
-        price: parseUnits('1'),
-        priceTimestampDelta: -10 * 86400,
-      });
-
-      await mintInstant(fixture, {}, {}, undefined, {
-        revertedWith: DataFeedError.PriceIsLowerThanMin,
-      });
-    });
-
-    it('should fail: mint instant with manual feed growth with growth apr set to 90%, timestamp is 10d in past and price exceeds max bound', async () => {
-      const fixture = await vaultsFixture();
-
-      await prepareCommonMintTest(fixture);
-      await updateFeed(fixture, {
-        mode: 'manualGrowth',
-        feed: fixture.dataFeedMTBill.publicKey,
-        underlyingFeed: fixture.manualUnderlyingFeedGrowthMTBill,
-        maxPrice: parseUnits('1.01'),
-      });
-
-      await updateManualFeedGrowth(fixture, {
-        baseFeed: fixture.dataFeedMTBill.publicKey,
-        maxGrowthApr: parseUnits('90'),
-      });
-
-      await timeTravel(fixture.context, 3601n);
-
-      await updateManualFeedGrowthPrice(fixture, {
-        baseFeed: fixture.dataFeedMTBill.publicKey,
-        growthApr: parseUnits('90'),
-        price: parseUnits('1'),
-        priceTimestampDelta: -10 * 86400,
-      });
-
-      await mintInstant(fixture, {}, {}, undefined, {
-        revertedWith: DataFeedError.PriceIsHigherThanMax,
-      });
-    });
-
-    it('should fail: mint instant with manual feed growth when price is stale', async () => {
-      const fixture = await vaultsFixture();
-
-      await prepareCommonMintTest(fixture);
-      await updateFeed(fixture, {
-        mode: 'manualGrowth',
-        feed: fixture.dataFeedMTBill.publicKey,
-        underlyingFeed: fixture.manualUnderlyingFeedGrowthMTBill,
-        maxStaleness: 100,
-      });
-
-      await timeTravel(fixture.context, 3601n);
-
-      await updateManualFeedGrowthPrice(fixture, {
-        baseFeed: fixture.dataFeedMTBill.publicKey,
-        growthApr: parseUnits('5'),
-        price: parseUnits('1'),
-        priceTimestampDelta: -100,
-      });
-
-      await timeTravel(fixture.context, 101n);
-
-      await mintInstant(fixture, {}, {}, undefined, {
-        revertedWith: DataFeedError.PriceIsStale,
-      });
     });
 
     it('mint instant with exact cap match', async () => {
@@ -1736,6 +1536,65 @@ describe('minter-vault', () => {
         {},
         { revertedWith: VaultError.VariationToleranceExceeded },
       );
+    });
+
+    it('should fail: when request user is blacklisted after request creation', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      // Blacklist the request user after the request was created
+      await updateAccountAc(fixture, {
+        blackListed: true,
+      });
+
+      await approveMintRequest(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          revertedWith: VaultError.Blacklisted,
+        },
+      );
+    });
+
+    it('should fail: when green list is enforced after request creation and request user is not green listed', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      await updateVaultCommon(fixture, {
+        greenlistEnforced: true,
+      });
+
+      await approveMintRequest(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          revertedWith: VaultError.NotGreenListed,
+        },
+      );
+    });
+
+    it('should approve when green list is enforced and request user is green listed', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      await updateVaultCommon(fixture, {
+        greenlistEnforced: true,
+      });
+      await updateAccountAc(fixture, {
+        greenListed: true,
+      });
+
+      await approveMintRequest(fixture, {});
     });
   });
 

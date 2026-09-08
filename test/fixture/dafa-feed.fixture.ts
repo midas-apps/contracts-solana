@@ -10,7 +10,6 @@ import { DATA_FEED_AC_ROLES } from '../constants/data-feed.constants';
 import { acRoleToBuffer, getAccountAcRoleStatePda } from '../helpers/ac.helpers';
 import {
   formatUnits,
-  getTime,
   InitLiteSVMReturnType,
   parseUnits,
   processTransaction,
@@ -19,7 +18,6 @@ import {
 import {
   DataFeedMode,
   generateFeedAcccount,
-  getManualFeedGrowthStatePda,
   getManualFeedStatePda,
 } from '../helpers/data-feed.helpers';
 
@@ -205,51 +203,6 @@ export const dataFeedFixture = async (fixture?: InitLiteSVMReturnType, initSlot?
     await processTransaction(context, createFeedTx, [authority, feed]);
   };
 
-  // TODO: move to helpers
-  const createManualUnderlyingFeedGrowth = async (
-    feed: Keypair,
-    acRole: PublicKey,
-    {
-      minGrowthApr,
-      maxGrowthApr,
-      onlyUp,
-    }: {
-      minGrowthApr: bigint;
-      maxGrowthApr: bigint;
-      onlyUp: boolean;
-    },
-  ) => {
-    const currentTime = await getTime(context);
-    const createFeedTx = new Transaction().add(
-      await dataFeedProgram.methods
-        .newManualFeedGrowth(
-          toBN(parseUnits('1')),
-          +currentTime.toString() - 1,
-          toBN(0),
-          9,
-          toBN(parseUnits('1', 2)),
-          toBN(minGrowthApr),
-          toBN(maxGrowthApr),
-          onlyUp,
-        )
-        .accountsPartial({
-          baseFeed: feed.publicKey,
-          authority: authority.publicKey,
-          acRole: acRole,
-          authorityAcRole: getAccountAcRoleStatePda(
-            acRole,
-            authority.publicKey,
-            DATA_FEED_AC_ROLES.FEED_ADMIN,
-          ),
-        })
-        .instruction(),
-    );
-
-    await processTransaction(context, createFeedTx, [authority, feed]);
-
-    return getManualFeedGrowthStatePda(feed.publicKey);
-  };
-
   await createManualFeed(dataFeedMTBill, acRoleMTbill.publicKey, {
     minPrice: parseUnits('0.1'),
     maxPrice: parseUnits('10'),
@@ -259,16 +212,6 @@ export const dataFeedFixture = async (fixture?: InitLiteSVMReturnType, initSlot?
     minPrice: parseUnits('0.997'),
     maxPrice: parseUnits('1.05'),
   });
-
-  const manualUnderlyingFeedGrowthMTBill = await createManualUnderlyingFeedGrowth(
-    dataFeedMTBill,
-    acRoleMTbill.publicKey,
-    {
-      minGrowthApr: parseUnits('0'),
-      maxGrowthApr: parseUnits('10'),
-      onlyUp: false,
-    },
-  );
 
   return {
     ...acF,
@@ -283,8 +226,6 @@ export const dataFeedFixture = async (fixture?: InitLiteSVMReturnType, initSlot?
     regularAccounts,
     context,
     mockedFeeds,
-    manualUnderlyingFeedGrowthMTBill,
-    createManualUnderlyingFeedGrowth,
     createManualFeed,
   };
 };

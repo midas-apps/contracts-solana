@@ -1249,6 +1249,13 @@ describe('redeemer-vault', () => {
       );
 
       await redeemRequest(fixture, {}, {});
+
+      // Fiat approval validates the request user (require_green_list = true), so
+      // green list the user first to reach the payment mint validation.
+      await updateAccountAc(fixture, {
+        greenListed: true,
+      });
+
       await approveRedeemRequest(
         fixture,
         { isFiat: true },
@@ -1256,6 +1263,31 @@ describe('redeemer-vault', () => {
         {},
         {
           revertedWith: VaultError.InvalidPaymentMint,
+        },
+      );
+    });
+
+    it('should fail: when request user is removed from green list after fiat request creation', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        isFiat: true,
+      });
+      await redeemRequest(fixture, { isFiat: true }, {});
+
+      // Remove the request user from the green list after the request was created.
+      // Fiat approvals always require the request user to be green listed.
+      await updateAccountAc(fixture, {
+        greenListed: false,
+      });
+
+      await approveRedeemRequest(
+        fixture,
+        { isFiat: true },
+        {},
+        {},
+        {
+          revertedWith: VaultError.NotGreenListed,
         },
       );
     });
@@ -1481,6 +1513,58 @@ describe('redeemer-vault', () => {
         { safeValidateLiquidity: true },
         {},
         { expectSkipped: true },
+      );
+    });
+
+    it('should fail: when request user is blacklisted after request creation', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        mintPaymentTokenAndApprove: {
+          to: fixture.requestRedeemer.publicKey,
+        },
+      });
+      await redeemRequest(fixture, {}, {});
+
+      // Blacklist the request user after the request was created
+      await updateAccountAc(fixture, {
+        blackListed: true,
+      });
+
+      await approveRedeemRequest(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          revertedWith: VaultError.Blacklisted,
+        },
+      );
+    });
+
+    it('should fail: when green list is enforced after request creation and request user is not green listed', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        mintPaymentTokenAndApprove: {
+          to: fixture.requestRedeemer.publicKey,
+        },
+      });
+      await redeemRequest(fixture, {}, {});
+
+      await updateVaultCommon(fixture, {
+        greenlistEnforced: true,
+        vaultCommon: fixture.redeemerCommonVault.publicKey,
+      });
+
+      await approveRedeemRequest(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          revertedWith: VaultError.NotGreenListed,
+        },
       );
     });
   });
