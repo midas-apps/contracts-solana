@@ -110,7 +110,7 @@ Roles: `admin`, `update_account_ac`, `vault_admin`, `vault_pauser`, `m_minter`, 
 - `yarn update:token-metadata --mtoken <token> --network <network> --symbol <symbol> [--name <name>] [--uri <uri>]`
 - `yarn update:manual-feed-price --mtoken <token> --network <network> --price <price>`
 
-## Verification
+**Local test utilities** (run with `tsx scripts/verify/<script>.ts`):
 
 - `yarn verify:token-metadata --mtoken <token> --network <network>`
 - `yarn tsx scripts/tasks/verify/verify-roles.ts --mtoken <token> --network <network> [--address <pubkey>]`
@@ -122,9 +122,13 @@ Roles: `admin`, `update_account_ac`, `vault_admin`, `vault_pauser`, `m_minter`, 
 
 **Direct verification utilities** (run with `yarn tsx scripts/tasks/verify/<script>.ts`):
 
+- `verify-upgrade-authority.ts` - Verify upgrade authority
+- `verify-roles.ts` - Verify roles
+- `verify-mint-state.ts` - Verify minter vault state
 - `verify-feed.ts` - Verify data feed configuration
 - `verify-mtoken-state.ts` - Verify mToken state
 - `verify-payment-tokens.ts` - Verify payment token setup
+- `verify-feed.ts` - Verify data feed configuration
 - `verify-redeem-request.ts` - Verify redeem request state
 - `get-all-requests.ts` - List all pending requests
 - `mint-payment-token.ts` - Mint test payment tokens

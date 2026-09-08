@@ -1,8 +1,15 @@
 import { CommonError } from './constants/common.constants';
-import { VaultActionIds, VaultError, VAULTS_PROGRAM_ID } from './constants/vaults.constants';
+import { DataFeedError } from './constants/data-feed.constants';
+import {
+  VaultActionIds,
+  VaultError,
+  VAULT_AC_ROLES,
+  VAULTS_PROGRAM_ID,
+} from './constants/vaults.constants';
 import { vaultsFixture } from './fixture/vaults.fixture';
 import { fromBN, parsePercent, parseUnits, timeTravel } from './helpers/common.helpers';
-import { updateAccountAc } from './testers/ac.testers';
+import { fetchVaultCommonState, getMinterVaultPda } from './helpers/vaults.helpers';
+import { grantRole, updateAccountAc } from './testers/ac.testers';
 import {
   newVaultCommon,
   updatePause,
@@ -10,14 +17,17 @@ import {
   updateVaultCommon,
   updateVaultCommonAccount,
 } from './testers/common-vaults.testers';
-import { updateFeed, updateManualFeed } from './testers/data-feed.testers';
+import { updateFeed, updateManualFeedPrice } from './testers/data-feed.testers';
 import {
   approveMintRequest,
+  migrateMinterVaultStateToV2,
   mintInstant,
   mintRequest,
   newMinterVault,
   prepareCommonMintTest,
   rejectMintRequest,
+  safeApproveMintRequestAtCurrentRate,
+  safeApproveMintRequestAtRequestRate,
   updateMinterVault,
 } from './testers/minter-vault.testers';
 import { transferToken } from './testers/redeem-vault.testers';
@@ -84,6 +94,17 @@ describe('minter-vault', () => {
       });
     });
 
+    it('update max_supply_cap', async () => {
+      const fixture = await vaultsFixture();
+
+      const commonVault = await newVaultCommon(fixture, {});
+      await newMinterVault(fixture, { commonVault });
+      await updateMinterVault(fixture, {
+        commonVault,
+        maxSupplyCap: parseUnits('1000'),
+      });
+    });
+
     it('should fail; call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
@@ -95,6 +116,64 @@ describe('minter-vault', () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+  });
+
+  describe('migrate_minter_vault_state_to_v2', () => {
+    it('should migrate minter vault state to v2', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+
+      const minterVault = getMinterVaultPda(fixture.minterCommonVault.publicKey);
+      const minterVaultData = await fixture.provider.connection.getAccountInfo(minterVault);
+      const dataWithoutMaxSupplyCap = minterVaultData?.data.slice(0, 80);
+
+      const lamports = await fixture.provider.connection.getMinimumBalanceForRentExemption(
+        dataWithoutMaxSupplyCap.length,
+      );
+
+      fixture.context.setAccount(minterVault, {
+        data: dataWithoutMaxSupplyCap,
+        executable: false,
+        owner: fixture.vaultsProgram.programId,
+        lamports,
+      });
+
+      await migrateMinterVaultStateToV2(fixture, {
+        commonVault: fixture.minterCommonVault.publicKey,
+      });
+    });
+
+    it('should migrate when called from non-authority', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+
+      const minterVault = getMinterVaultPda(fixture.minterCommonVault.publicKey);
+      const minterVaultData = await fixture.provider.connection.getAccountInfo(minterVault);
+      const dataWithoutMaxSupplyCap = minterVaultData?.data.slice(0, 80);
+
+      const lamports = await fixture.provider.connection.getMinimumBalanceForRentExemption(
+        dataWithoutMaxSupplyCap.length,
+      );
+
+      fixture.context.setAccount(minterVault, {
+        data: dataWithoutMaxSupplyCap,
+        executable: false,
+        owner: fixture.vaultsProgram.programId,
+        lamports,
+      });
+
+      await migrateMinterVaultStateToV2(
+        fixture,
+        {
+          commonVault: fixture.minterCommonVault.publicKey,
+        },
+        {
+          from: fixture.regularAccounts[0],
         },
       );
     });
@@ -183,7 +262,7 @@ describe('minter-vault', () => {
         },
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('1.1'),
       });
 
@@ -397,12 +476,12 @@ describe('minter-vault', () => {
 
       await prepareCommonMintTest(fixture);
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
         price: parseUnits('1.05'),
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('5'),
       });
 
@@ -433,12 +512,12 @@ describe('minter-vault', () => {
         },
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
         price: parseUnits('1.05'),
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('5'),
       });
 
@@ -483,7 +562,7 @@ describe('minter-vault', () => {
       await prepareCommonMintTest(fixture, {
         addPaymentToken: { stable: false },
       });
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: 0n,
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
       });
@@ -493,8 +572,7 @@ describe('minter-vault', () => {
         {},
         {},
         {
-          // TODO: find a way to proxify errors
-          revertedWith: CommonError.GenericError,
+          revertedWith: DataFeedError.InvalidPrice,
         },
       );
     });
@@ -720,6 +798,69 @@ describe('minter-vault', () => {
         },
       );
     });
+
+    it('should fail: max supply cap exceeded', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updateVaultCommonAccount(fixture, { waivedFee: true });
+      await updateMinterVault(fixture, { maxSupplyCap: parseUnits('99') });
+
+      await mintInstant(
+        fixture,
+        {
+          amountToken: 100,
+          minReceiveAmount: parseUnits('100'),
+        },
+        {},
+        {},
+        {
+          revertedWith: VaultError.MaxSupplyCapExceeded,
+        },
+      );
+    });
+
+    it('mint instant with exact cap match', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updateVaultCommonAccount(fixture, { waivedFee: true });
+      await updateMinterVault(fixture, { maxSupplyCap: parseUnits('100') });
+
+      await mintInstant(
+        fixture,
+        {
+          amountToken: 100,
+          minReceiveAmount: parseUnits('100'),
+        },
+        {},
+        {
+          fee: 0,
+          tokensMinted: parseUnits('100'),
+        },
+      );
+    });
+
+    it('mint instant with room under cap', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updateVaultCommonAccount(fixture, { waivedFee: true });
+      await updateMinterVault(fixture, { maxSupplyCap: parseUnits('100') });
+
+      await mintInstant(
+        fixture,
+        {
+          amountToken: 90,
+          minReceiveAmount: parseUnits('90'),
+        },
+        {},
+        {
+          fee: 0,
+          tokensMinted: parseUnits('90'),
+        },
+      );
+    });
   });
 
   describe('mint_request', () => {
@@ -804,7 +945,7 @@ describe('minter-vault', () => {
         },
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('1.1'),
       });
 
@@ -960,12 +1101,12 @@ describe('minter-vault', () => {
 
       await prepareCommonMintTest(fixture);
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
         price: parseUnits('1.05'),
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('5'),
       });
 
@@ -994,12 +1135,12 @@ describe('minter-vault', () => {
         },
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
         price: parseUnits('1.05'),
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('5'),
       });
 
@@ -1042,7 +1183,7 @@ describe('minter-vault', () => {
       await prepareCommonMintTest(fixture, {
         addPaymentToken: { stable: false },
       });
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: 0n,
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
       });
@@ -1052,8 +1193,7 @@ describe('minter-vault', () => {
         {},
         {},
         {
-          // TODO: find a way to proxify errors
-          revertedWith: CommonError.GenericError,
+          revertedWith: DataFeedError.InvalidPrice,
         },
       );
     });
@@ -1290,6 +1430,34 @@ describe('minter-vault', () => {
       );
     });
 
+    it('should fail: call from non-authority that has vault admin role', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      const commonState = await fetchVaultCommonState(
+        fixture.vaultsProgram,
+        fixture.minterCommonVault.publicKey,
+      );
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: VAULT_AC_ROLES.VAULT_ADMIN,
+        acRole: commonState.acRole,
+      });
+
+      await approveMintRequest(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
     it('should fail: when safe is passed and new rate exceeds allowed deviation', async () => {
       const fixture = await vaultsFixture();
 
@@ -1306,6 +1474,320 @@ describe('minter-vault', () => {
         {},
         {
           revertedWith: VaultError.VariationToleranceExceeded,
+        },
+      );
+    });
+
+    it('should fail: max supply cap exceeded on approve', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updateVaultCommonAccount(fixture, { waivedFee: true });
+
+      // Create request with 100 tokens (cap is MAX_U64 by default, so this succeeds)
+      await mintRequest(fixture, { amountToken: 100 }, {}, { fee: 0 });
+
+      // Reduce cap before approval
+      await updateMinterVault(fixture, { maxSupplyCap: parseUnits('50') });
+
+      // Approve should fail because cap is now 50 but request wants to mint 100
+      await approveMintRequest(
+        fixture,
+        { requestId: 0n },
+        {},
+        {},
+        {
+          revertedWith: VaultError.MaxSupplyCapExceeded,
+        },
+      );
+    });
+
+    it('should silently skip with skipOnSupplyCapExceeded=true when max supply cap exceeded', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updateVaultCommonAccount(fixture, { waivedFee: true });
+
+      await mintRequest(fixture, { amountToken: 100 }, {}, { fee: 0 });
+
+      // Reduce cap before approval
+      await updateMinterVault(fixture, { maxSupplyCap: parseUnits('50') });
+
+      // Should not throw, silently skips
+      await approveMintRequest(
+        fixture,
+        { requestId: 0n, skipOnSupplyCapExceeded: true },
+        {},
+        { expectSkipped: true },
+      );
+    });
+
+    it('should still revert with skipOnSupplyCapExceeded=true when variation tolerance exceeded', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      // skipOnSupplyCapExceeded only skips MaxSupplyCapExceeded, other errors still revert
+      await approveMintRequest(
+        fixture,
+        { isSafe: true, newRate: parseUnits('1.11'), skipOnSupplyCapExceeded: true },
+        {},
+        {},
+        { revertedWith: VaultError.VariationToleranceExceeded },
+      );
+    });
+
+    it('should fail: when request user is blacklisted after request creation', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      // Blacklist the request user after the request was created
+      await updateAccountAc(fixture, {
+        blackListed: true,
+      });
+
+      await approveMintRequest(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          revertedWith: VaultError.Blacklisted,
+        },
+      );
+    });
+
+    it('should fail: when green list is enforced after request creation and request user is not green listed', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      await updateVaultCommon(fixture, {
+        greenlistEnforced: true,
+      });
+
+      await approveMintRequest(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          revertedWith: VaultError.NotGreenListed,
+        },
+      );
+    });
+
+    it('should approve when green list is enforced and request user is green listed', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      await updateVaultCommon(fixture, {
+        greenlistEnforced: true,
+      });
+      await updateAccountAc(fixture, {
+        greenListed: true,
+      });
+
+      await approveMintRequest(fixture, {});
+    });
+  });
+
+  describe('safe_approve_mint_request_at_current_rate', () => {
+    it('should approve mint request at current rate', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      await safeApproveMintRequestAtCurrentRate(fixture, {});
+    });
+
+    it('should fail: when current rate exceeds variation tolerance', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      // Change rate significantly after request was created
+      await updateManualFeedPrice(fixture, {
+        price: parseUnits('1.11'),
+      });
+
+      await safeApproveMintRequestAtCurrentRate(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          revertedWith: VaultError.VariationToleranceExceeded,
+        },
+      );
+    });
+
+    it('should fail: call from non-authority', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      await safeApproveMintRequestAtCurrentRate(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('should fail: call from non-authority that has vault admin role', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      const commonState = await fetchVaultCommonState(
+        fixture.vaultsProgram,
+        fixture.minterCommonVault.publicKey,
+      );
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: VAULT_AC_ROLES.VAULT_ADMIN,
+        acRole: commonState.acRole,
+      });
+
+      await safeApproveMintRequestAtCurrentRate(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('should fail: max supply cap exceeded', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updateVaultCommonAccount(fixture, { waivedFee: true });
+
+      await mintRequest(fixture, { amountToken: 100 }, {}, { fee: 0 });
+
+      // Reduce cap before approval
+      await updateMinterVault(fixture, { maxSupplyCap: parseUnits('50') });
+
+      await safeApproveMintRequestAtCurrentRate(
+        fixture,
+        { requestId: 0n },
+        {},
+        {},
+        {
+          revertedWith: VaultError.MaxSupplyCapExceeded,
+        },
+      );
+    });
+  });
+
+  describe('safe_approve_mint_request_at_request_rate', () => {
+    it('should approve mint request at request rate', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      await safeApproveMintRequestAtRequestRate(fixture, {});
+    });
+
+    it('should succeed even when current rate changed significantly', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      // Change rate significantly after request was created
+      await updateManualFeedPrice(fixture, {
+        price: parseUnits('1.5'),
+      });
+
+      // Should still succeed using the original request rate
+      await safeApproveMintRequestAtRequestRate(fixture, {});
+    });
+
+    it('should fail: max supply cap exceeded', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updateVaultCommonAccount(fixture, { waivedFee: true });
+
+      await mintRequest(fixture, { amountToken: 100 }, {}, { fee: 0 });
+
+      // Reduce cap before approval
+      await updateMinterVault(fixture, { maxSupplyCap: parseUnits('50') });
+
+      await safeApproveMintRequestAtRequestRate(
+        fixture,
+        { requestId: 0n },
+        {},
+        {},
+        {
+          revertedWith: VaultError.MaxSupplyCapExceeded,
+        },
+      );
+    });
+
+    it('should fail: call from non-authority', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      await safeApproveMintRequestAtRequestRate(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('should fail: call from non-authority that has vault admin role', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      const commonState = await fetchVaultCommonState(
+        fixture.vaultsProgram,
+        fixture.minterCommonVault.publicKey,
+      );
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: VAULT_AC_ROLES.VAULT_ADMIN,
+        acRole: commonState.acRole,
+      });
+
+      await safeApproveMintRequestAtRequestRate(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
         },
       );
     });
@@ -1326,6 +1808,33 @@ describe('minter-vault', () => {
 
       await prepareCommonMintTest(fixture, {});
       await mintRequest(fixture, {}, {});
+
+      await rejectMintRequest(
+        fixture,
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('should fail: call from non-authority that has vault admin role', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      const commonState = await fetchVaultCommonState(
+        fixture.vaultsProgram,
+        fixture.minterCommonVault.publicKey,
+      );
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: VAULT_AC_ROLES.VAULT_ADMIN,
+        acRole: commonState.acRole,
+      });
 
       await rejectMintRequest(
         fixture,

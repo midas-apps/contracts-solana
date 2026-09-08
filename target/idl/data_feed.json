@@ -8,6 +8,77 @@
   },
   "instructions": [
     {
+      "name": "migrate_manual_feed_to_v2",
+      "discriminator": [
+        87,
+        111,
+        161,
+        248,
+        245,
+        251,
+        10,
+        149
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "docs": [
+            "Payer for realloc (lamports for extra space)"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "base_feed",
+          "docs": [
+            "Base feed state account"
+          ]
+        },
+        {
+          "name": "manual_feed",
+          "docs": [
+            "Manual feed state account - use UncheckedAccount to bypass deserialization"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  110,
+                  117,
+                  97,
+                  108,
+                  95,
+                  102,
+                  101,
+                  101,
+                  100,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "base_feed"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "new_feed",
       "discriminator": [
         177,
@@ -191,7 +262,44 @@
                   110
                 ]
               }
-            ]
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
           }
         },
         {
@@ -213,6 +321,10 @@
         {
           "name": "decimals",
           "type": "u8"
+        },
+        {
+          "name": "max_answer_deviation",
+          "type": "u64"
         }
       ]
     },
@@ -298,7 +410,44 @@
                   110
                 ]
               }
-            ]
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
           }
         },
         {
@@ -471,7 +620,223 @@
                   110
                 ]
               }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
+        },
+        {
+          "name": "base_feed",
+          "docs": [
+            "`DataFeed` account"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "decimals",
+          "type": {
+            "option": "u8"
+          }
+        },
+        {
+          "name": "max_answer_deviation",
+          "type": {
+            "option": "u64"
+          }
+        }
+      ]
+    },
+    {
+      "name": "update_manual_feed_price",
+      "discriminator": [
+        218,
+        240,
+        154,
+        7,
+        63,
+        198,
+        254,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "Account with Price Updater role"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "manual_feed",
+          "docs": [
+            "`ManualFeedState` instance"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  110,
+                  117,
+                  97,
+                  108,
+                  95,
+                  102,
+                  101,
+                  101,
+                  100,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "base_feed"
+              }
             ]
+          }
+        },
+        {
+          "name": "ac_role",
+          "docs": [
+            "AccessControlRoles instance that is set in base_feed"
+          ]
+        },
+        {
+          "name": "authority_ac_role",
+          "docs": [
+            "Price Updater AC role of `authority`"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99,
+                  95,
+                  114,
+                  111,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "ac_role"
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  105,
+                  99,
+                  101,
+                  95,
+                  117,
+                  112,
+                  100,
+                  97,
+                  116,
+                  101,
+                  114
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
           }
         },
         {
@@ -484,15 +849,11 @@
       "args": [
         {
           "name": "price",
-          "type": {
-            "option": "u64"
-          }
+          "type": "u64"
         },
         {
-          "name": "decimals",
-          "type": {
-            "option": "u8"
-          }
+          "name": "is_safe",
+          "type": "bool"
         }
       ]
     }
@@ -577,6 +938,19 @@
         97,
         38
       ]
+    },
+    {
+      "name": "ManualFeedUpdatedEventV2",
+      "discriminator": [
+        238,
+        164,
+        209,
+        41,
+        190,
+        168,
+        29,
+        36
+      ]
     }
   ],
   "errors": [
@@ -629,6 +1003,36 @@
       "code": 6009,
       "name": "PriceIsHigherThanMax",
       "msg": "Price is higher than max."
+    },
+    {
+      "code": 6010,
+      "name": "ArithmeticOverflow",
+      "msg": "Arithmetic overflow or underflow"
+    },
+    {
+      "code": 6011,
+      "name": "DeviationTooHigh",
+      "msg": "Deviation is too high"
+    },
+    {
+      "code": 6012,
+      "name": "InvalidPriceTimestamp",
+      "msg": "Invalid price timestamp"
+    },
+    {
+      "code": 6013,
+      "name": "InvalidTimestamp",
+      "msg": "Invalid timestamp"
+    },
+    {
+      "code": 6014,
+      "name": "NotEnoughTimeHasPassedSinceLastUpdate",
+      "msg": "Not enough time has passed since last update"
+    },
+    {
+      "code": 6015,
+      "name": "InvalidPrice",
+      "msg": "Invalid price"
     }
   ],
   "types": [
@@ -669,13 +1073,16 @@
         "kind": "enum",
         "variants": [
           {
-            "name": "MANUAL"
+            "name": "Manual"
           },
           {
-            "name": "SWITCHBOARD"
+            "name": "Switchboard"
           },
           {
-            "name": "PYTH"
+            "name": "Pyth"
+          },
+          {
+            "name": "Chainlink"
           }
         ]
       }
@@ -816,6 +1223,9 @@
     {
       "name": "ManualFeedState",
       "docs": [
+        "Current version - V2",
+        "- Added max_answer_deviation field",
+        "",
         "Account that holds data of manual data feed",
         "where the answer can be controlled by the",
         "actors with sufficient access (has `FEED_ADMIN` role)"
@@ -843,6 +1253,13 @@
               "Last time when price was updated timestamp"
             ],
             "type": "u32"
+          },
+          {
+            "name": "max_answer_deviation",
+            "docs": [
+              "Max answer deviation"
+            ],
+            "type": "u64"
           }
         ]
       }
@@ -879,6 +1296,55 @@
             "name": "price",
             "docs": [
               "New price"
+            ],
+            "type": {
+              "option": "u64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ManualFeedUpdatedEventV2",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "base_feed",
+            "docs": [
+              "`FeedState` account"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "manual_feed",
+            "docs": [
+              "Manual feed account"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "decimals",
+            "docs": [
+              "New Decimals"
+            ],
+            "type": {
+              "option": "u8"
+            }
+          },
+          {
+            "name": "price",
+            "docs": [
+              "New price"
+            ],
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "max_answer_deviation",
+            "docs": [
+              "New max answer deviation"
             ],
             "type": {
               "option": "u64"

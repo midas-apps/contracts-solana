@@ -1,4 +1,7 @@
-use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
+use access_control::{
+    program::AccessControl,
+    state::{AccountAccessControlRoleState, AccountAccessControlState},
+};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use token_authority::{
@@ -7,16 +10,15 @@ use token_authority::{
 };
 
 use crate::{
-    constants::{ac_roles, ONE},
-    events::MinterVaultRequestApprovedEvent,
+    constants::ac_roles,
     state::{MintVaultRequestState, MinterVaultState, VaultCommonState},
-    utils::{close_account, mint_token, require_variation_tolerance, Closable},
+    utils::{close_account, minter, Closable},
 };
 
 #[derive(Accounts)]
 #[instruction(request_id: u64)]
 pub struct ApproveMintRequest<'info> {
-    /// Account with vault admin role
+    /// Account with request manager role
     #[account(mut)]
     pub authority: Signer<'info>,
 
@@ -28,13 +30,23 @@ pub struct ApproveMintRequest<'info> {
     )]
     pub user_account: AccountInfo<'info>,
 
+    /// AccountAccessControlState account
+    #[account(
+            seeds = [AccountAccessControlState::SEED, vault_common.ac.as_ref(), user_account.key().as_ref()],
+            seeds::program = AccessControl::id(),
+            bump,
+        )]
+    pub account_ac: Box<Account<'info, AccountAccessControlState>>,
+
     /// Vault common state account
-    #[account()]
+    #[account(
+        address = minter_vault.common_vault
+    )]
     pub vault_common: Account<'info, VaultCommonState>,
 
-    /// Admin role of authority
+    /// Request manager role of authority
     #[account(
-        seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::VAULT_ADMIN],
+        seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::REQUEST_MANAGER],
         seeds::program = AccessControl::id(),
         bump,
     )]
@@ -119,51 +131,39 @@ impl<'info> Closable for ApproveMintRequest<'info> {
 ///
 /// - `request_id` - id of the mint request
 /// - `new_out_rate` - new out rate for the mint request.
-/// Using this value admin can correct the output mToken amount
+///   Using this value admin can correct the output mToken amount
 /// - `is_safe` - if true, will check variation tolerance before minting
+/// - `skip_on_supply_cap_exceeded` - if true, will skip minting and return success
 pub fn handle(
     ctx: Context<ApproveMintRequest>,
     request_id: u64,
     new_out_rate: u64,
     is_safe: bool,
+    skip_on_supply_cap_exceeded: bool,
 ) -> Result<()> {
-    let request = &ctx.accounts.mint_request;
-
-    if is_safe {
-        require_variation_tolerance(
-            &ctx.accounts.vault_common,
-            request.m_mint_rate.into(),
-            new_out_rate.into(),
-        )?;
+    match minter::approve_mint_request(
+        &ctx.accounts.mint_request,
+        &ctx.accounts.account_ac,
+        &ctx.accounts.vault_common,
+        &ctx.accounts.minter_vault,
+        &ctx.accounts.m_mint,
+        &ctx.accounts.m_mint_user_ata,
+        &ctx.accounts.m_mint_token_program,
+        &ctx.accounts.user_account,
+        &ctx.accounts.token_authority,
+        &ctx.accounts.vault_minter_role,
+        &ctx.accounts.system_program,
+        &ctx.accounts.token_authority_program,
+        request_id,
+        new_out_rate.into(),
+        is_safe,
+        skip_on_supply_cap_exceeded,
+    ) {
+        Ok(true) => {
+            ctx.accounts.close()?;
+            Ok(())
+        }
+        Ok(false) => Ok(()),
+        Err(e) => Err(e),
     }
-
-    let amount_to_mint = (request.deposited_usd_wo_fees as u128)
-        .checked_mul(ONE.into())
-        .unwrap()
-        .checked_div(new_out_rate.into())
-        .unwrap();
-
-    mint_token(
-        &ctx.accounts.vault_common.key(),
-        &ctx.accounts.minter_vault.to_account_info(),
-        &ctx.accounts.user_account.to_account_info(),
-        &ctx.accounts.token_authority.to_account_info(),
-        &ctx.accounts.vault_minter_role.to_account_info(),
-        &ctx.accounts.m_mint.to_account_info(),
-        &ctx.accounts.m_mint_user_ata.to_account_info(),
-        &ctx.accounts.m_mint_token_program.to_account_info(),
-        &ctx.accounts.system_program.to_account_info(),
-        &ctx.accounts.token_authority_program.to_account_info(),
-        amount_to_mint.try_into().unwrap(),
-    )?;
-
-    ctx.accounts.close()?;
-
-    emit!(MinterVaultRequestApprovedEvent {
-        common_vault: ctx.accounts.vault_common.key(),
-        new_out_rate,
-        request_id
-    });
-
-    Ok(())
 }

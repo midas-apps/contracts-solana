@@ -1,6 +1,6 @@
 import { Program } from '@coral-xyz/anchor';
 import { Keypair, PublicKey, Transaction } from '@solana/web3.js';
-import { ProgramTestContext } from 'solana-bankrun';
+import { LiteSVM } from 'litesvm';
 
 import { DataFeed } from 'target/types/data_feed';
 
@@ -8,7 +8,13 @@ import DATA_FEED_IDL from '../../target/idl/data_feed.json' with { type: 'json' 
 import { AC_ROLES } from '../constants/ac.constants';
 import { DATA_FEED_AC_ROLES } from '../constants/data-feed.constants';
 import { acRoleToBuffer, getAccountAcRoleStatePda } from '../helpers/ac.helpers';
-import { formatUnits, InitBankrunReturnType, parseUnits, processTransaction, toBN } from '../helpers/common.helpers';
+import {
+  formatUnits,
+  InitLiteSVMReturnType,
+  parseUnits,
+  processTransaction,
+  toBN,
+} from '../helpers/common.helpers';
 import {
   DataFeedMode,
   generateFeedAcccount,
@@ -17,7 +23,7 @@ import {
 
 import { acFixture } from './ac.fixture';
 
-const initMockedFeeds = async (context: ProgramTestContext) => {
+const initMockedFeeds = async (context: LiteSVM) => {
   // mainnet pyth SOL/USD account
   const pythHealhyFeed = [
     Keypair.generate(),
@@ -39,6 +45,16 @@ const initMockedFeeds = async (context: ProgramTestContext) => {
     348058928,
   ] as const;
 
+  // Mock chainlink OCR2 USDC/USD feed with test price 0.99
+  const chainlinkHealthyFeed = [
+    Keypair.generate(),
+    Buffer.from(
+      'YLNFQoCBSXUCAZnJra7sYZIu5E6pd0qvi+y5Fd9sZVr/6Cm3RMr8b2YSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFVTREMgLyBVU0QgICAgICAgICAgICAgICAgICAgICAgCAAAAAABAAAAAQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADNcA2kAAAAAwJ7mBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+      'base64',
+    ),
+    1761827891,
+  ] as const;
+
   for (const feed of [pythHealhyFeed, switchboardHealhyFeed]) {
     context.setAccount(feed[0].publicKey, {
       executable: false,
@@ -47,6 +63,16 @@ const initMockedFeeds = async (context: ProgramTestContext) => {
       data: feed[1],
     });
   }
+
+  // set chainlink feed with correct owner program id
+  context.setAccount(chainlinkHealthyFeed[0].publicKey, {
+    executable: false,
+    // Chainlink v2 SDK checks the owner is the Chainlink OCR2 program id,
+    // so we must set the real program id here or parsing will fail.
+    owner: new PublicKey('HEvSKofvBgfaexv23kMabbYqxasxU3mQ4ibBMEmJWHny'),
+    lamports: 10000,
+    data: chainlinkHealthyFeed[1],
+  });
 
   return {
     pyth: {
@@ -62,10 +88,16 @@ const initMockedFeeds = async (context: ProgramTestContext) => {
       lastUpdatedAtSlot: switchboardHealhyFeed[3],
       price: formatUnits(1011997930000000000n, 18),
     },
+    chainlink: {
+      account: chainlinkHealthyFeed[0].publicKey,
+      data: chainlinkHealthyFeed[1],
+      lastUpdatedAtTs: chainlinkHealthyFeed[2],
+      price: formatUnits(99000000n, 8),
+    },
   };
 };
 
-export const dataFeedFixture = async (fixture?: InitBankrunReturnType, initSlot?: bigint) => {
+export const dataFeedFixture = async (fixture?: InitLiteSVMReturnType, initSlot?: bigint) => {
   const acF = await acFixture(fixture, initSlot);
 
   const {
@@ -121,6 +153,24 @@ export const dataFeedFixture = async (fixture?: InitBankrunReturnType, initSlot?
           ),
         })
         .instruction(),
+      await acProgram.methods
+        .grantRole(acRoleToBuffer(DATA_FEED_AC_ROLES.PRICE_UPDATER))
+        .accountsPartial({
+          account: authority.publicKey,
+          acRole: acRole,
+          authority: authority.publicKey,
+          authorityAcAdminRole: getAccountAcRoleStatePda(
+            acRole,
+            authority.publicKey,
+            AC_ROLES.ADMIN,
+          ),
+          accountAcRole: getAccountAcRoleStatePda(
+            acRole,
+            authority.publicKey,
+            DATA_FEED_AC_ROLES.PRICE_UPDATER,
+          ),
+        })
+        .instruction(),
       await dataFeedProgram.methods
         .newFeed(
           acRole,
@@ -128,7 +178,7 @@ export const dataFeedFixture = async (fixture?: InitBankrunReturnType, initSlot?
           DataFeedMode.manual,
           toBN(minPrice),
           toBN(maxPrice),
-          3600,
+          24 * 3600,
         )
         .accounts({
           feed: feed.publicKey,
@@ -136,7 +186,7 @@ export const dataFeedFixture = async (fixture?: InitBankrunReturnType, initSlot?
         })
         .instruction(),
       await dataFeedProgram.methods
-        .newManualFeed(toBN(parseUnits('1')), 9)
+        .newManualFeed(toBN(parseUnits('1')), 9, toBN(parseUnits('1', 2)))
         .accountsPartial({
           baseFeed: feed.publicKey,
           authority: authority.publicKey,

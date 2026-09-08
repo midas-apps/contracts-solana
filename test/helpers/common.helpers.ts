@@ -1,4 +1,4 @@
-import { Idl, Program, web3 } from '@coral-xyz/anchor';
+import { Idl, Program } from '@coral-xyz/anchor';
 import * as anchor from '@coral-xyz/anchor';
 import {
   createApproveInstruction,
@@ -14,25 +14,23 @@ import {
   TokenInvalidAccountOwnerError,
 } from '@solana/spl-token';
 import {
+  AddressLookupTableAccount,
   Connection,
   Keypair,
-  LAMPORTS_PER_SOL,
   PublicKey,
   Signer,
   SystemProgram,
   Transaction,
   VersionedTransaction,
 } from '@solana/web3.js';
-import { BankrunProvider } from 'anchor-bankrun';
 import BN from 'bn.js';
 import {
-  AddedAccount,
-  AddedProgram,
-  BanksTransactionMeta,
   Clock,
-  ProgramTestContext,
-  startAnchor,
-} from 'solana-bankrun';
+  FailedTransactionMetadata,
+  LiteSVM,
+  SimulatedTransactionInfo,
+  TransactionMetadata,
+} from 'litesvm';
 import { parseUnits as parseUnitsViem, formatUnits as formatUnitsViem } from 'viem';
 
 import { AccessControl } from '@/target/types/access_control';
@@ -42,7 +40,10 @@ import { TokenAuthority } from '@/target/types/token_authority';
 
 import { DEFAULT_PUBKEY } from '../constants/common.constants';
 import { SQUADS_PROGRAM_ID } from '../constants/squads.constant';
-// import { ZERO_ADDRESS } from "test/constants/common.constants";
+
+import { fromWorkspace, LiteSVMProvider } from './lite-svm';
+
+const TESTS_LOG_LEVEL = (process.env.TESTS_LOG_LEVEL as 'error' | 'debug') || 'error';
 
 export interface OptionalCommonParams {
   from?: Keypair;
@@ -60,54 +61,51 @@ export function numToHex(decimalCode: number): string {
   return hexCode;
 }
 
-export type InitBankrunReturnType = {
-  context: ProgramTestContext;
-  provider: BankrunProvider;
+export interface InitLiteSVMReturnType {
+  context: LiteSVM;
+  provider: LiteSVMProvider;
   accounts: Keypair[];
-};
+}
 
-let bunrunReturnCache: InitBankrunReturnType | null = null;
+let bunrunReturnCache: InitLiteSVMReturnType | null = null;
 
-export const initBankrun = async (numAccounts = 10, initSlot?: bigint, cacheContext = false) => {
+export const initLiteSVM = async (numAccounts = 10, initSlot?: bigint, cacheContext = false) => {
   if (cacheContext && bunrunReturnCache) {
     return bunrunReturnCache;
   }
 
-  const accounts: Keypair[] = [];
-
-  const accountsToInject: AddedAccount[] = [];
+  const accounts: Keypair[] = bunrunReturnCache?.accounts ?? [];
 
   for (let i = 0; i < numAccounts; i++) {
     const keypair = Keypair.generate();
     accounts.push(keypair);
-
-    accountsToInject.push({
-      address: keypair.publicKey,
-      info: {
-        lamports: 1000 * LAMPORTS_PER_SOL,
-        data: Buffer.alloc(0),
-        owner: SystemProgram.programId,
-        executable: false,
-      },
-    });
   }
 
-  const context = await startAnchor('.', [{
-    name: 'external/squads',
-    programId: SQUADS_PROGRAM_ID,
-  }], [...accountsToInject]);
+  const context = fromWorkspace(
+    '.',
+    [
+      {
+        name: 'external/squads',
+        programId: SQUADS_PROGRAM_ID,
+      },
+    ],
+    [...accounts],
+  );
 
   if (initSlot) {
     await warpToSlot(context, initSlot);
   }
-  const provider = new BankrunProvider(context);
+
+  await setClockTime(context, BigInt(Math.floor(Date.now() / 1000)));
+
+  const provider = new LiteSVMProvider(context);
 
   anchor.setProvider(provider);
 
   bunrunReturnCache = {
     context,
     provider,
-    accounts: bunrunReturnCache?.accounts ?? accounts,
+    accounts: accounts,
   };
 
   return {
@@ -142,7 +140,7 @@ export const findPDA = <TProgram extends Idl | unknown>(
 };
 
 export const expectTxReverted = async (
-  ctx: ProgramTestContext,
+  ctx: LiteSVM,
   transaction: Transaction | VersionedTransaction,
   signers: (Keypair | Signer)[],
   opt?: OptionalCommonParams,
@@ -151,10 +149,7 @@ export const expectTxReverted = async (
     await processTransaction(ctx, transaction, signers);
     throw new Error('Expected to be reverted but not reverted');
   } catch (err) {
-    const revertMessage =
-      opt?.revertedWith && typeof opt.revertedWith === 'number'
-        ? numToHex(opt.revertedWith as number).toLowerCase()
-        : opt.revertedWith?.toString();
+    const revertMessage = opt.revertedWith?.toString();
 
     if (revertMessage && !err.toString().includes(revertMessage)) {
       throw new Error(
@@ -175,13 +170,17 @@ export const expectNotReverted = async (promise: Promise<unknown>) => {
 };
 
 export const expectEvents = async <TProgram extends Idl>(
-  txResult: BanksTransactionMeta | string[],
+  txResult: TransactionMetadata | FailedTransactionMetadata | string[],
   program: Program<TProgram>,
   expectedEvents: { name: string; data: object }[],
 ) => {
   const parser = new anchor.EventParser(program.programId, new anchor.BorshCoder(program.idl));
 
-  const logs = Array.isArray(txResult) ? txResult : txResult.logMessages;
+  const logs = Array.isArray(txResult)
+    ? txResult
+    : txResult instanceof FailedTransactionMetadata
+      ? txResult.meta().logs()
+      : txResult.logs();
 
   const events = parser.parseLogs(logs);
 
@@ -230,47 +229,146 @@ export const expectEvents = async <TProgram extends Idl>(
 };
 
 export const expectTxNotReverted = async (
-  ctx: ProgramTestContext,
+  ctx: LiteSVM,
   transaction: Transaction | VersionedTransaction,
   signers: (Keypair | Signer)[],
 ) => {
   try {
     return await processTransaction(ctx, transaction, signers);
   } catch (err) {
+    console.log(err);
     expect(true, `Expected tx to not revert, but it reverted. Err: ${err.toString()}`).toEqual(
       false,
     );
   }
 };
 
-let latestSlot = 1;
-
-export const warpToSlot = async (ctx: ProgramTestContext, slot: bigint) => {
+export const warpToSlot = async (ctx: LiteSVM, slot: bigint) => {
   ctx.warpToSlot(slot);
+};
 
-  latestSlot = Number(slot);
+export const getRequiredSignerKeysVersionedTransaction = (
+  tx: VersionedTransaction,
+  addressLookupTableAccounts?: AddressLookupTableAccount[] | null,
+): PublicKey[] => {
+  const message = tx.message;
+  const accountKeys =
+    'addressTableLookups' in message && message.addressTableLookups?.length
+      ? message.getAccountKeys({
+          addressLookupTableAccounts: addressLookupTableAccounts ?? undefined,
+        })
+      : message.getAccountKeys();
+
+  const signerKeys = new Set<string>();
+  for (let i = 0; i < accountKeys.length; i++) {
+    if (message.isAccountSigner(i)) {
+      const key = accountKeys.get(i);
+      if (key) signerKeys.add(key.toBase58());
+    }
+  }
+  return Array.from(signerKeys.values()).map((v) => new PublicKey(v));
+};
+
+export const getRequiredSignerKeysTransaction = (tx: Transaction) => {
+  const accountKeys = tx.instructions.map((v) => v.keys).flat();
+
+  const signerKeys = new Set<string>();
+  for (const account of accountKeys) {
+    if (account.isSigner) {
+      signerKeys.add(account.pubkey.toBase58());
+    }
+  }
+
+  return Array.from(signerKeys.values()).map((v) => new PublicKey(v));
 };
 
 export const processTransaction = async (
-  ctx: ProgramTestContext,
+  ctx: LiteSVM,
   transaction: Transaction | VersionedTransaction,
   signers: (Keypair | Signer)[],
 ) => {
-  // Need to generate new blockhash
-  ctx.warpToSlot(BigInt(latestSlot + 1));
-  latestSlot++;
+  const signersSet: (Keypair | Signer)[] = [];
 
-  const blockHash = ctx.lastBlockhash;
-  const client = ctx.banksClient;
+  const signersFormatted = signers
+    .map((signer) =>
+      signer instanceof Keypair
+        ? {
+            publicKey: signer.publicKey,
+            secretKey: signer.secretKey,
+          }
+        : signer,
+    )
+    .filter((signer) => {
+      if (!signersSet.some((s) => s.publicKey.equals(signer.publicKey))) {
+        signersSet.push(signer);
+        return true;
+      }
+      return false;
+    });
+
+  // Need to generate new blockhash
+  ctx.expireBlockhash();
 
   if (transaction instanceof Transaction) {
-    transaction.recentBlockhash = blockHash;
-    transaction.sign(...signers);
+    // const requiredSignerKeys = getRequiredSignerKeysTransaction(transaction);
+
+    // const signers = signersFormatted.filter((s) => requiredSignerKeys.find(v => v.equals(s.publicKey)));
+
+    // if (signers.length !== signersFormatted.length) {
+    //   const missingSigners = signersFormatted.filter((s) => !requiredSignerKeys.find(v => v.equals(s.publicKey)));
+    // throw new Error(`Missing signers: ${missingSigners.map(v => v.publicKey.toBase58()).join(', ')}`);
+    // }
+
+    transaction.recentBlockhash = ctx.latestBlockhash();
+    transaction.sign(...signersFormatted);
   } else {
-    transaction.sign([...signers]);
+    // const requiredSignerKeys = getRequiredSignerKeysVersionedTransaction(transaction);
+    // const signers = signersFormatted.filter((s) => requiredSignerKeys.find(v => v.equals(s.publicKey)));
+    // if (signers.length !== requiredSignerKeys.length) {
+    //   const missingSigners = requiredSignerKeys.filter((s) => !requiredSignerKeys.find(v => v.equals(s)));
+    //   throw new Error(`Missing signers: ${missingSigners.map(v => v.toBase58()).join(', ')}`);
+    // }
+    transaction.sign([...signersFormatted]);
   }
 
-  return await client.processTransaction(transaction);
+  handleProcessedTransaction(ctx.simulateTransaction(transaction));
+
+  const res = ctx.sendTransaction(transaction);
+
+  handleProcessedTransaction(res);
+
+  return res;
+};
+
+const handleProcessedTransaction = (
+  res: FailedTransactionMetadata | TransactionMetadata | SimulatedTransactionInfo,
+) => {
+  if (res instanceof FailedTransactionMetadata) {
+    if (TESTS_LOG_LEVEL === 'debug') {
+      console.log(res.meta().logs());
+    }
+
+    let panicLog = res
+      .meta()
+      .logs()
+      .find((log) => log.includes('Program log: panicked at'));
+
+    if (!panicLog) {
+      const prefix = 'custom program error: ';
+      const line = res
+        .meta()
+        .logs()
+        .find((line) => line.indexOf(prefix) !== -1);
+      const idx = line?.indexOf(prefix);
+      panicLog = idx !== -1 ? line?.slice(idx).trim() : null;
+    }
+    const errorLog = `Error: ${res.err().toString()}. ${panicLog ? `Panic log: ${panicLog}` : ''}`;
+    throw new Error(errorLog);
+  } else if (res instanceof TransactionMetadata) {
+    if (TESTS_LOG_LEVEL === 'debug') {
+      console.log(res.prettyLogs());
+    }
+  }
 };
 
 export const parseUnits = (n: string, decimals = 9) => {
@@ -283,7 +381,7 @@ export const formatUnits = (n: bigint, decimals = 9) => {
 
 export const createMint = async (
   connection: Connection,
-  ctx: ProgramTestContext,
+  ctx: LiteSVM,
   payer: Signer,
   tokenAuthority: PublicKey,
   freezeAuthority: PublicKey | null,
@@ -347,7 +445,7 @@ export const revokeMintInstruction = (
 };
 
 export const approveMint = async (
-  ctx: ProgramTestContext,
+  ctx: LiteSVM,
   mint: PublicKey,
   payer: Signer,
   approveTo: PublicKey,
@@ -362,7 +460,7 @@ export const approveMint = async (
 };
 
 export const getOrCreateAta = async (
-  context: ProgramTestContext,
+  context: LiteSVM,
   connection: Connection,
   mint: PublicKey,
   owner: PublicKey,
@@ -444,9 +542,8 @@ export function createAtaInx(
   return createAssociatedTokenAccountIdempotentInstruction(payer, ataAccount, owner, mint, program);
 }
 
-export const timeTravel = async (ctx: ProgramTestContext, timestampDelta: bigint) => {
-  const client = ctx.banksClient;
-  const currentClock = await client.getClock();
+export const timeTravel = async (ctx: LiteSVM, timestampDelta: bigint) => {
+  const currentClock = ctx.getClock();
   ctx.setClock(
     new Clock(
       currentClock.slot,
@@ -458,9 +555,8 @@ export const timeTravel = async (ctx: ProgramTestContext, timestampDelta: bigint
   );
 };
 
-export const setClockTime = async (ctx: ProgramTestContext, newTimestamp: bigint) => {
-  const client = ctx.banksClient;
-  const currentClock = await client.getClock();
+export const setClockTime = async (ctx: LiteSVM, newTimestamp: bigint) => {
+  const currentClock = ctx.getClock();
   ctx.setClock(
     new Clock(
       currentClock.slot,
@@ -472,9 +568,8 @@ export const setClockTime = async (ctx: ProgramTestContext, newTimestamp: bigint
   );
 };
 
-export const setClockSlot = async (ctx: ProgramTestContext, newSlot: bigint) => {
-  const client = ctx.banksClient;
-  const currentClock = await client.getClock();
+export const setClockSlot = async (ctx: LiteSVM, newSlot: bigint) => {
+  const currentClock = ctx.getClock();
   ctx.setClock(
     new Clock(
       newSlot,
@@ -487,12 +582,11 @@ export const setClockSlot = async (ctx: ProgramTestContext, newSlot: bigint) => 
 };
 
 export const setClockEpoch = async (
-  ctx: ProgramTestContext,
+  ctx: LiteSVM,
   newEpoch: bigint,
   epochStartTimestamp: bigint,
 ) => {
-  const client = ctx.banksClient;
-  const currentClock = await client.getClock();
+  const currentClock = ctx.getClock();
 
   ctx.setClock(
     new Clock(
@@ -505,9 +599,9 @@ export const setClockEpoch = async (
   );
 };
 
-export const getTime = async (ctx: ProgramTestContext) => {
-  const client = ctx.banksClient;
-  return (await client.getClock()).unixTimestamp;
+export const getTime = async (ctx: LiteSVM) => {
+  const currentClock = ctx.getClock();
+  return currentClock.unixTimestamp;
 };
 
 export const getBalance = async (

@@ -21,8 +21,11 @@ export const solmFONEConfig: TokenConfigWithNetworks = {
         mode: 'manual',
         minPrice: '1.03',
         maxPrice: '1.11044',
-        initialPrice: '1.04757758',
         maxStaleness: 2592000,
+        manual: {
+          initialPrice: '1.04757758',
+          maxAnswerDeviation: '0.4',
+        },
       },
       minter: {
         instantFee: '0',
@@ -77,8 +80,11 @@ export const solmFONEConfig: TokenConfigWithNetworks = {
         mode: 'manual',
         minPrice: '0.1',
         maxPrice: '100000',
-        initialPrice: '0.1',
         maxStaleness: 86400,
+        manual: {
+          initialPrice: '0.1',
+          maxAnswerDeviation: '0.4',
+        },
       },
       minter: {
         instantFee: '0',

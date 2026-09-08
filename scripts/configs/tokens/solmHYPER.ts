@@ -17,9 +17,12 @@ export const solmHYPERConfig: TokenConfigWithNetworks = {
       dataFeed: {
         // Oracle tolerance: 0.35% around the initial 1:1 denomination.
         mode: 'manual',
+        manual: {
+          initialPrice: '1',
+          maxAnswerDeviation: '0.35',
+        },
         minPrice: '0.9965',
         maxPrice: '1.0035',
-        initialPrice: '1',
         maxStaleness: 2592000,
       },
       minter: {

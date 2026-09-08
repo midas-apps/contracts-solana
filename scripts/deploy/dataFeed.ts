@@ -20,7 +20,7 @@ export const getDataFeedProgram = (provider: AnchorProvider) => {
   return new Program<DataFeed>(DATA_FEED_IDL as any, provider);
 };
 
-interface DeployDataFeedBaseConfig {
+export interface DeployDataFeedBaseConfig {
   acRole: PublicKey;
   feed?: Keypair;
   minPrice: bigint;
@@ -65,7 +65,7 @@ export const deployDataFeed = async (common: CommonParams, config: DeployDataFee
     await dataFeedProgram.methods
       .newFeed(
         acRole,
-        underlyingFeed,
+        underlyingFeed!,
         DataFeedMode[mode],
         toBN(minPrice),
         toBN(maxPrice),

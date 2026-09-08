@@ -19,9 +19,12 @@ export const pSVConfig: TokenConfigWithNetworks = {
       dataFeed: {
         // Oracle tolerance: 1.04%
         mode: 'manual',
+        manual: {
+          initialPrice: '1',
+          maxAnswerDeviation: '1.04',
+        },
         minPrice: '0.99',
         maxPrice: '1.03',
-        initialPrice: '1',
         maxStaleness: 2592000,
       },
       minter: {

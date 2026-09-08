@@ -2,7 +2,7 @@ import { getMint, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-to
 import { PublicKey } from '@solana/web3.js';
 import { expect } from 'vitest';
 
-import { MAX_U128, ONE } from '../constants/common.constants';
+import { MAX_U64, MAX_U128, ONE } from '../constants/common.constants';
 import { TOKEN_AUTHORITY_ROLES } from '../constants/token-authority.constants';
 import { VAULT_AC_ROLES } from '../constants/vaults.constants';
 import { VaultsFixtureReturnType } from '../fixture/vaults.fixture';
@@ -12,6 +12,7 @@ import {
   expectTxReverted,
   fromBN,
   getBalance,
+  getTime,
   OptionalCommonParams,
   parseUnits,
   toBN,
@@ -43,10 +44,12 @@ export const newMinterVault = async (
     commonVault,
     tokenAuthority,
     firstDepositMinMTokens,
+    maxSupplyCap,
   }: {
     commonVault?: PublicKey;
     tokenAuthority?: PublicKey;
     firstDepositMinMTokens?: bigint;
+    maxSupplyCap?: bigint;
   },
 
   opt?: OptionalCommonParams,
@@ -63,6 +66,7 @@ export const newMinterVault = async (
   commonVault ??= minterCommonVault.publicKey;
   tokenAuthority ??= getTokenAuthorityPda(mTBillMinterAuthoritySeed);
   firstDepositMinMTokens ??= parseUnits('10');
+  maxSupplyCap ??= MAX_U64; // u64::MAX = no cap
 
   const fetchState = async () => {
     const common = await fetchVaultCommonState(vaultsProgram, commonVault);
@@ -77,7 +81,7 @@ export const newMinterVault = async (
   const stateBefore = await fetchState();
 
   const tx = await vaultsProgram.methods
-    .newMinterVault(toBN(firstDepositMinMTokens))
+    .newMinterVault(toBN(firstDepositMinMTokens), toBN(maxSupplyCap))
     .accountsPartial({
       authority: from.publicKey,
       vaultCommon: commonVault,
@@ -105,6 +109,60 @@ export const newMinterVault = async (
   expect(stateAfter.minter.commonVault.equals(commonVault)).toBe(true);
   expect(stateAfter.minter.mintAuthorityPda.equals(tokenAuthority)).toBe(true);
   expect(fromBN(stateAfter.minter.firstDepositMinMTokens)).toEqual(firstDepositMinMTokens);
+  expect(fromBN(stateAfter.minter.maxSupplyCap)).toEqual(maxSupplyCap);
+};
+
+export const migrateMinterVaultStateToV2 = async (
+  fixture: CommonMinterVaultParams,
+  {
+    commonVault,
+  }: {
+    commonVault?: PublicKey;
+  },
+  opt?: OptionalCommonParams,
+) => {
+  const { vaultsProgram, authority: owner, context } = fixture;
+  const from = opt?.from ?? owner;
+
+  const minterVault = getMinterVaultPda(commonVault);
+
+  const minterVaultStateBefore = await fixture.provider.connection.getAccountInfo(minterVault);
+  const dataWithMaxSupplyCapRaw = Buffer.concat([
+    minterVaultStateBefore.data,
+    toBN(0n).toBuffer('le'),
+  ]);
+
+  const stateBefore = (await vaultsProgram.account.minterVaultState.coder.accounts.decode(
+    'minterVaultState',
+    dataWithMaxSupplyCapRaw,
+  )) as Awaited<ReturnType<typeof fetchMinterVaultState>>;
+
+  const tx = await vaultsProgram.methods
+    .migrateMinterVaultStateToV2()
+    .accountsPartial({
+      payer: from.publicKey,
+      vaultCommon: commonVault,
+      minterVault: minterVault,
+    })
+    .transaction();
+
+  if (opt?.revertedWith !== undefined) {
+    await expectTxReverted(context, tx, [from], opt);
+    return;
+  }
+
+  await expectTxNotReverted(context, tx, [from]);
+
+  const stateAfter = await fetchMinterVaultState(vaultsProgram, minterVault);
+
+  expect(fromBN(stateAfter.firstDepositMinMTokens)).toEqual(
+    fromBN(stateBefore.firstDepositMinMTokens),
+  );
+  expect(stateAfter.mintAuthorityPda.equals(stateBefore.mintAuthorityPda)).toBe(true);
+  expect(stateAfter.commonVault.equals(commonVault)).toBe(true);
+
+  expect(fromBN(stateBefore.maxSupplyCap)).toEqual(0n);
+  expect(fromBN(stateAfter.maxSupplyCap)).toEqual(MAX_U64);
 };
 
 export const updateMinterVault = async (
@@ -113,10 +171,12 @@ export const updateMinterVault = async (
     commonVault,
     tokenAuthority,
     firstDepositMinMTokens,
+    maxSupplyCap,
   }: {
     commonVault?: PublicKey;
     tokenAuthority?: PublicKey;
     firstDepositMinMTokens?: bigint;
+    maxSupplyCap?: bigint;
   },
 
   opt?: OptionalCommonParams,
@@ -127,6 +187,7 @@ export const updateMinterVault = async (
   commonVault ??= minterCommonVault.publicKey;
   tokenAuthority ??= null;
   firstDepositMinMTokens ??= null;
+  maxSupplyCap ??= null;
 
   const fetchState = async () => {
     const common = await fetchVaultCommonState(vaultsProgram, commonVault);
@@ -141,7 +202,11 @@ export const updateMinterVault = async (
   const stateBefore = await fetchState();
 
   const tx = await vaultsProgram.methods
-    .updateMinterVault(toBNNullable(firstDepositMinMTokens), tokenAuthority)
+    .updateMinterVault(
+      toBNNullable(firstDepositMinMTokens),
+      tokenAuthority,
+      toBNNullable(maxSupplyCap),
+    )
     .accountsPartial({
       authority: from.publicKey,
       vaultCommon: commonVault,
@@ -170,6 +235,10 @@ export const updateMinterVault = async (
 
   if (firstDepositMinMTokens !== null) {
     expect(fromBN(stateAfter.minter.firstDepositMinMTokens)).toEqual(firstDepositMinMTokens);
+  }
+
+  if (maxSupplyCap !== null) {
+    expect(fromBN(stateAfter.minter.maxSupplyCap)).toEqual(maxSupplyCap);
   }
 };
 
@@ -338,8 +407,8 @@ export const mintInstant = async (
     );
   }
 
-  const clock = await context.banksClient.getClock();
-  const currentDay = clock.unixTimestamp / 86400n;
+  const unixTimestamp = await getTime(context);
+  const currentDay = unixTimestamp / 86400n;
 
   const actualTokensMinted = expectedWasUndefined
     ? stateAfter.balanceFromMToken - stateBefore.balanceFromMToken
@@ -385,7 +454,7 @@ export const mintInstant = async (
       parseUnits((amountToken - (expected?.fee ?? 0)).toString(), paymentMint.decimals),
   );
 
-  return { stateAfter, clock };
+  return { stateAfter, unixTimestamp };
 };
 
 export const mintRequest = async (
@@ -609,10 +678,215 @@ export const approveMintRequest = async (
     newRate,
     isSafe,
     requestId,
+    skipOnSupplyCapExceeded,
   }: {
     requestId?: bigint;
     newRate?: bigint;
     isSafe?: boolean;
+    skipOnSupplyCapExceeded?: boolean;
+  },
+  accounts?: {
+    commonVault?: PublicKey;
+  },
+  expected?: {
+    tokensMinted?: bigint;
+    expectSkipped?: boolean;
+  },
+  opt?: OptionalCommonParams,
+) => {
+  const {
+    dataFeedProgram,
+    vaultsProgram,
+    tokenAuthorityProgram,
+    authority: owner,
+    context,
+    connection,
+  } = fixture;
+
+  newRate ??= parseUnits('1');
+  isSafe ??= false;
+  requestId ??= 0n;
+  skipOnSupplyCapExceeded ??= false;
+
+  expected ??= {
+    tokensMinted: parseUnits('9.9'),
+  };
+
+  const expectSkipped = expected?.expectSkipped ?? false;
+
+  const baseAccounts = {
+    vaultCommon: accounts?.commonVault ?? fixture.minterCommonVault.publicKey,
+  };
+
+  const from = opt?.from ?? owner;
+
+  // eslint-disable-next-line prefer-const
+  let requestStateCached: Awaited<ReturnType<typeof fetchMinterVaultRequestState>>;
+
+  const fetchState = async (_user?: PublicKey) => {
+    const minterVaultState = await fetchMinterVaultState(
+      vaultsProgram,
+      getMinterVaultPda(baseAccounts.vaultCommon),
+    );
+    const mintAuthorityState = await fetchTokenAuthorityState(
+      tokenAuthorityProgram,
+      minterVaultState.mintAuthorityPda,
+    );
+
+    const commonVaultState = await fetchVaultCommonState(vaultsProgram, baseAccounts.vaultCommon);
+
+    const requestState = await fetchMinterVaultRequestState(
+      vaultsProgram,
+      getMinterVaultRequestPda(getMinterVaultPda(baseAccounts.vaultCommon), requestId),
+      true,
+    );
+
+    const state = requestState ?? requestStateCached;
+    const commonVaultAccountState = await fetchVaultCommonAccountState(
+      vaultsProgram,
+      getCommonVaultAccountStatePda(baseAccounts.vaultCommon, state.user),
+    );
+
+    const mMintFeed = await fetchDataFeedState(dataFeedProgram, commonVaultState.mMintFeed);
+
+    const paymentTokenState = await fetchPaymentMintState(
+      vaultsProgram,
+      getPaymentMintStatePda(baseAccounts.vaultCommon, state.paymentMint),
+    );
+
+    const paymentTokenFeed = await fetchDataFeedState(dataFeedProgram, paymentTokenState.dataFeed);
+
+    const balanceUserPaymentMint = await getBalance(connection, state.user, state.paymentMint);
+
+    const balanceTokensReceiverPaymentMint = await getBalance(
+      connection,
+      commonVaultState.tokensReceiver,
+      state.paymentMint,
+    );
+
+    const balanceFeeReceiverPaymentMint = await getBalance(
+      connection,
+      commonVaultState.feeReceiver,
+      state.paymentMint,
+    );
+
+    const balanceUserMToken = await getBalance(
+      connection,
+      state.user,
+      commonVaultState.mMint,
+      TOKEN_2022_PROGRAM_ID,
+    );
+
+    const mTokenState = await getMint(
+      connection,
+      commonVaultState.mMint,
+      undefined,
+      TOKEN_2022_PROGRAM_ID,
+    );
+
+    return {
+      minterVaultState,
+      commonVaultState,
+      requestState,
+      balanceUserMToken,
+      mintAuthorityState,
+      commonVaultAccountState,
+      mMintFeed,
+      paymentTokenFeed,
+      balanceUserPaymentMint,
+      balanceTokensReceiverPaymentMint,
+      balanceFeeReceiverPaymentMint,
+      mTokenState,
+      paymentTokenState,
+    };
+  };
+
+  const stateBefore = await fetchState();
+  requestStateCached = stateBefore.requestState;
+
+  const user = stateBefore.requestState.user;
+
+  const tx = await vaultsProgram.methods
+    .approveMintRequest(toBN(requestId), toBN(newRate), isSafe, skipOnSupplyCapExceeded)
+    .accountsPartial({
+      ...baseAccounts,
+      authority: from.publicKey,
+      mintRequest: getMinterVaultRequestPda(getMinterVaultPda(baseAccounts.vaultCommon), requestId),
+      tokenAuthority: stateBefore.minterVaultState.mintAuthorityPda,
+      userAccount: user,
+      accountAc: getAccountAcStatePda(stateBefore.commonVaultState.ac, user),
+      mMint: stateBefore.commonVaultState.mMint,
+      mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
+      authorityAcRole: getAccountAcRoleStatePda(
+        stateBefore.commonVaultState.acRole,
+        from.publicKey,
+        VAULT_AC_ROLES.REQUEST_MANAGER,
+      ),
+      vaultMinterRole: getAccountAcRoleStatePda(
+        stateBefore.mintAuthorityState.acRole,
+        getMinterVaultPda(baseAccounts.vaultCommon),
+        TOKEN_AUTHORITY_ROLES.M_MINTER,
+      ),
+    })
+    .transaction();
+
+  if (opt?.revertedWith !== undefined) {
+    await expectTxReverted(context, tx, [from], opt);
+    return;
+  }
+
+  await expectTxNotReverted(context, tx, [from]);
+
+  // When expectSkipped is true, the operation was silently skipped - don't check state changes
+  if (expectSkipped) {
+    return;
+  }
+
+  const stateAfter = await fetchState(user);
+
+  expect(stateAfter.requestState).toEqual(null);
+
+  expect(fromBN(stateAfter.paymentTokenState.allowance)).toEqual(
+    fromBN(stateBefore.paymentTokenState.allowance),
+  );
+
+  expect(fromBN(stateAfter.commonVaultState.instantDailyLimitUsed)).toEqual(
+    fromBN(stateAfter.commonVaultState.instantDailyLimitUsed),
+  );
+
+  expect(stateAfter.commonVaultAccountState.freeFromMinFirstMint).toEqual(
+    stateAfter.commonVaultAccountState.freeFromMinFirstMint,
+  );
+
+  expect(stateAfter.balanceUserPaymentMint).toEqual(stateBefore.balanceUserPaymentMint);
+
+  expect(stateAfter.balanceUserMToken).toEqual(
+    stateBefore.balanceUserMToken + (expected?.tokensMinted ?? 0n),
+  );
+
+  expect(stateAfter.mTokenState.supply).toEqual(
+    stateBefore.mTokenState.supply + (expected?.tokensMinted ?? 0n),
+  );
+
+  expect(stateAfter.balanceFeeReceiverPaymentMint).toEqual(
+    stateBefore.balanceFeeReceiverPaymentMint,
+  );
+
+  expect(stateAfter.balanceTokensReceiverPaymentMint).toEqual(
+    stateBefore.balanceTokensReceiverPaymentMint,
+  );
+
+  return { stateAfter };
+};
+
+export const safeApproveMintRequestAtCurrentRate = async (
+  fixture: CommonMinterVaultParams,
+  {
+    requestId,
+    skipOnSupplyCapExceeded,
+  }: {
+    requestId?: bigint;
+    skipOnSupplyCapExceeded?: boolean;
   },
   accounts?: {
     commonVault?: PublicKey;
@@ -631,9 +905,8 @@ export const approveMintRequest = async (
     connection,
   } = fixture;
 
-  newRate ??= parseUnits('1');
-  isSafe ??= false;
   requestId ??= 0n;
+  skipOnSupplyCapExceeded ??= false;
 
   expected ??= {
     tokensMinted: parseUnits('9.9'),
@@ -732,19 +1005,215 @@ export const approveMintRequest = async (
   const user = stateBefore.requestState.user;
 
   const tx = await vaultsProgram.methods
-    .approveMintRequest(toBN(requestId), toBN(newRate), isSafe)
+    .safeApproveMintRequestAtCurrentRate(toBN(requestId), skipOnSupplyCapExceeded)
     .accountsPartial({
       ...baseAccounts,
       authority: from.publicKey,
       mintRequest: getMinterVaultRequestPda(getMinterVaultPda(baseAccounts.vaultCommon), requestId),
       tokenAuthority: stateBefore.minterVaultState.mintAuthorityPda,
       userAccount: user,
+      accountAc: getAccountAcStatePda(stateBefore.commonVaultState.ac, user),
+      mMint: stateBefore.commonVaultState.mMint,
+      mMintFeed: stateBefore.mMintFeed.underlyingFeed,
+      mMintDataFeed: stateBefore.commonVaultState.mMintFeed,
+      mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
+      authorityAcRole: getAccountAcRoleStatePda(
+        stateBefore.commonVaultState.acRole,
+        from.publicKey,
+        VAULT_AC_ROLES.REQUEST_MANAGER,
+      ),
+      vaultMinterRole: getAccountAcRoleStatePda(
+        stateBefore.mintAuthorityState.acRole,
+        getMinterVaultPda(baseAccounts.vaultCommon),
+        TOKEN_AUTHORITY_ROLES.M_MINTER,
+      ),
+    })
+    .transaction();
+
+  if (opt?.revertedWith !== undefined) {
+    await expectTxReverted(context, tx, [from], opt);
+    return;
+  }
+
+  await expectTxNotReverted(context, tx, [from]);
+
+  const stateAfter = await fetchState(user);
+
+  expect(stateAfter.requestState).toEqual(null);
+
+  expect(fromBN(stateAfter.paymentTokenState.allowance)).toEqual(
+    fromBN(stateBefore.paymentTokenState.allowance),
+  );
+
+  expect(fromBN(stateAfter.commonVaultState.instantDailyLimitUsed)).toEqual(
+    fromBN(stateAfter.commonVaultState.instantDailyLimitUsed),
+  );
+
+  expect(stateAfter.commonVaultAccountState.freeFromMinFirstMint).toEqual(
+    stateAfter.commonVaultAccountState.freeFromMinFirstMint,
+  );
+
+  expect(stateAfter.balanceUserPaymentMint).toEqual(stateBefore.balanceUserPaymentMint);
+
+  expect(stateAfter.balanceUserMToken).toEqual(
+    stateBefore.balanceUserMToken + (expected?.tokensMinted ?? 0n),
+  );
+
+  expect(stateAfter.mTokenState.supply).toEqual(
+    stateBefore.mTokenState.supply + (expected?.tokensMinted ?? 0n),
+  );
+
+  expect(stateAfter.balanceFeeReceiverPaymentMint).toEqual(
+    stateBefore.balanceFeeReceiverPaymentMint,
+  );
+
+  expect(stateAfter.balanceTokensReceiverPaymentMint).toEqual(
+    stateBefore.balanceTokensReceiverPaymentMint,
+  );
+
+  return { stateAfter };
+};
+
+export const safeApproveMintRequestAtRequestRate = async (
+  fixture: CommonMinterVaultParams,
+  {
+    requestId,
+    skipOnSupplyCapExceeded,
+  }: {
+    requestId?: bigint;
+    skipOnSupplyCapExceeded?: boolean;
+  },
+  accounts?: {
+    commonVault?: PublicKey;
+  },
+  expected?: {
+    tokensMinted?: bigint;
+  },
+  opt?: OptionalCommonParams,
+) => {
+  const {
+    dataFeedProgram,
+    vaultsProgram,
+    tokenAuthorityProgram,
+    authority: owner,
+    context,
+    connection,
+  } = fixture;
+
+  requestId ??= 0n;
+  skipOnSupplyCapExceeded ??= false;
+
+  expected ??= {
+    tokensMinted: parseUnits('9.9'),
+  };
+
+  const baseAccounts = {
+    vaultCommon: accounts?.commonVault ?? fixture.minterCommonVault.publicKey,
+  };
+
+  const from = opt?.from ?? owner;
+
+  // eslint-disable-next-line prefer-const
+  let requestStateCached: Awaited<ReturnType<typeof fetchMinterVaultRequestState>>;
+
+  const fetchState = async (_user?: PublicKey) => {
+    const minterVaultState = await fetchMinterVaultState(
+      vaultsProgram,
+      getMinterVaultPda(baseAccounts.vaultCommon),
+    );
+    const mintAuthorityState = await fetchTokenAuthorityState(
+      tokenAuthorityProgram,
+      minterVaultState.mintAuthorityPda,
+    );
+
+    const commonVaultState = await fetchVaultCommonState(vaultsProgram, baseAccounts.vaultCommon);
+
+    const requestState = await fetchMinterVaultRequestState(
+      vaultsProgram,
+      getMinterVaultRequestPda(getMinterVaultPda(baseAccounts.vaultCommon), requestId),
+      true,
+    );
+
+    const state = requestState ?? requestStateCached;
+    const commonVaultAccountState = await fetchVaultCommonAccountState(
+      vaultsProgram,
+      getCommonVaultAccountStatePda(baseAccounts.vaultCommon, state.user),
+    );
+
+    const mMintFeed = await fetchDataFeedState(dataFeedProgram, commonVaultState.mMintFeed);
+
+    const paymentTokenState = await fetchPaymentMintState(
+      vaultsProgram,
+      getPaymentMintStatePda(baseAccounts.vaultCommon, state.paymentMint),
+    );
+
+    const paymentTokenFeed = await fetchDataFeedState(dataFeedProgram, paymentTokenState.dataFeed);
+
+    const balanceUserPaymentMint = await getBalance(connection, state.user, state.paymentMint);
+
+    const balanceTokensReceiverPaymentMint = await getBalance(
+      connection,
+      commonVaultState.tokensReceiver,
+      state.paymentMint,
+    );
+
+    const balanceFeeReceiverPaymentMint = await getBalance(
+      connection,
+      commonVaultState.feeReceiver,
+      state.paymentMint,
+    );
+
+    const balanceUserMToken = await getBalance(
+      connection,
+      state.user,
+      commonVaultState.mMint,
+      TOKEN_2022_PROGRAM_ID,
+    );
+
+    const mTokenState = await getMint(
+      connection,
+      commonVaultState.mMint,
+      undefined,
+      TOKEN_2022_PROGRAM_ID,
+    );
+
+    return {
+      minterVaultState,
+      commonVaultState,
+      requestState,
+      balanceUserMToken,
+      mintAuthorityState,
+      commonVaultAccountState,
+      mMintFeed,
+      paymentTokenFeed,
+      balanceUserPaymentMint,
+      balanceTokensReceiverPaymentMint,
+      balanceFeeReceiverPaymentMint,
+      mTokenState,
+      paymentTokenState,
+    };
+  };
+
+  const stateBefore = await fetchState();
+  requestStateCached = stateBefore.requestState;
+
+  const user = stateBefore.requestState.user;
+
+  const tx = await vaultsProgram.methods
+    .safeApproveMintRequestAtRequestRate(toBN(requestId), skipOnSupplyCapExceeded)
+    .accountsPartial({
+      ...baseAccounts,
+      authority: from.publicKey,
+      mintRequest: getMinterVaultRequestPda(getMinterVaultPda(baseAccounts.vaultCommon), requestId),
+      tokenAuthority: stateBefore.minterVaultState.mintAuthorityPda,
+      userAccount: user,
+      accountAc: getAccountAcStatePda(stateBefore.commonVaultState.ac, user),
       mMint: stateBefore.commonVaultState.mMint,
       mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
       authorityAcRole: getAccountAcRoleStatePda(
         stateBefore.commonVaultState.acRole,
         from.publicKey,
-        VAULT_AC_ROLES.VAULT_ADMIN,
+        VAULT_AC_ROLES.REQUEST_MANAGER,
       ),
       vaultMinterRole: getAccountAcRoleStatePda(
         stateBefore.mintAuthorityState.acRole,
@@ -863,7 +1332,7 @@ export const rejectMintRequest = async (
       authorityAcRole: getAccountAcRoleStatePda(
         stateBefore.commonVaultState.acRole,
         from.publicKey,
-        VAULT_AC_ROLES.VAULT_ADMIN,
+        VAULT_AC_ROLES.REQUEST_MANAGER,
       ),
     })
     .transaction();
@@ -889,9 +1358,14 @@ export const prepareCommonMintTest = async (
       fee?: bigint;
     };
   } = {},
+  accounts?: {
+    commonVault?: PublicKey;
+  },
   opt?: OptionalCommonParams,
 ) => {
-  await addPaymentToken(fixture, params.addPaymentToken ?? {}, undefined);
-  await newVaultCommonAccount(fixture, {}, undefined, opt);
+  await addPaymentToken(fixture, params.addPaymentToken ?? {}, {
+    commonVault: accounts?.commonVault,
+  });
+  await newVaultCommonAccount(fixture, {}, { commonVault: accounts?.commonVault }, opt);
   await newAccountAc(fixture, {}, undefined, opt);
 };

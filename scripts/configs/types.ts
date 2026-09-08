@@ -40,25 +40,47 @@ const ethereumAddressSchema = z.string().refine((val) => /^0x[a-fA-F0-9]{40}$/.t
   message: 'Must be a valid Ethereum address (0x followed by 40 hex characters)',
 });
 
-export const dataFeedModeSchema = z.enum(['switchboard', 'pyth', 'manual']);
+export const dataFeedModeSchema = z.enum(['switchboard', 'pyth', 'manual', 'chainlink']);
 
 export const switchboardConfigSchema = z.object({
   env: z.enum(['devnet', 'mainnet']),
   ethRpc: z.url(),
   ethDataFeed: ethereumAddressSchema,
   feedName: z.string(), // e.g., "mTBILL/USD", "mRe7SOL/SOL"
+  underlyingFeed: publicKeySchema.optional(),
+});
+
+export const pythConfigSchema = z.object({
+  underlyingFeed: publicKeySchema,
+});
+
+export const chainlinkConfigSchema = z.object({
+  underlyingFeed: publicKeySchema,
+});
+
+export const manualConfigSchema = z.object({
+  initialPrice: priceSchema,
+  maxAnswerDeviation: priceSchema,
 });
 
 export const dataFeedConfigSchema = z
   .object({
     mode: dataFeedModeSchema,
-    underlyingFeed: publicKeySchema.optional(),
     minPrice: priceSchema,
     maxPrice: priceSchema,
     maxStaleness: z.number().int().positive(),
-    initialPrice: priceSchema.optional(),
+    pyth: pythConfigSchema.optional(),
+    manual: manualConfigSchema.optional(),
     switchboard: switchboardConfigSchema.optional(),
+    chainlink: chainlinkConfigSchema.optional(),
   })
+  // underlyingFeed behavior varies by mode:
+  // - switchboard: optional. If not provided, deploys new Switchboard oracle feed.
+  //   If provided, uses existing Switchboard feed.
+  // - manual: optional. If not provided, creates a new manual feed PDA internally.
+  //   If provided, uses the specified feed address.
+  // - pyth: required. Must reference an existing oracle feed address.
+  // - chainlink: required. Must reference an existing oracle feed address.
   .refine(
     (data) => {
       if (data.mode === 'switchboard') {
@@ -71,23 +93,30 @@ export const dataFeedConfigSchema = z
       path: ['switchboard'],
     },
   )
-  // underlyingFeed behavior varies by mode:
-  // - switchboard: optional. If not provided, deploys new Switchboard oracle feed.
-  //   If provided, uses existing Switchboard feed.
-  // - manual: optional. If not provided, creates a new manual feed PDA internally.
-  //   If provided, uses the specified feed address.
-  // - pyth: required. Must reference an existing oracle feed address.
   .refine(
     (data) => {
       // Pyth mode: underlyingFeed is required
       if (data.mode === 'pyth') {
-        return data.underlyingFeed !== undefined;
+        return data.pyth !== undefined;
       }
       return true;
     },
     {
-      message: 'underlyingFeed is required for pyth mode',
-      path: ['underlyingFeed'],
+      message: 'pyth configuration is required when mode is "pyth"',
+      path: ['pyth'],
+    },
+  )
+  .refine(
+    (data) => {
+      // Chainlink mode: underlyingFeed is required
+      if (data.mode === 'chainlink') {
+        return data.chainlink !== undefined;
+      }
+      return true;
+    },
+    {
+      message: 'chainlink configuration is required when mode is "chainlink"',
+      path: ['chainlink'],
     },
   )
   .refine(
@@ -103,8 +132,8 @@ export const dataFeedConfigSchema = z
   .refine(
     (data) => {
       // Ensure initialPrice is within [minPrice, maxPrice] when provided
-      if (data.initialPrice === undefined) return true;
-      const initial = parseFloat(data.initialPrice);
+      if (data?.manual?.initialPrice === undefined) return true;
+      const initial = parseFloat(data?.manual?.initialPrice || '0');
       const min = parseFloat(data.minPrice);
       const max = parseFloat(data.maxPrice);
       return initial >= min && initial <= max;
@@ -169,6 +198,7 @@ export const minterVaultConfigSchema = z.object({
   variationTolerance: monetaryAmountSchema,
   minAmount: monetaryAmountSchema,
   firstMintMinMTokens: monetaryAmountSchema,
+  maxSupplyCap: monetaryAmountSchema.optional(),
   greenListEnforced: z.boolean().default(false),
   tokensReceiver: publicKeySchema,
   feeReceiver: publicKeySchema,
@@ -240,10 +270,11 @@ export const paymentTokenConfigWithNetworksSchema = z.object({
   networks: z.record(z.string(), paymentTokenNetworkConfigSchema),
 });
 
-export const networkConfigSchema = z.record(z.string(),
+export const networkConfigSchema = z.record(
+  z.string(),
   z.object({
     timelock: timelockConfigSchema.optional(),
-  })
+  }),
 );
 
 export type NetworkConfig = z.infer<typeof networkConfigSchema>;

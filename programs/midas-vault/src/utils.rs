@@ -7,8 +7,8 @@ use crate::{
     errors::MidasVaultsError,
     program::MidasVaults,
     state::{
-        MinterVaultState, PauseInxState, PaymentMintState, RedeemerVaultRequestState,
-        RedeemerVaultState, VaultCommonAccountState, VaultCommonState,
+        MintVaultRequestState, MinterVaultState, PauseInxState, PaymentMintState,
+        RedeemerVaultRequestState, RedeemerVaultState, VaultCommonAccountState, VaultCommonState,
     },
 };
 use anchor_spl::{
@@ -52,11 +52,11 @@ pub fn close_account(
     let account = acc_to_close.to_account_info();
     **receiver.lamports.borrow_mut() = dest_starting_lamports
         .checked_add(account.lamports())
-        .unwrap();
+        .ok_or(MidasVaultsError::ArithmeticOverflow)?;
     **account.lamports.borrow_mut() = 0;
 
     account.assign(&system_program.key());
-    account.realloc(0, false)?;
+    account.resize(0)?;
 
     Ok(())
 }
@@ -102,16 +102,19 @@ pub fn validate_paused(common: &VaultCommonState, pause_inx: &PauseInxState) -> 
 /// do several checks:
 /// 1. That user is green listed
 /// 2. That user is not black listed
-/// 3. That vault and instruction are not paused
+/// 3. That vault and instruction are not paused (if pause_inx is Some)
 pub fn validate_common(
     common: &VaultCommonState,
     account_ac: &AccountAccessControlState,
-    pause_inx: &PauseInxState,
+    pause_inx: Option<&PauseInxState>,
     require_green_list: bool,
 ) -> Result<()> {
     validate_green_listed(common, account_ac, require_green_list)?;
     validate_black_listed(account_ac)?;
-    validate_paused(common, pause_inx)?;
+
+    if let Some(pause_inx) = pause_inx {
+        validate_paused(common, pause_inx)?;
+    }
 
     Ok(())
 }
@@ -169,7 +172,10 @@ pub fn require_and_update_allowance(
         MidasVaultsError::InsufficientAllowance
     );
 
-    mint_config.allowance -= amount;
+    mint_config.allowance = mint_config
+        .allowance
+        .checked_sub(amount)
+        .ok_or(MidasVaultsError::ArithmeticOverflow)?;
 
     Ok(())
 }
@@ -182,10 +188,13 @@ pub fn require_and_update_allowance(
 pub fn require_and_update_limit(common: &mut VaultCommonState, amount: u128) -> Result<()> {
     let current_day = get_current_ts()?
         .checked_div(SECONDS_PER_DAY as u32)
-        .unwrap();
+        .ok_or(MidasVaultsError::ArithmeticOverflow)?;
 
     let new_limit_used = if common.instant_last_day == current_day {
-        common.instant_daily_limit_used.checked_add(amount).unwrap()
+        common
+            .instant_daily_limit_used
+            .checked_add(amount)
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?
     } else {
         amount
     };
@@ -210,24 +219,52 @@ pub fn require_variation_tolerance(
     new_price: u128,
 ) -> Result<()> {
     let price_diff = if new_price >= price {
-        new_price - price
+        new_price
+            .checked_sub(price)
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?
     } else {
-        price - new_price
+        price
+            .checked_sub(new_price)
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?
     };
 
-    let price_diff_percent = price_diff
+    let price_diff_percent: u64 = price_diff
         .checked_mul(ONE_HUNDRED_PERCENT.into())
-        .unwrap()
+        .ok_or(MidasVaultsError::ArithmeticOverflow)?
         .checked_div(price)
-        .unwrap();
+        .ok_or(MidasVaultsError::ArithmeticOverflow)?
+        .try_into()
+        .map_err(|_| MidasVaultsError::ArithmeticOverflow)?;
 
     require_gte!(
         common.variation_tolerance,
-        price_diff_percent as u64,
+        price_diff_percent,
         MidasVaultsError::VariationToleranceExceeded
     );
 
     Ok(())
+}
+
+/// Validates that minting `mint_amount` tokens would not exceed `max_supply_cap`.
+/// To disable the cap (unlimited), set `max_supply_cap` to `u64::MAX`.
+pub fn validate_max_supply_cap(
+    m_mint: &Mint,
+    minter: &MinterVaultState,
+    mint_amount: u64,
+) -> Result<bool> {
+    validate_max_supply_cap_with_supply(m_mint.supply, minter, mint_amount)
+}
+
+/// Inner logic for max supply cap check
+pub(crate) fn validate_max_supply_cap_with_supply(
+    current_supply: u64,
+    minter: &MinterVaultState,
+    mint_amount: u64,
+) -> Result<bool> {
+    let new_supply = current_supply
+        .checked_add(mint_amount)
+        .ok_or(MidasVaultsError::ArithmeticOverflow)?;
+    Ok(minter.max_supply_cap >= new_supply)
 }
 
 /// Calculates fee for a given amount
@@ -262,9 +299,9 @@ pub fn get_fee_amount(
 
     Ok(amount
         .checked_mul(fee_percent)
-        .unwrap()
+        .ok_or(MidasVaultsError::ArithmeticOverflow)?
         .checked_div(ONE_HUNDRED_PERCENT.into())
-        .unwrap())
+        .ok_or(MidasVaultsError::ArithmeticOverflow)?)
 }
 
 /// Gets token rate from a data feed.
@@ -517,9 +554,11 @@ pub fn burn_mtoken_with_signer<'info>(
 
 /// Contains utils and helpers for minter vault
 pub mod minter {
-    use anchor_spl::token_interface::Mint;
+    use access_control::state::AccountAccessControlRoleState;
+    use token_authority::{program::TokenAuthority, state::TokenAuthorityState};
 
     use super::*;
+    use crate::events::MinterVaultRequestApprovedEvent;
 
     #[derive(AnchorDeserialize, AnchorSerialize)]
     /// Return type for `calc_and_validate_deposit`
@@ -555,7 +594,6 @@ pub mod minter {
         common: &VaultCommonState,
         common_account: &mut VaultCommonAccountState,
         minter: &mut MinterVaultState,
-
         payment_amount: u128,
         is_instant: bool,
     ) -> Result<CalcAndValidateDepositReturn> {
@@ -584,14 +622,18 @@ pub mod minter {
             decimals,
         )?;
 
-        let amount_token_wo_fee = payment_amount.checked_sub(fee_token_amount).unwrap();
+        let amount_token_wo_fee = payment_amount
+            .checked_sub(fee_token_amount)
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?;
 
         let fee_in_usd = (fee_token_amount.checked_mul(mint_in_rate))
-            .unwrap()
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?
             .checked_div(ONE.into())
-            .unwrap();
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?;
 
-        let deposited_usd = mint_amount_in_usd.checked_sub(fee_in_usd).unwrap();
+        let deposited_usd = mint_amount_in_usd
+            .checked_sub(fee_in_usd)
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?;
 
         let (m_token_amount, m_token_rate) =
             convert_usd_to_m_token(m_data_feed, m_feed, deposited_usd)?;
@@ -628,9 +670,9 @@ pub mod minter {
         Ok((
             amount
                 .checked_mul(rate)
-                .unwrap()
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?
                 .checked_div(ONE.into())
-                .unwrap(),
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?,
             rate,
         ))
     }
@@ -650,11 +692,74 @@ pub mod minter {
         Ok((
             amount
                 .checked_mul(ONE.into())
-                .unwrap()
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?
                 .checked_div(rate)
-                .unwrap(),
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?,
             rate,
         ))
+    }
+
+    // Approves mint request. Returns Ok(true) on success, Ok(false) if skipped.
+    pub fn approve_mint_request<'info>(
+        request: &MintVaultRequestState,
+        account_ac: &AccountAccessControlState,
+        vault_common: &Account<'info, VaultCommonState>,
+        minter_vault: &Account<'info, MinterVaultState>,
+        m_mint: &Box<InterfaceAccount<'info, Mint>>,
+        m_mint_user_ata: &Box<InterfaceAccount<'info, TokenAccount>>,
+        m_mint_token_program: &Interface<'info, TokenInterface>,
+        user_account: &AccountInfo<'info>,
+        token_authority: &Account<'info, TokenAuthorityState>,
+        vault_minter_role: &Account<'info, AccountAccessControlRoleState>,
+        system_program: &Program<'info, System>,
+        token_authority_program: &Program<'info, TokenAuthority>,
+        request_id: u64,
+        new_out_rate: u128,
+        is_safe: bool,
+        skip_on_supply_cap_exceeded: bool,
+    ) -> Result<bool> {
+        validate_common(&vault_common, &account_ac, None, false)?;
+
+        if is_safe {
+            require_variation_tolerance(vault_common, request.m_mint_rate.into(), new_out_rate)?;
+        }
+
+        let amount_to_mint = (request.deposited_usd_wo_fees as u128)
+            .checked_mul(ONE.into())
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?
+            .checked_div(new_out_rate)
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?;
+
+        if !validate_max_supply_cap(m_mint, minter_vault, amount_to_mint.try_into().unwrap())? {
+            if skip_on_supply_cap_exceeded {
+                return Ok(false);
+            }
+            return Err(MidasVaultsError::MaxSupplyCapExceeded.into());
+        }
+
+        mint_token(
+            &vault_common.key(),
+            &minter_vault.to_account_info(),
+            user_account,
+            &token_authority.to_account_info(),
+            &vault_minter_role.to_account_info(),
+            &m_mint.to_account_info(),
+            &m_mint_user_ata.to_account_info(),
+            &m_mint_token_program.to_account_info(),
+            &system_program.to_account_info(),
+            &token_authority_program.to_account_info(),
+            amount_to_mint.try_into().unwrap(),
+        )?;
+
+        emit!(MinterVaultRequestApprovedEvent {
+            common_vault: vault_common.key(),
+            new_out_rate: new_out_rate
+                .try_into()
+                .map_err(|_| MidasVaultsError::ArithmeticOverflow)?,
+            request_id
+        });
+
+        Ok(true)
     }
 }
 
@@ -782,7 +887,7 @@ pub mod redeemer {
         min_fiat_redeem_amount: Option<u64>,
         fiat_flat_fee: Option<u64>,
     ) -> Result<()> {
-        vault.common_vault = common_vault.clone();
+        vault.common_vault = *common_vault;
 
         if let Some(min_fiat_redeem_amount) = min_fiat_redeem_amount {
             vault.min_fiat_redeem_amount = min_fiat_redeem_amount;
@@ -833,39 +938,39 @@ pub mod redeemer {
             vault_common,
             vault_common_signer,
             redeemer_vault,
-            amount_m_token.into(),
+            amount_m_token,
             false,
             is_fiat,
         )?;
 
         let payment_mint_rate = if !is_fiat {
             get_token_rate(
-                &payment_mint_data_feed.unwrap(),
-                &payment_mint_feed.unwrap(),
+                payment_mint_data_feed.unwrap(),
+                payment_mint_feed.unwrap(),
                 payment_mint_state.stable,
             )?
         } else {
             ONE as u128
         };
 
-        let m_token_rate = get_token_rate(&m_mint_data_feed, &m_mint_feed, false)?;
+        let m_token_rate = get_token_rate(m_mint_data_feed, m_mint_feed, false)?;
 
         transfer_token(
-            &m_mint_token_program,
-            &m_mint,
+            m_mint_token_program,
+            m_mint,
             &signer.to_account_info(),
-            &m_mint_signer_ata,
-            &m_mint_vault_ata,
+            m_mint_signer_ata,
+            m_mint_vault_ata,
             params.m_token_amount_wo_fee,
         )?;
 
         if params.fee_amount > 0 {
             transfer_token(
-                &m_mint_token_program,
-                &m_mint,
+                m_mint_token_program,
+                m_mint,
                 &signer.to_account_info(),
-                &m_mint_signer_ata,
-                &m_mint_fee_receiver_ata,
+                m_mint_signer_ata,
+                m_mint_fee_receiver_ata,
                 params.fee_amount,
             )?;
         }
@@ -878,7 +983,9 @@ pub mod redeemer {
 
         let request_id = vault_common.requests_count;
 
-        vault_common.requests_count = request_id.checked_add(1).unwrap();
+        vault_common.requests_count = request_id
+            .checked_add(1)
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?;
 
         emit!(RedeemerVaultRequestCreatedEvent {
             amount_m_token,
@@ -896,10 +1003,28 @@ pub mod redeemer {
         Ok(())
     }
 
-    /// Approves redeem request. Moved to utils as the approval
-    /// logic is the same for fiat and not-fiat requests
+    /// Validates that requestRedeemer has sufficient balance for the transfer.
+    pub fn validate_liquidity(
+        redeemer_ata: &Box<InterfaceAccount<'_, TokenAccount>>,
+        payment_mint: &Box<InterfaceAccount<'_, Mint>>,
+        amount_base9: u128,
+    ) -> bool {
+        let transfer_amount: u64 =
+            match decimals_conversion::convert_from_base_9(amount_base9, payment_mint.decimals) {
+                Ok(v) => match v.try_into() {
+                    Ok(amount) => amount,
+                    Err(_) => return false,
+                },
+                Err(_) => return false,
+            };
+
+        redeemer_ata.amount >= transfer_amount
+    }
+
+    /// Approves redeem request. Returns Ok(true) on success, Ok(false) if skipped.
     pub fn approve_redeem_request<'info>(
         request: &RedeemerVaultRequestState,
+        account_ac: &AccountAccessControlState,
         vault_common: &Account<'info, VaultCommonState>,
         redeemer_vault: &Account<'info, RedeemerVaultState>,
         m_mint_token_program: &Interface<'info, TokenInterface>,
@@ -915,12 +1040,15 @@ pub mod redeemer {
         request_id: u64,
         new_m_token_rate: u128,
         is_safe: bool,
-    ) -> Result<()> {
+        safe_validate_liquidity: bool,
+    ) -> Result<bool> {
         let (expected_mint_key, is_fiat) = if let Some(payment_mint) = payment_mint {
             (payment_mint.key(), false)
         } else {
             (FIAT_MINT, true)
         };
+
+        validate_common(vault_common, account_ac, None, is_fiat)?;
 
         require_keys_eq!(
             expected_mint_key,
@@ -936,15 +1064,6 @@ pub mod redeemer {
             )?;
         }
 
-        burn_mtoken_with_signer(
-            &vault_common.key(),
-            m_mint_token_program,
-            m_mint,
-            &redeemer_vault.to_account_info(),
-            m_mint_vault_ata,
-            request.m_token_amount.into(),
-        )?;
-
         let decimals = if let Some(payment_mint) = payment_mint {
             payment_mint.decimals
         } else {
@@ -954,15 +1073,23 @@ pub mod redeemer {
         let amount_token_wo_fee = truncate(
             (request.m_token_amount as u128)
                 .checked_mul(new_m_token_rate)
-                .unwrap()
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?
                 .checked_div(request.payment_mint_rate.into())
-                .unwrap(),
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?,
             decimals,
         )?;
 
-        require_and_update_allowance(payment_mint_state, amount_token_wo_fee)?;
-
         if !is_fiat {
+            if safe_validate_liquidity
+                && !validate_liquidity(
+                    payment_mint_redeemer_ata.unwrap(),
+                    payment_mint.unwrap(),
+                    amount_token_wo_fee,
+                )
+            {
+                return Ok(false);
+            }
+
             transfer_token_with_signer(
                 &vault_common.key(),
                 RedeemerVaultState::SEED,
@@ -975,12 +1102,25 @@ pub mod redeemer {
             )?;
         }
 
+        require_and_update_allowance(payment_mint_state, amount_token_wo_fee)?;
+
+        burn_mtoken_with_signer(
+            &vault_common.key(),
+            m_mint_token_program,
+            m_mint,
+            &redeemer_vault.to_account_info(),
+            m_mint_vault_ata,
+            request.m_token_amount.into(),
+        )?;
+
         emit!(RedeemerVaultRequestApprovedEvent {
             request_id,
             common_vault: vault_common.key(),
-            new_out_rate: new_m_token_rate as u64
+            new_out_rate: new_m_token_rate
+                .try_into()
+                .map_err(|_| MidasVaultsError::ArithmeticOverflow)?,
         });
-        Ok(())
+        Ok(true)
     }
 
     /// Calculates shared parameters for instant and redeem redeems.
@@ -1019,10 +1159,8 @@ pub mod redeemer {
             is_instant,
         )?;
 
-        if is_fiat {
-            if !common_account.waived_fee {
-                fee_amount += redeemer.fiat_flat_fee as u128;
-            }
+        if is_fiat && !common_account.waived_fee {
+            fee_amount += redeemer.fiat_flat_fee as u128;
         }
 
         require_gt!(
@@ -1033,7 +1171,9 @@ pub mod redeemer {
 
         Ok(CalcAndValidateRedeemReturn {
             fee_amount,
-            m_token_amount_wo_fee: m_token_amount.checked_sub(fee_amount).unwrap(),
+            m_token_amount_wo_fee: m_token_amount
+                .checked_sub(fee_amount)
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?,
         })
     }
 
@@ -1053,9 +1193,9 @@ pub mod redeemer {
         Ok((
             amount
                 .checked_mul(ONE.into())
-                .unwrap()
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?
                 .checked_div(rate)
-                .unwrap(),
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?,
             rate,
         ))
     }
@@ -1075,9 +1215,9 @@ pub mod redeemer {
         Ok((
             amount
                 .checked_mul(rate)
-                .unwrap()
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?
                 .checked_div(ONE.into())
-                .unwrap(),
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?,
             rate,
         ))
     }
@@ -1085,7 +1225,11 @@ pub mod redeemer {
 
 /// Returns current unix timestamp from the clock
 pub fn get_current_ts() -> Result<u32> {
-    Ok(Clock::get().unwrap().unix_timestamp as u32)
+    Ok(Clock::get()
+        .unwrap()
+        .unix_timestamp
+        .try_into()
+        .map_err(|_| MidasVaultsError::ArithmeticOverflow)?)
 }
 
 /// Truncates value to a given number of decimals and returns
@@ -1106,8 +1250,243 @@ pub fn get_current_ts() -> Result<u32> {
 /// Truncated value in base 9
 ///
 pub fn truncate(value: u128, decimals: u8) -> Result<u128> {
-    return decimals_conversion::convert_to_base_9(
+    decimals_conversion::convert_to_base_9(
         decimals_conversion::convert_from_base_9(value, decimals)?,
         decimals,
-    );
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use anchor_lang::prelude::Pubkey;
+    fn default_pubkey() -> Pubkey {
+        Pubkey::new_from_array([0u8; 32])
+    }
+
+    fn vault_common(
+        paused: bool,
+        greenlist_enforced: bool,
+        variation_tolerance: u64,
+        instant_fee: u64,
+    ) -> VaultCommonState {
+        VaultCommonState {
+            ac: default_pubkey(),
+            paused,
+            greenlist_enforced,
+            requests_count: 0,
+            m_mint: default_pubkey(),
+            m_mint_feed: default_pubkey(),
+            ac_role: default_pubkey(),
+            tokens_receiver: default_pubkey(),
+            fee_receiver: default_pubkey(),
+            instant_fee,
+            instant_daily_limit: 0,
+            variation_tolerance,
+            min_amount: 0,
+            instant_last_day: 0,
+            instant_daily_limit_used: 0,
+        }
+    }
+
+    fn account_ac(green_listed: bool, black_listed: bool) -> AccountAccessControlState {
+        AccountAccessControlState {
+            green_listed,
+            black_listed,
+        }
+    }
+
+    fn pause_inx(paused: bool) -> PauseInxState {
+        PauseInxState { paused }
+    }
+
+    fn minter_vault_state(max_supply_cap: u64) -> MinterVaultState {
+        MinterVaultState {
+            first_deposit_min_m_tokens: 0,
+            common_vault: default_pubkey(),
+            mint_authority_pda: default_pubkey(),
+            max_supply_cap,
+        }
+    }
+
+    #[test]
+    fn test_validate_green_listed_skips_when_both_false() {
+        let common = vault_common(false, false, 0, 0);
+        let ac = account_ac(false, false);
+        assert!(validate_green_listed(&common, &ac, false).is_ok());
+    }
+
+    #[test]
+    fn test_validate_green_listed_requires_when_enforced() {
+        let common = vault_common(false, true, 0, 0);
+        let ac = account_ac(false, false);
+        assert!(validate_green_listed(&common, &ac, false).is_err());
+        let ac = account_ac(true, false);
+        assert!(validate_green_listed(&common, &ac, false).is_ok());
+    }
+
+    #[test]
+    fn test_validate_green_listed_requires_when_require_green_list_true() {
+        let common = vault_common(false, false, 0, 0);
+        let ac = account_ac(false, false);
+        assert!(validate_green_listed(&common, &ac, true).is_err());
+        let ac = account_ac(true, false);
+        assert!(validate_green_listed(&common, &ac, true).is_ok());
+    }
+
+    #[test]
+    fn test_validate_black_listed_ok_when_not_blacklisted() {
+        let ac = account_ac(true, false);
+        assert!(validate_black_listed(&ac).is_ok());
+    }
+
+    #[test]
+    fn test_validate_black_listed_err_when_blacklisted() {
+        let ac = account_ac(true, true);
+        assert!(validate_black_listed(&ac).is_err());
+    }
+
+    #[test]
+    fn test_validate_paused_ok_when_not_paused() {
+        let common = vault_common(false, false, 0, 0);
+        let pause_inx = pause_inx(false);
+        assert!(validate_paused(&common, &pause_inx).is_ok());
+    }
+
+    #[test]
+    fn test_validate_paused_err_when_vault_paused() {
+        let common = vault_common(true, false, 0, 0);
+        let pause_inx = pause_inx(false);
+        assert!(validate_paused(&common, &pause_inx).is_err());
+    }
+
+    #[test]
+    fn test_validate_paused_err_when_inx_paused() {
+        let common = vault_common(false, false, 0, 0);
+        let pause_inx = pause_inx(true);
+        assert!(validate_paused(&common, &pause_inx).is_err());
+    }
+
+    #[test]
+    fn test_validate_common_ok_when_all_pass() {
+        let common = vault_common(false, false, 0, 0);
+        let ac = account_ac(true, false);
+        let pause_inx = pause_inx(false);
+        assert!(validate_common(&common, &ac, Some(&pause_inx), false).is_ok());
+    }
+
+    #[test]
+    fn test_validate_common_fails_green_list() {
+        let common = vault_common(false, true, 0, 0);
+        let ac = account_ac(false, false);
+        let pause_inx = pause_inx(false);
+        assert!(validate_common(&common, &ac, Some(&pause_inx), false).is_err());
+    }
+
+    #[test]
+    fn test_validate_common_fails_black_list() {
+        let common = vault_common(false, false, 0, 0);
+        let ac = account_ac(true, true);
+        let pause_inx = pause_inx(false);
+        assert!(validate_common(&common, &ac, Some(&pause_inx), false).is_err());
+    }
+
+    #[test]
+    fn test_validate_common_fails_paused() {
+        let common = vault_common(true, false, 0, 0);
+        let ac = account_ac(true, false);
+        let pause_inx = pause_inx(false);
+        assert!(validate_common(&common, &ac, Some(&pause_inx), false).is_err());
+    }
+
+    #[test]
+    fn test_validate_common_skips_pause_when_pause_inx_none() {
+        // Vault is paused, but pause_inx is None, so the pause check is skipped.
+        let common = vault_common(true, false, 0, 0);
+        let ac = account_ac(true, false);
+        assert!(validate_common(&common, &ac, None, false).is_ok());
+    }
+
+    #[test]
+    fn test_validate_common_none_still_checks_black_list() {
+        // pause_inx is None but blacklist is still enforced.
+        let common = vault_common(false, false, 0, 0);
+        let ac = account_ac(true, true);
+        assert!(validate_common(&common, &ac, None, false).is_err());
+    }
+
+    #[test]
+    fn test_validate_common_none_still_checks_green_list() {
+        // pause_inx is None but greenlist is still enforced.
+        let common = vault_common(false, true, 0, 0);
+        let ac = account_ac(false, false);
+        assert!(validate_common(&common, &ac, None, false).is_err());
+    }
+
+    #[test]
+    fn test_validate_common_none_ok_when_user_valid() {
+        // pause_inx is None and the user passes greenlist/blacklist checks.
+        let common = vault_common(false, true, 0, 0);
+        let ac = account_ac(true, false);
+        assert!(validate_common(&common, &ac, None, false).is_ok());
+    }
+
+    #[test]
+    fn test_validate_max_supply_cap_within_cap() {
+        let minter = minter_vault_state(200);
+        assert!(validate_max_supply_cap_with_supply(100, &minter, 50).unwrap());
+    }
+
+    #[test]
+    fn test_validate_max_supply_cap_exceeds_cap() {
+        let minter = minter_vault_state(150);
+        assert!(!validate_max_supply_cap_with_supply(100, &minter, 60).unwrap());
+    }
+
+    #[test]
+    fn test_validate_max_supply_cap_at_cap() {
+        let minter = minter_vault_state(100);
+        assert!(validate_max_supply_cap_with_supply(100, &minter, 0).unwrap());
+    }
+
+    #[test]
+    fn test_validate_fee_valid() {
+        assert!(validate_fee(0, false).is_ok());
+        assert!(validate_fee(ONE_HUNDRED_PERCENT, false).is_ok());
+        assert!(validate_fee(5000, false).is_ok());
+    }
+
+    #[test]
+    fn test_validate_fee_with_min_check() {
+        assert!(validate_fee(0, true).is_err());
+        assert!(validate_fee(1, true).is_ok());
+        assert!(validate_fee(ONE_HUNDRED_PERCENT, true).is_ok());
+    }
+
+    #[test]
+    fn test_validate_fee_exceeds_100_percent() {
+        assert!(validate_fee(ONE_HUNDRED_PERCENT + 1, false).is_err());
+    }
+
+    #[test]
+    fn test_truncate_example_from_doc() {
+        let value = 123_456_789u128;
+        let decimals = 6;
+        let truncated = truncate(value, decimals).unwrap();
+        assert_eq!(truncated, 123_456_000);
+    }
+
+    #[test]
+    fn test_truncate_base_9_no_change() {
+        let value = 1_000_000_000u128; // 1.0 in base 9
+        let truncated = truncate(value, 9).unwrap();
+        assert_eq!(truncated, value);
+    }
+
+    #[test]
+    fn test_truncate_reduces_precision() {
+        let value = 1_234_567_890u128; // 1.234567890 in base 9
+        let truncated = truncate(value, 6).unwrap();
+        assert_eq!(truncated, 1_234_567_000);
+    }
 }

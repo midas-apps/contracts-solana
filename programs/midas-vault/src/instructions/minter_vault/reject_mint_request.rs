@@ -10,7 +10,7 @@ use crate::{
 #[derive(Accounts)]
 #[instruction(request_id: u64)]
 pub struct RejectMintRequest<'info> {
-    /// Account with vault admin role
+    /// Account with request manager role
     #[account(mut)]
     pub authority: Signer<'info>,
 
@@ -22,16 +22,18 @@ pub struct RejectMintRequest<'info> {
     pub user_account: AccountInfo<'info>,
 
     /// Vault common state account
-    #[account()]
-    pub vault_common: Account<'info, VaultCommonState>,
-
-    /// Admin role of authority
     #[account(
-        seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::VAULT_ADMIN],
+        address = minter_vault.common_vault
+    )]
+    pub vault_common: Box<Account<'info, VaultCommonState>>,
+
+    /// Request manager role of authority
+    #[account(
+        seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::REQUEST_MANAGER],
         seeds::program = AccessControl::id(),
         bump,
     )]
-    pub authority_ac_role: Account<'info, AccountAccessControlRoleState>,
+    pub authority_ac_role: Box<Account<'info, AccountAccessControlRoleState>>,
 
     /// Minter vault state account
     #[account(
@@ -39,7 +41,7 @@ pub struct RejectMintRequest<'info> {
         seeds = [MinterVaultState::SEED, vault_common.key().as_ref()],
         bump
     )]
-    pub minter_vault: Account<'info, MinterVaultState>,
+    pub minter_vault: Box<Account<'info, MinterVaultState>>,
 
     /// Mint request state account
     #[account(
@@ -48,7 +50,7 @@ pub struct RejectMintRequest<'info> {
         seeds = [MintVaultRequestState::SEED, minter_vault.key().as_ref(), &request_id.to_le_bytes()],
         bump,
     )]
-    pub mint_request: Account<'info, MintVaultRequestState>,
+    pub mint_request: Box<Account<'info, MintVaultRequestState>>,
 
     /// System program
     pub system_program: Program<'info, System>,

@@ -14,6 +14,77 @@ export type DataFeed = {
   },
   "instructions": [
     {
+      "name": "migrateManualFeedToV2",
+      "discriminator": [
+        87,
+        111,
+        161,
+        248,
+        245,
+        251,
+        10,
+        149
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "docs": [
+            "Payer for realloc (lamports for extra space)"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "baseFeed",
+          "docs": [
+            "Base feed state account"
+          ]
+        },
+        {
+          "name": "manualFeed",
+          "docs": [
+            "Manual feed state account - use UncheckedAccount to bypass deserialization"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  110,
+                  117,
+                  97,
+                  108,
+                  95,
+                  102,
+                  101,
+                  101,
+                  100,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "baseFeed"
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "newFeed",
       "discriminator": [
         177,
@@ -197,7 +268,44 @@ export type DataFeed = {
                   110
                 ]
               }
-            ]
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
           }
         },
         {
@@ -219,6 +327,10 @@ export type DataFeed = {
         {
           "name": "decimals",
           "type": "u8"
+        },
+        {
+          "name": "maxAnswerDeviation",
+          "type": "u64"
         }
       ]
     },
@@ -304,7 +416,44 @@ export type DataFeed = {
                   110
                 ]
               }
-            ]
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
           }
         },
         {
@@ -477,7 +626,223 @@ export type DataFeed = {
                   110
                 ]
               }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
+        },
+        {
+          "name": "baseFeed",
+          "docs": [
+            "`DataFeed` account"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "decimals",
+          "type": {
+            "option": "u8"
+          }
+        },
+        {
+          "name": "maxAnswerDeviation",
+          "type": {
+            "option": "u64"
+          }
+        }
+      ]
+    },
+    {
+      "name": "updateManualFeedPrice",
+      "discriminator": [
+        218,
+        240,
+        154,
+        7,
+        63,
+        198,
+        254,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "Account with Price Updater role"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "manualFeed",
+          "docs": [
+            "`ManualFeedState` instance"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  110,
+                  117,
+                  97,
+                  108,
+                  95,
+                  102,
+                  101,
+                  101,
+                  100,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "baseFeed"
+              }
             ]
+          }
+        },
+        {
+          "name": "acRole",
+          "docs": [
+            "AccessControlRoles instance that is set in base_feed"
+          ]
+        },
+        {
+          "name": "authorityAcRole",
+          "docs": [
+            "Price Updater AC role of `authority`"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99,
+                  95,
+                  114,
+                  111,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "acRole"
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  105,
+                  99,
+                  101,
+                  95,
+                  117,
+                  112,
+                  100,
+                  97,
+                  116,
+                  101,
+                  114
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
           }
         },
         {
@@ -490,15 +855,11 @@ export type DataFeed = {
       "args": [
         {
           "name": "price",
-          "type": {
-            "option": "u64"
-          }
+          "type": "u64"
         },
         {
-          "name": "decimals",
-          "type": {
-            "option": "u8"
-          }
+          "name": "isSafe",
+          "type": "bool"
         }
       ]
     }
@@ -583,6 +944,19 @@ export type DataFeed = {
         97,
         38
       ]
+    },
+    {
+      "name": "manualFeedUpdatedEventV2",
+      "discriminator": [
+        238,
+        164,
+        209,
+        41,
+        190,
+        168,
+        29,
+        36
+      ]
     }
   ],
   "errors": [
@@ -635,6 +1009,36 @@ export type DataFeed = {
       "code": 6009,
       "name": "priceIsHigherThanMax",
       "msg": "Price is higher than max."
+    },
+    {
+      "code": 6010,
+      "name": "arithmeticOverflow",
+      "msg": "Arithmetic overflow or underflow"
+    },
+    {
+      "code": 6011,
+      "name": "deviationTooHigh",
+      "msg": "Deviation is too high"
+    },
+    {
+      "code": 6012,
+      "name": "invalidPriceTimestamp",
+      "msg": "Invalid price timestamp"
+    },
+    {
+      "code": 6013,
+      "name": "invalidTimestamp",
+      "msg": "Invalid timestamp"
+    },
+    {
+      "code": 6014,
+      "name": "notEnoughTimeHasPassedSinceLastUpdate",
+      "msg": "Not enough time has passed since last update"
+    },
+    {
+      "code": 6015,
+      "name": "invalidPrice",
+      "msg": "Invalid price"
     }
   ],
   "types": [
@@ -682,6 +1086,9 @@ export type DataFeed = {
           },
           {
             "name": "pyth"
+          },
+          {
+            "name": "chainlink"
           }
         ]
       }
@@ -822,6 +1229,9 @@ export type DataFeed = {
     {
       "name": "manualFeedState",
       "docs": [
+        "Current version - V2",
+        "- Added max_answer_deviation field",
+        "",
         "Account that holds data of manual data feed",
         "where the answer can be controlled by the",
         "actors with sufficient access (has `FEED_ADMIN` role)"
@@ -849,6 +1259,13 @@ export type DataFeed = {
               "Last time when price was updated timestamp"
             ],
             "type": "u32"
+          },
+          {
+            "name": "maxAnswerDeviation",
+            "docs": [
+              "Max answer deviation"
+            ],
+            "type": "u64"
           }
         ]
       }
@@ -885,6 +1302,55 @@ export type DataFeed = {
             "name": "price",
             "docs": [
               "New price"
+            ],
+            "type": {
+              "option": "u64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "manualFeedUpdatedEventV2",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "baseFeed",
+            "docs": [
+              "`FeedState` account"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "manualFeed",
+            "docs": [
+              "Manual feed account"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "decimals",
+            "docs": [
+              "New Decimals"
+            ],
+            "type": {
+              "option": "u8"
+            }
+          },
+          {
+            "name": "price",
+            "docs": [
+              "New price"
+            ],
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "maxAnswerDeviation",
+            "docs": [
+              "New max answer deviation"
             ],
             "type": {
               "option": "u64"
