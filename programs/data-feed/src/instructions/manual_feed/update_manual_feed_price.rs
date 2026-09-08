@@ -5,11 +5,11 @@ use access_control::{
 use anchor_lang::prelude::*;
 
 use crate::{
-    constants::ac_roles,
+    constants::{ac_roles, MANUAL_PRICE_UPDATE_DELAY},
     errors::DataFeedError,
     events::ManualFeedUpdatedEventV2,
     state::{FeedState, ManualFeedState},
-    utils::{get_deviation, update_manual_feed},
+    utils::{get_current_ts, get_deviation, update_manual_feed},
 };
 
 #[derive(Accounts)]
@@ -60,6 +60,13 @@ pub fn handle(ctx: Context<UpdateManualFeedPrice>, price: u64, is_safe: bool) ->
             state.max_answer_deviation as u128,
             deviation,
             DataFeedError::DeviationTooHigh
+        );
+        require_gt!(
+            get_current_ts()?
+                .checked_sub(state.last_updated_at)
+                .ok_or(DataFeedError::ArithmeticOverflow)?,
+            MANUAL_PRICE_UPDATE_DELAY,
+            DataFeedError::NotEnoughTimeHasPassedSinceLastUpdate
         );
     }
 

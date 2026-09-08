@@ -144,7 +144,7 @@ impl<'info> Validate<'info> for RedeemRequestFiat<'info> {
         validate_common(
             &self.vault_common,
             &self.account_ac,
-            &self.pause_inx_state,
+            Some(&self.pause_inx_state),
             true,
         )?;
         Ok(())

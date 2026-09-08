@@ -192,7 +192,7 @@ impl<'info> Validate<'info> for MintInstant<'info> {
         validate_common(
             &self.vault_common,
             &self.account_ac,
-            &self.pause_inx_state,
+            Some(&self.pause_inx_state),
             false,
         )?;
         Ok(())

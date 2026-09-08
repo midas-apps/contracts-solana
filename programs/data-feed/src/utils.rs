@@ -1,10 +1,10 @@
 use crate::{
     constants::{
         CHAINLINK_FEED_MAX_STALENESS, DEFAULT_PUBKEY, MANUAL_FEED_MAX_STALENESS,
-        PYTH_FEED_MAX_STALENESS, SECONDS_IN_YEAR, SWITCHBOARD_FEED_MAX_STALENESS,
+        PYTH_FEED_MAX_STALENESS, SWITCHBOARD_FEED_MAX_STALENESS,
     },
     errors::DataFeedError,
-    state::{FeedMode, ManualFeedGrowthState},
+    state::FeedMode,
 };
 use anchor_lang::{prelude::*, require_keys_eq, AccountDeserialize, Key, Result};
 use pyth_solana_receiver_sdk::price_update::PriceUpdateV2;
@@ -56,34 +56,6 @@ pub fn get_price_in_base_9<'info>(
             );
 
             (feed_parsed.price as u128, feed_parsed.decimals)
-        }
-        FeedMode::ManualGrowth => {
-            // parse manual feed
-            let mut buf: &[u8] = &feed.try_borrow_mut_data()?[..];
-            let feed_parsed = ManualFeedGrowthState::try_deserialize(&mut buf)
-                .map_err(|_| DataFeedError::InvalidUnderlyingFeedProvided)?;
-
-            let current_ts = get_current_ts()?;
-
-            let update_diff = current_ts
-                .checked_sub(feed_parsed.last_updated_at)
-                .ok_or(DataFeedError::ArithmeticOverflow)?;
-
-            require_gte!(
-                data_feed.max_staleness,
-                update_diff,
-                DataFeedError::PriceIsStale
-            );
-
-            (
-                apply_growth_apr(
-                    feed_parsed.price as u128,
-                    feed_parsed.growth_apr,
-                    feed_parsed.price_timestamp,
-                    feed_parsed.decimals,
-                )?,
-                feed_parsed.decimals,
-            )
         }
         FeedMode::Switchboard => {
             // parse switchboard feed
@@ -230,7 +202,7 @@ pub fn update_feed(
     }
 
     let max_staleness = match state.mode {
-        FeedMode::Manual | FeedMode::ManualGrowth => MANUAL_FEED_MAX_STALENESS,
+        FeedMode::Manual => MANUAL_FEED_MAX_STALENESS,
         FeedMode::Pyth => PYTH_FEED_MAX_STALENESS,
         FeedMode::Switchboard => SWITCHBOARD_FEED_MAX_STALENESS,
         FeedMode::Chainlink => CHAINLINK_FEED_MAX_STALENESS,
@@ -270,139 +242,6 @@ pub fn update_manual_feed(
     }
 
     Ok(())
-}
-
-/// Updates `ManualFeedGrowthState` values.
-/// If parameter value is None - it wont be updated
-pub fn update_manual_feed_growth(
-    state: &mut ManualFeedGrowthState,
-    price: Option<u64>,
-    price_timestamp: Option<u32>,
-    decimals: Option<u8>,
-    max_answer_deviation: Option<u64>,
-    growth_apr: Option<i64>,
-    min_growth_apr: Option<i64>,
-    max_growth_apr: Option<i64>,
-    only_up: Option<bool>,
-) -> Result<()> {
-    if let Some(decimals) = decimals {
-        state.decimals = decimals;
-    }
-
-    if let Some(max_answer_deviation) = max_answer_deviation {
-        state.max_answer_deviation = max_answer_deviation;
-    }
-
-    if let Some(max_growth_apr) = max_growth_apr {
-        require_gte!(
-            max_growth_apr,
-            state.min_growth_apr,
-            DataFeedError::InvalidMaxGrowthApr
-        );
-        state.max_growth_apr = max_growth_apr;
-    }
-
-    if let Some(min_growth_apr) = min_growth_apr {
-        require_gte!(
-            state.max_growth_apr,
-            min_growth_apr,
-            DataFeedError::InvalidMinGrowthApr
-        );
-        state.min_growth_apr = min_growth_apr;
-    }
-
-    if let Some(only_up) = only_up {
-        state.only_up = only_up;
-    }
-
-    if let Some(price) = price {
-        state.price = price;
-    }
-
-    if let Some(growth_apr) = growth_apr {
-        require_gte!(
-            growth_apr,
-            state.min_growth_apr,
-            DataFeedError::InvalidGrowthApr
-        );
-        require_gte!(
-            state.max_growth_apr,
-            growth_apr,
-            DataFeedError::InvalidGrowthApr
-        );
-        state.growth_apr = growth_apr;
-    }
-
-    if let Some(price_timestamp) = price_timestamp {
-        require_gt!(
-            get_current_ts().unwrap() as i64,
-            price_timestamp as i64,
-            DataFeedError::InvalidPriceTimestamp
-        );
-        state.price_timestamp = price_timestamp;
-    }
-
-    if Option::is_some(&decimals) || Option::is_some(&price) {
-        state.last_updated_at = get_current_ts().unwrap();
-    }
-
-    Ok(())
-}
-
-pub fn apply_growth_apr(
-    price: u128,
-    growth_apr: i64,
-    timestamp_from: u32,
-    decimals: u8,
-) -> Result<u128> {
-    let timestamp_to = get_current_ts().unwrap();
-    apply_growth_apr_impl(price, growth_apr, timestamp_from, timestamp_to, decimals)
-}
-
-pub(crate) fn apply_growth_apr_impl(
-    price: u128,
-    growth_apr: i64,
-    timestamp_from: u32,
-    timestamp_to: u32,
-    decimals: u8,
-) -> Result<u128> {
-    require_gte!(
-        timestamp_to,
-        timestamp_from,
-        DataFeedError::InvalidTimestamp
-    );
-
-    let passed_seconds = timestamp_to
-        .checked_sub(timestamp_from)
-        .ok_or(DataFeedError::ArithmeticOverflow)?;
-
-    let denominator = 10_u128
-        .checked_pow(decimals.into())
-        .ok_or(DataFeedError::ArithmeticOverflow)?
-        .checked_mul(SECONDS_IN_YEAR as u128)
-        .ok_or(DataFeedError::ArithmeticOverflow)?
-        .checked_mul(100u128)
-        .ok_or(DataFeedError::ArithmeticOverflow)?;
-
-    let interest = price
-        .checked_mul(passed_seconds as u128)
-        .ok_or(DataFeedError::ArithmeticOverflow)?
-        .checked_mul(growth_apr.unsigned_abs() as u128)
-        .ok_or(DataFeedError::ArithmeticOverflow)?
-        .checked_div(denominator)
-        .ok_or(DataFeedError::ArithmeticOverflow)?;
-
-    let price_with_interest = if growth_apr > 0 {
-        price
-            .checked_add(interest)
-            .ok_or(DataFeedError::ArithmeticOverflow)?
-    } else {
-        price
-            .checked_sub(interest)
-            .ok_or(DataFeedError::ArithmeticOverflow)?
-    };
-
-    Ok(price_with_interest)
 }
 
 pub fn get_deviation(last_price: u128, new_price: u128, decimals: u8) -> Result<u128> {
@@ -604,17 +443,11 @@ pub mod decimals_conversion {
 }
 
 #[cfg(test)]
-mod growth_and_deviation_tests {
-    use super::{apply_growth_apr_impl, get_deviation};
-    use crate::constants::SECONDS_IN_YEAR;
+mod deviation_tests {
+    use super::get_deviation;
 
     fn units(amount: f64, decimals: u8) -> u128 {
         (amount * 10f64.powi(decimals as i32)).trunc() as u128
-    }
-
-    /// growth_apr has decimals precision: e.g. 5% with 8 decimals = 5 * 10^8
-    fn growth_apr_percent(percent: f64, decimals: u8) -> i64 {
-        (percent * 10f64.powi(decimals as i32)).trunc() as i64
     }
 
     // ---------- get_deviation ----------
@@ -650,56 +483,5 @@ mod growth_and_deviation_tests {
         let last = units(1.0, 9);
         let new = units(1.05, 9);
         assert_eq!(get_deviation(last, new, 9).unwrap(), 5_000_000_000);
-    }
-
-    // ---------- apply_growth_apr_impl ----------
-
-    #[test]
-    fn apply_growth_apr_zero_time_returns_unchanged_price() {
-        let price = units(100.0, 8);
-        let from = 1000u32;
-        let to = 1000u32;
-        assert_eq!(
-            apply_growth_apr_impl(price, growth_apr_percent(5.0, 8), from, to, 8).unwrap(),
-            price
-        );
-    }
-
-    #[test]
-    fn apply_growth_apr_positive_apr_increases_price() {
-        let price = units(100.0, 8);
-        let from = 0u32;
-        let to = SECONDS_IN_YEAR;
-        let growth_apr = growth_apr_percent(5.0, 8);
-        let result = apply_growth_apr_impl(price, growth_apr, from, to, 8).unwrap();
-        assert_eq!(result, units(105.0, 8));
-    }
-
-    #[test]
-    fn apply_growth_apr_negative_apr_decreases_price() {
-        let price = units(100.0, 8);
-        let from = 0u32;
-        let to = SECONDS_IN_YEAR;
-        let growth_apr = growth_apr_percent(-5.0, 8);
-        let result = apply_growth_apr_impl(price, growth_apr, from, to, 8).unwrap();
-        assert_eq!(result, units(95.0, 8));
-    }
-
-    #[test]
-    fn apply_growth_apr_half_year_half_interest() {
-        let price = units(100.0, 8);
-        let from = 0u32;
-        let to = SECONDS_IN_YEAR / 2;
-        let growth_apr = growth_apr_percent(10.0, 8);
-        let result = apply_growth_apr_impl(price, growth_apr, from, to, 8).unwrap();
-        assert_eq!(result, units(105.0, 8));
-    }
-
-    #[test]
-    fn apply_growth_apr_invalid_timestamp_to_before_from_errors() {
-        let price = units(100.0, 8);
-        let from = 1000u32;
-        let to = 999u32;
-        assert!(apply_growth_apr_impl(price, growth_apr_percent(5.0, 8), from, to, 8).is_err());
     }
 }

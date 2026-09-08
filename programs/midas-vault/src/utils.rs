@@ -102,16 +102,19 @@ pub fn validate_paused(common: &VaultCommonState, pause_inx: &PauseInxState) -> 
 /// do several checks:
 /// 1. That user is green listed
 /// 2. That user is not black listed
-/// 3. That vault and instruction are not paused
+/// 3. That vault and instruction are not paused (if pause_inx is Some)
 pub fn validate_common(
     common: &VaultCommonState,
     account_ac: &AccountAccessControlState,
-    pause_inx: &PauseInxState,
+    pause_inx: Option<&PauseInxState>,
     require_green_list: bool,
 ) -> Result<()> {
     validate_green_listed(common, account_ac, require_green_list)?;
     validate_black_listed(account_ac)?;
-    validate_paused(common, pause_inx)?;
+
+    if let Some(pause_inx) = pause_inx {
+        validate_paused(common, pause_inx)?;
+    }
 
     Ok(())
 }
@@ -699,6 +702,7 @@ pub mod minter {
     // Approves mint request. Returns Ok(true) on success, Ok(false) if skipped.
     pub fn approve_mint_request<'info>(
         request: &MintVaultRequestState,
+        account_ac: &AccountAccessControlState,
         vault_common: &Account<'info, VaultCommonState>,
         minter_vault: &Account<'info, MinterVaultState>,
         m_mint: &Box<InterfaceAccount<'info, Mint>>,
@@ -714,6 +718,8 @@ pub mod minter {
         is_safe: bool,
         skip_on_supply_cap_exceeded: bool,
     ) -> Result<bool> {
+        validate_common(&vault_common, &account_ac, None, false)?;
+
         if is_safe {
             require_variation_tolerance(vault_common, request.m_mint_rate.into(), new_out_rate)?;
         }
@@ -1018,6 +1024,7 @@ pub mod redeemer {
     /// Approves redeem request. Returns Ok(true) on success, Ok(false) if skipped.
     pub fn approve_redeem_request<'info>(
         request: &RedeemerVaultRequestState,
+        account_ac: &AccountAccessControlState,
         vault_common: &Account<'info, VaultCommonState>,
         redeemer_vault: &Account<'info, RedeemerVaultState>,
         m_mint_token_program: &Interface<'info, TokenInterface>,
@@ -1040,6 +1047,8 @@ pub mod redeemer {
         } else {
             (FIAT_MINT, true)
         };
+
+        validate_common(vault_common, account_ac, None, is_fiat)?;
 
         require_keys_eq!(
             expected_mint_key,
@@ -1363,7 +1372,7 @@ mod tests {
         let common = vault_common(false, false, 0, 0);
         let ac = account_ac(true, false);
         let pause_inx = pause_inx(false);
-        assert!(validate_common(&common, &ac, &pause_inx, false).is_ok());
+        assert!(validate_common(&common, &ac, Some(&pause_inx), false).is_ok());
     }
 
     #[test]
@@ -1371,7 +1380,7 @@ mod tests {
         let common = vault_common(false, true, 0, 0);
         let ac = account_ac(false, false);
         let pause_inx = pause_inx(false);
-        assert!(validate_common(&common, &ac, &pause_inx, false).is_err());
+        assert!(validate_common(&common, &ac, Some(&pause_inx), false).is_err());
     }
 
     #[test]
@@ -1379,7 +1388,7 @@ mod tests {
         let common = vault_common(false, false, 0, 0);
         let ac = account_ac(true, true);
         let pause_inx = pause_inx(false);
-        assert!(validate_common(&common, &ac, &pause_inx, false).is_err());
+        assert!(validate_common(&common, &ac, Some(&pause_inx), false).is_err());
     }
 
     #[test]
@@ -1387,7 +1396,7 @@ mod tests {
         let common = vault_common(true, false, 0, 0);
         let ac = account_ac(true, false);
         let pause_inx = pause_inx(false);
-        assert!(validate_common(&common, &ac, &pause_inx, false).is_err());
+        assert!(validate_common(&common, &ac, Some(&pause_inx), false).is_err());
     }
 
     #[test]

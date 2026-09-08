@@ -58,6 +58,9 @@ Follow these steps to set up your environment:
 
    ```sh
    avm install 0.32.1
+   # OR if not working
+   avm install 0.32.1 --from-source
+
    avm use 0.32.1
    ```
 

@@ -453,6 +453,77 @@
           "writable": true
         },
         {
+          "name": "account_ac",
+          "docs": [
+            "AccountAccessControlState account"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault_common.ac",
+                "account": "VaultCommonState"
+              },
+              {
+                "kind": "account",
+                "path": "user_account"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
+        },
+        {
           "name": "vault_common",
           "docs": [
             "Vault common state account"
@@ -868,6 +939,77 @@
             "request user account"
           ],
           "writable": true
+        },
+        {
+          "name": "account_ac",
+          "docs": [
+            "AccountAccessControlState account"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault_common.ac",
+                "account": "VaultCommonState"
+              },
+              {
+                "kind": "account",
+                "path": "user_account"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
         },
         {
           "name": "request_redeemer",
@@ -1359,6 +1501,77 @@
             "request user account"
           ],
           "writable": true
+        },
+        {
+          "name": "account_ac",
+          "docs": [
+            "AccountAccessControlState account"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault_common.ac",
+                "account": "VaultCommonState"
+              },
+              {
+                "kind": "account",
+                "path": "user_account"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
         },
         {
           "name": "vault_common",
@@ -6115,6 +6328,77 @@
           "writable": true
         },
         {
+          "name": "account_ac",
+          "docs": [
+            "AccountAccessControlState account"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault_common.ac",
+                "account": "VaultCommonState"
+              },
+              {
+                "kind": "account",
+                "path": "user_account"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
+        },
+        {
           "name": "vault_common",
           "docs": [
             "Vault common state account"
@@ -6536,6 +6820,77 @@
           "writable": true
         },
         {
+          "name": "account_ac",
+          "docs": [
+            "AccountAccessControlState account"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault_common.ac",
+                "account": "VaultCommonState"
+              },
+              {
+                "kind": "account",
+                "path": "user_account"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
+        },
+        {
           "name": "vault_common",
           "docs": [
             "Vault common state account"
@@ -6943,6 +7298,77 @@
             "request user account"
           ],
           "writable": true
+        },
+        {
+          "name": "account_ac",
+          "docs": [
+            "AccountAccessControlState account"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault_common.ac",
+                "account": "VaultCommonState"
+              },
+              {
+                "kind": "account",
+                "path": "user_account"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
         },
         {
           "name": "request_redeemer",
@@ -7438,6 +7864,77 @@
             "request user account"
           ],
           "writable": true
+        },
+        {
+          "name": "account_ac",
+          "docs": [
+            "AccountAccessControlState account"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault_common.ac",
+                "account": "VaultCommonState"
+              },
+              {
+                "kind": "account",
+                "path": "user_account"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
         },
         {
           "name": "request_redeemer",
@@ -10301,9 +10798,6 @@
           },
           {
             "name": "Chainlink"
-          },
-          {
-            "name": "ManualGrowth"
           }
         ]
       }

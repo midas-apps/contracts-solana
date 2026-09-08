@@ -1,4 +1,7 @@
-use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
+use access_control::{
+    program::AccessControl,
+    state::{AccountAccessControlRoleState, AccountAccessControlState},
+};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
@@ -22,6 +25,14 @@ pub struct SafeApproveRedeemRequestAtRequestRate<'info> {
         address = redeem_request.user
     )]
     pub user_account: AccountInfo<'info>,
+
+    /// AccountAccessControlState account
+    #[account(
+            seeds = [AccountAccessControlState::SEED, vault_common.ac.as_ref(), user_account.key().as_ref()],
+            seeds::program = AccessControl::id(),
+            bump,
+        )]
+    pub account_ac: Box<Account<'info, AccountAccessControlState>>,
 
     /// CHECK:
     /// request redeemer account
@@ -150,6 +161,7 @@ pub fn handle(
 
     match redeemer::approve_redeem_request(
         &ctx.accounts.redeem_request,
+        &ctx.accounts.account_ac,
         &ctx.accounts.vault_common,
         &ctx.accounts.redeemer_vault,
         &ctx.accounts.m_mint_token_program,

@@ -1,4 +1,7 @@
-use access_control::{program::AccessControl, state::AccountAccessControlRoleState};
+use access_control::{
+    program::AccessControl,
+    state::{AccountAccessControlRoleState, AccountAccessControlState},
+};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use token_authority::{
@@ -26,6 +29,14 @@ pub struct SafeApproveMintRequestAtRequestRate<'info> {
         address = mint_request.user
     )]
     pub user_account: AccountInfo<'info>,
+
+    /// AccountAccessControlState account
+    #[account(
+            seeds = [AccountAccessControlState::SEED, vault_common.ac.as_ref(), user_account.key().as_ref()],
+            seeds::program = AccessControl::id(),
+            bump,
+        )]
+    pub account_ac: Box<Account<'info, AccountAccessControlState>>,
 
     /// Vault common state account
     #[account(
@@ -130,6 +141,7 @@ pub fn handle(
 
     match minter::approve_mint_request(
         &ctx.accounts.mint_request,
+        &ctx.accounts.account_ac,
         &ctx.accounts.vault_common,
         &ctx.accounts.minter_vault,
         &ctx.accounts.m_mint,

@@ -459,6 +459,77 @@ export type MidasVaults = {
           "writable": true
         },
         {
+          "name": "accountAc",
+          "docs": [
+            "AccountAccessControlState account"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault_common.ac",
+                "account": "vaultCommonState"
+              },
+              {
+                "kind": "account",
+                "path": "userAccount"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
+        },
+        {
           "name": "vaultCommon",
           "docs": [
             "Vault common state account"
@@ -874,6 +945,77 @@ export type MidasVaults = {
             "request user account"
           ],
           "writable": true
+        },
+        {
+          "name": "accountAc",
+          "docs": [
+            "AccountAccessControlState account"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault_common.ac",
+                "account": "vaultCommonState"
+              },
+              {
+                "kind": "account",
+                "path": "userAccount"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
         },
         {
           "name": "requestRedeemer",
@@ -1365,6 +1507,77 @@ export type MidasVaults = {
             "request user account"
           ],
           "writable": true
+        },
+        {
+          "name": "accountAc",
+          "docs": [
+            "AccountAccessControlState account"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault_common.ac",
+                "account": "vaultCommonState"
+              },
+              {
+                "kind": "account",
+                "path": "userAccount"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
         },
         {
           "name": "vaultCommon",
@@ -6121,6 +6334,77 @@ export type MidasVaults = {
           "writable": true
         },
         {
+          "name": "accountAc",
+          "docs": [
+            "AccountAccessControlState account"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault_common.ac",
+                "account": "vaultCommonState"
+              },
+              {
+                "kind": "account",
+                "path": "userAccount"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
+        },
+        {
           "name": "vaultCommon",
           "docs": [
             "Vault common state account"
@@ -6542,6 +6826,77 @@ export type MidasVaults = {
           "writable": true
         },
         {
+          "name": "accountAc",
+          "docs": [
+            "AccountAccessControlState account"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault_common.ac",
+                "account": "vaultCommonState"
+              },
+              {
+                "kind": "account",
+                "path": "userAccount"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
+        },
+        {
           "name": "vaultCommon",
           "docs": [
             "Vault common state account"
@@ -6949,6 +7304,77 @@ export type MidasVaults = {
             "request user account"
           ],
           "writable": true
+        },
+        {
+          "name": "accountAc",
+          "docs": [
+            "AccountAccessControlState account"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault_common.ac",
+                "account": "vaultCommonState"
+              },
+              {
+                "kind": "account",
+                "path": "userAccount"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
         },
         {
           "name": "requestRedeemer",
@@ -7444,6 +7870,77 @@ export type MidasVaults = {
             "request user account"
           ],
           "writable": true
+        },
+        {
+          "name": "accountAc",
+          "docs": [
+            "AccountAccessControlState account"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault_common.ac",
+                "account": "vaultCommonState"
+              },
+              {
+                "kind": "account",
+                "path": "userAccount"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
         },
         {
           "name": "requestRedeemer",
@@ -10307,9 +10804,6 @@ export type MidasVaults = {
           },
           {
             "name": "chainlink"
-          },
-          {
-            "name": "manualGrowth"
           }
         ]
       }

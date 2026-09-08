@@ -49,7 +49,6 @@ pub struct UpdateFeed<'info> {
 /// - PullFeedAccountData (Switchboard)
 /// - Chainlink OCR2 (Chainlink)
 /// - ManualFeedState (Manual)
-/// - ManualFeedGrowthState (ManualGrowth)
 ///
 /// - `mode` - type of underlying feed
 /// - `min_price` - min_price that feed can return. Should be lower than `max_price`
