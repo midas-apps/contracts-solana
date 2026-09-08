@@ -13,18 +13,20 @@ import { getDataFeedProgram } from '../../deploy/dataFeed';
 import { getTokenAddresses } from '../../utils/addressQueries';
 import { getMtoken, getNetwork, getOptionalArg } from '../../utils/argumentParser';
 
+// Manual feeds always store prices with 8 decimals. The on-chain program
+// normalizes to base-9 using the feed's own `decimals`, so the human-readable
+// price must be scaled by this value before submitting.
+const MANUAL_FEED_DECIMALS = 8;
+
 async function main(provider: AnchorProvider, payer: Wallet) {
   const mtoken = getMtoken();
   const network = getNetwork();
   const priceArg = getOptionalArg('price');
-  const decimalsArg = getOptionalArg('decimals');
+  // When true, bypasses the on-chain max-answer-deviation safety check.
+  const isSafe = getOptionalArg('is-safe') === 'true';
 
-  if (!priceArg && !decimalsArg) {
-    throw createUserError('At least one of --price or --decimals is required', [
-      'Example: --price 1.05',
-      'Example: --decimals 9',
-      'Example: --price 1.05 --decimals 9',
-    ]);
+  if (!priceArg) {
+    throw createUserError('--price is required', ['Example: --price 1.05']);
   }
 
   console.log(`\n🔄 Updating manual feed price for ${mtoken} on ${network}`);
@@ -40,6 +42,12 @@ async function main(provider: AnchorProvider, payer: Wallet) {
   const feedProgram = getDataFeedProgram(provider);
   const state = await fetchDataFeedState(feedProgram, tokenAddrs.mTokenDataFeed);
 
+  if (!state) {
+    throw createUserError(`FeedState not found at ${tokenAddrs.mTokenDataFeed}`, [
+      'The FeedState account does not exist on-chain',
+    ]);
+  }
+
   // Check if feed is manual mode
   if (!('manual' in state.mode)) {
     throw createUserError('This feed is not in manual mode', [
@@ -48,20 +56,13 @@ async function main(provider: AnchorProvider, payer: Wallet) {
     ]);
   }
 
-  // Parse arguments
-  const price = priceArg ? parseFloat(priceArg) : null;
-  const decimals = decimalsArg ? parseInt(decimalsArg) : null;
-
-  if (price !== null && (isNaN(price) || price < 0)) {
+  // Parse price
+  const price = parseFloat(priceArg);
+  if (isNaN(price) || price < 0) {
     throw createUserError('Invalid price value', ['Price must be a positive number']);
   }
 
-  if (decimals !== null && (isNaN(decimals) || decimals < 0 || decimals > 18)) {
-    throw createUserError('Invalid decimals value', ['Decimals must be between 0 and 18']);
-  }
-
-  // Convert price to base-9 format if provided
-  const priceBase9 = price !== null ? toBN(BigInt(Math.round(price * 1e9))) : null;
+  const priceRaw = toBN(BigInt(Math.round(price * 10 ** MANUAL_FEED_DECIMALS)));
 
   // Get manual feed PDA
   const manualFeedPda = getManualFeedStatePda(tokenAddrs.mTokenDataFeed);
@@ -69,16 +70,12 @@ async function main(provider: AnchorProvider, payer: Wallet) {
   console.log('\n📋 Update Details:');
   console.log(`   Data Feed: ${tokenAddrs.mTokenDataFeed.toString()}`);
   console.log(`   Manual Feed PDA: ${manualFeedPda.toString()}`);
-  if (price !== null) {
-    console.log(`   New Price: $${price} (raw: ${priceBase9?.toString()})`);
-  }
-  if (decimals !== null) {
-    console.log(`   New Decimals: ${decimals}`);
-  }
+  console.log(`   New Price: $${price} (raw: ${priceRaw.toString()})`);
+  console.log(`   Decimals: ${MANUAL_FEED_DECIMALS}`);
 
   const tx = new Transaction().add(
     await feedProgram.methods
-      .updateManualFeed(priceBase9, decimals)
+      .updateManualFeedPrice(priceRaw, isSafe)
       .accountsPartial({
         authority: payer.publicKey,
         manualFeed: manualFeedPda,
@@ -87,14 +84,14 @@ async function main(provider: AnchorProvider, payer: Wallet) {
         authorityAcRole: getAccountAcRoleStatePda(
           state.acRole,
           payer.publicKey,
-          DATA_FEED_AC_ROLES.FEED_ADMIN,
+          DATA_FEED_AC_ROLES.PRICE_UPDATER,
         ),
       })
       .instruction(),
   );
 
   const txResult = await sendAndWaitForCustomSolanaTxSign(provider, tx, [], {
-    action: 'update-feed-ptoken',
+    action: 'update-feed-mtoken',
     comment: `Update manual feed price for ${mtoken}`,
     mToken: mtoken,
     waitForTx: false,
@@ -113,4 +110,5 @@ async function main(provider: AnchorProvider, payer: Wallet) {
 }
 
 const network = getNetwork();
-executeNetworkScript(network, main, 'update-feed-ptoken');
+const mtoken = getMtoken();
+executeNetworkScript(network, main, 'update-feed-mtoken', mtoken);

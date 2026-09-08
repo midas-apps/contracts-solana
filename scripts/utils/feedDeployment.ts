@@ -18,6 +18,8 @@ export interface DeployFeedParams {
   network: string;
   acRole: PublicKey;
   dataFeedConfig: DataFeedConfig;
+  isPaymentToken?: boolean;
+  existingDataFeed?: PublicKey;
 }
 
 export interface DeployFeedResult {
@@ -31,11 +33,15 @@ export async function deployFeedFromConfig({
   network,
   acRole,
   dataFeedConfig,
+  existingDataFeed,
+  isPaymentToken,
 }: DeployFeedParams): Promise<DeployFeedResult> {
   const mode = dataFeedConfig.mode;
 
   const feedConfig = {
     acRole,
+    isPaymentToken: !!isPaymentToken,
+    existingDataFeed,
     minPrice: BigInt(Math.floor(parseFloat(dataFeedConfig.minPrice) * PRICE_MULTIPLIER)),
     maxPrice: BigInt(Math.floor(parseFloat(dataFeedConfig.maxPrice) * PRICE_MULTIPLIER)),
     maxStaleness: dataFeedConfig.maxStaleness,

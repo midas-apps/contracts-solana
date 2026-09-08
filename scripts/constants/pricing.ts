@@ -23,7 +23,7 @@ export const MANUAL_PRICE_DECIMALS = 8;
  * Multiplier for converting decimal price strings to base-9 integers
  * Used when converting config prices (e.g., "1.5") to on-chain format
  */
-export const PRICE_MULTIPLIER = 10 ** PRICE_DECIMALS;
+export const PRICE_MULTIPLIER = 10 ** 9;
 
 /**
  * Multiplier for converting decimal manual price strings to base-8 integers

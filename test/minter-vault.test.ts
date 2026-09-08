@@ -724,6 +724,16 @@ describe('minter-vault', () => {
       );
     });
 
+    it('when mint_request function is paused', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updatePauseInx(fixture, {
+        fnId: VaultActionIds.MINT_REQUEST,
+      });
+      await mintInstant(fixture, {}, {});
+    });
+
     it('should fail: when allowance is insufficient', async () => {
       const fixture = await vaultsFixture();
 
@@ -1420,6 +1430,16 @@ describe('minter-vault', () => {
           revertedWith: VaultError.VaultPaused,
         },
       );
+    });
+
+    it('when mint_instant function is paused', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+      await updatePauseInx(fixture, {
+        fnId: VaultActionIds.MINT_INSTANT,
+      });
+      await mintRequest(fixture, {}, {});
     });
 
     it('should fail: when allowance is insufficient', async () => {

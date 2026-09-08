@@ -25,7 +25,20 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
 
   const config = loadTokenConfig(mtoken, network);
 
-  const globalAc = getAcAddress(network);
+  const tokenAddrs = getTokenAddresses(network, mtoken);
+  if (!tokenAddrs) {
+    throw createUserError(`Token addresses not found for ${mtoken} on ${network}`, [
+      `Run: yarn deploy:token-ac-role --mtoken ${mtoken} --network ${network}`,
+    ]);
+  }
+
+  if (tokenAddrs.acGlobalOverride && !tokenAddrs.acGlobalOverride.ac) {
+    throw createUserError(`AC Global Override config is not complete for ${mtoken} on ${network}`, [
+      `Run: yarn deploy:token-ac:global-override --mtoken ${mtoken} --network ${network}`,
+    ]);
+  }
+
+  const globalAc = tokenAddrs.acGlobalOverride?.ac ?? getAcAddress(network);
   if (!globalAc) {
     throw createUserError(`AC not found for network ${network}`, [
       `Run: yarn deploy:global-ac-role --network ${network} && yarn deploy:global-ac --network ${network}`,
@@ -39,18 +52,11 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
     ]);
   }
 
-  const acRoleGlobal = getAcRoleGlobalAddress(network);
+  const acRoleGlobal = tokenAddrs.acGlobalOverride?.acRole ?? getAcRoleGlobalAddress(network);
   if (acRoleGlobal && tokenAcRole.equals(acRoleGlobal)) {
     throw createUserError(`Token AC Role cannot match global AC Role`, [
       `Token AC Role: ${tokenAcRole.toString()}`,
       `Global AC Role: ${acRoleGlobal.toString()}`,
-    ]);
-  }
-
-  const tokenAddrs = getTokenAddresses(network, mtoken);
-  if (!tokenAddrs) {
-    throw createUserError(`Token addresses not found for ${mtoken} on ${network}`, [
-      `Run: yarn deploy:token-ac-role --mtoken ${mtoken} --network ${network}`,
     ]);
   }
 

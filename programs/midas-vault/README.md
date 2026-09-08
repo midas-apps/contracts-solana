@@ -1,6 +1,6 @@
 # Midas Vaults program
 
-Implementation of EVM`s version of `DepositVault` and `RedemptionVault`
+Implementation of EVM`s version of `DepositVault`and`RedemptionVault`
 
 ## Structure of program
 

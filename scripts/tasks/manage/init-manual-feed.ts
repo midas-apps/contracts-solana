@@ -4,6 +4,7 @@ import { Transaction } from '@solana/web3.js';
 import { createUserError } from '@/common/errorHandler';
 import { executeNetworkScript } from '@/common/scriptRunner';
 import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
+import { MANUAL_PRICE_DECIMALS } from '@/scripts/constants/pricing';
 import { DATA_FEED_AC_ROLES } from '@/test/constants/data-feed.constants';
 import { getAccountAcRoleStatePda } from '@/test/helpers/ac.helpers';
 import { fromBN, toBN } from '@/test/helpers/common.helpers';
@@ -25,13 +26,14 @@ import { getMtoken, getNetwork, getOptionalArg } from '../../utils/argumentParse
  * - The ManualFeedState PDA doesn't exist but FeedState does
  *
  * Usage:
- *   yarn tsx scripts/tasks/manage/init-manual-feed.ts --mtoken mFONE --network mainnet --price 1.05 --decimals 9
+ *   yarn tsx scripts/tasks/manage/init-manual-feed.ts --mtoken solmFONE --network mainnet --price 1.05
  */
-async function main(provider: AnchorProvider, payer: Wallet) {
+// Manual feeds always store prices with 8 decimals (the on-chain program
+// normalizes to base-9 using this value, so it must stay fixed across deploys).
+async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const mtoken = getMtoken();
-  const network = getNetwork();
   const priceArg = getOptionalArg('price');
-  const decimalsArg = getOptionalArg('decimals');
+  const maxAnswerDeviationArg = getOptionalArg('max-answer-deviation');
 
   console.log(`\n🔧 Initializing ManualFeedState for ${mtoken} on ${network}`);
 
@@ -82,19 +84,7 @@ async function main(provider: AnchorProvider, payer: Wallet) {
     throw createUserError('--price is required', ['Example: --price 1.05']);
   }
 
-  // Parse decimals (required)
-  if (!decimalsArg) {
-    throw createUserError('--decimals is required', ['Example: --decimals 9']);
-  }
-  const decimals = parseInt(decimalsArg, 10);
-  if (isNaN(decimals) || decimals < 0 || decimals > 18) {
-    throw createUserError('Invalid --decimals value', [
-      'Must be an integer between 0 and 18',
-      `Provided: ${decimalsArg}`,
-    ]);
-  }
-
-  // Calculate price with the specified decimals
+  const decimals = MANUAL_PRICE_DECIMALS;
   const priceMultiplier = 10 ** decimals;
   const initialPrice = BigInt(Math.round(parseFloat(priceArg) * priceMultiplier));
 
@@ -117,7 +107,7 @@ async function main(provider: AnchorProvider, payer: Wallet) {
 
   const initManualFeedTx = new Transaction().add(
     await feedProgram.methods
-      .newManualFeed(toBN(initialPrice), decimals)
+      .newManualFeed(toBN(initialPrice), decimals, toBN(maxAnswerDeviationArg ?? 0))
       .accountsPartial({
         authority: payer.publicKey,
         manualFeed: manualFeedPda,
@@ -153,4 +143,4 @@ const network = getNetwork();
 const mtoken = getOptionalArg('mtoken') || getOptionalArg('m');
 executeNetworkScript(network, main, 'update-feed-mtoken', mtoken);
 
-// Usage: yarn tsx scripts/tasks/manage/init-manual-feed.ts --mtoken mFONE --network mainnet --price 1.04757758 --decimals 8
+// Usage: yarn tsx scripts/tasks/manage/init-manual-feed.ts --mtoken solmFONE --network mainnet --price 1.04757758

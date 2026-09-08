@@ -2,13 +2,13 @@ import { PaymentToken } from '@/common/tokenTypes';
 import { TokenConfigWithNetworks } from '@/scripts/configs/types';
 import { UNLIMITED } from '@/scripts/constants/pricing';
 
-export const mFONEConfig: TokenConfigWithNetworks = {
+export const solmFONEConfig: TokenConfigWithNetworks = {
   // Shared configuration (same across all networks)
   metadata: {
     name: 'Midas Fasanara ONE',
-    symbol: 'mF-ONE',
+    symbol: 'solmFONE',
     decimals: 9,
-    uri: 'https://raw.githubusercontent.com/midas-apps/midas-assets/refs/heads/main/solana/mfone-metadata',
+    uri: 'https://raw.githubusercontent.com/midas-apps/midas-assets/refs/heads/main/solana/solmfone-metadata',
   },
   tokenAuthority: {
     seed: 'mfone-token-authority',

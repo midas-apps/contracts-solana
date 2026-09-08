@@ -1,10 +1,16 @@
+import { Wallet } from '@coral-xyz/anchor';
 import { Keypair, PublicKey, Transaction } from '@solana/web3.js';
 
+import { createCustomSignerProvider } from '@/common/scriptRunner';
 import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 import { MANUAL_PRICE_DECIMALS } from '@/scripts/constants/pricing';
 import { AC_ROLES } from '@/test/constants/ac.constants';
 import { DATA_FEED_AC_ROLES } from '@/test/constants/data-feed.constants';
-import { getAccountAcRoleStatePda, acRoleToBuffer } from '@/test/helpers/ac.helpers';
+import {
+  getAccountAcRoleStatePda,
+  acRoleToBuffer,
+  fetchAccountAcRoleState,
+} from '@/test/helpers/ac.helpers';
 import { toBN } from '@/test/helpers/common.helpers';
 import {
   getManualFeedGrowthStatePda,
@@ -24,6 +30,8 @@ export interface DeployManualFeedParams {
   underlyingFeed?: PublicKey; // Optional - if not provided, will create manual feed
   maxAnswerDeviation: bigint;
   initialPrice?: bigint;
+  isPaymentToken?: boolean;
+  existingDataFeed?: PublicKey;
 }
 
 export interface DeployManualFeedGrowthParams extends DeployManualFeedParams {
@@ -43,7 +51,7 @@ export async function deployManualFeed(
   paramsCommon: DeployDataFeedBaseConfig,
   params: DeployManualFeedParams,
 ): Promise<PublicKey> {
-  const { provider, payer } = common;
+  let { provider, payer } = common;
 
   // If underlyingFeed is missing, create manual feed
   if (!params.underlyingFeed) {
@@ -51,7 +59,9 @@ export async function deployManualFeed(
     const baseFeedKeypair = Keypair.generate();
     // Calculate the manual feed PDA that will be created later
     // This is safe because PDAs are deterministic
-    const manualFeedPda = getManualFeedStatePda(baseFeedKeypair.publicKey);
+    const manualFeedPda = getManualFeedStatePda(
+      params.existingDataFeed ?? baseFeedKeypair.publicKey,
+    );
 
     const tempConfig: DeployDataFeedConfig = {
       acRole: paramsCommon.acRole,
@@ -63,7 +73,21 @@ export async function deployManualFeed(
       feed: baseFeedKeypair,
     };
 
-    const feedPublicKey = await deployDataFeed(common, tempConfig);
+    const feedPublicKey = params.existingDataFeed
+      ? params.existingDataFeed
+      : await deployDataFeed(common, tempConfig);
+
+    let action = 'deployer';
+    let waitForTx = true;
+
+    // if payment token is true - then acRole is global and should be executed from a different wallet
+    if (params.isPaymentToken) {
+      const res = await createCustomSignerProvider(common.network, 'update-feed-ptoken');
+      provider = res.provider;
+      payer = res.payer as Wallet;
+      action = 'update-feed-ptoken';
+      waitForTx = false;
+    }
 
     // Grant FEED_ADMIN role if not already granted
     const acProgram = getAcProgram(provider);
@@ -73,48 +97,59 @@ export async function deployManualFeed(
       DATA_FEED_AC_ROLES.FEED_ADMIN,
     );
 
-    // Attempt to grant FEED_ADMIN role (required for manual feed operations)
-    const grantRoleTx = new Transaction().add(
-      await acProgram.methods
-        .grantRole(acRoleToBuffer(DATA_FEED_AC_ROLES.FEED_ADMIN))
-        .accountsPartial({
-          account: payer.publicKey,
-          acRole: paramsCommon.acRole,
-          authority: payer.publicKey,
-          authorityAcAdminRole: getAccountAcRoleStatePda(
-            paramsCommon.acRole,
-            payer.publicKey,
-            AC_ROLES.ADMIN,
-          ),
-          accountAcRole: authorityAcRolePda,
-        })
-        .instruction(),
-    );
+    const feedAdminRole = await fetchAccountAcRoleState(acProgram, authorityAcRolePda, true);
 
-    try {
-      const roleResult = await sendAndWaitForCustomSolanaTxSign(provider, grantRoleTx, [], {
-        action: 'deployer',
-        comment: 'Grant FEED_ADMIN role for manual feed',
-        waitForTx: true,
-      });
-      if (roleResult.signature) {
-        console.log(`Transaction signature: ${roleResult.signature}`);
-      }
-      console.log('✓ FEED_ADMIN role granted');
-    } catch (error) {
-      // Check if error is "role already exists" - if so, continue
-      const errorMsg = error?.toString() || '';
-      if (errorMsg.includes('already') || errorMsg.includes('AlreadyGranted')) {
-        console.log('ℹ FEED_ADMIN role already exists, continuing');
-      } else {
-        throw error;
+    if (!feedAdminRole) {
+      // Attempt to grant FEED_ADMIN role (required for manual feed operations)
+      const grantRoleTx = new Transaction().add(
+        await acProgram.methods
+          .grantRole(acRoleToBuffer(DATA_FEED_AC_ROLES.FEED_ADMIN))
+          .accountsPartial({
+            account: payer.publicKey,
+            acRole: paramsCommon.acRole,
+            authority: payer.publicKey,
+            authorityAcAdminRole: getAccountAcRoleStatePda(
+              paramsCommon.acRole,
+              payer.publicKey,
+              AC_ROLES.ADMIN,
+            ),
+            accountAcRole: authorityAcRolePda,
+          })
+          .instruction(),
+      );
+
+      try {
+        const roleResult = await sendAndWaitForCustomSolanaTxSign(provider, grantRoleTx, [], {
+          action,
+          comment: 'Grant FEED_ADMIN role for manual feed',
+          waitForTx,
+          pollingIntervalMs: waitForTx ? 1000 : undefined,
+          timeoutDurationMs: waitForTx ? 120 * 1000 : undefined,
+        });
+        if (roleResult.signature) {
+          console.log(`Transaction signature: ${roleResult.signature}`);
+        }
+        console.log('✓ FEED_ADMIN role granted');
+      } catch (error) {
+        // Check if error is "role already exists" - if so, continue
+        const errorMsg = error?.toString() || '';
+        if (errorMsg.includes('already') || errorMsg.includes('AlreadyGranted')) {
+          console.log('ℹ FEED_ADMIN role already exists, continuing');
+        } else {
+          throw error;
+        }
       }
     }
-
     // Step 2: Deploy manual feed associated with base feed
     const dataFeedProgram = getDataFeedProgram(provider);
 
+    if (params.existingDataFeed) {
+      console.log(`✓ Using existing data feed: ${params.existingDataFeed.toString()}`);
+    }
+
     const initialPrice = params.initialPrice ?? paramsCommon.minPrice;
+    console.log(`Initial price: ${initialPrice}`);
+
     const manualFeedTx = new Transaction().add(
       await dataFeedProgram.methods
         .newManualFeed(toBN(initialPrice), MANUAL_PRICE_DECIMALS, toBN(params.maxAnswerDeviation))
@@ -129,15 +164,17 @@ export async function deployManualFeed(
     );
 
     const manualResult = await sendAndWaitForCustomSolanaTxSign(provider, manualFeedTx, [], {
-      action: 'deployer',
+      action,
       comment: 'Deploy Manual Feed',
-      waitForTx: true,
-      pollingIntervalMs: 1000,
-      timeoutDurationMs: 120 * 1000,
+      waitForTx,
+      pollingIntervalMs: waitForTx ? 1000 : undefined,
+      timeoutDurationMs: waitForTx ? 120 * 1000 : undefined,
     });
 
     if (manualResult.signature) {
       console.log(`Transaction signature: ${manualResult.signature}`);
+    } else {
+      console.log(`Transaction created | TX ID: ${manualResult.txId}`);
     }
 
     return feedPublicKey;
