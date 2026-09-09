@@ -101,10 +101,12 @@ function generateNetworkAddressesCode(networkAddrs: NetworkAddresses, indent = '
     parts.push(`ac: ${formatPublicKey(networkAddrs.ac)}`);
   }
   if (networkAddrs.timelock) {
-    parts.push(`timelock: ${formatObject([
-      `multisig: ${formatPublicKey(networkAddrs.timelock.multisig)}`,
-      `vault: ${formatPublicKey(networkAddrs.timelock.vault)}`,
-    ])}`);
+    parts.push(
+      `timelock: ${formatObject([
+        `multisig: ${formatPublicKey(networkAddrs.timelock.multisig)}`,
+        `vault: ${formatPublicKey(networkAddrs.timelock.vault)}`,
+      ])}`,
+    );
   }
 
   if (networkAddrs.tokens && Object.keys(networkAddrs.tokens).length > 0) {

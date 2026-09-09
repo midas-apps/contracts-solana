@@ -9,9 +9,6 @@ export const solmHYPERConfig: TokenConfigWithNetworks = {
     decimals: 9,
     uri: 'https://raw.githubusercontent.com/midas-apps/midas-assets/refs/heads/main/solana/solmhyper-metadata',
   },
-  tokenAuthority: {
-    seed: 'mhyper-token-authority',
-  },
   networks: {
     mainnet: {
       dataFeed: {

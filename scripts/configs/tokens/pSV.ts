@@ -10,9 +10,6 @@ export const pSVConfig: TokenConfigWithNetworks = {
     decimals: 9,
     uri: 'https://raw.githubusercontent.com/midas-apps/midas-assets/refs/heads/main/solana/psv-metadata',
   },
-  tokenAuthority: {
-    seed: 'psv-token-authority',
-  },
   // Network-specific configurations
   networks: {
     mainnet: {
