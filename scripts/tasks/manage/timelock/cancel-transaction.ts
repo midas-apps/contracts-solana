@@ -1,14 +1,13 @@
 import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
+import { Transaction } from '@solana/web3.js';
+import * as multisig from '@sqds/multisig';
 
 import { createUserError } from '@/common/errorHandler';
 import { executeNetworkScript } from '@/common/scriptRunner';
-
+import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
+import { getMultisigInfo, wrapTxWithSquadsSigner } from '@/scripts/deploy/timelock';
 import { getTimelockAddress } from '@/scripts/utils/addressQueries';
 import { getMultisigTxIndex, getNetwork } from '@/scripts/utils/argumentParser';
-import { Transaction } from '@solana/web3.js';
-import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
-import * as multisig from '@sqds/multisig';
-import { getMultisigInfo, wrapTxWithSquadsSigner } from '@/scripts/deploy/timelock';
 
 async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const multisigTxIndex = getMultisigTxIndex();

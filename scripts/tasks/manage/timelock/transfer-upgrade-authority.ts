@@ -1,20 +1,18 @@
 import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
+import { PublicKey, Transaction } from '@solana/web3.js';
+import { LOADER_V3_PROGRAM_ADDRESS } from '@solana-program/loader-v3';
 
 import { createUserError } from '@/common/errorHandler';
+import { programAddresses } from '@/common/programs';
 import { executeNetworkScript } from '@/common/scriptRunner';
-
+import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
+import { sendTxWithTimelock } from '@/scripts/deploy/timelock';
 import { getTimelockAddress } from '@/scripts/utils/addressQueries';
 import { getAuthority, getNetwork, getProgram } from '@/scripts/utils/argumentParser';
-import { PublicKey, Transaction } from '@solana/web3.js';
-import { programAddresses } from '@/common/programs';
-import { LOADER_V3_PROGRAM_ADDRESS } from '@solana-program/loader-v3';
-import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 import {
   getSetAuthorityInstructionIx,
   getUpgradeAuthority,
 } from '@/scripts/utils/loaderProgramHelpers';
-import { sendTxWithTimelock } from '@/scripts/deploy/timelock';
-import * as multisig from '@sqds/multisig';
 
 async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   let newAuthority = getAuthority(false);

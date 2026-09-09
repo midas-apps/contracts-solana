@@ -1,24 +1,17 @@
-import { instructions } from '@sqds/multisig';
-import { SquadsFixtureReturnType } from '../fixture/squads.fixture';
 import {
   AddressLookupTableAccount,
   Keypair,
-  LAMPORTS_PER_SOL,
   PublicKey,
-  SystemProgram,
   Transaction,
   TransactionInstruction,
   TransactionMessage,
   VersionedTransaction,
 } from '@solana/web3.js';
-import {
-  expectTxNotReverted,
-  expectTxReverted,
-  OptionalCommonParams,
-  timeTravel,
-} from '../helpers/common.helpers';
 import * as multisig from '@sqds/multisig';
+
 import { DAY } from '../constants/common.constants';
+import { SquadsFixtureReturnType } from '../fixture/squads.fixture';
+import { expectTxNotReverted, expectTxReverted, timeTravel } from '../helpers/common.helpers';
 
 const wrapTxWithSquadsSigner = async (
   fixture: SquadsFixtureReturnType,
@@ -119,9 +112,7 @@ export const sendSquadsTxWithTimelock = async (
 ) => {
   const {
     multisigPda: defaultMultisigPda,
-    multisigWithSquadsSignerPda,
     multisigSignerPda,
-    getMutlisigData,
     authority,
     squadsConnection,
   } = fixture;
@@ -304,7 +295,6 @@ export const sendSquadsConfigurationTxWithTimelock = async (
   const {
     multisigPda: defaultMultisigPda,
     multisigSignerPda,
-    getMutlisigData,
     authority,
     squadsConnection,
   } = fixture;
@@ -317,12 +307,6 @@ export const sendSquadsConfigurationTxWithTimelock = async (
   const squadsSigner = multisigPda.equals(defaultMultisigPda) ? false : true;
 
   const member = squadsSigner ? multisigSignerPda : authority.publicKey;
-
-  // Derive the PDA of the Squads Vault
-  const [vaultPda] = multisig.getVaultPda({
-    multisigPda: multisigPda as any,
-    index: 0,
-  });
 
   // Get deserialized multisig account info
   const multisigInfo = await multisig.accounts.Multisig.fromAccountAddress(

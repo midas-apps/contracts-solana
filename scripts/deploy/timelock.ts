@@ -10,12 +10,11 @@ import {
   TransactionMessage,
   VersionedTransaction,
 } from '@solana/web3.js';
+import * as multisig from '@sqds/multisig';
 
 import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 
 import { CommonParams } from './dataFeed';
-import * as multisig from '@sqds/multisig';
-import { Wallet } from '@coral-xyz/anchor';
 
 export interface DeployTimelockConfig {
   delay: number;

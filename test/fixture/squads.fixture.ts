@@ -1,17 +1,10 @@
-import { Program } from '@coral-xyz/anchor';
 import { Keypair, PublicKey, Transaction } from '@solana/web3.js';
-
-import { AccessControl } from 'target/types/access_control';
-
-import ACCESS_CONTROL_IDL from '../../target/idl/access_control.json' with { type: 'json' };
-import { AC_ROLES } from '../constants/ac.constants';
-import { acRoleToBuffer, generateAcRoleAccount } from '../helpers/ac.helpers';
-import { initBankrun, processTransaction } from '../helpers/common.helpers';
-import { generateAcAccount } from '../helpers/vaults.helpers';
-import { ProgramTestContext } from 'solana-bankrun';
-import { DAY } from '../constants/common.constants';
 import * as multisig from '@sqds/multisig';
+import { ProgramTestContext } from 'solana-bankrun';
+
+import { DAY } from '../constants/common.constants';
 import { SQUADS_PROGRAM_ID } from '../constants/squads.constant';
+import { initBankrun, processTransaction } from '../helpers/common.helpers';
 
 const createMultisig = async (
   context: ProgramTestContext,

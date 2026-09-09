@@ -1,15 +1,14 @@
 import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
+import { PublicKey } from '@solana/web3.js';
 
 import { createUserError } from '@/common/errorHandler';
 import { executeNetworkScript } from '@/common/scriptRunner';
-
+import { loadNetworkConfig } from '@/scripts/configs/loadNetworkConfig';
+import { deployTimelock, DeployTimelockConfig } from '@/scripts/deploy/timelock';
 import { getTimelockAddress } from '@/scripts/utils/addressQueries';
 import { registerGlobalTimelock } from '@/scripts/utils/addressRegistry';
 import { saveAddressesToFile } from '@/scripts/utils/addressStorage';
 import { getNetwork } from '@/scripts/utils/argumentParser';
-import { loadNetworkConfig } from '@/scripts/configs/loadNetworkConfig';
-import { deployTimelock, DeployTimelockConfig } from '@/scripts/deploy/timelock';
-import { PublicKey } from '@solana/web3.js';
 
 async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   console.log(`Deploying Timelock for: ${network}, payer: ${payer.publicKey.toBase58()}`);

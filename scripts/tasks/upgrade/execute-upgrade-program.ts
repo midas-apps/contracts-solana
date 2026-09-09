@@ -1,19 +1,17 @@
 import { AnchorProvider, Wallet } from '@coral-xyz/anchor';
 
 import { createUserError } from '@/common/errorHandler';
-import { executeNetworkScript } from '@/common/scriptRunner';
-
-import { getTimelockAddress } from '@/scripts/utils/addressQueries';
-import { getMultisigTxIndex, getNetwork } from '@/scripts/utils/argumentParser';
 import { programAddresses } from '@/common/programs';
+import { executeNetworkScript } from '@/common/scriptRunner';
 import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 import {
   getMultisigInfo,
   getTimelockTransaction,
   sendTxWithTimelock,
 } from '@/scripts/deploy/timelock';
+import { getTimelockAddress } from '@/scripts/utils/addressQueries';
+import { getMultisigTxIndex, getNetwork } from '@/scripts/utils/argumentParser';
 import { getUpgradeAuthority } from '@/scripts/utils/loaderProgramHelpers';
-import * as multisig from '@sqds/multisig';
 
 async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const multisigTxIndex = getMultisigTxIndex();

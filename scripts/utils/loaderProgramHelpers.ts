@@ -1,4 +1,5 @@
-import { createUserError } from '@/common/errorHandler';
+import { AccountRole, Address, TransactionSigner } from '@solana/kit';
+import { Connection, PublicKey, TransactionInstruction } from '@solana/web3.js';
 import {
   getCloseInstruction,
   getExtendProgramInstruction,
@@ -6,8 +7,8 @@ import {
   getUpgradeInstruction,
   LOADER_V3_PROGRAM_ADDRESS,
 } from '@solana-program/loader-v3';
-import { AccountRole, Address, TransactionSigner } from '@solana/kit';
-import { Connection, PublicKey, TransactionInstruction } from '@solana/web3.js';
+
+import { createUserError } from '@/common/errorHandler';
 
 export const getUpgradeAuthority = async (
   connection: Connection,

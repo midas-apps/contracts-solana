@@ -1,16 +1,17 @@
 import { LAMPORTS_PER_SOL, SystemProgram, Transaction } from '@solana/web3.js';
+import * as multisig from '@sqds/multisig';
+
+import { AC_ROLES } from './constants/ac.constants';
 import { DAY } from './constants/common.constants';
+import { acFixture } from './fixture/ac.fixture';
 import { squadsFixture } from './fixture/squads.fixture';
+import { acRoleToBuffer } from './helpers/ac.helpers';
+import { processTransaction } from './helpers/common.helpers';
+import { grantRole } from './testers/ac.testers';
 import {
   sendSquadsConfigurationTxWithTimelock,
   sendSquadsTxWithTimelock,
 } from './testers/squads.testers';
-import * as multisig from '@sqds/multisig';
-import { processTransaction } from './helpers/common.helpers';
-import { acFixture } from './fixture/ac.fixture';
-import { grantRole } from './testers/ac.testers';
-import { AC_ROLES } from './constants/ac.constants';
-import { acRoleToBuffer } from './helpers/ac.helpers';
 
 describe('Squads multisig', () => {
   describe('initializing', () => {
@@ -29,7 +30,7 @@ describe('Squads multisig', () => {
       it('change the timelock configuration when timelock is passed', async () => {
         const fixture = await squadsFixture();
 
-        const { multisigPda, getMutlisigData, authority, regularAccounts, context } = fixture;
+        const { multisigPda, getMutlisigData, authority, context } = fixture;
 
         const [vaultPda] = multisig.getVaultPda({
           multisigPda: multisigPda as any,
@@ -99,7 +100,7 @@ describe('Squads multisig', () => {
       it('should fail: change the timelock configuration when timelock is not passed', async () => {
         const fixture = await squadsFixture();
 
-        const { multisigPda, getMutlisigData, authority, regularAccounts, context } = fixture;
+        const { multisigPda, authority, context } = fixture;
 
         const [vaultPda] = multisig.getVaultPda({
           multisigPda: multisigPda as any,
@@ -138,7 +139,7 @@ describe('Squads multisig', () => {
       it('should fail: change the members configuration when timelock is not passed', async () => {
         const fixture = await squadsFixture();
 
-        const { multisigPda, getMutlisigData, authority, regularAccounts, context } = fixture;
+        const { multisigPda, authority, regularAccounts, context } = fixture;
 
         const [vaultPda] = multisig.getVaultPda({
           multisigPda: multisigPda as any,
@@ -181,7 +182,7 @@ describe('Squads multisig', () => {
     describe('vault transactions', () => {
       it('regular sol transfer with timelock', async () => {
         const fixture = await squadsFixture();
-        const { multisigPda, getMutlisigData, authority, regularAccounts, context } = fixture;
+        const { multisigPda, authority, regularAccounts, context } = fixture;
 
         const [vaultPda] = multisig.getVaultPda({
           multisigPda: multisigPda as any,
@@ -217,7 +218,7 @@ describe('Squads multisig', () => {
         const fixture = await squadsFixture();
         const fixtureAc = await acFixture(fixture);
 
-        const { multisigPda, getMutlisigData, authority, regularAccounts, context } = fixture;
+        const { multisigPda, authority, regularAccounts, context } = fixture;
 
         const [vaultPda] = multisig.getVaultPda({
           multisigPda: multisigPda as any,
@@ -260,7 +261,7 @@ describe('Squads multisig', () => {
 
       it('should fail: sol transfer but timelock is not passed', async () => {
         const fixture = await squadsFixture();
-        const { multisigPda, getMutlisigData, authority, regularAccounts, context } = fixture;
+        const { multisigPda, authority, regularAccounts, context } = fixture;
 
         const [vaultPda] = multisig.getVaultPda({
           multisigPda: multisigPda as any,
@@ -301,7 +302,7 @@ describe('Squads multisig', () => {
 
       it('should fail: sol transfer create from non-member', async () => {
         const fixture = await squadsFixture();
-        const { multisigPda, getMutlisigData, authority, regularAccounts, context } = fixture;
+        const { multisigPda, authority, regularAccounts, context } = fixture;
 
         const [vaultPda] = multisig.getVaultPda({
           multisigPda: multisigPda as any,
@@ -342,7 +343,8 @@ describe('Squads multisig', () => {
 
       it('should fail: sol transfer execute from non-member', async () => {
         const fixture = await squadsFixture();
-        const { multisigPda, getMutlisigData, authority, regularAccounts, context } = fixture;
+
+        const { multisigPda, authority, regularAccounts, context } = fixture;
 
         const [vaultPda] = multisig.getVaultPda({
           multisigPda: multisigPda as any,
@@ -389,7 +391,6 @@ describe('Squads multisig', () => {
       const {
         multisigWithSquadsSignerPda,
         multisigSignerPda,
-        getMutlisigData,
         authority,
         regularAccounts,
         context,

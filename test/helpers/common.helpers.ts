@@ -1,4 +1,4 @@
-import { Idl, Program, web3 } from '@coral-xyz/anchor';
+import { Idl, Program } from '@coral-xyz/anchor';
 import * as anchor from '@coral-xyz/anchor';
 import {
   createApproveInstruction,
@@ -27,7 +27,6 @@ import { BankrunProvider } from 'anchor-bankrun';
 import BN from 'bn.js';
 import {
   AddedAccount,
-  AddedProgram,
   BanksTransactionMeta,
   Clock,
   ProgramTestContext,
@@ -60,11 +59,11 @@ export function numToHex(decimalCode: number): string {
   return hexCode;
 }
 
-export type InitBankrunReturnType = {
+export interface InitBankrunReturnType {
   context: ProgramTestContext;
   provider: BankrunProvider;
   accounts: Keypair[];
-};
+}
 
 let bunrunReturnCache: InitBankrunReturnType | null = null;
 
