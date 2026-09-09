@@ -1,7 +1,7 @@
 import { AnchorProvider, Program } from '@coral-xyz/anchor';
 import { PublicKey } from '@solana/web3.js';
 
-import { isAccountNotFoundError } from '@/common/errorHandler';
+import { createUserError, isAccountNotFoundError } from '@/common/errorHandler';
 import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 import { TokenAuthority } from '@/target/types/token_authority';
 import {
@@ -34,9 +34,10 @@ export const deployTokenAuthority = async (
     const existingAuthority =
       await tokenAuthorityProgram.account.tokenAuthorityState.fetch(authority);
     if (!existingAuthority.acRole.equals(acRole)) {
-      console.warn(
-        `⚠️  Token authority already exists with different acRole: ${existingAuthority.acRole.toString()} (expected: ${acRole.toString()}). Reusing existing authority.`,
-      );
+      throw createUserError('Token authority already exists with different acRole', [
+        `Expected acRole: ${acRole.toString()}`,
+        `Found acRole: ${existingAuthority.acRole.toString()}`,
+      ]);
     }
     return authority;
   } catch (error) {

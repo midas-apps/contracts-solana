@@ -92,10 +92,16 @@ export const initBankrun = async (numAccounts = 10, initSlot?: bigint, cacheCont
     });
   }
 
-  const context = await startAnchor('.', [{
-    name: 'external/squads',
-    programId: SQUADS_PROGRAM_ID,
-  }], [...accountsToInject]);
+  const context = await startAnchor(
+    '.',
+    [
+      {
+        name: 'external/squads',
+        programId: SQUADS_PROGRAM_ID,
+      },
+    ],
+    [...accountsToInject],
+  );
 
   if (initSlot) {
     await warpToSlot(context, initSlot);
@@ -548,13 +554,19 @@ export const fetchAccountNullable = async <TReturn>(
     fetch: (account: PublicKey) => Promise<TReturn>;
   },
   allowNull = false,
+  validateError?: (error: unknown) => boolean,
 ) => {
   try {
     return await account.fetch(publicKey);
-  } catch {
+  } catch (e) {
     if (!allowNull) {
       throw new Error('Account state is empty');
     }
+
+    if (validateError && !validateError(e)) {
+      throw e;
+    }
+
     return null;
   }
 };

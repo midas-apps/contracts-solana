@@ -9,9 +9,6 @@ export const mTBILLConfig: TokenConfigWithNetworks = {
     decimals: 9,
     uri: 'https://raw.githubusercontent.com/midas-apps/midas-assets/refs/heads/main/solana/mtbill-metadata',
   },
-  tokenAuthority: {
-    seed: 'mtbill-token-authority',
-  },
   // Network-specific configurations
   networks: {
     devnet: {

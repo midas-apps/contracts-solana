@@ -10,9 +10,6 @@ export const solmFONEConfig: TokenConfigWithNetworks = {
     decimals: 9,
     uri: 'https://raw.githubusercontent.com/midas-apps/midas-assets/refs/heads/main/solana/solmfone-metadata',
   },
-  tokenAuthority: {
-    seed: 'mfone-token-authority',
-  },
   // Network-specific configurations
   networks: {
     mainnet: {
