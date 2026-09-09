@@ -35,12 +35,6 @@ export type TokenAuthority = {
           "signer": true
         },
         {
-          "name": "from",
-          "docs": [
-            "account to burn from"
-          ]
-        },
-        {
           "name": "tokenAuthority",
           "docs": [
             "Token authority PDA"
@@ -177,64 +171,11 @@ export type TokenAuthority = {
           "writable": true
         },
         {
-          "name": "fromAta",
+          "name": "fromTokenAccount",
           "docs": [
-            "ATA of `from` (ThawAccount::from)"
+            "Token account of `from` (Burn::from)"
           ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "from"
-              },
-              {
-                "kind": "account",
-                "path": "tokenProgram"
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
+          "writable": true
         },
         {
           "name": "tokenProgram",
@@ -274,12 +215,6 @@ export type TokenAuthority = {
           ],
           "writable": true,
           "signer": true
-        },
-        {
-          "name": "toFreeze",
-          "docs": [
-            "account to freeze"
-          ]
         },
         {
           "name": "tokenAuthority",
@@ -419,64 +354,11 @@ export type TokenAuthority = {
           "writable": true
         },
         {
-          "name": "toFreezeAta",
+          "name": "toFreezeTokenAccount",
           "docs": [
-            "ATA of `to_to_freeze` (FreezeAccount::account)"
+            "Token account of `to_freeze` (FreezeAccount::account)"
           ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "toFreeze"
-              },
-              {
-                "kind": "account",
-                "path": "tokenProgram"
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
+          "writable": true
         },
         {
           "name": "tokenProgram",
@@ -511,12 +393,6 @@ export type TokenAuthority = {
           ],
           "writable": true,
           "signer": true
-        },
-        {
-          "name": "receiver",
-          "docs": [
-            "receiver of tokens"
-          ]
         },
         {
           "name": "tokenAuthority",
@@ -655,64 +531,11 @@ export type TokenAuthority = {
           "writable": true
         },
         {
-          "name": "receiverAta",
+          "name": "receiverTokenAccount",
           "docs": [
-            "ATA of `receiver` (MintTo::account)"
+            "Token account of `receiver` (MintTo::to)"
           ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "receiver"
-              },
-              {
-                "kind": "account",
-                "path": "tokenProgram"
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
+          "writable": true
         },
         {
           "name": "tokenProgram",
@@ -1009,12 +832,6 @@ export type TokenAuthority = {
           "signer": true
         },
         {
-          "name": "toThaw",
-          "docs": [
-            "account to thaw"
-          ]
-        },
-        {
           "name": "tokenAuthority",
           "docs": [
             "Token authority PDA"
@@ -1152,64 +969,11 @@ export type TokenAuthority = {
           "writable": true
         },
         {
-          "name": "toThawAta",
+          "name": "toThawTokenAccount",
           "docs": [
-            "ATA of `to_thaw` (ThawAccount::account)"
+            "Token account of `to_thaw` (ThawAccount::account)"
           ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "toThaw"
-              },
-              {
-                "kind": "account",
-                "path": "tokenProgram"
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
+          "writable": true
         },
         {
           "name": "tokenProgram",

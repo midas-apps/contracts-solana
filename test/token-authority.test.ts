@@ -9,7 +9,11 @@ import { CommonError } from './constants/common.constants';
 import { acFixture } from './fixture/ac.fixture';
 import { tokenAuthorityFixture } from './fixture/token-authority.fixture';
 import { vaultsFixture } from './fixture/vaults.fixture';
-import { expectTxNotReverted } from './helpers/common.helpers';
+import {
+  createStandaloneTokenAccount,
+  expectTxNotReverted,
+  findATA,
+} from './helpers/common.helpers';
 import { getTokenAuthorityPda } from './helpers/token-authority.helpers';
 import { mintToken } from './testers/redeem-vault.testers';
 import {
@@ -50,6 +54,29 @@ describe('token-authority', () => {
           revertedWith: CommonError.AccountIsNotInitialized,
         },
       );
+    });
+
+    it('mints to a non-canonical token account', async () => {
+      const fixture = await vaultsFixture();
+      const owner = fixture.regularAccounts[0].publicKey;
+      const tokenAccount = await createStandaloneTokenAccount(
+        fixture.context,
+        fixture.provider.connection,
+        fixture.mTBillMint.publicKey,
+        owner,
+        fixture.authority,
+        TOKEN_2022_PROGRAM_ID,
+      );
+
+      expect(
+        tokenAccount.equals(findATA(fixture.mTBillMint.publicKey, owner, TOKEN_2022_PROGRAM_ID)),
+      ).toBe(false);
+
+      await mintMToken(fixture, {
+        to: owner,
+        tokenAccount,
+        amount: 100n,
+      });
     });
   });
 
@@ -146,6 +173,46 @@ describe('token-authority', () => {
       await burnToken(fixture, { address: burnFrom, amount: 100n }, {});
     });
 
+    it('burns from a non-canonical token account', async () => {
+      const fixture = await vaultsFixture();
+      const owner = fixture.accounts[1].publicKey;
+      const tokenAccount = await createStandaloneTokenAccount(
+        fixture.context,
+        fixture.provider.connection,
+        fixture.mTBillMint.publicKey,
+        owner,
+        fixture.authority,
+        TOKEN_2022_PROGRAM_ID,
+      );
+
+      expect(
+        tokenAccount.equals(findATA(fixture.mTBillMint.publicKey, owner, TOKEN_2022_PROGRAM_ID)),
+      ).toBe(false);
+
+      await expectTxNotReverted(
+        fixture.context,
+        new Transaction().add(
+          createSetAuthorityInstruction(
+            fixture.mTBillMint.publicKey,
+            fixture.authority.publicKey,
+            AuthorityType.PermanentDelegate,
+            getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed),
+            undefined,
+            TOKEN_2022_PROGRAM_ID,
+          ),
+        ),
+        [fixture.authority],
+      );
+
+      await mintMToken(fixture, {
+        to: owner,
+        tokenAccount,
+        amount: 100n,
+      });
+
+      await burnToken(fixture, { tokenAccount, amount: 100n }, {});
+    });
+
     it('should fail: call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
@@ -198,6 +265,46 @@ describe('token-authority', () => {
       await freezeAccount(fixture, {}, {});
     });
 
+    it('freezes a non-canonical token account', async () => {
+      const fixture = await vaultsFixture();
+      const owner = fixture.regularAccounts[0].publicKey;
+      const tokenAccount = await createStandaloneTokenAccount(
+        fixture.context,
+        fixture.provider.connection,
+        fixture.mTBillMint.publicKey,
+        owner,
+        fixture.authority,
+        TOKEN_2022_PROGRAM_ID,
+      );
+
+      expect(
+        tokenAccount.equals(findATA(fixture.mTBillMint.publicKey, owner, TOKEN_2022_PROGRAM_ID)),
+      ).toBe(false);
+
+      await mintMToken(fixture, {
+        to: owner,
+        tokenAccount,
+        amount: 100n,
+      });
+
+      await expectTxNotReverted(
+        fixture.context,
+        new Transaction().add(
+          createSetAuthorityInstruction(
+            fixture.mTBillMint.publicKey,
+            fixture.authority.publicKey,
+            AuthorityType.FreezeAccount,
+            getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed),
+            undefined,
+            TOKEN_2022_PROGRAM_ID,
+          ),
+        ),
+        [fixture.authority],
+      );
+
+      await freezeAccount(fixture, { tokenAccount }, {});
+    });
+
     it('should fail: call from non-authority', async () => {
       const fixture = await vaultsFixture();
 
@@ -246,6 +353,47 @@ describe('token-authority', () => {
       );
       await freezeAccount(fixture, {});
       await thawAccount(fixture, {}, {});
+    });
+
+    it('thaws a non-canonical token account', async () => {
+      const fixture = await vaultsFixture();
+      const owner = fixture.regularAccounts[0].publicKey;
+      const tokenAccount = await createStandaloneTokenAccount(
+        fixture.context,
+        fixture.provider.connection,
+        fixture.mTBillMint.publicKey,
+        owner,
+        fixture.authority,
+        TOKEN_2022_PROGRAM_ID,
+      );
+
+      expect(
+        tokenAccount.equals(findATA(fixture.mTBillMint.publicKey, owner, TOKEN_2022_PROGRAM_ID)),
+      ).toBe(false);
+
+      await mintMToken(fixture, {
+        to: owner,
+        tokenAccount,
+        amount: 100n,
+      });
+
+      await expectTxNotReverted(
+        fixture.context,
+        new Transaction().add(
+          createSetAuthorityInstruction(
+            fixture.mTBillMint.publicKey,
+            fixture.authority.publicKey,
+            AuthorityType.FreezeAccount,
+            getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed),
+            undefined,
+            TOKEN_2022_PROGRAM_ID,
+          ),
+        ),
+        [fixture.authority],
+      );
+
+      await freezeAccount(fixture, { tokenAccount });
+      await thawAccount(fixture, { tokenAccount }, {});
     });
 
     it('should fail: call from non-authority', async () => {

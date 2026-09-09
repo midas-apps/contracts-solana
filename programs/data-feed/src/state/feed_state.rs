@@ -12,7 +12,7 @@ pub enum FeedMode {
     /// Indicates underlying_feed is Pyth's `PriceUpdateV2`
     Pyth,
     /// Indicates underlying_feed is Chainlink OCR2 feed account
-    Chainlink
+    Chainlink,
 }
 
 #[account]

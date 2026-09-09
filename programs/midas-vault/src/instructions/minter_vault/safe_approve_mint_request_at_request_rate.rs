@@ -147,7 +147,6 @@ pub fn handle(
         &ctx.accounts.m_mint,
         &ctx.accounts.m_mint_user_ata,
         &ctx.accounts.m_mint_token_program,
-        &ctx.accounts.user_account,
         &ctx.accounts.token_authority,
         &ctx.accounts.vault_minter_role,
         &ctx.accounts.system_program,

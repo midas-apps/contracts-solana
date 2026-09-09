@@ -1,12 +1,15 @@
 import { Idl, Program } from '@coral-xyz/anchor';
 import * as anchor from '@coral-xyz/anchor';
 import {
+  ACCOUNT_SIZE,
   createApproveInstruction,
   createAssociatedTokenAccountIdempotentInstruction,
+  createInitializeAccount3Instruction,
   createInitializeMint2Instruction,
   createRevokeInstruction,
   getAccount,
   getAssociatedTokenAddressSync,
+  getMinimumBalanceForRentExemptAccount,
   getMinimumBalanceForRentExemptMint,
   MINT_SIZE,
   TOKEN_PROGRAM_ID,
@@ -457,6 +460,36 @@ export const approveMint = async (
     new Transaction().add(approveMintInstruction(mint, payer, approveTo, amount, programId)),
     [payer],
   );
+};
+
+/** Creates a token account that is not the owner's associated token account. */
+export const createStandaloneTokenAccount = async (
+  context: LiteSVM,
+  connection: Connection,
+  mint: PublicKey,
+  owner: PublicKey,
+  payer: Signer,
+  programId = TOKEN_PROGRAM_ID,
+) => {
+  const tokenAccount = Keypair.generate();
+  const lamports = await getMinimumBalanceForRentExemptAccount(connection);
+
+  await processTransaction(
+    context,
+    new Transaction().add(
+      SystemProgram.createAccount({
+        fromPubkey: payer.publicKey,
+        newAccountPubkey: tokenAccount.publicKey,
+        space: ACCOUNT_SIZE,
+        lamports,
+        programId,
+      }),
+      createInitializeAccount3Instruction(tokenAccount.publicKey, mint, owner, programId),
+    ),
+    [payer, tokenAccount],
+  );
+
+  return tokenAccount.publicKey;
 };
 
 export const getOrCreateAta = async (

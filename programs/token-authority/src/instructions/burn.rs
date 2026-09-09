@@ -13,11 +13,6 @@ pub struct Burn<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    /// CHECK:
-    /// account to burn from
-    #[account()]
-    pub from: AccountInfo<'info>,
-
     /// Token authority PDA
     #[account(
         seeds = [TokenAuthorityState::SEED, token_authority.base_seed.as_ref()],
@@ -40,14 +35,13 @@ pub struct Burn<'info> {
     )]
     pub mint: Box<InterfaceAccount<'info, SplMint>>,
 
-    /// ATA of `from` (ThawAccount::from)
+    /// Token account to burn from (Burn::from). Canonical ATA is not required.
     #[account(
         mut,
-        associated_token::token_program = token_program,
-        associated_token::mint = mint,
-        associated_token::authority = from,
+        token::token_program = token_program,
+        token::mint = mint,
     )]
-    pub from_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub from_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
     /// SPL token program
     pub token_program: Interface<'info, TokenInterface>,
@@ -75,7 +69,7 @@ pub fn handle(ctx: Context<Burn>, amount: u64) -> Result<()> {
             SplBurn {
                 authority: ctx.accounts.token_authority.to_account_info(),
                 mint: ctx.accounts.mint.to_account_info(),
-                from: ctx.accounts.from_ata.to_account_info(),
+                from: ctx.accounts.from_token_account.to_account_info(),
             },
             &[&[
                 TokenAuthorityState::SEED,

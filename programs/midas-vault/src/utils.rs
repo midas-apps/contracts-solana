@@ -424,11 +424,10 @@ pub fn transfer_token_with_signer<'info>(
 ///
 /// - `common_vault` - common vault state
 /// - `authority` - `AuthorityMint::authority`
-/// - `receiver` - `AuthorityMint::receiver`
 /// - `token_authority` - `AuthorityMint::token_authority`
 /// - `authority_minter_role` - `AuthorityMint::authority_minter_role`
 /// - `mint` - `AuthorityMint::mint`
-/// - `receiver_ata` - `AuthorityMint::receiver_ata`
+/// - `receiver_token_account` - `AuthorityMint::receiver_token_account`
 /// - `token_program` - SPL token program
 /// - `system_program` - system program
 /// - `token_authority_program` - token authority program
@@ -436,11 +435,10 @@ pub fn transfer_token_with_signer<'info>(
 pub fn mint_token<'info>(
     common_vault: &Pubkey,
     authority: &AccountInfo<'info>,
-    receiver: &AccountInfo<'info>,
     token_authority: &AccountInfo<'info>,
     authority_minter_role: &AccountInfo<'info>,
     mint: &AccountInfo<'info>,
-    receiver_ata: &AccountInfo<'info>,
+    receiver_token_account: &AccountInfo<'info>,
     token_program: &AccountInfo<'info>,
     system_program: &AccountInfo<'info>,
     token_authority_program: &AccountInfo<'info>,
@@ -453,11 +451,10 @@ pub fn mint_token<'info>(
 
     let accounts = AuthorityMint {
         authority: authority.clone(),
-        receiver: receiver.clone(),
         token_authority: token_authority.clone(),
         authority_minter_role: authority_minter_role.clone(),
         mint: mint.clone(),
-        receiver_ata: receiver_ata.clone(),
+        receiver_token_account: receiver_token_account.clone(),
         token_program: token_program.clone(),
         system_program: system_program.clone(),
     };
@@ -708,7 +705,6 @@ pub mod minter {
         m_mint: &Box<InterfaceAccount<'info, Mint>>,
         m_mint_user_ata: &Box<InterfaceAccount<'info, TokenAccount>>,
         m_mint_token_program: &Interface<'info, TokenInterface>,
-        user_account: &AccountInfo<'info>,
         token_authority: &Account<'info, TokenAuthorityState>,
         vault_minter_role: &Account<'info, AccountAccessControlRoleState>,
         system_program: &Program<'info, System>,
@@ -740,7 +736,6 @@ pub mod minter {
         mint_token(
             &vault_common.key(),
             &minter_vault.to_account_info(),
-            user_account,
             &token_authority.to_account_info(),
             &vault_minter_role.to_account_info(),
             &m_mint.to_account_info(),
