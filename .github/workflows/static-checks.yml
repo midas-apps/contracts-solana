@@ -78,8 +78,11 @@ jobs:
 
       - name: Install Rust toolchain
         run: |
-          rustup toolchain install "$RUST_NIGHTLY" --profile minimal --component clippy --component rustfmt
-          rustup override set "$RUST_NIGHTLY"
+          # Host clippy/fmt/tests must follow rust-toolchain.toml (1.93.1).
+          # The Solana BPF nightly (1.80) rejects current crates.io MSRVs,
+          # e.g. base64ct 1.7.3 requires rustc 1.81.
+          CHANNEL=$(sed -n 's/^channel = "\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$CHANNEL" --profile minimal --component clippy --component rustfmt
 
       - name: Cache cargo build
         uses: Swatinem/rust-cache@63fed3e2fecf6f7b51dc6f043341b79ef82a9ae7 # v2.9.2
