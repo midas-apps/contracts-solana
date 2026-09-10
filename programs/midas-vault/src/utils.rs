@@ -726,7 +726,7 @@ pub mod minter {
             .checked_mul(ONE.into())
             .ok_or(MidasVaultsError::ArithmeticOverflow)?
             .checked_div(new_out_rate)
-            .ok_or(MidasVaultsError::ArithmeticOverflow)?;
+            .ok_or(MidasVaultsError::InvalidRate)?;
 
         if !validate_max_supply_cap(m_mint, minter_vault, amount_to_mint.try_into().unwrap())? {
             if skip_on_supply_cap_exceeded {
