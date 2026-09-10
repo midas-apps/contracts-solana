@@ -261,10 +261,10 @@ pub(crate) fn validate_max_supply_cap_with_supply(
     minter: &MinterVaultState,
     mint_amount: u64,
 ) -> Result<bool> {
-    let new_supply = current_supply
-        .checked_add(mint_amount)
-        .ok_or(MidasVaultsError::ArithmeticOverflow)?;
-    Ok(minter.max_supply_cap >= new_supply)
+    Ok(match current_supply.checked_add(mint_amount) {
+        Some(new_supply) => minter.max_supply_cap >= new_supply,
+        None => false, // Overflow implies the cap is exceeded.
+    })
 }
 
 /// Calculates fee for a given amount
@@ -1446,6 +1446,25 @@ mod tests {
     fn test_validate_max_supply_cap_at_cap() {
         let minter = minter_vault_state(100);
         assert!(validate_max_supply_cap_with_supply(100, &minter, 0).unwrap());
+    }
+
+    #[test]
+    fn test_validate_max_supply_cap_add_overflow_unlimited() {
+        // u64 overflow is treated as cap exceeded, even when the cap is unlimited.
+        let minter = minter_vault_state(u64::MAX);
+        assert!(!validate_max_supply_cap_with_supply(u64::MAX, &minter, 1).unwrap());
+    }
+
+    #[test]
+    fn test_validate_max_supply_cap_add_overflow_finite_cap() {
+        let minter = minter_vault_state(100);
+        assert!(!validate_max_supply_cap_with_supply(u64::MAX, &minter, 1).unwrap());
+    }
+
+    #[test]
+    fn test_validate_max_supply_cap_unlimited_at_u64_max() {
+        let minter = minter_vault_state(u64::MAX);
+        assert!(validate_max_supply_cap_with_supply(u64::MAX, &minter, 0).unwrap());
     }
 
     #[test]
