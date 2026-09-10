@@ -181,7 +181,7 @@ solana airdrop 10 --url http://127.0.0.1:8899
 
 ### Data Feed Modes
 
-`switchboard`, `pyth`, `chainlink`, `manual`
+`switchboard`, `pyth`, `manual`
 
 ### Files
 

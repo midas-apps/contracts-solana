@@ -1,6 +1,6 @@
 use crate::{
     constants::{
-        CHAINLINK_FEED_MAX_STALENESS, DEFAULT_PUBKEY, MANUAL_FEED_MAX_STALENESS,
+        DEFAULT_PUBKEY, MANUAL_FEED_MAX_STALENESS,
         PYTH_FEED_MAX_STALENESS, SWITCHBOARD_FEED_MAX_STALENESS,
     },
     errors::DataFeedError,
@@ -12,7 +12,6 @@ use pyth_solana_receiver_sdk::price_update::PriceUpdateV2;
 use switchboard_on_demand::{PullFeedAccountData, PRECISION};
 
 use crate::state::{FeedState, ManualFeedState};
-use chainlink_solana::v2::read_feed_v2;
 
 /// Parses the price from `feed` account and converts it
 /// to the price with 9 decimal points.
@@ -25,7 +24,6 @@ use chainlink_solana::v2::read_feed_v2;
 ///     - `ManualFeedState` (Manual feed account)
 ///     - `PullFeedAccountData` (Switchboard feed account)
 ///     - `PriceUpdateV2` (Pyth feed account)
-///     - `Feed` (Chainlink OCR2 feed account)
 pub fn get_price_in_base_9<'info>(
     data_feed: &FeedState,
     feed: &AccountInfo<'info>,
@@ -99,34 +97,6 @@ pub fn get_price_in_base_9<'info>(
                     .try_into()
                     .map_err(|_| DataFeedError::InvalidPrice)?,
                 raw_price.exponent.abs().try_into().unwrap(),
-            )
-        }
-        FeedMode::Chainlink => {
-            // parse chainlink feed via direct account read (SDK v2)
-            let data = feed.try_borrow_data()?;
-            let result = read_feed_v2(data, feed.owner.to_bytes())
-                .map_err(|_| DataFeedError::InvalidUnderlyingFeedProvided)?;
-
-            let round = result
-                .latest_round_data()
-                .ok_or(DataFeedError::InvalidPrice)?;
-
-            // enforce staleness using round.updated_at (seconds)
-            let now = get_current_ts().unwrap() as u64;
-            let age = now.checked_sub(round.timestamp as u64).unwrap_or(u64::MAX);
-
-            require_gte!(
-                data_feed.max_staleness as u64,
-                age,
-                DataFeedError::PriceIsStale
-            );
-
-            (
-                round
-                    .answer
-                    .try_into()
-                    .map_err(|_| DataFeedError::InvalidPrice)?,
-                result.decimals(),
             )
         }
     };
@@ -204,8 +174,7 @@ pub fn update_feed(
     let max_staleness = match state.mode {
         FeedMode::Manual => MANUAL_FEED_MAX_STALENESS,
         FeedMode::Pyth => PYTH_FEED_MAX_STALENESS,
-        FeedMode::Switchboard => SWITCHBOARD_FEED_MAX_STALENESS,
-        FeedMode::Chainlink => CHAINLINK_FEED_MAX_STALENESS,
+        FeedMode::Switchboard => SWITCHBOARD_FEED_MAX_STALENESS
     };
 
     require_gte!(

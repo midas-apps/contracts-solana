@@ -10801,9 +10801,6 @@ export type MidasVaults = {
           },
           {
             "name": "pyth"
-          },
-          {
-            "name": "chainlink"
           }
         ]
       }

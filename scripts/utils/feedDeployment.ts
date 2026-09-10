@@ -7,7 +7,6 @@ import { DataFeedConfig } from '@/scripts/configs/types';
 import { MANUAL_PRICE_MULTIPLIER, PRICE_MULTIPLIER } from '@/scripts/constants/pricing';
 
 import { deployDataFeed as deployDataFeedContract, getDataFeedProgram } from '../deploy/dataFeed';
-import { deployChainlinkFeed } from '../deploy/feeds/chainlink';
 import { deployManualFeed } from '../deploy/feeds/manual';
 import { deployPythFeed } from '../deploy/feeds/pyth';
 import { deploySwitchboardFeed, verifySwitchboardFeed } from '../deploy/feeds/switchboard';
@@ -114,20 +113,6 @@ export async function deployFeedFromConfig({
       };
     }
 
-    case 'chainlink': {
-      if (!dataFeedConfig.chainlink)
-        throw createUserError('chainlink configuration is required for chainlink mode');
-
-      const underlyingFeed = new PublicKey(dataFeedConfig.chainlink.underlyingFeed);
-      const dataFeed = await deployChainlinkFeed({ provider, payer, network }, feedConfig, {
-        underlyingFeed,
-      });
-      return {
-        dataFeed,
-        underlyingFeed,
-      };
-    }
-
     case 'manual': {
       const manualConfig = dataFeedConfig.manual;
       if (!manualConfig) throw createUserError('manual configuration is required for manual mode');
@@ -154,7 +139,7 @@ export async function deployFeedFromConfig({
 
     default:
       throw createUserError(`Unsupported feed mode: ${mode}`, [
-        'Supported modes: switchboard, pyth, chainlink, manual',
+        'Supported modes: switchboard, pyth, manual',
       ]);
   }
 }

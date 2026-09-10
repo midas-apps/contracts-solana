@@ -18,7 +18,6 @@ interface FeedState {
     manual?: Record<string, never>;
     switchboard?: Record<string, never>;
     pyth?: Record<string, never>;
-    chainlink?: Record<string, never>;
   };
   minPrice: { toString: () => string };
   maxPrice: { toString: () => string };
@@ -29,7 +28,6 @@ function formatMode(mode: FeedState['mode']): string {
   if (mode.manual) return 'manual';
   if (mode.switchboard) return 'switchboard';
   if (mode.pyth) return 'pyth';
-  if (mode.chainlink) return 'chainlink';
   return 'unknown';
 }
 
@@ -84,7 +82,6 @@ async function fetchUnderlyingPrice(
 
     // For other modes, we'd need their specific implementations
     // Pyth would need pyth SDK
-    // Chainlink would need chainlink SDK
     return null;
   } catch (error) {
     console.log(

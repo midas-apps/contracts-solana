@@ -8,7 +8,6 @@ export const DataFeedMode = {
   manual: { manual: {} },
   switchboard: { switchboard: {} },
   pyth: { pyth: {} },
-  chainlink: { chainlink: {} },
 };
 
 export const generateFeedAcccount = () => {

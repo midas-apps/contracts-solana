@@ -47,7 +47,6 @@ pub struct UpdateFeed<'info> {
 ///   next supported account types:
 /// - PriceUpdateV2 (PYTH)
 /// - PullFeedAccountData (Switchboard)
-/// - Chainlink OCR2 (Chainlink)
 /// - ManualFeedState (Manual)
 ///
 /// - `mode` - type of underlying feed

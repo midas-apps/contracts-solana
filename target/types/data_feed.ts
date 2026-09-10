@@ -1086,9 +1086,6 @@ export type DataFeed = {
           },
           {
             "name": "pyth"
-          },
-          {
-            "name": "chainlink"
           }
         ]
       }

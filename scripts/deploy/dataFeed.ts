@@ -31,7 +31,7 @@ export interface DeployDataFeedBaseConfig {
 /**
  * Discriminated union for data feed deployments
  * - Manual and Switchboard feeds: underlyingFeed is optional (will be created if not provided)
- * - Pyth and Chainlink feeds: underlyingFeed is required (must reference existing oracle)
+ * - Pyth feeds: underlyingFeed is required (must reference existing oracle)
  */
 export type DeployDataFeedConfig =
   | (DeployDataFeedBaseConfig & {
@@ -39,7 +39,7 @@ export type DeployDataFeedConfig =
       underlyingFeed?: PublicKey;
     })
   | (DeployDataFeedBaseConfig & {
-      mode: 'pyth' | 'chainlink';
+      mode: 'pyth';
       underlyingFeed: PublicKey;
     });
 
@@ -55,7 +55,7 @@ export const deployDataFeed = async (common: CommonParams, config: DeployDataFee
   } = config;
   const feed = feedKeypair ?? Keypair.generate();
 
-  if ((mode === 'pyth' || mode === 'chainlink') && !underlyingFeed) {
+  if (mode === 'pyth' && !underlyingFeed) {
     throw new Error(`underlyingFeed is required for ${mode} mode`);
   }
 

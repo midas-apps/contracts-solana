@@ -362,34 +362,6 @@ describe('data-feed', () => {
         { revertedWith: DataFeedError.ExceedsMaxStaleness },
       );
     });
-
-    it('should fail: update max_staleness when value is 0 and mode is chainlink', async () => {
-      const fixture = await dataFeedFixture();
-
-      await updateFeed(
-        fixture,
-        {
-          mode: 'chainlink',
-          underlyingFeed: fixture.mockedFeeds.chainlink.account,
-          maxStaleness: 0,
-        },
-        { revertedWith: DataFeedError.InvalidStaleness },
-      );
-    });
-
-    it('should fail: update max_staleness when value is 5 minutes and mode is chainlink', async () => {
-      const fixture = await dataFeedFixture();
-
-      await updateFeed(
-        fixture,
-        {
-          mode: 'chainlink',
-          underlyingFeed: fixture.mockedFeeds.chainlink.account,
-          maxStaleness: 1 + 5 * 60,
-        },
-        { revertedWith: DataFeedError.ExceedsMaxStaleness },
-      );
-    });
   });
 
   describe('update_manual_feed', () => {
@@ -745,7 +717,7 @@ describe('data-feed', () => {
 
       const feed = await createNewFeed(fixture, {
         mode: 'pyth',
-        underlyingFeed: fixture.mockedFeeds.chainlink.account,
+        underlyingFeed: fixture.mockedFeeds.switchboard.account,
         maxPrice: parseUnits(fixture.mockedFeeds.pyth.price.toString()),
       });
 
@@ -910,7 +882,7 @@ describe('data-feed', () => {
 
       const feed = await createNewFeed(fixture, {
         mode: 'switchboard',
-        underlyingFeed: fixture.mockedFeeds.chainlink.account,
+        underlyingFeed: fixture.mockedFeeds.pyth.account,
         maxPrice: parseUnits(fixture.mockedFeeds.switchboard.price.toString()),
       });
 
@@ -1006,134 +978,4 @@ describe('data-feed', () => {
     });
   });
 
-  describe('Chainlink underlying ', () => {
-    it('when underlying Chainlink feed is valid', async () => {
-      const fixture = await vaultsFixture();
-
-      const feed = await createNewFeed(fixture, {
-        mode: 'chainlink',
-        underlyingFeed: fixture.mockedFeeds.chainlink.account,
-        maxPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()),
-        maxStaleness: 5 * 60,
-      });
-
-      await updateFeed(fixture, {
-        mode: 'chainlink',
-        underlyingFeed: fixture.mockedFeeds.chainlink.account,
-        maxPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()),
-        maxStaleness: 5 * 60,
-      });
-
-      await prepareCommonMintTest(fixture);
-
-      await updatePaymentToken(fixture, {
-        dataFeed: feed.publicKey,
-      });
-
-      // align clock with embedded chainlink timestamp to avoid staleness
-      await setClockTime(fixture.context, BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs));
-
-      await mintInstant(
-        fixture,
-        { minReceiveAmount: 0n },
-        {},
-        // do not assert exact minted amount; just ensure success
-        undefined,
-      );
-    });
-
-    it('should fail: when underlying Chainlink feed is stale', async () => {
-      const fixture = await vaultsFixture();
-
-      const feed = await createNewFeed(fixture, {
-        mode: 'chainlink',
-        underlyingFeed: fixture.mockedFeeds.chainlink.account,
-        maxPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()),
-        maxStaleness: 5 * 60,
-      });
-
-      await prepareCommonMintTest(fixture);
-
-      await updatePaymentToken(fixture, {
-        dataFeed: feed.publicKey,
-      });
-
-      // move clock beyond maxStaleness
-      await setClockTime(
-        fixture.context,
-        BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs + 301),
-      );
-
-      await mintInstant(fixture, { minReceiveAmount: 0n }, {}, undefined, {
-        revertedWith: DataFeedError.PriceIsStale,
-      });
-    });
-
-    it('should fail: when underlying feed is invalid', async () => {
-      const fixture = await vaultsFixture();
-
-      const feed = await createNewFeed(fixture, {
-        mode: 'chainlink',
-        underlyingFeed: fixture.mockedFeeds.switchboard.account,
-        maxPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()),
-      });
-
-      await prepareCommonMintTest(fixture);
-
-      await updatePaymentToken(fixture, {
-        dataFeed: feed.publicKey,
-      });
-
-      await mintInstant(fixture, { minReceiveAmount: 0n }, {}, undefined, {
-        revertedWith: DataFeedError.InvalidUnderlyingFeedProvided,
-      });
-    });
-
-    it('should fail: when price is > max price', async () => {
-      const fixture = await vaultsFixture();
-
-      const feed = await createNewFeed(fixture, {
-        mode: 'chainlink',
-        underlyingFeed: fixture.mockedFeeds.chainlink.account,
-        maxPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()) - 1n,
-        maxStaleness: 5 * 60,
-      });
-
-      await prepareCommonMintTest(fixture);
-
-      await updatePaymentToken(fixture, {
-        dataFeed: feed.publicKey,
-      });
-
-      await setClockTime(fixture.context, BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs));
-
-      await mintInstant(fixture, { minReceiveAmount: 0n }, {}, undefined, {
-        revertedWith: DataFeedError.PriceIsHigherThanMax,
-      });
-    });
-
-    it('should fail: when price is < min price', async () => {
-      const fixture = await vaultsFixture();
-
-      const feed = await createNewFeed(fixture, {
-        mode: 'chainlink',
-        underlyingFeed: fixture.mockedFeeds.chainlink.account,
-        maxPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()) + 2n,
-        minPrice: parseUnits(fixture.mockedFeeds.chainlink.price.toString()) + 1n,
-        maxStaleness: 5 * 60,
-      });
-
-      await prepareCommonMintTest(fixture);
-
-      await updatePaymentToken(fixture, {
-        dataFeed: feed.publicKey,
-      });
-
-      await setClockTime(fixture.context, BigInt(fixture.mockedFeeds.chainlink.lastUpdatedAtTs));
-
-      await mintInstant(fixture, { minReceiveAmount: 0n }, {}, undefined, {
-        revertedWith: DataFeedError.PriceIsLowerThanMin,
-      });
-    });
-  });
 });

@@ -40,7 +40,7 @@ const ethereumAddressSchema = z.string().refine((val) => /^0x[a-fA-F0-9]{40}$/.t
   message: 'Must be a valid Ethereum address (0x followed by 40 hex characters)',
 });
 
-export const dataFeedModeSchema = z.enum(['switchboard', 'pyth', 'manual', 'chainlink']);
+export const dataFeedModeSchema = z.enum(['switchboard', 'pyth', 'manual']);
 
 export const switchboardConfigSchema = z.object({
   env: z.enum(['devnet', 'mainnet']),
@@ -51,10 +51,6 @@ export const switchboardConfigSchema = z.object({
 });
 
 export const pythConfigSchema = z.object({
-  underlyingFeed: publicKeySchema,
-});
-
-export const chainlinkConfigSchema = z.object({
   underlyingFeed: publicKeySchema,
 });
 
@@ -72,7 +68,6 @@ export const dataFeedConfigSchema = z
     pyth: pythConfigSchema.optional(),
     manual: manualConfigSchema.optional(),
     switchboard: switchboardConfigSchema.optional(),
-    chainlink: chainlinkConfigSchema.optional(),
   })
   // underlyingFeed behavior varies by mode:
   // - switchboard: optional. If not provided, deploys new Switchboard oracle feed.
@@ -80,7 +75,6 @@ export const dataFeedConfigSchema = z
   // - manual: optional. If not provided, creates a new manual feed PDA internally.
   //   If provided, uses the specified feed address.
   // - pyth: required. Must reference an existing oracle feed address.
-  // - chainlink: required. Must reference an existing oracle feed address.
   .refine(
     (data) => {
       if (data.mode === 'switchboard') {
@@ -104,19 +98,6 @@ export const dataFeedConfigSchema = z
     {
       message: 'pyth configuration is required when mode is "pyth"',
       path: ['pyth'],
-    },
-  )
-  .refine(
-    (data) => {
-      // Chainlink mode: underlyingFeed is required
-      if (data.mode === 'chainlink') {
-        return data.chainlink !== undefined;
-      }
-      return true;
-    },
-    {
-      message: 'chainlink configuration is required when mode is "chainlink"',
-      path: ['chainlink'],
     },
   )
   .refine(
