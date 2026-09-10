@@ -1,7 +1,6 @@
-import { AuthorityType, getAccount, getMint, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
+import { getAccount, getMint, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import { Keypair, PublicKey } from '@solana/web3.js';
 
-import { AC_ROLES } from '../constants/ac.constants';
 import { TOKEN_AUTHORITY_ROLES } from '../constants/token-authority.constants';
 import { TokenAuthorityFixtureReturnType } from '../fixture/token-authority.fixture';
 import { getAccountAcRoleStatePda } from '../helpers/ac.helpers';
@@ -184,61 +183,6 @@ export const mintMToken = async (
   expect(stateAfter.balanceReceiver).toEqual(stateBefore.balanceReceiver + amount);
 
   expect(stateAfter.mintState.supply).toEqual(stateBefore.mintState.supply + amount);
-};
-
-export const setAuthority = async (
-  fixture: CommonTokenAuthorityParams & { mTBillMint: Keypair },
-  {
-    accountOrMint,
-    authorityType,
-    newAuthority,
-  }: {
-    accountOrMint?: PublicKey;
-    newAuthority?: PublicKey;
-    authorityType?: AuthorityType;
-  },
-  opt?: OptionalCommonParams,
-) => {
-  accountOrMint ??= fixture.mTBillMint.publicKey;
-  authorityType ??= AuthorityType.MintTokens;
-  newAuthority ??= fixture.regularAccounts[0]?.publicKey;
-
-  const from = opt?.from ?? fixture.authority;
-
-  const fetchState = async () => {
-    const minterState = await fetchTokenAuthorityState(
-      fixture.tokenAuthorityProgram,
-      getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed),
-    );
-
-    return {
-      minterState,
-    };
-  };
-
-  const stateBefore = await fetchState();
-
-  const tx = await fixture.tokenAuthorityProgram.methods
-    .setAuthority(authorityType, newAuthority)
-    .accountsPartial({
-      authority: from.publicKey,
-      tokenAuthority: getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed),
-      authorityAdminRole: getAccountAcRoleStatePda(
-        stateBefore.minterState.acRole,
-        from.publicKey,
-        AC_ROLES.ADMIN,
-      ),
-      accountOrMint: accountOrMint,
-      tokenProgram: TOKEN_2022_PROGRAM_ID,
-    })
-    .transaction();
-
-  if (opt?.revertedWith !== undefined) {
-    await expectTxReverted(fixture.context, tx, [from], opt);
-    return;
-  }
-
-  await expectTxNotReverted(fixture.context, tx, [from]);
 };
 
 export const burnToken = async (

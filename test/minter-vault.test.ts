@@ -147,7 +147,7 @@ describe('minter-vault', () => {
       });
     });
 
-    it('should migrate when called from non-authority', async () => {
+    it('should fail: migrate from non-authority', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture);
@@ -174,6 +174,48 @@ describe('minter-vault', () => {
         },
         {
           from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('should fail: migrate from vault admin without admin role', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture);
+
+      const commonVault = fixture.minterCommonVault.publicKey;
+      const acRole = (await fetchVaultCommonState(fixture.vaultsProgram, commonVault)).acRole;
+
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: VAULT_AC_ROLES.VAULT_ADMIN,
+        acRole,
+      });
+
+      const minterVault = getMinterVaultPda(commonVault);
+      const minterVaultData = await fixture.provider.connection.getAccountInfo(minterVault);
+      const dataWithoutMaxSupplyCap = minterVaultData?.data.slice(0, 80);
+
+      const lamports = await fixture.provider.connection.getMinimumBalanceForRentExemption(
+        dataWithoutMaxSupplyCap.length,
+      );
+
+      fixture.context.setAccount(minterVault, {
+        data: dataWithoutMaxSupplyCap,
+        executable: false,
+        owner: fixture.vaultsProgram.programId,
+        lamports,
+      });
+
+      await migrateMinterVaultStateToV2(
+        fixture,
+        {
+          commonVault,
+        },
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
         },
       );
     });

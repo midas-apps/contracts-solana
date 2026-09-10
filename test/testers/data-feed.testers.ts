@@ -1,5 +1,6 @@
 import { Keypair, PublicKey } from '@solana/web3.js';
 
+import { AC_ROLES } from '../constants/ac.constants';
 import { MAX_U64 } from '../constants/common.constants';
 import { DATA_FEED_AC_ROLES } from '../constants/data-feed.constants';
 import { DataFeedFixtureReturnType } from '../fixture/dafa-feed.fixture';
@@ -296,12 +297,18 @@ export const migrateManualFeedToV2 = async (
       'manualFeedState',
       dataWithMaxSupplyCapRaw,
     )) as Awaited<ReturnType<typeof fetchManualFeedState>>;
+  const baseFeedState = await fetchDataFeedState(dataFeedProgram, baseFeed);
 
   const tx = await dataFeedProgram.methods
     .migrateManualFeedToV2()
     .accountsPartial({
       baseFeed: baseFeed,
-      payer: from.publicKey,
+      authority: from.publicKey,
+      authorityAcRole: getAccountAcRoleStatePda(
+        baseFeedState.acRole,
+        from.publicKey,
+        AC_ROLES.ADMIN,
+      ),
     })
     .transaction();
 

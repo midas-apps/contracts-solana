@@ -6,6 +6,9 @@ import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 import { getVaultsProgram } from '@/scripts/deploy/vaults';
 import { getTokenAddresses } from '@/scripts/utils/addressQueries';
 import { getMtoken, getNetwork } from '@/scripts/utils/argumentParser';
+import { AC_ROLES } from '@/test/constants/ac.constants';
+import { getAccountAcRoleStatePda } from '@/test/helpers/ac.helpers';
+import { fetchVaultCommonState } from '@/test/helpers/vaults.helpers';
 
 async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const common = { provider, payer, network };
@@ -21,13 +24,19 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   }
 
   const vaultsProgram = getVaultsProgram(provider);
+  const vaultCommonState = await fetchVaultCommonState(vaultsProgram, minterVault.commonVault);
 
   const tx = await vaultsProgram.methods
     .migrateMinterVaultStateToV2()
     .accountsPartial({
       minterVault: minterVault.account,
-      payer: payer.publicKey,
+      authority: payer.publicKey,
       vaultCommon: minterVault.commonVault,
+      authorityAcRole: getAccountAcRoleStatePda(
+        vaultCommonState.acRole,
+        payer.publicKey,
+        AC_ROLES.ADMIN,
+      ),
     })
     .transaction();
 

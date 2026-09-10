@@ -455,7 +455,7 @@ describe('data-feed', () => {
       });
     });
 
-    it('migrate manual feed to v2 from non-authority', async () => {
+    it('should fail: migrate from non-authority', async () => {
       const fixture = await dataFeedFixture();
 
       const baseFeed = await createDefaultDataFeed(fixture);
@@ -483,6 +483,47 @@ describe('data-feed', () => {
         },
         {
           from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('should fail: migrate from feed admin without admin role', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultDataFeed(fixture);
+      const acRole = (await fetchDataFeedState(fixture.dataFeedProgram, baseFeed)).acRole;
+
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: DATA_FEED_AC_ROLES.FEED_ADMIN,
+        acRole,
+      });
+
+      const manualFeedStatePda = getManualFeedStatePda(baseFeed);
+      const manualFeedStateData =
+        await fixture.provider.connection.getAccountInfo(manualFeedStatePda);
+      const dataWithoutMaxAnswerDeviation = manualFeedStateData.data.slice(0, 21);
+
+      const lamports = await fixture.provider.connection.getMinimumBalanceForRentExemption(
+        dataWithoutMaxAnswerDeviation.length,
+      );
+
+      fixture.context.setAccount(manualFeedStatePda, {
+        data: dataWithoutMaxAnswerDeviation,
+        executable: false,
+        owner: fixture.dataFeedProgram.programId,
+        lamports,
+      });
+
+      await migrateManualFeedToV2(
+        fixture,
+        {
+          baseFeed,
+        },
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
         },
       );
     });

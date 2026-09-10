@@ -1,9 +1,10 @@
 import {
   AuthorityType,
+  createFreezeAccountInstruction,
   createSetAuthorityInstruction,
   TOKEN_2022_PROGRAM_ID,
 } from '@solana/spl-token';
-import { Keypair, Transaction } from '@solana/web3.js';
+import { Transaction } from '@solana/web3.js';
 
 import { CommonError } from './constants/common.constants';
 import { acFixture } from './fixture/ac.fixture';
@@ -15,13 +16,11 @@ import {
   findATA,
 } from './helpers/common.helpers';
 import { getTokenAuthorityPda } from './helpers/token-authority.helpers';
-import { mintToken } from './testers/redeem-vault.testers';
 import {
   burnToken,
   freezeAccount,
   mintMToken,
   newTokenAuthority,
-  setAuthority,
   thawAccount,
 } from './testers/token-authority.testers';
 
@@ -77,43 +76,6 @@ describe('token-authority', () => {
         tokenAccount,
         amount: 100n,
       });
-    });
-  });
-
-  describe('set_authority', () => {
-    it('call with default params', async () => {
-      const fixture = await vaultsFixture();
-
-      await setAuthority(fixture, {
-        newAuthority: fixture.regularAccounts[0].publicKey,
-      });
-      await mintToken(
-        fixture,
-        {
-          tokenProgram: TOKEN_2022_PROGRAM_ID,
-          mint: {
-            mint: fixture.mTBillMint.publicKey,
-            decimals: 9,
-            feed: Keypair.generate(),
-          },
-        },
-        {
-          from: fixture.regularAccounts[0],
-        },
-      );
-    });
-
-    it('should fail: call from non-authority', async () => {
-      const fixture = await vaultsFixture();
-
-      await mintMToken(
-        fixture,
-        {},
-        {
-          from: fixture.regularAccounts[0],
-          revertedWith: CommonError.AccountIsNotInitialized,
-        },
-      );
     });
   });
 
@@ -422,42 +384,6 @@ describe('token-authority', () => {
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
-        },
-      );
-    });
-
-    it('should fail: call when authority type is not assigned', async () => {
-      const fixture = await vaultsFixture();
-
-      await mintMToken(fixture, {});
-
-      await expectTxNotReverted(
-        fixture.context,
-        new Transaction().add(
-          createSetAuthorityInstruction(
-            fixture.mTBillMint.publicKey,
-            fixture.authority.publicKey,
-            AuthorityType.FreezeAccount,
-            getTokenAuthorityPda(fixture.mTBillMinterAuthoritySeed),
-            undefined,
-            TOKEN_2022_PROGRAM_ID,
-          ),
-        ),
-        [fixture.authority],
-      );
-
-      await freezeAccount(fixture, {});
-
-      await setAuthority(fixture, {
-        newAuthority: fixture.regularAccounts[0].publicKey,
-        authorityType: AuthorityType.FreezeAccount,
-      });
-
-      await thawAccount(
-        fixture,
-        {},
-        {
-          revertedWith: CommonError.SplOwnerDoesNotMatch,
         },
       );
     });

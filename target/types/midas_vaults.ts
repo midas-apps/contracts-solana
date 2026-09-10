@@ -1945,7 +1945,7 @@ export type MidasVaults = {
       ],
       "accounts": [
         {
-          "name": "payer",
+          "name": "authority",
           "docs": [
             "Payer for realloc (lamports for extra space)"
           ],
@@ -1988,6 +1988,97 @@ export type MidasVaults = {
                 "path": "vaultCommon"
               }
             ]
+          }
+        },
+        {
+          "name": "authorityAcRole",
+          "docs": [
+            "Admin role of authority"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99,
+                  95,
+                  114,
+                  111,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault_common.ac_role",
+                "account": "vaultCommonState"
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  100,
+                  109,
+                  105,
+                  110,
+                  95,
+                  114,
+                  111,
+                  108,
+                  101
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
           }
         },
         {

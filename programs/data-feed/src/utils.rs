@@ -62,7 +62,7 @@ pub fn get_price_in_base_9<'info>(
                 .map_err(|_| DataFeedError::InvalidUnderlyingFeedProvided)?;
             let raw_price = feed
                 .get_value(
-                    Clock::get().unwrap().slot,
+                    Clock::get()?.slot,
                     data_feed.max_staleness.into(),
                     feed.min_sample_size.into(),
                     true,
@@ -124,7 +124,11 @@ pub fn get_price_in_base_9<'info>(
 
 /// Returns current unix timestamp from clock
 pub fn get_current_ts() -> Result<u32> {
-    Ok(Clock::get().unwrap().unix_timestamp as u32)
+    Ok(Clock::get()
+        .unwrap()
+        .unix_timestamp
+        .try_into()
+        .map_err(|_| DataFeedError::ArithmeticOverflow)?)
 }
 
 /// Updates `FeedState` values.

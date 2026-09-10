@@ -2,6 +2,7 @@ import { getMint, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-to
 import { PublicKey } from '@solana/web3.js';
 import { expect } from 'vitest';
 
+import { AC_ROLES } from '../constants/ac.constants';
 import { MAX_U64, MAX_U128, ONE } from '../constants/common.constants';
 import { TOKEN_AUTHORITY_ROLES } from '../constants/token-authority.constants';
 import { VAULT_AC_ROLES } from '../constants/vaults.constants';
@@ -136,13 +137,19 @@ export const migrateMinterVaultStateToV2 = async (
     'minterVaultState',
     dataWithMaxSupplyCapRaw,
   )) as Awaited<ReturnType<typeof fetchMinterVaultState>>;
+  const vaultCommonState = await fetchVaultCommonState(vaultsProgram, commonVault);
 
   const tx = await vaultsProgram.methods
     .migrateMinterVaultStateToV2()
     .accountsPartial({
-      payer: from.publicKey,
+      authority: from.publicKey,
       vaultCommon: commonVault,
       minterVault: minterVault,
+      authorityAcRole: getAccountAcRoleStatePda(
+        vaultCommonState.acRole,
+        from.publicKey,
+        AC_ROLES.ADMIN,
+      ),
     })
     .transaction();
 

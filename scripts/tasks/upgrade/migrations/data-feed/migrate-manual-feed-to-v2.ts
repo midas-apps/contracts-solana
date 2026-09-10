@@ -6,7 +6,9 @@ import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 import { getDataFeedProgram } from '@/scripts/deploy/dataFeed';
 import { getTokenAddresses } from '@/scripts/utils/addressQueries';
 import { getMtoken, getNetwork } from '@/scripts/utils/argumentParser';
-import { getManualFeedStatePda } from '@/test/helpers/data-feed.helpers';
+import { AC_ROLES } from '@/test/constants/ac.constants';
+import { getAccountAcRoleStatePda } from '@/test/helpers/ac.helpers';
+import { fetchDataFeedState, getManualFeedStatePda } from '@/test/helpers/data-feed.helpers';
 
 async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const common = { provider, payer, network };
@@ -27,13 +29,19 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   }
 
   const dataFeedProgram = getDataFeedProgram(provider);
+  const baseFeedState = await fetchDataFeedState(dataFeedProgram, dataFeed);
 
   const tx = await dataFeedProgram.methods
     .migrateManualFeedToV2()
     .accountsPartial({
       manualFeed: manualFeed,
-      payer: payer.publicKey,
+      authority: payer.publicKey,
       baseFeed: dataFeed,
+      authorityAcRole: getAccountAcRoleStatePda(
+        baseFeedState.acRole,
+        payer.publicKey,
+        AC_ROLES.ADMIN,
+      ),
     })
     .transaction();
 

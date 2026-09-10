@@ -1,3 +1,6 @@
+use access_control::{
+    constants::ac_roles, program::AccessControl, state::AccountAccessControlRoleState,
+};
 use anchor_lang::{prelude::*, system_program};
 
 use crate::state::{MinterVaultState, VaultCommonState};
@@ -10,7 +13,7 @@ const OLD_MINTER_VAULT_SIZE: usize = 80;
 pub struct MigrateMinterVaultStateToV2<'info> {
     /// Payer for realloc (lamports for extra space)
     #[account(mut)]
-    pub payer: Signer<'info>,
+    pub authority: Signer<'info>,
 
     /// Vault common state account
     #[account()]
@@ -25,6 +28,14 @@ pub struct MigrateMinterVaultStateToV2<'info> {
     )]
     pub minter_vault: UncheckedAccount<'info>,
 
+    /// Admin role of authority
+    #[account(
+        seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::ADMIN],
+        seeds::program = AccessControl::id(),
+        bump,
+    )]
+    pub authority_ac_role: Box<Account<'info, AccountAccessControlRoleState>>,
+
     pub system_program: Program<'info, System>,
 }
 
@@ -32,7 +43,7 @@ pub struct MigrateMinterVaultStateToV2<'info> {
 pub fn handle(ctx: Context<MigrateMinterVaultStateToV2>) -> Result<()> {
     let minter_vault = &ctx.accounts.minter_vault;
     let current_len = minter_vault.data_len();
-    let new_len = 8 + MinterVaultState::INIT_SPACE;
+    let new_len = MinterVaultState::INIT_SPACE.checked_add(8).unwrap();
 
     // Check if already migrated
     if current_len >= new_len {
@@ -59,7 +70,7 @@ pub fn handle(ctx: Context<MigrateMinterVaultStateToV2>) -> Result<()> {
             CpiContext::new(
                 ctx.accounts.system_program.to_account_info(),
                 system_program::Transfer {
-                    from: ctx.accounts.payer.to_account_info(),
+                    from: ctx.accounts.authority.to_account_info(),
                     to: minter_vault.to_account_info(),
                 },
             ),
@@ -73,7 +84,8 @@ pub fn handle(ctx: Context<MigrateMinterVaultStateToV2>) -> Result<()> {
     // Write max_supply_cap (u64::MAX) at the end of existing data
     let mut data = minter_vault.try_borrow_mut_data()?;
     let max_supply_cap_bytes = u64::MAX.to_le_bytes();
-    data[OLD_MINTER_VAULT_SIZE..OLD_MINTER_VAULT_SIZE + 8].copy_from_slice(&max_supply_cap_bytes);
+    data[OLD_MINTER_VAULT_SIZE..OLD_MINTER_VAULT_SIZE.checked_add(8).unwrap()]
+        .copy_from_slice(&max_supply_cap_bytes);
 
     msg!(
         "Migrated minter vault from {} to {} bytes, set max_supply_cap to u64::MAX",

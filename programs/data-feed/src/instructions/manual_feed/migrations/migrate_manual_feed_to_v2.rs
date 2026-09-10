@@ -1,3 +1,6 @@
+use access_control::{
+    constants::ac_roles, program::AccessControl, state::AccountAccessControlRoleState,
+};
 use anchor_lang::{prelude::*, system_program};
 
 use crate::state::{FeedState, ManualFeedState};
@@ -10,7 +13,7 @@ const OLD_MANUAL_FEED_SIZE: usize = 21;
 pub struct MigrateManualFeedToV2<'info> {
     /// Payer for realloc (lamports for extra space)
     #[account(mut)]
-    pub payer: Signer<'info>,
+    pub authority: Signer<'info>,
 
     /// Base feed state account
     #[account()]
@@ -25,6 +28,14 @@ pub struct MigrateManualFeedToV2<'info> {
     )]
     pub manual_feed: UncheckedAccount<'info>,
 
+    /// Admin role of authority
+    #[account(
+        seeds = [AccountAccessControlRoleState::SEED, base_feed.ac_role.as_ref(), authority.key().as_ref(), ac_roles::ADMIN],
+        seeds::program = AccessControl::id(),
+        bump,
+    )]
+    pub authority_ac_role: Box<Account<'info, AccountAccessControlRoleState>>,
+
     pub system_program: Program<'info, System>,
 }
 
@@ -32,7 +43,7 @@ pub struct MigrateManualFeedToV2<'info> {
 pub fn handle(ctx: Context<MigrateManualFeedToV2>) -> Result<()> {
     let manual_feed = &ctx.accounts.manual_feed;
     let current_len = manual_feed.data_len();
-    let new_len = 8 + ManualFeedState::INIT_SPACE;
+    let new_len = ManualFeedState::INIT_SPACE.checked_add(8).unwrap();
 
     // Check if already migrated
     if current_len >= new_len {
@@ -59,7 +70,7 @@ pub fn handle(ctx: Context<MigrateManualFeedToV2>) -> Result<()> {
             CpiContext::new(
                 ctx.accounts.system_program.to_account_info(),
                 system_program::Transfer {
-                    from: ctx.accounts.payer.to_account_info(),
+                    from: ctx.accounts.authority.to_account_info(),
                     to: manual_feed.to_account_info(),
                 },
             ),
@@ -73,7 +84,7 @@ pub fn handle(ctx: Context<MigrateManualFeedToV2>) -> Result<()> {
     // Write max_answer_deviation (u64::MAX) at the end of existing data
     let mut data = manual_feed.try_borrow_mut_data()?;
     let max_answer_deviation_bytes = u64::MAX.to_le_bytes();
-    data[OLD_MANUAL_FEED_SIZE..OLD_MANUAL_FEED_SIZE + 8]
+    data[OLD_MANUAL_FEED_SIZE..OLD_MANUAL_FEED_SIZE.checked_add(8).unwrap()]
         .copy_from_slice(&max_answer_deviation_bytes);
 
     msg!(
