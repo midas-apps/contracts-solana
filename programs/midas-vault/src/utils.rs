@@ -716,7 +716,7 @@ pub mod minter {
         is_safe: bool,
         skip_on_supply_cap_exceeded: bool,
     ) -> Result<bool> {
-        validate_common(&vault_common, &account_ac, None, false)?;
+        validate_common(vault_common, account_ac, None, false)?;
 
         if is_safe {
             require_variation_tolerance(vault_common, request.m_mint_rate.into(), new_out_rate)?;

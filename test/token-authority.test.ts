@@ -1,6 +1,5 @@
 import {
   AuthorityType,
-  createFreezeAccountInstruction,
   createSetAuthorityInstruction,
   TOKEN_2022_PROGRAM_ID,
 } from '@solana/spl-token';
