@@ -1,0 +1,12 @@
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Debug artifacts
+.exvul_solana_auditor/
+
+# Generated reports
+exvul_solana_auditor.md

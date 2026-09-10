@@ -173,7 +173,7 @@ export type TokenAuthority = {
         {
           "name": "fromTokenAccount",
           "docs": [
-            "Token account of `from` (Burn::from)"
+            "Token account to burn from (Burn::from). Canonical ATA is not required."
           ],
           "writable": true
         },
@@ -356,7 +356,7 @@ export type TokenAuthority = {
         {
           "name": "toFreezeTokenAccount",
           "docs": [
-            "Token account of `to_freeze` (FreezeAccount::account)"
+            "Token account to freeze (FreezeAccount::account). Canonical ATA is not required."
           ],
           "writable": true
         },
@@ -533,7 +533,7 @@ export type TokenAuthority = {
         {
           "name": "receiverTokenAccount",
           "docs": [
-            "Token account of `receiver` (MintTo::to)"
+            "Token account to mint to (MintTo::to). Canonical ATA is not required."
           ],
           "writable": true
         },
@@ -971,7 +971,7 @@ export type TokenAuthority = {
         {
           "name": "toThawTokenAccount",
           "docs": [
-            "Token account of `to_thaw` (ThawAccount::account)"
+            "Token account to thaw (ThawAccount::account). Canonical ATA is not required."
           ],
           "writable": true
         },

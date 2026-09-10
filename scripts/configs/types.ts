@@ -151,14 +151,6 @@ export const tokenMetadataSchema = z.object({
   uri: z.url().optional(),
 });
 
-export const tokenAuthorityConfigSchema = z.object({
-  seed: z
-    .string()
-    .min(8, 'Seed must be at least 8 characters for security')
-    .max(32, 'Seed must not exceed 32 characters')
-    .regex(/^[a-z0-9-]+$/, 'Seed must only contain lowercase letters, numbers, and hyphens'),
-});
-
 export const paymentTokenConfigSchema = z.object({
   symbol: z
     .string()
@@ -226,7 +218,6 @@ export const timelockConfigSchema = z.object({
 
 export const tokenConfigSchema = z.object({
   metadata: tokenMetadataSchema,
-  tokenAuthority: tokenAuthorityConfigSchema,
   dataFeed: dataFeedConfigSchema,
   minter: minterVaultConfigSchema,
   redeemer: redeemerVaultConfigSchema,
@@ -244,7 +235,6 @@ export const networkSpecificConfigSchema = z.object({
 
 export const tokenConfigWithNetworksSchema = z.object({
   metadata: tokenMetadataSchema,
-  tokenAuthority: tokenAuthorityConfigSchema,
   networks: z.record(z.string(), networkSpecificConfigSchema),
 });
 

@@ -675,13 +675,19 @@ export const fetchAccountNullable = async <TReturn>(
     fetch: (account: PublicKey) => Promise<TReturn>;
   },
   allowNull = false,
+  validateError?: (error: unknown) => boolean,
 ) => {
   try {
     return await account.fetch(publicKey);
-  } catch {
+  } catch (e) {
     if (!allowNull) {
       throw new Error('Account state is empty');
     }
+
+    if (validateError && !validateError(e)) {
+      throw e;
+    }
+
     return null;
   }
 };
