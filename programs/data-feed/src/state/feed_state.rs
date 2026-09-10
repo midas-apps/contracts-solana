@@ -10,7 +10,7 @@ pub enum FeedMode {
     /// Indicates underlying_feed is Switchboard's `PullFeedAccountData`
     Switchboard,
     /// Indicates underlying_feed is Pyth's `PriceUpdateV2`
-    Pyth
+    Pyth,
 }
 
 #[account]

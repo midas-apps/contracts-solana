@@ -161,7 +161,7 @@ pub fn handle(
     is_safe: bool,
     safe_validate_liquidity: bool,
 ) -> Result<()> {
-    match redeemer::approve_redeem_request(
+    if redeemer::approve_redeem_request(
         &ctx.accounts.redeem_request,
         &ctx.accounts.account_ac,
         &ctx.accounts.vault_common,
@@ -178,12 +178,9 @@ pub fn handle(
         new_m_token_rate.into(),
         is_safe,
         safe_validate_liquidity,
-    ) {
-        Ok(true) => {
-            ctx.accounts.close()?;
-            Ok(())
-        }
-        Ok(false) => Ok(()),
-        Err(e) => Err(e),
+    )? {
+        ctx.accounts.close()?;
     }
+
+    Ok(())
 }

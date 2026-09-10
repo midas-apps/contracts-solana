@@ -287,10 +287,12 @@ pub fn get_fee_amount(
         return Ok(0);
     }
 
-    let mut fee_percent = mint_config.fee.into();
+    let mut fee_percent: u128 = mint_config.fee.into();
 
     if is_instant {
-        fee_percent += common.instant_fee as u128;
+        fee_percent = fee_percent
+            .checked_add(common.instant_fee as u128)
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?;
     }
 
     if fee_percent > ONE_HUNDRED_PERCENT.into() {
@@ -1155,7 +1157,9 @@ pub mod redeemer {
         )?;
 
         if is_fiat && !common_account.waived_fee {
-            fee_amount += redeemer.fiat_flat_fee as u128;
+            fee_amount = fee_amount
+                .checked_add(redeemer.fiat_flat_fee as u128)
+                .ok_or(MidasVaultsError::ArithmeticOverflow)?;
         }
 
         require_gt!(

@@ -1,7 +1,7 @@
 use crate::{
     constants::{
-        DEFAULT_PUBKEY, MANUAL_FEED_MAX_STALENESS,
-        PYTH_FEED_MAX_STALENESS, SWITCHBOARD_FEED_MAX_STALENESS,
+        DEFAULT_PUBKEY, MANUAL_FEED_MAX_STALENESS, PYTH_FEED_MAX_STALENESS,
+        SWITCHBOARD_FEED_MAX_STALENESS,
     },
     errors::DataFeedError,
     state::FeedMode,
@@ -174,7 +174,7 @@ pub fn update_feed(
     let max_staleness = match state.mode {
         FeedMode::Manual => MANUAL_FEED_MAX_STALENESS,
         FeedMode::Pyth => PYTH_FEED_MAX_STALENESS,
-        FeedMode::Switchboard => SWITCHBOARD_FEED_MAX_STALENESS
+        FeedMode::Switchboard => SWITCHBOARD_FEED_MAX_STALENESS,
     };
 
     require_gte!(
@@ -216,7 +216,11 @@ pub fn update_manual_feed(
 pub fn get_deviation(last_price: u128, new_price: u128, decimals: u8) -> Result<u128> {
     if new_price == 0 {
         return Ok(100u128
-            .checked_mul(10_u128.checked_pow(decimals.into()).unwrap())
+            .checked_mul(
+                10_u128
+                    .checked_pow(decimals.into())
+                    .ok_or(DataFeedError::ArithmeticOverflow)?,
+            )
             .ok_or(DataFeedError::ArithmeticOverflow)?);
     }
 

@@ -139,7 +139,7 @@ pub fn handle(
 ) -> Result<()> {
     let new_out_rate: u128 = ctx.accounts.mint_request.m_mint_rate.into();
 
-    match minter::approve_mint_request(
+    if minter::approve_mint_request(
         &ctx.accounts.mint_request,
         &ctx.accounts.account_ac,
         &ctx.accounts.vault_common,
@@ -155,12 +155,9 @@ pub fn handle(
         new_out_rate,
         false,
         skip_on_supply_cap_exceeded,
-    ) {
-        Ok(true) => {
-            ctx.accounts.close()?;
-            Ok(())
-        }
-        Ok(false) => Ok(()),
-        Err(e) => Err(e),
+    )? {
+        ctx.accounts.close()?;
     }
+
+    Ok(())
 }

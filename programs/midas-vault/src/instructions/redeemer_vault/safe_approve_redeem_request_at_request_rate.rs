@@ -159,7 +159,7 @@ pub fn handle(
 ) -> Result<()> {
     let new_m_token_rate: u64 = ctx.accounts.redeem_request.m_token_rate;
 
-    match redeemer::approve_redeem_request(
+    if redeemer::approve_redeem_request(
         &ctx.accounts.redeem_request,
         &ctx.accounts.account_ac,
         &ctx.accounts.vault_common,
@@ -176,12 +176,9 @@ pub fn handle(
         new_m_token_rate.into(),
         false,
         safe_validate_liquidity,
-    ) {
-        Ok(true) => {
-            ctx.accounts.close()?;
-            Ok(())
-        }
-        Ok(false) => Ok(()),
-        Err(e) => Err(e),
+    )? {
+        ctx.accounts.close()?;
     }
+
+    Ok(())
 }

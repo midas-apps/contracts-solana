@@ -141,7 +141,7 @@ pub fn handle(
     is_safe: bool,
     skip_on_supply_cap_exceeded: bool,
 ) -> Result<()> {
-    match minter::approve_mint_request(
+    if minter::approve_mint_request(
         &ctx.accounts.mint_request,
         &ctx.accounts.account_ac,
         &ctx.accounts.vault_common,
@@ -157,12 +157,9 @@ pub fn handle(
         new_out_rate.into(),
         is_safe,
         skip_on_supply_cap_exceeded,
-    ) {
-        Ok(true) => {
-            ctx.accounts.close()?;
-            Ok(())
-        }
-        Ok(false) => Ok(()),
-        Err(e) => Err(e),
+    )? {
+        ctx.accounts.close()?;
     }
+
+    Ok(())
 }
