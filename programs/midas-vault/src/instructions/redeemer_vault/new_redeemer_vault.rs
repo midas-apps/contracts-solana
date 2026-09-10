@@ -46,9 +46,9 @@ pub struct NewRedeemerVault<'info> {
 /// # Arguments
 ///
 /// - `request_redeemer` - account from which tokens will be taken during
-/// the request approval (not ATA)
+///   the request approval (not ATA)
 /// - `min_fiat_redeem_amount` - minimum amount of mTokens to initiate
-/// a fiat redeem request
+///   a fiat redeem request
 /// - `fiat_flat_fee` - flat mToken fee (not it %) for fiat redeem request
 pub fn handle(
     ctx: Context<NewRedeemerVault>,

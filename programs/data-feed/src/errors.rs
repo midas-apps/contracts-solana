@@ -22,4 +22,16 @@ pub enum DataFeedError {
     PriceIsLowerThanMin,
     #[msg("Price is higher than max.")]
     PriceIsHigherThanMax,
+    #[msg("Arithmetic overflow or underflow")]
+    ArithmeticOverflow,
+    #[msg("Deviation is too high")]
+    DeviationTooHigh,
+    #[msg("Invalid price timestamp")]
+    InvalidPriceTimestamp,
+    #[msg("Invalid timestamp")]
+    InvalidTimestamp,
+    #[msg("Not enough time has passed since last update")]
+    NotEnoughTimeHasPassedSinceLastUpdate,
+    #[msg("Invalid price")]
+    InvalidPrice,
 }

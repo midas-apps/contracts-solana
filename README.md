@@ -26,10 +26,11 @@ All requirements and invariants for the programs are described in [this notion d
 
 ## Prerequirments
 
-- anchor-cli - 0.30.1
-- solana-cli - 2.1.16
-- node - 20
-- yarn - 1.22.22
+- anchor-cli - 0.32.1
+- solana-cli - 2.2.20
+- rustc - 1.93.1
+- node - ^24
+- yarn - 4.10.3
 
 ## Installation Guide
 
@@ -39,40 +40,43 @@ Follow these steps to set up your environment:
 
    Install Rust using [rustup.rs](https://rustup.rs/).
 
-2. **Install Solana CLI (v2.1.16) via agave-install**
+2. **Install Solana CLI (v2.2.20) via agave-install**
 
    Use the [official installation guide](https://docs.anza.xyz/cli/install):
 
    ```sh
-   sh -c "$(curl -sSfL https://release.anza.xyz/v2.1.16/install)"
+   sh -c "$(curl -sSfL https://release.anza.xyz/v2.2.20/install)"
    ```
 
-3. **Install Anchor Version Manager (AVM) and Anchor CLI (v0.30.1)**
+3. **Install Anchor Version Manager (AVM) and Anchor CLI (v0.32.1)**
 
    ```sh
-   cargo install --git https://github.com/coral-xyz/anchor --tag v0.30.1 avm --locked --force
+   cargo install --git https://github.com/coral-xyz/anchor --tag v0.32.1 avm --locked --force
    ```
 
    Then run:
 
    ```sh
-   avm install 0.30.1
-   avm use 0.30.1
+   avm install 0.32.1
+   # OR if not working
+   avm install 0.32.1 --from-source
+
+   avm use 0.32.1
    ```
 
    Verify your installation:
 
    ```sh
    anchor --version
-   # should output: anchor-cli 0.30.1
+   # should output: anchor-cli 0.32.1
    ```
 
-4. **(Optional) Use Nightly Rust Toolchain for Building**
+4. **(Optional) Install build tools**
 
-If you encounter build errors related to the toolchain, you can use the nightly toolchain for building the project.
+If you encounter build errors related, you should probably install sbf tools:
 
 ```sh
-RUSTUP_TOOLCHAIN="nightly-2024-05-09" yarn build
+cargo build-sbf --force-tools-install
 ```
 
 ## How to build the project
@@ -81,18 +85,18 @@ RUSTUP_TOOLCHAIN="nightly-2024-05-09" yarn build
 yarn build
 ```
 
-or
-
-```
-RUSTUP_TOOLCHAIN="nightly-2024-05-09" yarn build
-```
-
 ## How to run tests
 
 To run all tests:
 
 ```
 yarn test
+```
+
+To run all tests with program logging to console:
+
+```
+TESTS_LOG_LEVEL=debug yarn test
 ```
 
 To run only cargo tests:

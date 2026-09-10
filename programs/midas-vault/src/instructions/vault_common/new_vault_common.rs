@@ -30,12 +30,12 @@ pub struct NewVaultCommon<'info> {
 /// # Arguments
 ///
 /// - `ac` - access_control::AccessControlState pubkey that will be used
-/// for green/black lists checks
+///   for green/black lists checks
 /// - `m_mint` - mToken mint pubkey
 /// - `m_mint_feed` - mToken data_feed::FeedState pubkey
 /// - `greenlist_enforced` - if true, only greenlisted accounts can interact with the vault
 /// - `ac_role` - access_control::AccountAccessControlRoleState pubkey that will be used
-/// to manage access control
+///   to manage access control
 /// - `tokens_receiver` - pubkey that will receive tokens from the vault (not ATA)
 /// - `fee_receiver` - pubkey that will receive fees from the vault (not ATA)
 /// - `instant_fee` - % fee that will be charged for instant swaps

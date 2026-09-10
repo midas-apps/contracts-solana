@@ -1,13 +1,75 @@
-import { Keypair, PublicKey, Transaction } from '@solana/web3.js';
+import {
+  AccountMeta,
+  Keypair,
+  PublicKey,
+  SystemProgram,
+  Transaction,
+  TransactionInstruction,
+} from '@solana/web3.js';
 import * as multisig from '@sqds/multisig';
-import { ProgramTestContext } from 'solana-bankrun';
+import { LiteSVM } from 'litesvm';
 
 import { DAY } from '../constants/common.constants';
 import { SQUADS_PROGRAM_ID } from '../constants/squads.constant';
-import { initBankrun, processTransaction } from '../helpers/common.helpers';
+import { initLiteSVM, processTransaction } from '../helpers/common.helpers';
+
+export function createMultisigCreateV2Instruction(
+  accounts: multisig.generated.MultisigCreateV2InstructionAccounts,
+  args: multisig.generated.MultisigCreateV2InstructionArgs,
+) {
+  const [data] = multisig.generated.multisigCreateV2Struct.serialize({
+    instructionDiscriminator: multisig.generated.multisigCreateV2InstructionDiscriminator,
+    ...args,
+  });
+  const keys: AccountMeta[] = [
+    {
+      pubkey: accounts.programConfig,
+      isWritable: false,
+      isSigner: false,
+    },
+    {
+      pubkey: accounts.treasury,
+      isWritable: true,
+      isSigner: false,
+    },
+    {
+      pubkey: accounts.multisig,
+      isWritable: true,
+      isSigner: false,
+    },
+    {
+      pubkey: accounts.createKey,
+      isWritable: true,
+      isSigner: true,
+    },
+    {
+      pubkey: accounts.creator,
+      isWritable: true,
+      isSigner: true,
+    },
+    {
+      pubkey: accounts.systemProgram ?? SystemProgram.programId,
+      isWritable: false,
+      isSigner: false,
+    },
+  ];
+
+  if (accounts.anchorRemainingAccounts != null) {
+    for (const acc of accounts.anchorRemainingAccounts) {
+      keys.push(acc);
+    }
+  }
+
+  const ix = new TransactionInstruction({
+    programId: multisig.PROGRAM_ID,
+    keys,
+    data,
+  });
+  return ix;
+}
 
 const createMultisig = async (
-  context: ProgramTestContext,
+  context: LiteSVM,
   {
     authority,
     timelock = 2n * DAY,
@@ -37,33 +99,34 @@ const createMultisig = async (
   await processTransaction(
     context,
     new Transaction().add(
-      multisig.instructions.multisigCreateV2({
-        // Must sign the transaction, unless the .rpc method is used.
-        createKey: createKey.publicKey,
-        // The creator & fee payer
-        creator: authority.publicKey,
-        // The PDA of the multisig you are creating, derived by a random PublicKey
-        multisigPda,
-        // Here the config authority will be the system program
-        configAuthority: null,
-        // Create without any time-lock
-        timeLock: Number(timelock),
-        // List of the members to add to the multisig
-        members: [
-          {
-            // Members Public Key
-            key: member ?? authority.publicKey,
-            // Granted Proposer, Voter, and Executor permissions
-            permissions: multisig.types.Permissions.all(),
+      createMultisigCreateV2Instruction(
+        {
+          // Must sign the transaction, unless the .rpc method is used.
+          createKey: createKey.publicKey,
+          // The creator & fee payer
+          creator: authority.publicKey,
+          // The PDA of the multisig you are creating, derived by a random PublicKey
+          multisig: multisigPda,
+          // This is for the program config treasury account
+          treasury: configTreasury,
+          programConfig: programConfigPda,
+        },
+        {
+          args: {
+            configAuthority: null,
+            threshold: 1,
+            members: [
+              {
+                key: member ?? authority.publicKey,
+                permissions: multisig.types.Permissions.all(),
+              },
+            ],
+            timeLock: Number(timelock),
+            rentCollector: null,
+            memo: null,
           },
-        ],
-        // This means that there needs to be 2 votes for a transaction proposal to be approved
-        threshold: 1,
-        // This is for the program config treasury account
-        treasury: configTreasury,
-        // Rent reclaim account
-        rentCollector: null,
-      }),
+        },
+      ),
     ),
     [authority, createKey],
   );
@@ -72,7 +135,7 @@ const createMultisig = async (
 };
 
 export const squadsFixture = async (initSlot?: bigint) => {
-  const { provider, context, accounts } = await initBankrun(10, initSlot, true);
+  const { provider, context, accounts } = await initLiteSVM(10, initSlot, true);
 
   const [authority, ...regularAccounts] = accounts;
 

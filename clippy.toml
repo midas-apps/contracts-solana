@@ -1,0 +1,7 @@
+# Clippy configuration
+# See: https://doc.rust-lang.org/stable/clippy/configuration.html
+
+# Allow functions with many arguments (default threshold is 7)
+too-many-arguments-threshold = 20
+
+# borrowed_box is allowed in root Cargo.toml [workspace.lints.clippy]

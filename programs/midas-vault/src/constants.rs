@@ -9,7 +9,9 @@ pub const STABLECOIN_RATE: u64 = ONE;
 /// 100% with 2 decimals precision
 pub const ONE_HUNDRED_PERCENT: u64 = 100 * 100;
 /// Max u128 value
-pub const MAX_UINT128: u128 = u128::max_value(); // 18446744073709551615
+pub const MAX_UINT128: u128 = u128::MAX;
+/// Max u64 value
+pub const MAX_UINT64: u64 = u64::MAX;
 
 pub mod seeds {
     pub const VAULT: &[u8; 5] = b"vault";
@@ -20,4 +22,6 @@ pub mod ac_roles {
     pub const VAULT_ADMIN: &[u8; 16] = b"vault_admin_role";
     /// Holder of this role can pause whole vault or specific instruction
     pub const VAULT_PAUSER: &[u8; 17] = b"vault_pauser_role";
+    /// Holder of this role can approve/reject mint/redeem requests
+    pub const REQUEST_MANAGER: &[u8; 20] = b"request_manager_role";
 }

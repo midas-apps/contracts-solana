@@ -6,7 +6,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     constants::ac_roles,
-    events::ManualFeedUpdatedEvent,
+    events::ManualFeedUpdatedEventV2,
     state::{FeedState, ManualFeedState},
     utils::update_manual_feed,
 };
@@ -49,22 +49,23 @@ pub struct UpdateManualFeed<'info> {
 ///
 /// # Arguments
 ///
-/// - `price` - new value for `ManualFeedState.price`
 /// - `decimals` - new decimals value for `ManualFeedState.decimals`
+/// - `max_answer_deviation` - new max answer deviation value for `ManualFeedState.max_answer_deviation`
 pub fn handle(
     ctx: Context<UpdateManualFeed>,
-    price: Option<u64>,
     decimals: Option<u8>,
+    max_answer_deviation: Option<u64>,
 ) -> Result<()> {
     let state = &mut ctx.accounts.manual_feed;
 
-    update_manual_feed(state, price, decimals)?;
+    update_manual_feed(state, None, decimals, max_answer_deviation)?;
 
-    emit!(ManualFeedUpdatedEvent {
+    emit!(ManualFeedUpdatedEventV2 {
         manual_feed: ctx.accounts.manual_feed.key(),
         base_feed: ctx.accounts.base_feed.key(),
         decimals,
-        price
+        price: None,
+        max_answer_deviation,
     });
 
     Ok(())

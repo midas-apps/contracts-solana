@@ -13,14 +13,14 @@ import { MidasVaults } from 'target/types/midas_vaults';
 import { createMTokenMint } from '../../common/create-mtoken-mint';
 import MIDAS_VAULTS_IDL from '../../target/idl/midas_vaults.json' with { type: 'json' };
 import { AC_ROLES } from '../constants/ac.constants';
-import { MAX_U128 } from '../constants/common.constants';
+import { MAX_U64, MAX_U128 } from '../constants/common.constants';
 import { TOKEN_AUTHORITY_ROLES } from '../constants/token-authority.constants';
 import { VAULT_AC_ROLES, VaultActionIds } from '../constants/vaults.constants';
 import { acRoleToBuffer, getAccountAcRoleStatePda } from '../helpers/ac.helpers';
 import {
   createMint,
   getOrCreateAta,
-  InitBankrunReturnType,
+  InitLiteSVMReturnType,
   parseUnits,
   processTransaction,
   toBN,
@@ -35,7 +35,7 @@ import {
 import { dataFeedFixture } from './dafa-feed.fixture';
 import { tokenAuthorityFixture } from './token-authority.fixture';
 
-export const vaultsFixture = async (fixture?: InitBankrunReturnType, initSlot?: bigint) => {
+export const vaultsFixture = async (fixture?: InitLiteSVMReturnType, initSlot?: bigint) => {
   const dfFixture = await dataFeedFixture(fixture, initSlot);
   const taFixture = await tokenAuthorityFixture(dfFixture);
 
@@ -177,6 +177,24 @@ export const vaultsFixture = async (fixture?: InitBankrunReturnType, initSlot?: 
         })
         .instruction(),
       await acProgram.methods
+        .grantRole(acRoleToBuffer(VAULT_AC_ROLES.REQUEST_MANAGER))
+        .accountsPartial({
+          account: authority.publicKey,
+          acRole: acRoleMTbill.publicKey,
+          authority: authority.publicKey,
+          authorityAcAdminRole: getAccountAcRoleStatePda(
+            acRoleMTbill.publicKey,
+            authority.publicKey,
+            AC_ROLES.ADMIN,
+          ),
+          accountAcRole: getAccountAcRoleStatePda(
+            acRoleMTbill.publicKey,
+            authority.publicKey,
+            VAULT_AC_ROLES.REQUEST_MANAGER,
+          ),
+        })
+        .instruction(),
+      await acProgram.methods
         .grantRole(acRoleToBuffer(VAULT_AC_ROLES.VAULT_PAUSER))
         .accountsPartial({
           account: authority.publicKey,
@@ -273,7 +291,7 @@ export const vaultsFixture = async (fixture?: InitBankrunReturnType, initSlot?: 
       })
       .instruction(),
     await vaultsProgram.methods
-      .newMinterVault(toBN(0))
+      .newMinterVault(toBN(0), toBN(MAX_U64))
       .accountsPartial({
         vaultCommon: minterCommonVault.publicKey,
         authority: authority.publicKey,

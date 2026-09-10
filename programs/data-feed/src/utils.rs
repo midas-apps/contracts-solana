@@ -21,9 +21,9 @@ use crate::state::{FeedState, ManualFeedState};
 ///
 /// - `data_feed` - `FeedState` account
 /// - `feed` - account of the price feed. Currently supported types are:
-///     - `ManualFeedState`
-///     - `PullFeedAccountData`
-///     - `PriceUpdateV2`
+///     - `ManualFeedState` (Manual feed account)
+///     - `PullFeedAccountData` (Switchboard feed account)
+///     - `PriceUpdateV2` (Pyth feed account)
 pub fn get_price_in_base_9<'info>(
     data_feed: &FeedState,
     feed: &AccountInfo<'info>,
@@ -35,44 +35,53 @@ pub fn get_price_in_base_9<'info>(
     );
 
     let (raw_price, decimals) = match data_feed.mode {
-        FeedMode::MANUAL => {
+        FeedMode::Manual => {
             // parse manual feed
             let mut buf: &[u8] = &feed.try_borrow_mut_data()?[..];
-            let feed_parsed = ManualFeedState::try_deserialize(&mut buf).unwrap();
+            let feed_parsed = ManualFeedState::try_deserialize(&mut buf)
+                .map_err(|_| DataFeedError::InvalidUnderlyingFeedProvided)?;
 
             let current_ts = get_current_ts()?;
 
-            if feed_parsed.last_updated_at > 0 {
-                let update_diff = current_ts.checked_sub(feed_parsed.last_updated_at).unwrap();
+            let update_diff = current_ts
+                .checked_sub(feed_parsed.last_updated_at)
+                .ok_or(DataFeedError::ArithmeticOverflow)?;
 
-                require_gte!(
-                    data_feed.max_staleness,
-                    update_diff,
-                    DataFeedError::PriceIsStale
-                );
-            }
+            require_gte!(
+                data_feed.max_staleness,
+                update_diff,
+                DataFeedError::PriceIsStale
+            );
 
             (feed_parsed.price as u128, feed_parsed.decimals)
         }
-        FeedMode::SWITCHBOARD => {
+        FeedMode::Switchboard => {
             // parse switchboard feed
             let feed_data = feed.data.borrow();
-            let feed = PullFeedAccountData::parse(feed_data).unwrap();
+            let feed = PullFeedAccountData::parse(feed_data)
+                .map_err(|_| DataFeedError::InvalidUnderlyingFeedProvided)?;
             let raw_price = feed
                 .get_value(
-                    &Clock::get()?,
+                    Clock::get()?.slot,
                     data_feed.max_staleness.into(),
                     feed.min_sample_size.into(),
                     true,
                 )
-                .unwrap();
+                .map_err(|_| DataFeedError::PriceIsStale)?;
 
-            (raw_price.mantissa() as u128, PRECISION.try_into().unwrap())
+            (
+                raw_price
+                    .mantissa()
+                    .try_into()
+                    .map_err(|_| DataFeedError::InvalidPrice)?,
+                PRECISION.try_into().unwrap(),
+            )
         }
-        FeedMode::PYTH => {
+        FeedMode::Pyth => {
             // parse pyth feed
             let mut buf: &[u8] = &feed.try_borrow_mut_data()?[..];
-            let feed_parsed = PriceUpdateV2::try_deserialize(&mut buf).unwrap();
+            let feed_parsed = PriceUpdateV2::try_deserialize(&mut buf)
+                .map_err(|_| DataFeedError::InvalidUnderlyingFeedProvided)?;
 
             let raw_price = feed_parsed
                 .get_price_no_older_than(
@@ -80,16 +89,21 @@ pub fn get_price_in_base_9<'info>(
                     data_feed.max_staleness.into(),
                     &feed_parsed.price_message.feed_id,
                 )
-                .unwrap();
+                .map_err(|_| DataFeedError::PriceIsStale)?;
 
             (
-                raw_price.price as u128,
+                raw_price
+                    .price
+                    .try_into()
+                    .map_err(|_| DataFeedError::InvalidPrice)?,
                 raw_price.exponent.abs().try_into().unwrap(),
             )
         }
     };
 
-    let price = decimals_conversion::convert_to_base_9(raw_price.into(), decimals)?;
+    require_gt!(raw_price, 0, DataFeedError::InvalidPrice);
+
+    let price = decimals_conversion::convert_to_base_9(raw_price, decimals)?;
 
     msg!("price: {}, {}", raw_price, price);
 
@@ -110,7 +124,11 @@ pub fn get_price_in_base_9<'info>(
 
 /// Returns current unix timestamp from clock
 pub fn get_current_ts() -> Result<u32> {
-    Ok(Clock::get().unwrap().unix_timestamp as u32)
+    Ok(Clock::get()
+        .unwrap()
+        .unix_timestamp
+        .try_into()
+        .map_err(|_| DataFeedError::ArithmeticOverflow)?)
 }
 
 /// Updates `FeedState` values.
@@ -157,23 +175,17 @@ pub fn update_feed(
         state.max_staleness = max_staleness;
     }
 
-    match state.mode {
-        FeedMode::MANUAL => require_gte!(
-            MANUAL_FEED_MAX_STALENESS,
-            state.max_staleness,
-            DataFeedError::ExceedsMaxStaleness
-        ),
-        FeedMode::PYTH => require_gte!(
-            PYTH_FEED_MAX_STALENESS,
-            state.max_staleness,
-            DataFeedError::ExceedsMaxStaleness
-        ),
-        FeedMode::SWITCHBOARD => require_gte!(
-            SWITCHBOARD_FEED_MAX_STALENESS,
-            state.max_staleness,
-            DataFeedError::ExceedsMaxStaleness
-        ),
-    }
+    let max_staleness = match state.mode {
+        FeedMode::Manual => MANUAL_FEED_MAX_STALENESS,
+        FeedMode::Pyth => PYTH_FEED_MAX_STALENESS,
+        FeedMode::Switchboard => SWITCHBOARD_FEED_MAX_STALENESS,
+    };
+
+    require_gte!(
+        max_staleness,
+        state.max_staleness,
+        DataFeedError::ExceedsMaxStaleness
+    );
 
     Ok(())
 }
@@ -184,6 +196,7 @@ pub fn update_manual_feed(
     state: &mut ManualFeedState,
     price: Option<u64>,
     decimals: Option<u8>,
+    max_answer_deviation: Option<u64>,
 ) -> Result<()> {
     if let Some(price) = price {
         state.price = price;
@@ -193,6 +206,10 @@ pub fn update_manual_feed(
         state.decimals = decimals;
     }
 
+    if let Some(max_answer_deviation) = max_answer_deviation {
+        state.max_answer_deviation = max_answer_deviation;
+    }
+
     if Option::is_some(&decimals) || Option::is_some(&price) {
         state.last_updated_at = get_current_ts().unwrap();
     }
@@ -200,9 +217,48 @@ pub fn update_manual_feed(
     Ok(())
 }
 
+pub fn get_deviation(last_price: u128, new_price: u128, decimals: u8) -> Result<u128> {
+    if new_price == 0 {
+        return Ok(100u128
+            .checked_mul(
+                10_u128
+                    .checked_pow(decimals.into())
+                    .ok_or(DataFeedError::ArithmeticOverflow)?,
+            )
+            .ok_or(DataFeedError::ArithmeticOverflow)?);
+    }
+
+    if last_price == 0 {
+        return Err(DataFeedError::InvalidPrice.into());
+    }
+
+    let one = 10_i128
+        .checked_pow(decimals.into())
+        .ok_or(DataFeedError::ArithmeticOverflow)?;
+
+    let last_price_i: i128 = i128::try_from(last_price).unwrap();
+    let new_price_i: i128 = i128::try_from(new_price).unwrap();
+
+    let price_dif: i128 = new_price_i
+        .checked_sub(last_price_i)
+        .ok_or(DataFeedError::ArithmeticOverflow)?;
+
+    let deviation: i128 = (price_dif
+        .checked_mul(one)
+        .ok_or(DataFeedError::ArithmeticOverflow)?
+        .checked_mul(100)
+        .ok_or(DataFeedError::ArithmeticOverflow)?)
+    .checked_div(last_price_i)
+    .ok_or(DataFeedError::ArithmeticOverflow)?;
+
+    Ok(deviation.abs().try_into()?)
+}
+
 /// library for converting values from one decimal point precision to another
 pub mod decimals_conversion {
     use anchor_lang::Result;
+
+    use crate::errors::DataFeedError;
 
     /// converts `value` with `value_decimals` precision to a `value` with `target_decimals` precision
     /// # Arguments
@@ -220,9 +276,31 @@ pub mod decimals_conversion {
         }
 
         let adjusted_amount = if value_decimals > target_decimals {
-            value / (10 as u128).pow((value_decimals - target_decimals).into())
+            value
+                .checked_div(
+                    10_u128
+                        .checked_pow(
+                            (value_decimals
+                                .checked_sub(target_decimals)
+                                .ok_or(DataFeedError::ArithmeticOverflow)?)
+                            .into(),
+                        )
+                        .ok_or(DataFeedError::ArithmeticOverflow)?,
+                )
+                .ok_or(DataFeedError::ArithmeticOverflow)?
         } else {
-            value * (10 as u128).pow((target_decimals - value_decimals).into())
+            value
+                .checked_mul(
+                    10_u128
+                        .checked_pow(
+                            (target_decimals
+                                .checked_sub(value_decimals)
+                                .ok_or(DataFeedError::ArithmeticOverflow)?)
+                            .into(),
+                        )
+                        .ok_or(DataFeedError::ArithmeticOverflow)?,
+                )
+                .ok_or(DataFeedError::ArithmeticOverflow)?
         };
 
         Ok(adjusted_amount)
@@ -338,5 +416,49 @@ pub mod decimals_conversion {
                 convert_from_base_9_test(114f64, 9, 114000000000)
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod deviation_tests {
+    use super::get_deviation;
+
+    fn units(amount: f64, decimals: u8) -> u128 {
+        (amount * 10f64.powi(decimals as i32)).trunc() as u128
+    }
+
+    // ---------- get_deviation ----------
+
+    #[test]
+    fn get_deviation_zero_when_prices_equal() {
+        let last = units(100.0, 6);
+        assert_eq!(get_deviation(last, last, 6).unwrap(), 0);
+    }
+
+    #[test]
+    fn get_deviation_one_percent_up() {
+        let last = units(100.0, 6);
+        let new = units(101.0, 6);
+        assert_eq!(get_deviation(last, new, 6).unwrap(), 1_000_000);
+    }
+
+    #[test]
+    fn get_deviation_ten_percent_down() {
+        let last = units(100.0, 6);
+        let new = units(90.0, 6);
+        assert_eq!(get_deviation(last, new, 6).unwrap(), 10_000_000);
+    }
+
+    #[test]
+    fn get_deviation_when_new_price_zero_returns_100_percent() {
+        let last = units(100.0, 6);
+        assert_eq!(get_deviation(last, 0, 6).unwrap(), 100_000_000);
+    }
+
+    #[test]
+    fn get_deviation_different_decimals() {
+        let last = units(1.0, 9);
+        let new = units(1.05, 9);
+        assert_eq!(get_deviation(last, new, 9).unwrap(), 5_000_000_000);
     }
 }

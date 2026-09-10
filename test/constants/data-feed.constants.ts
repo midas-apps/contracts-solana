@@ -14,6 +14,7 @@ export enum DataFeedMode {}
 
 export const DATA_FEED_AC_ROLES = {
   FEED_ADMIN: 'data_feed_admin',
+  PRICE_UPDATER: 'price_updater',
 };
 
 export enum DataFeedError {
@@ -27,4 +28,10 @@ export enum DataFeedError {
   InvalidUnderlyingFeed,
   PriceIsLowerThanMin,
   PriceIsHigherThanMax,
+  ArithmeticOverflow,
+  DeviationTooHigh,
+  InvalidPriceTimestamp,
+  InvalidTimestamp,
+  NotEnoughTimeHasPassedSinceLastUpdate,
+  InvalidPrice,
 }

@@ -1,31 +1,59 @@
-import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
-import { Keypair } from '@solana/web3.js';
+import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { Keypair, Transaction } from '@solana/web3.js';
 
 import { CommonError, DAY, DEFAULT_PUBKEY } from './constants/common.constants';
 import { DataFeedError } from './constants/data-feed.constants';
-import { VaultActionIds, VaultError, VAULTS_PROGRAM_ID } from './constants/vaults.constants';
+import {
+  VAULT_AC_ROLES,
+  VaultActionIds,
+  VaultError,
+  VAULTS_PROGRAM_ID,
+} from './constants/vaults.constants';
 import { vaultsFixture } from './fixture/vaults.fixture';
-import { fromBN, parsePercent, parseUnits, timeTravel } from './helpers/common.helpers';
-import { updateAccountAc } from './testers/ac.testers';
+import { getAccountAcRoleStatePda } from './helpers/ac.helpers';
+import {
+  expectTxNotReverted,
+  fromBN,
+  getBalance,
+  getOrCreateAta,
+  parsePercent,
+  parseUnits,
+  timeTravel,
+  toBN,
+} from './helpers/common.helpers';
+import { fetchDataFeedState } from './helpers/data-feed.helpers';
+import {
+  fetchRedeemerVaultRequestState,
+  fetchRedeemerVaultState,
+  fetchVaultCommonState,
+  getRedeemerVaultPda,
+  getRedeemerVaultRequestPda,
+} from './helpers/vaults.helpers';
+import { grantRole, newAccountAc, updateAccountAc } from './testers/ac.testers';
 import {
   addPaymentToken,
   newVaultCommon,
+  newVaultCommonAccount,
   updatePause,
   updatePauseInx,
   updateVaultCommon,
   updateVaultCommonAccount,
 } from './testers/common-vaults.testers';
-import { updateFeed, updateManualFeed } from './testers/data-feed.testers';
+import { updateFeed, updateManualFeedPrice } from './testers/data-feed.testers';
 import {
   approveRedeemRequest,
+  mintPaymentTokenAndApprove,
   prepareCommonRedeemTest,
   redeemInstant,
   redeemRequest,
   rejectRedeemRequest,
   newRedeemerVault,
+  safeApproveRedeemRequestAtCurrentRate,
+  safeApproveRedeemRequestAtRequestRate,
   updateRedeemerVault,
   transferToken,
 } from './testers/redeem-vault.testers';
+import { mintMToken } from './testers/token-authority.testers';
 
 describe('redeemer-vault', () => {
   describe('initializing', () => {
@@ -163,7 +191,7 @@ describe('redeemer-vault', () => {
         },
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('1.1'),
       });
 
@@ -275,12 +303,12 @@ describe('redeemer-vault', () => {
         mintPaymentTokenAndApprove: { amountBase9: parseUnits('495') },
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
         price: parseUnits('1.05'),
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('5'),
       });
 
@@ -313,12 +341,12 @@ describe('redeemer-vault', () => {
         mintPaymentTokenAndApprove: { amountBase9: parseUnits('471.428571') },
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
         price: parseUnits('1.05'),
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('5'),
       });
 
@@ -380,7 +408,7 @@ describe('redeemer-vault', () => {
       await prepareCommonRedeemTest(fixture, {
         addPaymentToken: { stable: false },
       });
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: 0n,
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
       });
@@ -390,8 +418,7 @@ describe('redeemer-vault', () => {
         {},
         {},
         {
-          // TODO: find a way to proxify errors
-          revertedWith: DataFeedError.PriceIsLowerThanMin,
+          revertedWith: DataFeedError.InvalidPrice,
         },
       );
     });
@@ -753,12 +780,12 @@ describe('redeemer-vault', () => {
         mintMToken: { amount: parseUnits('100') },
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
         price: parseUnits('1.05'),
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('5'),
       });
 
@@ -788,12 +815,12 @@ describe('redeemer-vault', () => {
         mintMToken: { amount: parseUnits('100') },
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
         price: parseUnits('1.05'),
       });
 
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: parseUnits('5'),
       });
 
@@ -891,7 +918,7 @@ describe('redeemer-vault', () => {
       await prepareCommonRedeemTest(fixture, {
         addPaymentToken: { stable: false },
       });
-      await updateManualFeed(fixture, {
+      await updateManualFeedPrice(fixture, {
         price: 0n,
         baseFeed: fixture.paymentMints.usdc.feed.publicKey,
       });
@@ -901,8 +928,7 @@ describe('redeemer-vault', () => {
         {},
         {},
         {
-          // TODO: find a way to proxify errors
-          revertedWith: DataFeedError.PriceIsLowerThanMin,
+          revertedWith: DataFeedError.InvalidPrice,
         },
       );
     });
@@ -1223,6 +1249,13 @@ describe('redeemer-vault', () => {
       );
 
       await redeemRequest(fixture, {}, {});
+
+      // Fiat approval validates the request user (require_green_list = true), so
+      // green list the user first to reach the payment mint validation.
+      await updateAccountAc(fixture, {
+        greenListed: true,
+      });
+
       await approveRedeemRequest(
         fixture,
         { isFiat: true },
@@ -1230,6 +1263,31 @@ describe('redeemer-vault', () => {
         {},
         {
           revertedWith: VaultError.InvalidPaymentMint,
+        },
+      );
+    });
+
+    it('should fail: when request user is removed from green list after fiat request creation', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        isFiat: true,
+      });
+      await redeemRequest(fixture, { isFiat: true }, {});
+
+      // Remove the request user from the green list after the request was created.
+      // Fiat approvals always require the request user to be green listed.
+      await updateAccountAc(fixture, {
+        greenListed: false,
+      });
+
+      await approveRedeemRequest(
+        fixture,
+        { isFiat: true },
+        {},
+        {},
+        {
+          revertedWith: VaultError.NotGreenListed,
         },
       );
     });
@@ -1331,12 +1389,41 @@ describe('redeemer-vault', () => {
       );
     });
 
+    it('should fail: call from non-authority that has vault admin role', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {});
+      await redeemRequest(fixture, {}, {});
+
+      const commonState = await fetchVaultCommonState(
+        fixture.vaultsProgram,
+        fixture.redeemerCommonVault.publicKey,
+      );
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: VAULT_AC_ROLES.VAULT_ADMIN,
+        acRole: commonState.acRole,
+      });
+
+      await approveRedeemRequest(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
     it('should fail: when request redeemer approve is insufficient', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonRedeemTest(fixture, {
         mintPaymentTokenAndApprove: {
           doApprove: false,
+          amountBase9: parseUnits('100'),
           to: fixture.requestRedeemer.publicKey,
         },
       });
@@ -1391,6 +1478,633 @@ describe('redeemer-vault', () => {
         },
       );
     });
+
+    it('should revert when variation tolerance exceeded even with safeValidateLiquidity=true', async () => {
+      const fixture = await vaultsFixture();
+      await prepareCommonRedeemTest(fixture, {});
+      await redeemRequest(fixture, {}, {});
+
+      // safeValidateLiquidity only suppresses liquidity errors, not variation tolerance
+      await approveRedeemRequest(
+        fixture,
+        { isSafe: true, newRate: parseUnits('1.11'), safeValidateLiquidity: true },
+        {},
+        {},
+        {
+          revertedWith: VaultError.VariationToleranceExceeded,
+        },
+      );
+    });
+
+    it('should silently skip with safeValidateLiquidity=true when request redeemer balance insufficient', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        mintPaymentTokenAndApprove: {
+          amountBase9: parseUnits('0.01'),
+          to: fixture.requestRedeemer.publicKey,
+        },
+      });
+      await redeemRequest(fixture, {}, {});
+
+      // Should not throw, silently skips
+      await approveRedeemRequest(
+        fixture,
+        { safeValidateLiquidity: true },
+        {},
+        { expectSkipped: true },
+      );
+    });
+
+    it('should fail: when request user is blacklisted after request creation', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        mintPaymentTokenAndApprove: {
+          to: fixture.requestRedeemer.publicKey,
+        },
+      });
+      await redeemRequest(fixture, {}, {});
+
+      // Blacklist the request user after the request was created
+      await updateAccountAc(fixture, {
+        blackListed: true,
+      });
+
+      await approveRedeemRequest(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          revertedWith: VaultError.Blacklisted,
+        },
+      );
+    });
+
+    it('should fail: when green list is enforced after request creation and request user is not green listed', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        mintPaymentTokenAndApprove: {
+          to: fixture.requestRedeemer.publicKey,
+        },
+      });
+      await redeemRequest(fixture, {}, {});
+
+      await updateVaultCommon(fixture, {
+        greenlistEnforced: true,
+        vaultCommon: fixture.redeemerCommonVault.publicKey,
+      });
+
+      await approveRedeemRequest(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          revertedWith: VaultError.NotGreenListed,
+        },
+      );
+    });
+  });
+
+  describe('safe_approve_redeem_request_at_current_rate', () => {
+    it('should approve redeem request at current rate', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        mintPaymentTokenAndApprove: {
+          to: fixture.requestRedeemer.publicKey,
+        },
+      });
+      await redeemRequest(fixture, {}, {});
+
+      await safeApproveRedeemRequestAtCurrentRate(fixture, {});
+    });
+
+    it('should fail: when current rate exceeds variation tolerance', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        mintPaymentTokenAndApprove: {
+          to: fixture.requestRedeemer.publicKey,
+        },
+      });
+      await redeemRequest(fixture, {}, {});
+
+      // Change rate significantly after request was created
+      await updateManualFeedPrice(fixture, {
+        price: parseUnits('1.11'),
+      });
+
+      await safeApproveRedeemRequestAtCurrentRate(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          revertedWith: VaultError.VariationToleranceExceeded,
+        },
+      );
+    });
+
+    it('should revert when variation tolerance exceeded even with safeValidateLiquidity=true', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        mintPaymentTokenAndApprove: {
+          to: fixture.requestRedeemer.publicKey,
+        },
+      });
+      await redeemRequest(fixture, {}, {});
+
+      // Change rate significantly after request was created
+      await updateManualFeedPrice(fixture, {
+        price: parseUnits('1.11'),
+      });
+
+      // safeValidateLiquidity only suppresses liquidity errors, not variation tolerance
+      await safeApproveRedeemRequestAtCurrentRate(
+        fixture,
+        { safeValidateLiquidity: true },
+        {},
+        {},
+        {
+          revertedWith: VaultError.VariationToleranceExceeded,
+        },
+      );
+    });
+
+    it('should fail: call from non-authority', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        mintPaymentTokenAndApprove: {
+          to: fixture.requestRedeemer.publicKey,
+        },
+      });
+      await redeemRequest(fixture, {}, {});
+
+      await safeApproveRedeemRequestAtCurrentRate(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('should fail: call from non-authority that has vault admin role', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        mintPaymentTokenAndApprove: {
+          to: fixture.requestRedeemer.publicKey,
+        },
+      });
+      await redeemRequest(fixture, {}, {});
+
+      const commonState = await fetchVaultCommonState(
+        fixture.vaultsProgram,
+        fixture.redeemerCommonVault.publicKey,
+      );
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: VAULT_AC_ROLES.VAULT_ADMIN,
+        acRole: commonState.acRole,
+      });
+
+      await safeApproveRedeemRequestAtCurrentRate(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('should process bulk approvals with safeValidateLiquidity=true, skipping requests with insufficient liquidity', async () => {
+      const fixture = await vaultsFixture();
+      const {
+        vaultsProgram,
+        dataFeedProgram,
+        context,
+        authority,
+        regularAccounts,
+        redeemerCommonVault,
+        paymentMints,
+        connection,
+      } = fixture;
+
+      const [user0, user1, user2] = regularAccounts;
+      const paymentMint = paymentMints.usdc;
+      const commonVault = redeemerCommonVault.publicKey;
+
+      // Add payment token with 0% fee to simplify math
+      await addPaymentToken(fixture, { fee: 0n }, { commonVault });
+
+      // Setup each user: vault common account, AC account, mTokens, payment token ATA
+      for (const user of [user0, user1, user2]) {
+        await newVaultCommonAccount(fixture, { account: user.publicKey }, { commonVault });
+        await newAccountAc(fixture, { account: user.publicKey });
+
+        // Create payment token ATA for receiving funds
+        await getOrCreateAta(context, connection, paymentMint.mint, user.publicKey, authority);
+      }
+
+      // Mint mTokens to each user: 10, 70, 25
+      await mintMToken(fixture, { to: user0.publicKey, amount: parseUnits('10') });
+      await mintMToken(fixture, { to: user1.publicKey, amount: parseUnits('70') });
+      await mintMToken(fixture, { to: user2.publicKey, amount: parseUnits('25') });
+
+      // Create redeem requests for each user
+      // Request 0: 10 mTokens -> 10 USDC
+      await redeemRequest(
+        fixture,
+        { amountMToken: parseUnits('10') },
+        { commonVault },
+        { fee: 0n },
+        { from: user0 },
+      );
+
+      // Request 1: 70 mTokens -> 70 USDC
+      await redeemRequest(
+        fixture,
+        { amountMToken: parseUnits('70') },
+        { commonVault },
+        { fee: 0n },
+        { from: user1 },
+      );
+
+      // Request 2: 25 mTokens -> 25 USDC
+      await redeemRequest(
+        fixture,
+        { amountMToken: parseUnits('25') },
+        { commonVault },
+        { fee: 0n },
+        { from: user2 },
+      );
+
+      // Fund requestRedeemer with exactly 50 USDC
+      await mintPaymentTokenAndApprove(fixture, {
+        to: fixture.requestRedeemer.publicKey,
+        amountBase9: parseUnits('50'),
+      });
+
+      // Fetch state needed to build instructions
+      const redeemerVaultPda = getRedeemerVaultPda(commonVault);
+      const commonVaultState = await fetchVaultCommonState(vaultsProgram, commonVault);
+      const redeemerVaultState = await fetchRedeemerVaultState(vaultsProgram, redeemerVaultPda);
+      const mMintFeed = await fetchDataFeedState(dataFeedProgram, commonVaultState.mMintFeed);
+
+      // Build 3 approve instructions with safeValidateLiquidity=true
+      const buildApproveInstruction = async (requestId: bigint, user: Keypair) => {
+        return vaultsProgram.methods
+          .safeApproveRedeemRequestAtCurrentRate(toBN(requestId), true)
+          .accountsPartial({
+            vaultCommon: commonVault,
+            authority: authority.publicKey,
+            redeemRequest: getRedeemerVaultRequestPda(redeemerVaultPda, requestId),
+            userAccount: user.publicKey,
+            mMint: commonVaultState.mMint,
+            mMintFeed: mMintFeed.underlyingFeed,
+            mMintDataFeed: commonVaultState.mMintFeed,
+            mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
+            paymentMint: paymentMint.mint,
+            paymentMintTokenProgram: TOKEN_PROGRAM_ID,
+            requestRedeemer: redeemerVaultState.requestRedeemer,
+            authorityAcRole: getAccountAcRoleStatePda(
+              commonVaultState.acRole,
+              authority.publicKey,
+              VAULT_AC_ROLES.REQUEST_MANAGER,
+            ),
+          })
+          .instruction();
+      };
+
+      const ix0 = await buildApproveInstruction(0n, user0);
+      const ix1 = await buildApproveInstruction(1n, user1);
+      const ix2 = await buildApproveInstruction(2n, user2);
+
+      // Get balances before
+      const redeemerBalanceBefore = await getBalance(
+        connection,
+        fixture.requestRedeemer.publicKey,
+        paymentMint.mint,
+      );
+      expect(redeemerBalanceBefore).toEqual(parseUnits('50', paymentMint.decimals));
+
+      // Execute bulk transaction
+      const tx = new Transaction().add(ix0, ix1, ix2);
+      await expectTxNotReverted(context, tx, [authority]);
+
+      // Verify results
+      // Request 0 should be closed (user0 received 10 USDC)
+      const request0After = await fetchRedeemerVaultRequestState(
+        vaultsProgram,
+        getRedeemerVaultRequestPda(redeemerVaultPda, 0n),
+        true,
+      );
+      expect(request0After).toEqual(null);
+
+      // Request 1 should still exist (skipped - needed 70 but only 40 available)
+      const request1After = await fetchRedeemerVaultRequestState(
+        vaultsProgram,
+        getRedeemerVaultRequestPda(redeemerVaultPda, 1n),
+        true,
+      );
+      expect(request1After).not.toEqual(null);
+      expect(fromBN(request1After.mTokenAmount)).toEqual(parseUnits('70'));
+
+      // Request 2 should be closed (user2 received 25 USDC)
+      const request2After = await fetchRedeemerVaultRequestState(
+        vaultsProgram,
+        getRedeemerVaultRequestPda(redeemerVaultPda, 2n),
+        true,
+      );
+      expect(request2After).toEqual(null);
+
+      // Verify user balances
+      const user0PaymentBalance = await getBalance(connection, user0.publicKey, paymentMint.mint);
+      expect(user0PaymentBalance).toEqual(parseUnits('10', paymentMint.decimals));
+
+      const user1PaymentBalance = await getBalance(connection, user1.publicKey, paymentMint.mint);
+      expect(user1PaymentBalance).toEqual(0n); // Skipped, got nothing
+
+      const user2PaymentBalance = await getBalance(connection, user2.publicKey, paymentMint.mint);
+      expect(user2PaymentBalance).toEqual(parseUnits('25', paymentMint.decimals));
+
+      // Verify final requestRedeemer balance is 15 USDC
+      const redeemerBalanceAfter = await getBalance(
+        connection,
+        fixture.requestRedeemer.publicKey,
+        paymentMint.mint,
+      );
+      expect(redeemerBalanceAfter).toEqual(parseUnits('15', paymentMint.decimals));
+    });
+
+    it('should measure transaction size limits for bulk approvals', async () => {
+      const fixture = await vaultsFixture();
+      const {
+        vaultsProgram,
+        dataFeedProgram,
+        context,
+        authority,
+        regularAccounts,
+        redeemerCommonVault,
+        paymentMints,
+        connection,
+      } = fixture;
+
+      const paymentMint = paymentMints.usdc;
+      const commonVault = redeemerCommonVault.publicKey;
+
+      // Add payment token with 0% fee
+      await addPaymentToken(fixture, { fee: 0n }, { commonVault });
+
+      // Use all available regular accounts (fixture provides 10 accounts, first is authority)
+      const users = regularAccounts.slice(0, 9); // Take up to 9 users
+
+      // Setup each user
+      for (const user of users) {
+        await newVaultCommonAccount(fixture, { account: user.publicKey }, { commonVault });
+        await newAccountAc(fixture, { account: user.publicKey });
+        await getOrCreateAta(context, connection, paymentMint.mint, user.publicKey, authority);
+        await mintMToken(fixture, { to: user.publicKey, amount: parseUnits('10') });
+      }
+
+      // Create redeem requests for each user
+      for (const user of users) {
+        await redeemRequest(
+          fixture,
+          { amountMToken: parseUnits('10') },
+          { commonVault },
+          { fee: 0n },
+          { from: user },
+        );
+      }
+
+      // Fund requestRedeemer with enough for all
+      await mintPaymentTokenAndApprove(fixture, {
+        to: fixture.requestRedeemer.publicKey,
+        amountBase9: parseUnits('1000'),
+      });
+
+      // Fetch state needed to build instructions
+      const redeemerVaultPda = getRedeemerVaultPda(commonVault);
+      const commonVaultState = await fetchVaultCommonState(vaultsProgram, commonVault);
+      const redeemerVaultState = await fetchRedeemerVaultState(vaultsProgram, redeemerVaultPda);
+      const mMintFeed = await fetchDataFeedState(dataFeedProgram, commonVaultState.mMintFeed);
+
+      // Build approve instruction for a user
+      const buildApproveInstruction = async (requestId: bigint, user: Keypair) => {
+        return vaultsProgram.methods
+          .safeApproveRedeemRequestAtCurrentRate(toBN(requestId), true)
+          .accountsPartial({
+            vaultCommon: commonVault,
+            authority: authority.publicKey,
+            redeemRequest: getRedeemerVaultRequestPda(redeemerVaultPda, requestId),
+            userAccount: user.publicKey,
+            mMint: commonVaultState.mMint,
+            mMintFeed: mMintFeed.underlyingFeed,
+            mMintDataFeed: commonVaultState.mMintFeed,
+            mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
+            paymentMint: paymentMint.mint,
+            paymentMintTokenProgram: TOKEN_PROGRAM_ID,
+            requestRedeemer: redeemerVaultState.requestRedeemer,
+            authorityAcRole: getAccountAcRoleStatePda(
+              commonVaultState.acRole,
+              authority.publicKey,
+              VAULT_AC_ROLES.REQUEST_MANAGER,
+            ),
+          })
+          .instruction();
+      };
+
+      // Build instructions for all users
+      const instructions = await Promise.all(
+        users.map((user, idx) => buildApproveInstruction(BigInt(idx), user)),
+      );
+
+      // Measure transaction sizes with increasing number of instructions
+      const sizes: { count: number; size: number; fits: boolean }[] = [];
+
+      for (let i = 1; i <= instructions.length; i++) {
+        const tx = new Transaction();
+        tx.recentBlockhash = context.latestBlockhash();
+        tx.feePayer = authority.publicKey;
+
+        for (let j = 0; j < i; j++) {
+          tx.add(instructions[j]);
+        }
+
+        try {
+          const serialized = tx.serialize({ requireAllSignatures: false });
+          const size = serialized.length;
+          const fits = size <= 1232;
+
+          sizes.push({ count: i, size, fits });
+          console.log(
+            `${i} instruction(s): ${size} bytes ${fits ? '✓' : '✗ (exceeds 1232 limit)'}`,
+          );
+        } catch (e) {
+          // Transaction too large to serialize
+          const errorMsg = e instanceof Error ? e.message : String(e);
+          const sizeMatch = errorMsg.match(/(\d+) > 1232/);
+          const estimatedSize = sizeMatch ? parseInt(sizeMatch[1]) : 0;
+
+          sizes.push({ count: i, size: estimatedSize, fits: false });
+          console.log(`${i} instruction(s): ~${estimatedSize} bytes ✗ (exceeds 1232 limit)`);
+        }
+      }
+
+      // Find the maximum number of instructions that fit
+      const maxInstructions = sizes.filter((s) => s.fits).length;
+
+      console.log(`\n=== TRANSACTION SIZE ANALYSIS ===`);
+      console.log(`Max instructions that fit in single tx: ${maxInstructions}`);
+      console.log(`Transaction size limit: 1232 bytes`);
+
+      // Verify at least 2 instructions fit (we know 3 worked in previous test)
+      expect(maxInstructions).toBeGreaterThanOrEqual(2);
+
+      // Actually execute a transaction with the max fitting instructions
+      if (maxInstructions > 0) {
+        const tx = new Transaction();
+        for (let i = 0; i < maxInstructions; i++) {
+          tx.add(instructions[i]);
+        }
+
+        await expectTxNotReverted(context, tx, [authority]);
+
+        // Verify the requests were processed
+        for (let i = 0; i < maxInstructions; i++) {
+          const requestState = await fetchRedeemerVaultRequestState(
+            vaultsProgram,
+            getRedeemerVaultRequestPda(redeemerVaultPda, BigInt(i)),
+            true,
+          );
+          expect(requestState).toEqual(null); // Should be closed
+        }
+
+        console.log(`Successfully executed ${maxInstructions} approvals in single transaction!`);
+      }
+    });
+  });
+
+  describe('safe_approve_redeem_request_at_request_rate', () => {
+    it('should approve redeem request at request rate', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        mintPaymentTokenAndApprove: {
+          to: fixture.requestRedeemer.publicKey,
+        },
+      });
+      await redeemRequest(fixture, {}, {});
+
+      await safeApproveRedeemRequestAtRequestRate(fixture, {});
+    });
+
+    it('should succeed even when current rate changed significantly', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        mintPaymentTokenAndApprove: {
+          to: fixture.requestRedeemer.publicKey,
+        },
+      });
+      await redeemRequest(fixture, {}, {});
+
+      // Change rate significantly after request was created
+      await updateManualFeedPrice(fixture, {
+        price: parseUnits('1.5'),
+      });
+
+      // Should still succeed using the original request rate
+      await safeApproveRedeemRequestAtRequestRate(fixture, {});
+    });
+
+    it('should silently skip with safeValidateLiquidity=true when request redeemer balance insufficient', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        mintPaymentTokenAndApprove: {
+          amountBase9: parseUnits('0.01'),
+          to: fixture.requestRedeemer.publicKey,
+        },
+      });
+      await redeemRequest(fixture, {}, {});
+
+      // Should not throw, silently skips
+      await safeApproveRedeemRequestAtRequestRate(
+        fixture,
+        { safeValidateLiquidity: true },
+        {},
+        { expectSkipped: true },
+      );
+    });
+
+    it('should fail: call from non-authority', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        mintPaymentTokenAndApprove: {
+          to: fixture.requestRedeemer.publicKey,
+        },
+      });
+      await redeemRequest(fixture, {}, {});
+
+      await safeApproveRedeemRequestAtRequestRate(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('should fail: call from non-authority that has vault admin role', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        mintPaymentTokenAndApprove: {
+          to: fixture.requestRedeemer.publicKey,
+        },
+      });
+      await redeemRequest(fixture, {}, {});
+
+      const commonState = await fetchVaultCommonState(
+        fixture.vaultsProgram,
+        fixture.redeemerCommonVault.publicKey,
+      );
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: VAULT_AC_ROLES.VAULT_ADMIN,
+        acRole: commonState.acRole,
+      });
+
+      await safeApproveRedeemRequestAtRequestRate(
+        fixture,
+        {},
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
   });
 
   describe('reject_redeem_request', () => {
@@ -1415,6 +2129,33 @@ describe('redeemer-vault', () => {
 
       await prepareCommonRedeemTest(fixture, {});
       await redeemRequest(fixture, {}, {});
+      await rejectRedeemRequest(
+        fixture,
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('should fail: call from non-authority that has vault admin role', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {});
+      await redeemRequest(fixture, {}, {});
+
+      const commonState = await fetchVaultCommonState(
+        fixture.vaultsProgram,
+        fixture.redeemerCommonVault.publicKey,
+      );
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: VAULT_AC_ROLES.VAULT_ADMIN,
+        acRole: commonState.acRole,
+      });
+
       await rejectRedeemRequest(
         fixture,
         {},

@@ -54,10 +54,10 @@ jobs:
         run: yarn
 
       - name: ESLint
-        run: yarn lint
+        run: yarn ts:lint
 
       - name: Prettier
-        run: yarn format:check
+        run: yarn ts:format
 
   # ---------------------------------------------------------------------------
   # Medium lane: Rust lint, format and *host* unit tests. These compile the
@@ -78,8 +78,11 @@ jobs:
 
       - name: Install Rust toolchain
         run: |
-          rustup toolchain install "$RUST_NIGHTLY" --profile minimal --component clippy --component rustfmt
-          rustup override set "$RUST_NIGHTLY"
+          # Host clippy/fmt/tests must follow rust-toolchain.toml (1.93.1).
+          # The Solana BPF nightly (1.80) rejects current crates.io MSRVs,
+          # e.g. base64ct 1.7.3 requires rustc 1.81.
+          CHANNEL=$(sed -n 's/^channel = "\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$CHANNEL" --profile minimal --component clippy --component rustfmt
 
       - name: Cache cargo build
         uses: Swatinem/rust-cache@63fed3e2fecf6f7b51dc6f043341b79ef82a9ae7 # v2.9.2
@@ -87,36 +90,10 @@ jobs:
           shared-key: rust-host
 
       - name: Format check
-        run: cargo fmt --all --check
+        run: cargo fmt --check
 
       - name: Clippy
-        # Fail on warnings, but downgrade a set of style/pedantic lints that we
-        # don't want to gate CI on:
-        #   * useless_attribute: false-positives on the
-        #     `#[allow(ambiguous_glob_reexports)]` guarding our `pub use foo::*`
-        #     re-exports (those allows suppress a real rustc lint and must stay).
-        #   * the rest are stylistic (needless lifetimes/borrows, redundant
-        #     casts/conversions, empty docs, too-many-args / &Box<Account> on
-        #     Anchor handlers, and a handful of local style nits) and left as
-        #     warnings for now.
-        run: >-
-          cargo clippy --workspace --all-targets --
-          -D warnings
-          -A clippy::useless_attribute
-          -A clippy::needless_lifetimes
-          -A clippy::needless_borrow
-          -A clippy::useless_conversion
-          -A clippy::unnecessary_cast
-          -A clippy::empty_docs
-          -A clippy::too_many_arguments
-          -A clippy::borrowed_box
-          -A clippy::redundant_field_names
-          -A clippy::collapsible_if
-          -A clippy::legacy_numeric_constants
-          -A clippy::manual_map
-          -A clippy::unnecessary_mut_passed
-          -A clippy::clone_on_copy
-          -A clippy::needless_return
+        run: cargo clippy
 
       - name: Unit tests
         run: cargo test --workspace

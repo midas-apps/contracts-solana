@@ -2,7 +2,6 @@ use anchor_lang::prelude::*;
 
 #[account]
 #[derive(InitSpace)]
-///
 pub struct TokenAuthorityState {
     /// AccessControlRole account that will be used to manage
     /// the access to the token authority instructions

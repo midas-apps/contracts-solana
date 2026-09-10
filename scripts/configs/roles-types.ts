@@ -20,6 +20,7 @@ export const SOLANA_ROLES = {
   // Vault Management Roles
   VAULT_ADMIN: 'vault_admin_role',
   VAULT_PAUSER: 'vault_pauser_role',
+  REQUEST_MANAGER: 'request_manager_role',
 
   // Token Authority Roles
   M_MINTER: 'm_minter_role',
@@ -28,6 +29,7 @@ export const SOLANA_ROLES = {
 
   // Data Feed Roles
   FEED_ADMIN: 'data_feed_admin',
+  PRICE_UPDATER: 'price_updater_role',
 } as const;
 
 export const ROLE_GROUPS = {
