@@ -461,4 +461,48 @@ mod deviation_tests {
         let new = units(1.05, 9);
         assert_eq!(get_deviation(last, new, 9).unwrap(), 5_000_000_000);
     }
+
+    // ---------- edge cases ----------
+
+    #[test]
+    fn get_deviation_last_price_zero_returns_error() {
+        // last_price=0 is an invalid base; safe updates must be blocked until
+        // an unsafe update sets a non-zero price first.
+        assert!(get_deviation(0, 1_000_000, 6).is_err());
+    }
+
+    #[test]
+    fn get_deviation_overflow_when_decimals_too_large() {
+        // 10^39 > i128::MAX (~1.7e38), so checked_pow overflows → ArithmeticOverflow.
+        // A feed misconfigured with decimals >= 39 permanently blocks the safe path.
+        assert!(get_deviation(1_000_000, 1_000_001, 39).is_err());
+    }
+
+    #[test]
+    fn get_deviation_exactly_at_boundary() {
+        // 1% increase: result must equal 1_000_000 so require_gte!(1_000_000, 1_000_000) passes.
+        let last = units(1.0, 6); // 1_000_000
+        let new = units(1.01, 6); // 1_010_000
+        assert_eq!(get_deviation(last, new, 6).unwrap(), 1_000_000);
+    }
+
+    #[test]
+    fn get_deviation_symmetric_for_equal_magnitude_up_and_down() {
+        // A 10% increase and a 10% decrease from the same base must produce
+        // identical deviation so the tolerance check is direction-agnostic.
+        let base = units(1.0, 6);
+        let dev_up = get_deviation(base, units(1.1, 6), 6).unwrap();
+        let dev_down = get_deviation(base, units(0.9, 6), 6).unwrap();
+        assert_eq!(dev_up, dev_down);
+    }
+
+    #[test]
+    fn get_deviation_truncates_fractional_percent() {
+        // price_dif=1, last=3_000_000, decimals=6:
+        // true deviation = 1 * 1_000_000 * 100 / 3_000_000 = 33.333... → truncates to 33.
+        // This means a price just below a threshold can slip past if the threshold
+        // itself happens to sit on a non-integer boundary.
+        let deviation = get_deviation(3_000_000, 3_000_001, 6).unwrap();
+        assert_eq!(deviation, 33);
+    }
 }

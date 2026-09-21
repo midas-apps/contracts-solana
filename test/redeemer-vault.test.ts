@@ -1496,6 +1496,66 @@ describe('redeemer-vault', () => {
       );
     });
 
+    it('when safe=true and rate decreases exactly at tolerance boundary', async () => {
+      // Stored m_token_rate = 1.0; 10% decrease = exactly at 10% (fixture) tolerance.
+      // require_gte! is inclusive so this must pass.
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {
+        mintPaymentTokenAndApprove: {
+          to: fixture.requestRedeemer.publicKey,
+          amountBase9: parseUnits('10.89'), // covers payout at 0.9 rate (9.9 * 0.9 = 8.91)
+        },
+      });
+      await redeemRequest(fixture, {}, {});
+
+      await approveRedeemRequest(
+        fixture,
+        {
+          isSafe: true,
+          newRate: parseUnits('0.9'), // -10% from 1.0, exactly at boundary
+        },
+        {},
+        {},
+      );
+    });
+
+    it('should fail: when safe=true and rate decreases beyond tolerance', async () => {
+      // ~11.2% decrease from stored m_token_rate 1.0 exceeds 10% tolerance.
+      // Confirms the tolerance check is symmetric for rate decreases.
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {});
+      await redeemRequest(fixture, {}, {});
+
+      await approveRedeemRequest(
+        fixture,
+        {
+          isSafe: true,
+          newRate: parseUnits('0.89'), // ~11.2% below 1.0
+        },
+        {},
+        {},
+        { revertedWith: VaultError.VariationToleranceExceeded },
+      );
+    });
+
+    it('should fail: when safe=true and new rate is zero', async () => {
+      // new_rate=0 produces 100% deviation >> 10% tolerance → VariationToleranceExceeded.
+      const fixture = await vaultsFixture();
+
+      await prepareCommonRedeemTest(fixture, {});
+      await redeemRequest(fixture, {}, {});
+
+      await approveRedeemRequest(
+        fixture,
+        { isSafe: true, newRate: 0n },
+        {},
+        {},
+        { revertedWith: VaultError.VariationToleranceExceeded },
+      );
+    });
+
     it('should silently skip with safeValidateLiquidity=true when request redeemer balance insufficient', async () => {
       const fixture = await vaultsFixture();
 

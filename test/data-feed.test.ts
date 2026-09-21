@@ -686,6 +686,102 @@ describe('data-feed', () => {
         isSafe: true,
       });
     });
+
+    it('update price (safe) at exactly max_answer_deviation boundary', async () => {
+      // Default: initialPrice=1e9, maxAnswerDeviation=1e9 (= 1% in 9-decimal units).
+      // A 1% increase lands exactly on the boundary; require_gte! is inclusive so it passes.
+      const fixture = await dataFeedFixture();
+      const baseFeed = await createDefaultDataFeed(fixture);
+
+      await timeTravel(fixture.context, 3601n);
+
+      await updateManualFeedPrice(fixture, {
+        baseFeed,
+        price: parseUnits('1.01'), // exactly +1% from initial 1.0
+        isSafe: true,
+      });
+    });
+
+    it('should fail: update price (safe) just above max_answer_deviation boundary', async () => {
+      // 1.1% increase exceeds the 1% maxAnswerDeviation.
+      const fixture = await dataFeedFixture();
+      const baseFeed = await createDefaultDataFeed(fixture);
+
+      await timeTravel(fixture.context, 3601n);
+
+      await updateManualFeedPrice(
+        fixture,
+        {
+          baseFeed,
+          price: parseUnits('1.011'), // +1.1% from initial 1.0
+          isSafe: true,
+        },
+        { revertedWith: DataFeedError.DeviationTooHigh },
+      );
+    });
+
+    it('should fail: update price (safe) when stored price is 0', async () => {
+      // get_deviation(0, newPrice, decimals) returns InvalidPrice, permanently
+      // blocking the safe path until an unsafe update sets a non-zero price.
+      const fixture = await dataFeedFixture();
+      const baseFeed = await createDefaultDataFeed(fixture, { initialPrice: 0n });
+
+      await timeTravel(fixture.context, 3601n);
+
+      await updateManualFeedPrice(
+        fixture,
+        {
+          baseFeed,
+          price: parseUnits('1'),
+          isSafe: true,
+        },
+        { revertedWith: DataFeedError.InvalidPrice },
+      );
+    });
+
+    it('update price (safe) with max_answer_deviation=0 allows only zero-change updates', async () => {
+      // deviation=0 satisfies require_gte!(0, 0); any non-zero change fails.
+      const fixture = await dataFeedFixture();
+      const baseFeed = await createDefaultDataFeed(fixture, { maxAnswerDeviation: 0n });
+
+      await timeTravel(fixture.context, 3601n);
+
+      await updateManualFeedPrice(fixture, {
+        baseFeed,
+        price: parseUnits('1'), // same as initial price → 0% deviation
+        isSafe: true,
+      });
+    });
+
+    it('should fail: update price (safe) with max_answer_deviation=0 and any price change', async () => {
+      // Even a single lamport change exceeds a zero tolerance.
+      const fixture = await dataFeedFixture();
+      const baseFeed = await createDefaultDataFeed(fixture, { maxAnswerDeviation: 0n });
+
+      await timeTravel(fixture.context, 3601n);
+
+      await updateManualFeedPrice(
+        fixture,
+        {
+          baseFeed,
+          price: parseUnits('1') + 1n, // one lamport above initial
+          isSafe: true,
+        },
+        { revertedWith: DataFeedError.DeviationTooHigh },
+      );
+    });
+
+    it('update price (unsafe) with extreme deviation bypasses check', async () => {
+      // is_safe=false skips all deviation and time checks regardless of magnitude.
+      const fixture = await dataFeedFixture();
+      const baseFeed = await createDefaultDataFeed(fixture);
+
+      await updateManualFeedPrice(fixture, {
+        baseFeed,
+        price: parseUnits('10000'), // 1,000,000% above initial 1.0
+        isSafe: false,
+      });
+    });
   });
 
   describe('PYTH underlying ', () => {

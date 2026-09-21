@@ -1520,6 +1520,81 @@ describe('minter-vault', () => {
       );
     });
 
+    it('when safe=true and rate decreases exactly at tolerance boundary', async () => {
+      // Stored m_mint_rate = 1.0; 10% decrease = exactly at 10% (fixture) tolerance.
+      // require_gte! is inclusive so this must pass.
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      await approveMintRequest(
+        fixture,
+        {
+          isSafe: true,
+          newRate: parseUnits('0.9'), // -10% from 1.0, exactly at boundary
+        },
+        {},
+        { tokensMinted: parseUnits('11') }, // 9.9 USD / 0.9 rate = 11 tokens
+      );
+    });
+
+    it('should fail: when safe=true and rate decreases beyond tolerance', async () => {
+      // ~11.1% decrease from stored rate 1.0 exceeds 10% tolerance.
+      // Confirms the tolerance check is symmetric for rate decreases.
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      await approveMintRequest(
+        fixture,
+        {
+          isSafe: true,
+          newRate: parseUnits('0.89'), // ~11.2% below 1.0
+        },
+        {},
+        {},
+        { revertedWith: VaultError.VariationToleranceExceeded },
+      );
+    });
+
+    it('should fail: when safe=true and new rate is zero', async () => {
+      // new_rate=0 produces 100% deviation >> 10% tolerance → VariationToleranceExceeded.
+      // Confirms zero rate is rejected before reaching the divide-by-zero in minting math.
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      await approveMintRequest(
+        fixture,
+        { isSafe: true, newRate: 0n },
+        {},
+        {},
+        { revertedWith: VaultError.VariationToleranceExceeded },
+      );
+    });
+
+    it('variation_tolerance=100% passes deviation for zero rate but then fails with InvalidRate', async () => {
+      // With 100% tolerance: price_diff_percent=10000=ONE_HUNDRED_PERCENT passes require_gte!.
+      // The subsequent checked_div(new_out_rate=0) then raises InvalidRate.
+      // Documents the footgun: 100% tolerance does NOT protect against zero-rate minting.
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await updateVaultCommon(fixture, { variationTolerance: parsePercent(100) });
+      await mintRequest(fixture, {}, {});
+
+      await approveMintRequest(
+        fixture,
+        { isSafe: true, newRate: 0n },
+        {},
+        {},
+        { revertedWith: VaultError.InvalidRate },
+      );
+    });
+
     it('should fail: max supply cap exceeded on approve', async () => {
       const fixture = await vaultsFixture();
 
