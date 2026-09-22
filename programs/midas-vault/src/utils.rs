@@ -605,8 +605,7 @@ pub mod minter {
             payment_mint_data_feed,
             payment_mint_feed,
             payment_amount,
-        )
-        .unwrap();
+        )?;
 
         require_and_update_allowance(mint_config, payment_amount)?;
 
@@ -722,13 +721,14 @@ pub mod minter {
             require_variation_tolerance(vault_common, request.m_mint_rate.into(), new_out_rate)?;
         }
 
-        let amount_to_mint = (request.deposited_usd_wo_fees as u128)
+        let amount_to_mint: u64 = (request.deposited_usd_wo_fees as u128)
             .checked_mul(ONE.into())
             .ok_or(MidasVaultsError::ArithmeticOverflow)?
             .checked_div(new_out_rate)
-            .ok_or(MidasVaultsError::InvalidRate)?;
+            .ok_or(MidasVaultsError::InvalidRate)?
+            .try_into()?;
 
-        if !validate_max_supply_cap(m_mint, minter_vault, amount_to_mint.try_into().unwrap())? {
+        if !validate_max_supply_cap(m_mint, minter_vault, amount_to_mint)? {
             if skip_on_supply_cap_exceeded {
                 return Ok(false);
             }
@@ -745,7 +745,7 @@ pub mod minter {
             &m_mint_token_program.to_account_info(),
             &system_program.to_account_info(),
             &token_authority_program.to_account_info(),
-            amount_to_mint.try_into().unwrap(),
+            amount_to_mint,
         )?;
 
         emit!(MinterVaultRequestApprovedEvent {

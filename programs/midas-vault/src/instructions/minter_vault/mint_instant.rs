@@ -215,8 +215,7 @@ pub fn handle(
     let amount_token_base9 = decimals_conversion::convert_to_base_9(
         amount_token.into(),
         ctx.accounts.payment_mint.decimals,
-    )
-    .unwrap();
+    )?;
 
     let params = minter::calc_and_validate_deposit(
         &ctx.accounts.payment_mint,
@@ -260,10 +259,12 @@ pub fn handle(
         )?;
     }
 
+    let m_token_amount: u64 = params.m_token_amount.try_into()?;
+
     if !validate_max_supply_cap(
         &ctx.accounts.m_mint,
         &ctx.accounts.minter_vault,
-        params.m_token_amount.try_into().unwrap(),
+        m_token_amount,
     )? {
         return Err(MidasVaultsError::MaxSupplyCapExceeded.into());
     }
@@ -278,14 +279,14 @@ pub fn handle(
         &ctx.accounts.m_mint_token_program.to_account_info(),
         &ctx.accounts.system_program.to_account_info(),
         &ctx.accounts.token_authority_program.to_account_info(),
-        params.m_token_amount.try_into().unwrap(),
+        m_token_amount,
     )?;
 
     emit!(MinterVaultInstantMintedEvent {
         common_vault: ctx.accounts.vault_common.key(),
         payment_mint: ctx.accounts.payment_mint.key(),
         signer: ctx.accounts.signer.key(),
-        payment_amount: amount_token_base9.try_into().unwrap(),
+        payment_amount: amount_token_base9.try_into()?,
         calculated: params,
         referrer_id
     });

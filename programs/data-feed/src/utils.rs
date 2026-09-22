@@ -96,7 +96,8 @@ pub fn get_price_in_base_9<'info>(
                     .price
                     .try_into()
                     .map_err(|_| DataFeedError::InvalidPrice)?,
-                raw_price.exponent.abs().try_into().unwrap(),
+                u8::try_from(raw_price.exponent.unsigned_abs())
+                    .map_err(|_| DataFeedError::InvalidPrice)?,
             )
         }
     };
