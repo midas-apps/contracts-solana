@@ -178,8 +178,7 @@ pub fn handle(ctx: Context<MintRequest>, amount_token: u64, referrer_id: [u8; 32
     let amount_token_base9 = decimals_conversion::convert_to_base_9(
         amount_token.into(),
         ctx.accounts.payment_mint.decimals,
-    )
-    .unwrap();
+    )?;
 
     let params = minter::calc_and_validate_deposit(
         &ctx.accounts.payment_mint,
@@ -221,7 +220,7 @@ pub fn handle(ctx: Context<MintRequest>, amount_token: u64, referrer_id: [u8; 32
     mint_request.payment_mint = ctx.accounts.payment_mint.key();
     mint_request.deposited_usd = params.mint_amount_in_usd.try_into()?;
     mint_request.deposited_usd_wo_fees = params.deposited_usd.try_into()?;
-    mint_request.m_mint_rate = params.m_token_rate.try_into().unwrap();
+    mint_request.m_mint_rate = params.m_token_rate.try_into()?;
 
     let request_id = ctx.accounts.vault_common.requests_count;
 
@@ -236,7 +235,7 @@ pub fn handle(ctx: Context<MintRequest>, amount_token: u64, referrer_id: [u8; 32
         common_vault: ctx.accounts.vault_common.key(),
         payment_mint: ctx.accounts.payment_mint.key(),
         signer: ctx.accounts.signer.key(),
-        payment_amount: amount_token_base9.try_into().unwrap(),
+        payment_amount: amount_token_base9.try_into()?,
         calculated: params,
         referrer_id,
         request_id

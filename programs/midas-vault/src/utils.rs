@@ -502,7 +502,7 @@ pub fn burn_mtoken<'info>(
                 from: from.to_account_info(),
             },
         ),
-        amount.try_into().unwrap(),
+        amount.try_into()?,
     )?;
 
     Ok(())
@@ -545,7 +545,7 @@ pub fn burn_mtoken_with_signer<'info>(
                 &[vault_pda_bump_seed],
             ]],
         ),
-        amount.try_into().unwrap(),
+        amount.try_into()?,
     )?;
 
     Ok(())
@@ -974,9 +974,9 @@ pub mod redeemer {
 
         redeem_request.user = signer.key();
         redeem_request.payment_mint = payment_mint.key();
-        redeem_request.m_token_amount = params.m_token_amount_wo_fee.try_into().unwrap();
-        redeem_request.m_token_rate = m_token_rate.try_into().unwrap();
-        redeem_request.payment_mint_rate = payment_mint_rate.try_into().unwrap();
+        redeem_request.m_token_amount = params.m_token_amount_wo_fee.try_into()?;
+        redeem_request.m_token_rate = m_token_rate.try_into()?;
+        redeem_request.payment_mint_rate = payment_mint_rate.try_into()?;
 
         let request_id = vault_common.requests_count;
 
@@ -1224,8 +1224,7 @@ pub mod redeemer {
 
 /// Returns current unix timestamp from the clock
 pub fn get_current_ts() -> Result<u32> {
-    Ok(Clock::get()
-        .unwrap()
+    Ok(Clock::get()?
         .unix_timestamp
         .try_into()
         .map_err(|_| MidasVaultsError::ArithmeticOverflow)?)

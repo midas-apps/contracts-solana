@@ -176,7 +176,7 @@ pub fn handle(
         &ctx.accounts.m_mint_feed,
         false,
     )?;
-    let new_m_token_rate: u64 = current_rate.try_into().unwrap();
+    let new_m_token_rate: u64 = current_rate.try_into()?;
 
     if redeemer::approve_redeem_request(
         &ctx.accounts.redeem_request,

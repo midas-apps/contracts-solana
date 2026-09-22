@@ -74,7 +74,7 @@ pub fn get_price_in_base_9<'info>(
                     .mantissa()
                     .try_into()
                     .map_err(|_| DataFeedError::InvalidPrice)?,
-                PRECISION.try_into().unwrap(),
+                PRECISION.try_into()?,
             )
         }
         FeedMode::Pyth => {
@@ -125,8 +125,7 @@ pub fn get_price_in_base_9<'info>(
 
 /// Returns current unix timestamp from clock
 pub fn get_current_ts() -> Result<u32> {
-    Ok(Clock::get()
-        .unwrap()
+    Ok(Clock::get()?
         .unix_timestamp
         .try_into()
         .map_err(|_| DataFeedError::ArithmeticOverflow)?)
@@ -212,7 +211,7 @@ pub fn update_manual_feed(
     }
 
     if Option::is_some(&decimals) || Option::is_some(&price) {
-        state.last_updated_at = get_current_ts().unwrap();
+        state.last_updated_at = get_current_ts()?;
     }
 
     Ok(())
@@ -237,8 +236,8 @@ pub fn get_deviation(last_price: u128, new_price: u128, decimals: u8) -> Result<
         .checked_pow(decimals.into())
         .ok_or(DataFeedError::ArithmeticOverflow)?;
 
-    let last_price_i: i128 = i128::try_from(last_price).unwrap();
-    let new_price_i: i128 = i128::try_from(new_price).unwrap();
+    let last_price_i: i128 = i128::try_from(last_price)?;
+    let new_price_i: i128 = i128::try_from(new_price)?;
 
     let price_dif: i128 = new_price_i
         .checked_sub(last_price_i)
