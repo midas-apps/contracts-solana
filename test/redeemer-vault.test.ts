@@ -1516,7 +1516,7 @@ describe('redeemer-vault', () => {
           newRate: parseUnits('0.9'), // -10% from 1.0, exactly at boundary
         },
         {},
-        {},
+        { tokensReceived: 8.91 }, // 9.9 * 0.9
       );
     });
 

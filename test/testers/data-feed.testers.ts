@@ -461,10 +461,14 @@ export const updateManualFeedPrice = async (
   expect(BigInt(feedFetched.lastUpdatedAt)).toBe(currentTs);
 };
 
-export const createDefaultDataFeed = async (fixture: CommonDataFeedParams) => {
+export const createDefaultDataFeed = async (
+  fixture: CommonDataFeedParams,
+  opts?: { initialPrice?: bigint; maxAnswerDeviation?: bigint },
+) => {
   const feed = await createNewFeed(fixture, {});
   await createNewManualFeed(fixture, {
     baseFeed: feed.publicKey,
+    ...opts,
   });
   return feed.publicKey;
 };
