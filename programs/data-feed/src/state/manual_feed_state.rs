@@ -2,6 +2,9 @@ use anchor_lang::prelude::*;
 
 #[account]
 #[derive(InitSpace)]
+/// Current version - V2
+///     - Added max_answer_deviation field
+///
 /// Account that holds data of manual data feed
 /// where the answer can be controlled by the
 /// actors with sufficient access (has `FEED_ADMIN` role)
@@ -12,6 +15,8 @@ pub struct ManualFeedState {
     pub decimals: u8,
     /// Last time when price was updated timestamp
     pub last_updated_at: u32,
+    /// Max answer deviation
+    pub max_answer_deviation: u64,
 }
 
 impl ManualFeedState {

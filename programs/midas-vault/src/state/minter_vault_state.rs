@@ -1,7 +1,10 @@
 use anchor_lang::prelude::*;
 
-#[account]
+#[account()]
 #[derive(InitSpace)]
+/// Current version - V2
+///     - Added max_supply_cap field
+///
 /// Minter Vault state definition
 /// Contains everything that is only
 /// minter-vault related, everything that can be shared
@@ -14,6 +17,8 @@ pub struct MinterVaultState {
     pub common_vault: Pubkey,
     /// mint authority pda (token-authority program)
     pub mint_authority_pda: Pubkey,
+    /// max supply cap for mToken minting
+    pub max_supply_cap: u64,
 }
 
 impl MinterVaultState {

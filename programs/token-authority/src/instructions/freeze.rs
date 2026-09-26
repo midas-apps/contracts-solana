@@ -13,11 +13,6 @@ pub struct Freeze<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    /// CHECK:
-    /// account to freeze
-    #[account()]
-    pub to_freeze: AccountInfo<'info>,
-
     /// Token authority PDA
     #[account(
         seeds = [TokenAuthorityState::SEED, token_authority.base_seed.as_ref()],
@@ -40,14 +35,13 @@ pub struct Freeze<'info> {
     )]
     pub mint: Box<InterfaceAccount<'info, SplMint>>,
 
-    /// ATA of `to_to_freeze` (FreezeAccount::account)
+    /// Token account to freeze (FreezeAccount::account). Canonical ATA is not required.
     #[account(
         mut,
-        associated_token::token_program = token_program,
-        associated_token::mint = mint,
-        associated_token::authority = to_freeze,
+        token::token_program = token_program,
+        token::mint = mint,
     )]
-    pub to_freeze_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub to_freeze_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
     /// SPL token program
     pub token_program: Interface<'info, TokenInterface>,
@@ -70,7 +64,7 @@ pub fn handle(ctx: Context<Freeze>) -> Result<()> {
         FreezeAccount {
             authority: ctx.accounts.token_authority.to_account_info(),
             mint: ctx.accounts.mint.to_account_info(),
-            account: ctx.accounts.to_freeze_ata.to_account_info(),
+            account: ctx.accounts.to_freeze_token_account.to_account_info(),
         },
         &[&[
             TokenAuthorityState::SEED,

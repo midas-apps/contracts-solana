@@ -15,7 +15,7 @@ declare_id!("MDF1kkcgJqyizY8k3U1ESAxLBYFYmE3qTwxf2pmGE1s");
 pub mod data_feed {
     use super::*;
 
-    /* DataFeed instructions */
+    // DataFeed instructions
 
     pub fn new_feed(
         ctx: Context<NewFeed>,
@@ -56,21 +56,34 @@ pub mod data_feed {
             max_staleness,
         )
     }
-    /* Manual Underlying Feed instructions */
+    // Manual Underlying Feed instructions
 
     pub fn new_manual_feed(
         ctx: Context<NewManualFeed>,
         initial_price: u64,
         decimals: u8,
+        max_answer_deviation: u64,
     ) -> Result<()> {
-        new_manual_feed::handle(ctx, initial_price, decimals)
+        new_manual_feed::handle(ctx, initial_price, decimals, max_answer_deviation)
     }
 
     pub fn update_manual_feed(
         ctx: Context<UpdateManualFeed>,
-        price: Option<u64>,
         decimals: Option<u8>,
+        max_answer_deviation: Option<u64>,
     ) -> Result<()> {
-        update_manual_feed::handle(ctx, price, decimals)
+        update_manual_feed::handle(ctx, decimals, max_answer_deviation)
+    }
+
+    pub fn update_manual_feed_price(
+        ctx: Context<UpdateManualFeedPrice>,
+        price: u64,
+        is_safe: bool,
+    ) -> Result<()> {
+        update_manual_feed_price::handle(ctx, price, is_safe)
+    }
+
+    pub fn migrate_manual_feed_to_v2(ctx: Context<MigrateManualFeedToV2>) -> Result<()> {
+        migrate_manual_feed_to_v2::handle(ctx)
     }
 }

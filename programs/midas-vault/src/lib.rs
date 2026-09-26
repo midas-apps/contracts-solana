@@ -15,24 +15,27 @@ declare_id!("MidasZepq8k2oFNCCm1rm31rbbj68JSPJeXwqQu6NfZ");
 pub mod midas_vaults {
     use super::*;
 
-    /** Minter Vault Instructions */
+    // Minter Vault Instructions
 
     pub fn new_minter_vault(
         ctx: Context<NewMinterVault>,
         first_deposit_min_m_tokens: u64,
+        max_supply_cap: u64,
     ) -> Result<()> {
-        minter_vault::new_minter_vault::handle(ctx, first_deposit_min_m_tokens)
+        minter_vault::new_minter_vault::handle(ctx, first_deposit_min_m_tokens, max_supply_cap)
     }
 
     pub fn update_minter_vault(
         ctx: Context<UpdateMinterVault>,
         new_first_deposit_min_m_tokens: Option<u64>,
         mint_authority_pda: Option<Pubkey>,
+        max_supply_cap: Option<u64>,
     ) -> Result<()> {
         minter_vault::update_minter_vault::handle(
             ctx,
             new_first_deposit_min_m_tokens,
             mint_authority_pda,
+            max_supply_cap,
         )
     }
 
@@ -60,15 +63,46 @@ pub mod midas_vaults {
         request_id: u64,
         new_out_rate: u64,
         is_safe: bool,
+        skip_on_supply_cap_exceeded: bool,
     ) -> Result<()> {
-        minter_vault::approve_mint_request::handle(ctx, request_id, new_out_rate, is_safe)
+        minter_vault::approve_mint_request::handle(
+            ctx,
+            request_id,
+            new_out_rate,
+            is_safe,
+            skip_on_supply_cap_exceeded,
+        )
+    }
+
+    pub fn safe_approve_mint_request_at_current_rate(
+        ctx: Context<SafeApproveMintRequestAtCurrentRate>,
+        request_id: u64,
+        skip_on_supply_cap_exceeded: bool,
+    ) -> Result<()> {
+        minter_vault::safe_approve_mint_request_at_current_rate::handle(
+            ctx,
+            request_id,
+            skip_on_supply_cap_exceeded,
+        )
+    }
+
+    pub fn safe_approve_mint_request_at_request_rate(
+        ctx: Context<SafeApproveMintRequestAtRequestRate>,
+        request_id: u64,
+        skip_on_supply_cap_exceeded: bool,
+    ) -> Result<()> {
+        minter_vault::safe_approve_mint_request_at_request_rate::handle(
+            ctx,
+            request_id,
+            skip_on_supply_cap_exceeded,
+        )
     }
 
     pub fn reject_mint_request(context: Context<RejectMintRequest>, request_id: u64) -> Result<()> {
         minter_vault::reject_mint_request::handle(context, request_id)
     }
 
-    /** Redeemer Vault Instructions */
+    // Redeemer Vault Instructions
 
     pub fn new_redeemer_vault(
         ctx: Context<NewRedeemerVault>,
@@ -122,8 +156,15 @@ pub mod midas_vaults {
         request_id: u64,
         new_m_token_rate: u64,
         is_safe: bool,
+        safe_validate_liquidity: bool,
     ) -> Result<()> {
-        redeemer_vault::approve_redeem_request::handle(ctx, request_id, new_m_token_rate, is_safe)
+        redeemer_vault::approve_redeem_request::handle(
+            ctx,
+            request_id,
+            new_m_token_rate,
+            is_safe,
+            safe_validate_liquidity,
+        )
     }
 
     pub fn approve_redeem_request_fiat(
@@ -140,11 +181,35 @@ pub mod midas_vaults {
         )
     }
 
+    pub fn safe_approve_redeem_request_at_current_rate(
+        ctx: Context<SafeApproveRedeemRequestAtCurrentRate>,
+        request_id: u64,
+        safe_validate_liquidity: bool,
+    ) -> Result<()> {
+        redeemer_vault::safe_approve_redeem_request_at_current_rate::handle(
+            ctx,
+            request_id,
+            safe_validate_liquidity,
+        )
+    }
+
+    pub fn safe_approve_redeem_request_at_request_rate(
+        ctx: Context<SafeApproveRedeemRequestAtRequestRate>,
+        request_id: u64,
+        safe_validate_liquidity: bool,
+    ) -> Result<()> {
+        redeemer_vault::safe_approve_redeem_request_at_request_rate::handle(
+            ctx,
+            request_id,
+            safe_validate_liquidity,
+        )
+    }
+
     pub fn reject_redeem_request(ctx: Context<RejectRedeemRequest>, request_id: u64) -> Result<()> {
         redeemer_vault::reject_redeem_request::handle(ctx, request_id)
     }
 
-    /** Common Vault Instructions */
+    // Common Vault Instructions
 
     pub fn new_common_vault(
         ctx: Context<NewVaultCommon>,
@@ -256,7 +321,7 @@ pub mod midas_vaults {
         vault_common::withdraw_tokens::handle(ctx, vault_seed, amount)
     }
 
-    /** Pause Instructions */
+    // Pause Instructions
 
     pub fn new_pause_inx(ctx: Context<NewPauseInx>, fn_id: u8) -> Result<()> {
         pause::new_pause_inx::handle(ctx, fn_id)
@@ -268,5 +333,13 @@ pub mod midas_vaults {
 
     pub fn update_pause(ctx: Context<UpdatePause>, paused: bool) -> Result<()> {
         pause::update_pause::handle(ctx, paused)
+    }
+
+    // Migration Instructions
+
+    pub fn migrate_minter_vault_state_to_v2(
+        ctx: Context<MigrateMinterVaultStateToV2>,
+    ) -> Result<()> {
+        minter_vault::migrations::migrate_minter_vault_state_to_v2::handle(ctx)
     }
 }

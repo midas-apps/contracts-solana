@@ -26,6 +26,14 @@ pub mod approve_redeem_request_fiat;
 #[allow(ambiguous_glob_reexports)]
 pub use approve_redeem_request_fiat::*;
 
+pub mod safe_approve_redeem_request_at_current_rate;
+#[allow(ambiguous_glob_reexports)]
+pub use safe_approve_redeem_request_at_current_rate::*;
+
+pub mod safe_approve_redeem_request_at_request_rate;
+#[allow(ambiguous_glob_reexports)]
+pub use safe_approve_redeem_request_at_request_rate::*;
+
 pub mod redeem_request_fiat;
 #[allow(ambiguous_glob_reexports)]
 pub use redeem_request_fiat::*;

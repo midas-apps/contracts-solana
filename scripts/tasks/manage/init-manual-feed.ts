@@ -4,6 +4,7 @@ import { Transaction } from '@solana/web3.js';
 import { createUserError } from '@/common/errorHandler';
 import { executeNetworkScript } from '@/common/scriptRunner';
 import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
+import { MANUAL_PRICE_DECIMALS } from '@/scripts/constants/pricing';
 import { DATA_FEED_AC_ROLES } from '@/test/constants/data-feed.constants';
 import { getAccountAcRoleStatePda } from '@/test/helpers/ac.helpers';
 import { fromBN, toBN } from '@/test/helpers/common.helpers';
@@ -29,12 +30,10 @@ import { getMtoken, getNetwork, getOptionalArg } from '../../utils/argumentParse
  */
 // Manual feeds always store prices with 8 decimals (the on-chain program
 // normalizes to base-9 using this value, so it must stay fixed across deploys).
-const MANUAL_FEED_DECIMALS = 8;
-
-async function main(provider: AnchorProvider, payer: Wallet) {
+async function main(provider: AnchorProvider, payer: Wallet, network: string) {
   const mtoken = getMtoken();
-  const network = getNetwork();
   const priceArg = getOptionalArg('price');
+  const maxAnswerDeviationArg = getOptionalArg('max-answer-deviation');
 
   console.log(`\n🔧 Initializing ManualFeedState for ${mtoken} on ${network}`);
 
@@ -85,7 +84,7 @@ async function main(provider: AnchorProvider, payer: Wallet) {
     throw createUserError('--price is required', ['Example: --price 1.05']);
   }
 
-  const decimals = MANUAL_FEED_DECIMALS;
+  const decimals = MANUAL_PRICE_DECIMALS;
   const priceMultiplier = 10 ** decimals;
   const initialPrice = BigInt(Math.round(parseFloat(priceArg) * priceMultiplier));
 
@@ -108,7 +107,7 @@ async function main(provider: AnchorProvider, payer: Wallet) {
 
   const initManualFeedTx = new Transaction().add(
     await feedProgram.methods
-      .newManualFeed(toBN(initialPrice), decimals)
+      .newManualFeed(toBN(initialPrice), decimals, toBN(maxAnswerDeviationArg ?? 0))
       .accountsPartial({
         authority: payer.publicKey,
         manualFeed: manualFeedPda,

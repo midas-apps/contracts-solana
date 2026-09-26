@@ -20,7 +20,7 @@ export const getDataFeedProgram = (provider: AnchorProvider) => {
   return new Program<DataFeed>(DATA_FEED_IDL as any, provider);
 };
 
-interface DeployDataFeedBaseConfig {
+export interface DeployDataFeedBaseConfig {
   acRole: PublicKey;
   feed?: Keypair;
   minPrice: bigint;
@@ -31,7 +31,7 @@ interface DeployDataFeedBaseConfig {
 /**
  * Discriminated union for data feed deployments
  * - Manual and Switchboard feeds: underlyingFeed is optional (will be created if not provided)
- * - Pyth and Chainlink feeds: underlyingFeed is required (must reference existing oracle)
+ * - Pyth feeds: underlyingFeed is required (must reference existing oracle)
  */
 export type DeployDataFeedConfig =
   | (DeployDataFeedBaseConfig & {
@@ -39,7 +39,7 @@ export type DeployDataFeedConfig =
       underlyingFeed?: PublicKey;
     })
   | (DeployDataFeedBaseConfig & {
-      mode: 'pyth' | 'chainlink';
+      mode: 'pyth';
       underlyingFeed: PublicKey;
     });
 
@@ -55,7 +55,7 @@ export const deployDataFeed = async (common: CommonParams, config: DeployDataFee
   } = config;
   const feed = feedKeypair ?? Keypair.generate();
 
-  if ((mode === 'pyth' || mode === 'chainlink') && !underlyingFeed) {
+  if (mode === 'pyth' && !underlyingFeed) {
     throw new Error(`underlyingFeed is required for ${mode} mode`);
   }
 
@@ -65,7 +65,7 @@ export const deployDataFeed = async (common: CommonParams, config: DeployDataFee
     await dataFeedProgram.methods
       .newFeed(
         acRole,
-        underlyingFeed,
+        underlyingFeed!,
         DataFeedMode[mode],
         toBN(minPrice),
         toBN(maxPrice),

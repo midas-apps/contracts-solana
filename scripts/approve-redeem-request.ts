@@ -62,6 +62,12 @@ async function main(provider: AnchorProvider, payer: Wallet) {
     const lower = arg.toLowerCase();
     return lower === 'true' || lower === '1' || lower === 'yes';
   })();
+  const safeValidateLiquidity = (() => {
+    const arg = getOptionalArg('safe-validate-liquidity');
+    if (!arg) return false;
+    const lower = arg.toLowerCase();
+    return lower === 'true' || lower === '1' || lower === 'yes';
+  })();
 
   console.log(`Approving redeem request for ${mtoken} tokens with payment token ${paymentToken}`);
   if (requestIdArg !== undefined) {
@@ -71,6 +77,7 @@ async function main(provider: AnchorProvider, payer: Wallet) {
     console.log(`New rate (base-9 input): ${newRateStr} (e.g., "1000000000" = $1.00)`);
   }
   console.log(`Is safe: ${isSafe}`);
+  console.log(`Safe validate liquidity: ${safeValidateLiquidity}`);
 
   // Get token addresses
   const vaultCommon = requireRedeemerVault(network, mtoken);
@@ -157,6 +164,7 @@ async function main(provider: AnchorProvider, payer: Wallet) {
     console.log(`  New rate (base-9): ${newRate} (using stored rate from request)`);
   }
   console.log(`  Is safe: ${isSafe}`);
+  console.log(`  Safe validate liquidity: ${safeValidateLiquidity}`);
   console.log(`  mToken amount in request: ${fromBN(redeemRequest.mTokenAmount)}`);
   console.log(`  Stored mToken rate (base-9): ${fromBN(redeemRequest.mTokenRate)}`);
   console.log(`  Stored payment mint rate (base-9): ${fromBN(redeemRequest.paymentMintRate)}`);
@@ -286,7 +294,7 @@ async function main(provider: AnchorProvider, payer: Wallet) {
   // Add approve instruction
   tx.add(
     await vaultsProgram.methods
-      .approveRedeemRequest(toBN(requestId), toBN(newRate), isSafe)
+      .approveRedeemRequest(toBN(requestId), toBN(newRate), isSafe, safeValidateLiquidity)
       .accountsPartial({
         authority: payer.publicKey,
         userAccount: redeemRequest.user,
@@ -317,7 +325,8 @@ const network = getNetwork();
 executeNetworkScript(network, main);
 
 // Usage examples:
-// yarn tsx scripts/approve-redeem-request.ts --network devnet --mtoken mTBILL --payment-token USDC --request-id 0 --new-rate 1000000000 --is-safe true
-// yarn tsx scripts/approve-redeem-request.ts --network devnet --mtoken mTBILL --payment-token USDC --request-id 0 --new-rate 1150000000 --is-safe false
+// yarn tsx scripts/approve-redeem-request.ts --network devnet --mtoken mTBILL --payment-token USDC --request-id 0 --new-rate 1000000000 --is-safe true --safe-validate-liquidity false
+// yarn tsx scripts/approve-redeem-request.ts --network devnet --mtoken mTBILL --payment-token USDC --request-id 0 --new-rate 1150000000 --is-safe false --safe-validate-liquidity true
 //
 // Note: --new-rate should be a base-9 integer (e.g., "1000000000" for $1.00, "1150000000" for $1.15)
+// Note: --safe-validate-liquidity if true, checks redeemer liquidity before transfer and skips (returns success) if insufficient

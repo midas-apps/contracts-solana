@@ -60,11 +60,11 @@ pub fn handle(
     allowance: Option<u128>,
     stable: Option<bool>,
 ) -> Result<()> {
-    let data_feed = if let Some(new_data_feed) = &ctx.accounts.new_data_feed {
-        Some(new_data_feed.key())
-    } else {
-        None
-    };
+    let data_feed = ctx
+        .accounts
+        .new_data_feed
+        .as_ref()
+        .map(|new_data_feed| new_data_feed.key());
 
     let mint = &ctx.accounts.payment_mint_state.mint.clone();
 

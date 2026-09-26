@@ -33,12 +33,4 @@ pub mod token_authority {
     pub fn thaw(ctx: Context<Thaw>) -> Result<()> {
         thaw::handle(ctx)
     }
-
-    pub fn set_authority(
-        ctx: Context<SetAuthority>,
-        authority_type: u8,
-        new_authority: Option<Pubkey>,
-    ) -> Result<()> {
-        set_authority::handle(ctx, authority_type, new_authority)
-    }
 }
