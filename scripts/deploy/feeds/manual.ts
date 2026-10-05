@@ -3,6 +3,7 @@ import { Keypair, PublicKey, Transaction } from '@solana/web3.js';
 
 import { createCustomSignerProvider } from '@/common/scriptRunner';
 import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
+import { MANUAL_PRICE_DECIMALS } from '@/scripts/constants/pricing';
 import { AC_ROLES } from '@/test/constants/ac.constants';
 import { DATA_FEED_AC_ROLES } from '@/test/constants/data-feed.constants';
 import {
@@ -19,14 +20,12 @@ import {
   DeployDataFeedConfig,
   getDataFeedProgram,
   CommonParams,
+  DeployDataFeedBaseConfig,
 } from '../dataFeed';
 
 export interface DeployManualFeedParams {
-  acRole: PublicKey;
   underlyingFeed?: PublicKey; // Optional - if not provided, will create manual feed
-  minPrice: bigint;
-  maxPrice: bigint;
-  maxStaleness: number;
+  maxAnswerDeviation: bigint;
   initialPrice?: bigint;
   isPaymentToken?: boolean;
   existingDataFeed?: PublicKey;
@@ -39,6 +38,7 @@ export interface DeployManualFeedParams {
  */
 export async function deployManualFeed(
   common: CommonParams,
+  paramsCommon: DeployDataFeedBaseConfig,
   params: DeployManualFeedParams,
 ): Promise<PublicKey> {
   let { provider, payer } = common;
@@ -54,12 +54,12 @@ export async function deployManualFeed(
     );
 
     const tempConfig: DeployDataFeedConfig = {
-      acRole: params.acRole,
+      acRole: paramsCommon.acRole,
       mode: 'manual',
       underlyingFeed: manualFeedPda, // Use manual feed PDA (will be created in step 2)
-      minPrice: params.minPrice,
-      maxPrice: params.maxPrice,
-      maxStaleness: params.maxStaleness,
+      minPrice: paramsCommon.minPrice,
+      maxPrice: paramsCommon.maxPrice,
+      maxStaleness: paramsCommon.maxStaleness,
       feed: baseFeedKeypair,
     };
 
@@ -82,24 +82,24 @@ export async function deployManualFeed(
     // Grant FEED_ADMIN role if not already granted
     const acProgram = getAcProgram(provider);
     const authorityAcRolePda = getAccountAcRoleStatePda(
-      params.acRole,
+      paramsCommon.acRole,
       payer.publicKey,
       DATA_FEED_AC_ROLES.FEED_ADMIN,
     );
 
-    const feeAdminRole = await fetchAccountAcRoleState(acProgram, authorityAcRolePda, true);
+    const feedAdminRole = await fetchAccountAcRoleState(acProgram, authorityAcRolePda, true);
 
-    if (!feeAdminRole) {
+    if (!feedAdminRole) {
       // Attempt to grant FEED_ADMIN role (required for manual feed operations)
       const grantRoleTx = new Transaction().add(
         await acProgram.methods
           .grantRole(acRoleToBuffer(DATA_FEED_AC_ROLES.FEED_ADMIN))
           .accountsPartial({
             account: payer.publicKey,
-            acRole: params.acRole,
+            acRole: paramsCommon.acRole,
             authority: payer.publicKey,
             authorityAcAdminRole: getAccountAcRoleStatePda(
-              params.acRole,
+              paramsCommon.acRole,
               payer.publicKey,
               AC_ROLES.ADMIN,
             ),
@@ -137,16 +137,16 @@ export async function deployManualFeed(
       console.log(`✓ Using existing data feed: ${params.existingDataFeed.toString()}`);
     }
 
-    const initialPrice = params.initialPrice ?? params.minPrice;
+    const initialPrice = params.initialPrice ?? paramsCommon.minPrice;
     console.log(`Initial price: ${initialPrice}`);
 
     const manualFeedTx = new Transaction().add(
       await dataFeedProgram.methods
-        .newManualFeed(toBN(initialPrice), 8)
+        .newManualFeed(toBN(initialPrice), MANUAL_PRICE_DECIMALS, toBN(params.maxAnswerDeviation))
         .accountsPartial({
           authority: payer.publicKey,
           manualFeed: manualFeedPda,
-          acRole: params.acRole,
+          acRole: paramsCommon.acRole,
           authorityAcRole: authorityAcRolePda,
           baseFeed: feedPublicKey,
         })
@@ -172,12 +172,9 @@ export async function deployManualFeed(
 
   // If underlyingFeed is provided, use standard deployment
   const config: DeployDataFeedConfig = {
-    acRole: params.acRole,
+    ...paramsCommon,
     mode: 'manual',
     underlyingFeed: params.underlyingFeed,
-    minPrice: params.minPrice,
-    maxPrice: params.maxPrice,
-    maxStaleness: params.maxStaleness,
   };
 
   return await deployDataFeed(common, config);

@@ -31,3 +31,17 @@ pub struct ManualFeedUpdatedEvent {
     /// New price
     pub price: Option<u64>,
 }
+
+#[event]
+pub struct ManualFeedUpdatedEventV2 {
+    /// `FeedState` account
+    pub base_feed: Pubkey,
+    /// Manual feed account
+    pub manual_feed: Pubkey,
+    /// New Decimals
+    pub decimals: Option<u8>,
+    /// New price
+    pub price: Option<u64>,
+    /// New max answer deviation
+    pub max_answer_deviation: Option<u64>,
+}

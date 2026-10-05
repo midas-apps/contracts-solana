@@ -13,11 +13,6 @@ pub struct Mint<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    /// CHECK:
-    /// receiver of tokens
-    #[account()]
-    pub receiver: AccountInfo<'info>,
-
     /// Token authority PDA
     #[account(
         seeds = [TokenAuthorityState::SEED, token_authority.base_seed.as_ref()],
@@ -40,14 +35,13 @@ pub struct Mint<'info> {
     )]
     pub mint: Box<InterfaceAccount<'info, SplMint>>,
 
-    /// ATA of `receiver` (MintTo::account)
+    /// Token account to mint to (MintTo::to). Canonical ATA is not required.
     #[account(
         mut,
-        associated_token::token_program = token_program,
-        associated_token::mint = mint,
-        associated_token::authority = receiver,
+        token::token_program = token_program,
+        token::mint = mint,
     )]
-    pub receiver_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub receiver_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
     /// SPL token program
     pub token_program: Interface<'info, TokenInterface>,
@@ -75,7 +69,7 @@ pub fn handle(ctx: Context<Mint>, amount: u64) -> Result<()> {
             MintTo {
                 authority: ctx.accounts.token_authority.to_account_info(),
                 mint: ctx.accounts.mint.to_account_info(),
-                to: ctx.accounts.receiver_ata.to_account_info(),
+                to: ctx.accounts.receiver_token_account.to_account_info(),
             },
             &[&[
                 TokenAuthorityState::SEED,

@@ -14,14 +14,18 @@ import { getTokenAddresses } from '../../utils/addressQueries';
 import { getMtoken, getNetwork, getOptionalArg } from '../../utils/argumentParser';
 
 // Manual feeds always store prices with 8 decimals. The on-chain program
-// normalizes to base-9 using the feed's own `decimals`, so price and decimals
-// must always be written together to stay consistent.
+// normalizes to base-9 using the feed's own `decimals`, so the human-readable
+// price must be scaled by this value before submitting.
 const MANUAL_FEED_DECIMALS = 8;
 
 async function main(provider: AnchorProvider, payer: Wallet) {
   const mtoken = getMtoken();
   const network = getNetwork();
   const priceArg = getOptionalArg('price');
+  // When true, uses safe_update_manual_feed_price (price updater role) which enforces
+  // the max-answer-deviation and update delay checks. Otherwise uses the unsafe
+  // update_manual_feed_price (feed admin role).
+  const isSafe = getOptionalArg('is-safe') === 'true';
 
   if (!priceArg) {
     throw createUserError('--price is required', ['Example: --price 1.05']);
@@ -39,6 +43,12 @@ async function main(provider: AnchorProvider, payer: Wallet) {
 
   const feedProgram = getDataFeedProgram(provider);
   const state = await fetchDataFeedState(feedProgram, tokenAddrs.mTokenDataFeed);
+
+  if (!state) {
+    throw createUserError(`FeedState not found at ${tokenAddrs.mTokenDataFeed}`, [
+      'The FeedState account does not exist on-chain',
+    ]);
+  }
 
   // Check if feed is manual mode
   if (!('manual' in state.mode)) {
@@ -65,9 +75,12 @@ async function main(provider: AnchorProvider, payer: Wallet) {
   console.log(`   New Price: $${price} (raw: ${priceRaw.toString()})`);
   console.log(`   Decimals: ${MANUAL_FEED_DECIMALS}`);
 
+  const updateMethod = isSafe
+    ? feedProgram.methods.safeUpdateManualFeedPrice(priceRaw)
+    : feedProgram.methods.updateManualFeedPrice(priceRaw);
+
   const tx = new Transaction().add(
-    await feedProgram.methods
-      .updateManualFeed(priceRaw, MANUAL_FEED_DECIMALS)
+    await updateMethod
       .accountsPartial({
         authority: payer.publicKey,
         manualFeed: manualFeedPda,
@@ -76,7 +89,7 @@ async function main(provider: AnchorProvider, payer: Wallet) {
         authorityAcRole: getAccountAcRoleStatePda(
           state.acRole,
           payer.publicKey,
-          DATA_FEED_AC_ROLES.FEED_ADMIN,
+          isSafe ? DATA_FEED_AC_ROLES.PRICE_UPDATER : DATA_FEED_AC_ROLES.FEED_ADMIN,
         ),
       })
       .instruction(),

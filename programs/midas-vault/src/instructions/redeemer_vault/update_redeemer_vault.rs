@@ -15,7 +15,7 @@ pub struct UpdateRedeemerVault<'info> {
 
     /// Vault common state account
     #[account()]
-    pub vault_common: Account<'info, VaultCommonState>,
+    pub vault_common: Box<Account<'info, VaultCommonState>>,
 
     /// Admin role of authority
     #[account(
@@ -23,7 +23,7 @@ pub struct UpdateRedeemerVault<'info> {
         seeds::program = AccessControl::id(),
         bump,
     )]
-    pub authority_ac_role: Account<'info, AccountAccessControlRoleState>,
+    pub authority_ac_role: Box<Account<'info, AccountAccessControlRoleState>>,
 
     /// Redeemer vault state account
     #[account(
@@ -31,7 +31,7 @@ pub struct UpdateRedeemerVault<'info> {
         seeds = [RedeemerVaultState::SEED, vault_common.key().as_ref()],
         bump
     )]
-    pub redeemer_vault: Account<'info, RedeemerVaultState>,
+    pub redeemer_vault: Box<Account<'info, RedeemerVaultState>>,
 
     /// System program
     pub system_program: Program<'info, System>,

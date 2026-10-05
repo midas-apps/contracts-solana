@@ -6,4 +6,6 @@ pub enum AccessControlError {
     NotAuthority,
     #[msg("Cannot be both blacklisted and whitelisted")]
     BothBlacklistedAndWhitelisted,
+    #[msg("Arithmetic overflow or underflow")]
+    ArithmeticOverflow,
 }

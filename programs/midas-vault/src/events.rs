@@ -116,6 +116,18 @@ pub struct MinterVaultUpdatedEvent {
 }
 
 #[event]
+pub struct MinterVaultUpdatedEventV2 {
+    /// common vault account
+    pub common_vault: Pubkey,
+    /// min. mTokens for first deposit
+    pub first_deposit_min_m_tokens: Option<u64>,
+    /// mint authority pda (token-authority program)
+    pub mint_authority_pda: Option<Pubkey>,
+    /// max supply cap for mToken minting
+    pub max_supply_cap: Option<u64>,
+}
+
+#[event]
 pub struct MinterVaultInstantMintedEvent {
     /// common vault account
     pub common_vault: Pubkey,

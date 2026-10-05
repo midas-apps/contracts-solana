@@ -44,7 +44,7 @@ pub fn handle(ctx: Context<UpdatePause>, paused: bool) -> Result<()> {
     ctx.accounts.vault_common.paused = paused;
 
     emit!(PauseUpdatedEvent {
-        paused: paused,
+        paused,
         common_vault: ctx.accounts.vault_common.key()
     });
 
