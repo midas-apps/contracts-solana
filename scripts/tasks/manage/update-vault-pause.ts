@@ -121,14 +121,14 @@ async function main(provider: AnchorProvider, payer: Wallet) {
     const authorityRoleState = await fetchAccountAcRoleState(acProgram, authorityAcRole, true);
 
     if (!authorityRoleState) {
-      throw createUserError(
-        `Current wallet is missing ${VAULT_AC_ROLES.VAULT_PAUSER} for ${target.vault} vault`,
-        [
-          `Wallet: ${payer.publicKey.toString()}`,
-          `AC Role: ${commonState.acRole.toString()}`,
-          `Missing role account: ${authorityAcRole.toString()}`,
-          `Run: yarn token-ac:grant-operational --mtoken ${mtoken} --network ${network}`,
-        ],
+      console.warn(
+        `Warning: current wallet is missing ${VAULT_AC_ROLES.VAULT_PAUSER} for ${target.vault} vault. Sending the transaction anyway.`,
+      );
+      console.warn(`  Wallet: ${payer.publicKey.toString()}`);
+      console.warn(`  AC Role: ${commonState.acRole.toString()}`);
+      console.warn(`  Missing role account: ${authorityAcRole.toString()}`);
+      console.warn(
+        `  Grant it with: yarn token-ac:grant-operational --mtoken ${mtoken} --network ${network}`,
       );
     }
 

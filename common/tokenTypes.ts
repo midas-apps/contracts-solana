@@ -1,8 +1,9 @@
 export enum MProduct {
-  MTBILL = 'mTBILL',
-  SOLMFONE = 'solmFONE',
-  SOLMHYPER = 'solmHYPER',
-  PSV = 'pSV',
+  mTBILL = 'mTBILL',
+  solmFONE = 'solmFONE',
+  solmHYPER = 'solmHYPER',
+  pSV = 'pSV',
+  solStockMarketTRBasisTrade = 'solStockMarketTRBasisTrade',
 }
 
 export enum PaymentToken {
