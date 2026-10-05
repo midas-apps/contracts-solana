@@ -420,20 +420,27 @@ export const updateManualFeedPrice = async (
   const from = opt?.from ?? owner;
   const baseFeedStateBefore = await fetchDataFeedState(dataFeedProgram, baseFeed);
 
-  const tx = await dataFeedProgram.methods
-    .updateManualFeedPrice(toBN(price), isSafe)
-    .accountsPartial({
-      baseFeed: baseFeed,
-      authority: from.publicKey,
-      manualFeed: feedPda,
-      acRole: baseFeedStateBefore.acRole,
-      authorityAcRole: getAccountAcRoleStatePda(
-        baseFeedStateBefore.acRole,
-        from.publicKey,
-        DATA_FEED_AC_ROLES.PRICE_UPDATER,
-      ),
-    })
-    .transaction();
+  const accounts = {
+    baseFeed: baseFeed,
+    authority: from.publicKey,
+    manualFeed: feedPda,
+    acRole: baseFeedStateBefore.acRole,
+    authorityAcRole: getAccountAcRoleStatePda(
+      baseFeedStateBefore.acRole,
+      from.publicKey,
+      isSafe ? DATA_FEED_AC_ROLES.PRICE_UPDATER : DATA_FEED_AC_ROLES.FEED_ADMIN,
+    ),
+  };
+
+  const tx = isSafe
+    ? await dataFeedProgram.methods
+        .safeUpdateManualFeedPrice(toBN(price))
+        .accountsPartial(accounts)
+        .transaction()
+    : await dataFeedProgram.methods
+        .updateManualFeedPrice(toBN(price))
+        .accountsPartial(accounts)
+        .transaction();
 
   if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);

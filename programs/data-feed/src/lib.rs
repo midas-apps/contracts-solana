@@ -75,12 +75,15 @@ pub mod data_feed {
         update_manual_feed::handle(ctx, decimals, max_answer_deviation)
     }
 
-    pub fn update_manual_feed_price(
-        ctx: Context<UpdateManualFeedPrice>,
+    pub fn update_manual_feed_price(ctx: Context<UpdateManualFeedPrice>, price: u64) -> Result<()> {
+        update_manual_feed_price::handle(ctx, price)
+    }
+
+    pub fn safe_update_manual_feed_price(
+        ctx: Context<SafeUpdateManualFeedPrice>,
         price: u64,
-        is_safe: bool,
     ) -> Result<()> {
-        update_manual_feed_price::handle(ctx, price, is_safe)
+        safe_update_manual_feed_price::handle(ctx, price)
     }
 
     pub fn migrate_manual_feed_to_v2(ctx: Context<MigrateManualFeedToV2>) -> Result<()> {

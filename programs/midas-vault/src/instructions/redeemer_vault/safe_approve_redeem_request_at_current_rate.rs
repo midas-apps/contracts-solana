@@ -159,7 +159,7 @@ impl<'info> Closable for SafeApproveRedeemRequestAtCurrentRate<'info> {
 /// Safely approves redeem request at the current mToken rate from data feed.
 /// Validates variation tolerance between request rate and current rate.
 /// Will close redeem request account after processing.
-/// Can only be called by the vault admin.
+/// Can only be called by the request manager.
 ///
 /// # Arguments
 ///

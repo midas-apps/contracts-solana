@@ -1472,7 +1472,25 @@ describe('minter-vault', () => {
       );
     });
 
-    it('should fail: call from non-authority that has vault admin role', async () => {
+    it('should fail: call (safe) from non-authority', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      await approveMintRequest(
+        fixture,
+        { isSafe: true },
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('should approve (unsafe) from account that has only vault admin role', async () => {
       const fixture = await vaultsFixture();
 
       await prepareCommonMintTest(fixture, {});
@@ -1492,10 +1510,110 @@ describe('minter-vault', () => {
         fixture,
         {},
         {},
+        { tokensMinted: parseUnits('9.9') },
+        {
+          from: fixture.regularAccounts[0],
+        },
+      );
+    });
+
+    it('should fail: approve (unsafe) from account that has only request manager role', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      const commonState = await fetchVaultCommonState(
+        fixture.vaultsProgram,
+        fixture.minterCommonVault.publicKey,
+      );
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: VAULT_AC_ROLES.REQUEST_MANAGER,
+        acRole: commonState.acRole,
+      });
+
+      await approveMintRequest(
+        fixture,
+        {},
+        {},
         {},
         {
           from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('should approve (safe) from account that has only request manager role', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      const commonState = await fetchVaultCommonState(
+        fixture.vaultsProgram,
+        fixture.minterCommonVault.publicKey,
+      );
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: VAULT_AC_ROLES.REQUEST_MANAGER,
+        acRole: commonState.acRole,
+      });
+
+      await approveMintRequest(
+        fixture,
+        { isSafe: true },
+        {},
+        { tokensMinted: parseUnits('9.9') },
+        {
+          from: fixture.regularAccounts[0],
+        },
+      );
+    });
+
+    it('should fail: approve (safe) from account that has only vault admin role', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      const commonState = await fetchVaultCommonState(
+        fixture.vaultsProgram,
+        fixture.minterCommonVault.publicKey,
+      );
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: VAULT_AC_ROLES.VAULT_ADMIN,
+        acRole: commonState.acRole,
+      });
+
+      await approveMintRequest(
+        fixture,
+        { isSafe: true },
+        {},
+        {},
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('when safe=false and new rate exceeds allowed deviation (tolerance is not checked)', async () => {
+      const fixture = await vaultsFixture();
+
+      await prepareCommonMintTest(fixture, {});
+      await mintRequest(fixture, {}, {});
+
+      await approveMintRequest(
+        fixture,
+        {
+          newRate: parseUnits('1.5'),
+        },
+        {},
+        {
+          tokensMinted: parseUnits('6.6'),
         },
       );
     });

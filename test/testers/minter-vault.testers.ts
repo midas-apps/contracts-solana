@@ -813,29 +813,36 @@ export const approveMintRequest = async (
 
   const user = stateBefore.requestState.user;
 
-  const tx = await vaultsProgram.methods
-    .approveMintRequest(toBN(requestId), toBN(newRate), isSafe, skipOnSupplyCapExceeded)
-    .accountsPartial({
-      ...baseAccounts,
-      authority: from.publicKey,
-      mintRequest: getMinterVaultRequestPda(getMinterVaultPda(baseAccounts.vaultCommon), requestId),
-      tokenAuthority: stateBefore.minterVaultState.mintAuthorityPda,
-      userAccount: user,
-      accountAc: getAccountAcStatePda(stateBefore.commonVaultState.ac, user),
-      mMint: stateBefore.commonVaultState.mMint,
-      mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
-      authorityAcRole: getAccountAcRoleStatePda(
-        stateBefore.commonVaultState.acRole,
-        from.publicKey,
-        VAULT_AC_ROLES.REQUEST_MANAGER,
-      ),
-      vaultMinterRole: getAccountAcRoleStatePda(
-        stateBefore.mintAuthorityState.acRole,
-        getMinterVaultPda(baseAccounts.vaultCommon),
-        TOKEN_AUTHORITY_ROLES.M_MINTER,
-      ),
-    })
-    .transaction();
+  const approveAccounts = {
+    ...baseAccounts,
+    authority: from.publicKey,
+    mintRequest: getMinterVaultRequestPda(getMinterVaultPda(baseAccounts.vaultCommon), requestId),
+    tokenAuthority: stateBefore.minterVaultState.mintAuthorityPda,
+    userAccount: user,
+    accountAc: getAccountAcStatePda(stateBefore.commonVaultState.ac, user),
+    mMint: stateBefore.commonVaultState.mMint,
+    mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
+    authorityAcRole: getAccountAcRoleStatePda(
+      stateBefore.commonVaultState.acRole,
+      from.publicKey,
+      isSafe ? VAULT_AC_ROLES.REQUEST_MANAGER : VAULT_AC_ROLES.VAULT_ADMIN,
+    ),
+    vaultMinterRole: getAccountAcRoleStatePda(
+      stateBefore.mintAuthorityState.acRole,
+      getMinterVaultPda(baseAccounts.vaultCommon),
+      TOKEN_AUTHORITY_ROLES.M_MINTER,
+    ),
+  };
+
+  const tx = isSafe
+    ? await vaultsProgram.methods
+        .safeApproveMintRequest(toBN(requestId), toBN(newRate), skipOnSupplyCapExceeded)
+        .accountsPartial(approveAccounts)
+        .transaction()
+    : await vaultsProgram.methods
+        .approveMintRequest(toBN(requestId), toBN(newRate), skipOnSupplyCapExceeded)
+        .accountsPartial(approveAccounts)
+        .transaction();
 
   if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);

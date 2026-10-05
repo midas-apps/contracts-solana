@@ -14,7 +14,7 @@ use crate::{
 #[derive(Accounts)]
 #[instruction(request_id: u64)]
 pub struct ApproveRedeemRequestFiat<'info> {
-    /// Account with request manager role
+    /// Account with vault admin role
     #[account(mut)]
     pub authority: Signer<'info>,
 
@@ -40,9 +40,9 @@ pub struct ApproveRedeemRequestFiat<'info> {
     )]
     pub vault_common: Box<Account<'info, VaultCommonState>>,
 
-    /// Request manager role of authority
+    /// Vault admin role of authority
     #[account(
-        seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::REQUEST_MANAGER],
+        seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::VAULT_ADMIN],
         seeds::program = AccessControl::id(),
         bump,
     )]

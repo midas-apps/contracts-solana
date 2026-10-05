@@ -18,7 +18,7 @@ use crate::{
 #[derive(Accounts)]
 #[instruction(request_id: u64)]
 pub struct ApproveMintRequest<'info> {
-    /// Account with request manager role
+    /// Account with vault admin role
     #[account(mut)]
     pub authority: Signer<'info>,
 
@@ -44,9 +44,9 @@ pub struct ApproveMintRequest<'info> {
     )]
     pub vault_common: Account<'info, VaultCommonState>,
 
-    /// Request manager role of authority
+    /// Vault admin role of authority
     #[account(
-        seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::REQUEST_MANAGER],
+        seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::VAULT_ADMIN],
         seeds::program = AccessControl::id(),
         bump,
     )]
@@ -132,13 +132,11 @@ impl<'info> Closable for ApproveMintRequest<'info> {
 /// - `request_id` - id of the mint request
 /// - `new_out_rate` - new out rate for the mint request.
 ///   Using this value admin can correct the output mToken amount
-/// - `is_safe` - if true, will check variation tolerance before minting
 /// - `skip_on_supply_cap_exceeded` - if true, will skip minting and return success
 pub fn handle(
     ctx: Context<ApproveMintRequest>,
     request_id: u64,
     new_out_rate: u64,
-    is_safe: bool,
     skip_on_supply_cap_exceeded: bool,
 ) -> Result<()> {
     if minter::approve_mint_request(
@@ -155,7 +153,7 @@ pub fn handle(
         &ctx.accounts.token_authority_program,
         request_id,
         new_out_rate.into(),
-        is_safe,
+        false,
         skip_on_supply_cap_exceeded,
     )? {
         ctx.accounts.close()?;

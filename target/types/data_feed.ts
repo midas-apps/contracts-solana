@@ -426,6 +426,177 @@ export type DataFeed = {
       ]
     },
     {
+      "name": "safeUpdateManualFeedPrice",
+      "discriminator": [
+        102,
+        22,
+        125,
+        104,
+        252,
+        7,
+        191,
+        69
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "Account with Price Updater role"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "manualFeed",
+          "docs": [
+            "`ManualFeedState` instance"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  110,
+                  117,
+                  97,
+                  108,
+                  95,
+                  102,
+                  101,
+                  101,
+                  100,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "baseFeed"
+              }
+            ]
+          }
+        },
+        {
+          "name": "acRole",
+          "docs": [
+            "AccessControlRoles instance that is set in base_feed"
+          ]
+        },
+        {
+          "name": "authorityAcRole",
+          "docs": [
+            "Price Updater AC role of `authority`"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99,
+                  95,
+                  114,
+                  111,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "acRole"
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  105,
+                  99,
+                  101,
+                  95,
+                  117,
+                  112,
+                  100,
+                  97,
+                  116,
+                  101,
+                  114
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
+        },
+        {
+          "name": "baseFeed",
+          "docs": [
+            "`DataFeed` account"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "price",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "updateFeed",
       "discriminator": [
         222,
@@ -795,7 +966,7 @@ export type DataFeed = {
         {
           "name": "authority",
           "docs": [
-            "Account with Price Updater role"
+            "Account with Feed Admin role"
           ],
           "writable": true,
           "signer": true
@@ -846,7 +1017,7 @@ export type DataFeed = {
         {
           "name": "authorityAcRole",
           "docs": [
-            "Price Updater AC role of `authority`"
+            "Feed admin role of `authority`"
           ],
           "pda": {
             "seeds": [
@@ -881,19 +1052,21 @@ export type DataFeed = {
               {
                 "kind": "const",
                 "value": [
-                  112,
-                  114,
-                  105,
-                  99,
-                  101,
-                  95,
-                  117,
-                  112,
                   100,
                   97,
                   116,
+                  97,
+                  95,
+                  102,
                   101,
-                  114
+                  101,
+                  100,
+                  95,
+                  97,
+                  100,
+                  109,
+                  105,
+                  110
                 ]
               }
             ],
@@ -947,10 +1120,6 @@ export type DataFeed = {
         {
           "name": "price",
           "type": "u64"
-        },
-        {
-          "name": "isSafe",
-          "type": "bool"
         }
       ]
     }

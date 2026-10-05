@@ -13,8 +13,8 @@ use crate::{
 
 #[derive(Accounts)]
 #[instruction(request_id: u64)]
-pub struct ApproveRedeemRequest<'info> {
-    /// Account with vault admin role
+pub struct SafeApproveRedeemRequest<'info> {
+    /// Account with request manager role
     #[account(mut)]
     pub authority: Signer<'info>,
 
@@ -48,9 +48,9 @@ pub struct ApproveRedeemRequest<'info> {
     )]
     pub vault_common: Box<Account<'info, VaultCommonState>>,
 
-    /// Vault admin role of authority
+    /// Request manager role of authority
     #[account(
-        seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::VAULT_ADMIN],
+        seeds = [AccountAccessControlRoleState::SEED, vault_common.ac_role.as_ref(), authority.key().as_ref(), ac_roles::REQUEST_MANAGER],
         seeds::program = AccessControl::id(),
         bump,
     )]
@@ -129,7 +129,7 @@ pub struct ApproveRedeemRequest<'info> {
     pub system_program: Program<'info, System>,
 }
 
-impl<'info> Closable for ApproveRedeemRequest<'info> {
+impl<'info> Closable for SafeApproveRedeemRequest<'info> {
     /// Close implementation to close redeem request
     fn close(&mut self) -> Result<()> {
         close_account(
@@ -142,9 +142,9 @@ impl<'info> Closable for ApproveRedeemRequest<'info> {
     }
 }
 
-/// Approves redeem request and emits an event.
+/// Safely approves redeem request and emits an event.
 /// Can be used only for non-fiat redeem requests.
-/// Can be called only by vault admin.
+/// Can be called only by the request manager.
 ///
 /// # Arguments
 ///
@@ -154,7 +154,7 @@ impl<'info> Closable for ApproveRedeemRequest<'info> {
 /// - `safe_validate_liquidity` - if true, checks redeemer liquidity before transfer
 ///   and skips processing (returns success) if insufficient
 pub fn handle(
-    ctx: Context<ApproveRedeemRequest>,
+    ctx: Context<SafeApproveRedeemRequest>,
     request_id: u64,
     new_m_token_rate: u64,
     safe_validate_liquidity: bool,
@@ -174,7 +174,7 @@ pub fn handle(
         Some(&ctx.accounts.payment_mint_user_ata),
         request_id,
         new_m_token_rate.into(),
-        false,
+        true,
         safe_validate_liquidity,
     )? {
         ctx.accounts.close()?;

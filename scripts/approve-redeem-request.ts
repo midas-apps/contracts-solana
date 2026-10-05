@@ -248,7 +248,7 @@ async function main(provider: AnchorProvider, payer: Wallet) {
   const authorityAcRole = getAccountAcRoleStatePda(
     commonState.acRole,
     payer.publicKey,
-    VAULT_AC_ROLES.VAULT_ADMIN,
+    isSafe ? VAULT_AC_ROLES.REQUEST_MANAGER : VAULT_AC_ROLES.VAULT_ADMIN,
   );
 
   // Create transaction
@@ -292,9 +292,20 @@ async function main(provider: AnchorProvider, payer: Wallet) {
   }
 
   // Add approve instruction
+  const approveMethod = isSafe
+    ? vaultsProgram.methods.safeApproveRedeemRequest(
+        toBN(requestId),
+        toBN(newRate),
+        safeValidateLiquidity,
+      )
+    : vaultsProgram.methods.approveRedeemRequest(
+        toBN(requestId),
+        toBN(newRate),
+        safeValidateLiquidity,
+      );
+
   tx.add(
-    await vaultsProgram.methods
-      .approveRedeemRequest(toBN(requestId), toBN(newRate), isSafe, safeValidateLiquidity)
+    await approveMethod
       .accountsPartial({
         authority: payer.publicKey,
         userAccount: redeemRequest.user,

@@ -758,6 +758,27 @@ export const approveRedeemRequest = async (
 
   const user = stateBefore.requestState.user;
 
+  const approveAccounts = {
+    ...baseAccounts,
+    authority: from.publicKey,
+    redeemRequest: getRedeemerVaultRequestPda(
+      getRedeemerVaultPda(baseAccounts.vaultCommon),
+      requestId,
+    ),
+    userAccount: user,
+    accountAc: getAccountAcStatePda(stateBefore.commonVaultState.ac, user),
+    mMint: stateBefore.commonVaultState.mMint,
+    mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
+    paymentMint: stateBefore.requestState.paymentMint,
+    paymentMintTokenProgram: TOKEN_PROGRAM_ID,
+    requestRedeemer: stateBefore.redeemerVaultState.requestRedeemer,
+    authorityAcRole: getAccountAcRoleStatePda(
+      stateBefore.commonVaultState.acRole,
+      from.publicKey,
+      isSafe ? VAULT_AC_ROLES.REQUEST_MANAGER : VAULT_AC_ROLES.VAULT_ADMIN,
+    ),
+  };
+
   const tx = isFiat
     ? await vaultsProgram.methods
         .approveRedeemRequestFiat(toBN(requestId), toBN(newRate), isSafe)
@@ -775,33 +796,19 @@ export const approveRedeemRequest = async (
           authorityAcRole: getAccountAcRoleStatePda(
             stateBefore.commonVaultState.acRole,
             from.publicKey,
-            VAULT_AC_ROLES.REQUEST_MANAGER,
+            VAULT_AC_ROLES.VAULT_ADMIN,
           ),
         })
         .transaction()
-    : await vaultsProgram.methods
-        .approveRedeemRequest(toBN(requestId), toBN(newRate), isSafe, safeValidateLiquidity)
-        .accountsPartial({
-          ...baseAccounts,
-          authority: from.publicKey,
-          redeemRequest: getRedeemerVaultRequestPda(
-            getRedeemerVaultPda(baseAccounts.vaultCommon),
-            requestId,
-          ),
-          userAccount: user,
-          accountAc: getAccountAcStatePda(stateBefore.commonVaultState.ac, user),
-          mMint: stateBefore.commonVaultState.mMint,
-          mMintTokenProgram: TOKEN_2022_PROGRAM_ID,
-          paymentMint: stateBefore.requestState.paymentMint,
-          paymentMintTokenProgram: TOKEN_PROGRAM_ID,
-          requestRedeemer: stateBefore.redeemerVaultState.requestRedeemer,
-          authorityAcRole: getAccountAcRoleStatePda(
-            stateBefore.commonVaultState.acRole,
-            from.publicKey,
-            VAULT_AC_ROLES.REQUEST_MANAGER,
-          ),
-        })
-        .transaction();
+    : isSafe
+      ? await vaultsProgram.methods
+          .safeApproveRedeemRequest(toBN(requestId), toBN(newRate), safeValidateLiquidity)
+          .accountsPartial(approveAccounts)
+          .transaction()
+      : await vaultsProgram.methods
+          .approveRedeemRequest(toBN(requestId), toBN(newRate), safeValidateLiquidity)
+          .accountsPartial(approveAccounts)
+          .transaction();
 
   if (opt?.revertedWith !== undefined) {
     await expectTxReverted(context, tx, [from], opt);

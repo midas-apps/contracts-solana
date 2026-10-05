@@ -4,7 +4,6 @@ use access_control::{
 };
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
-use data_feed::state::FeedState;
 use token_authority::{
     constants::ac_roles as ac_roles_token_authority, program::TokenAuthority,
     state::TokenAuthorityState,
@@ -13,12 +12,12 @@ use token_authority::{
 use crate::{
     constants::ac_roles,
     state::{MintVaultRequestState, MinterVaultState, VaultCommonState},
-    utils::{close_account, get_token_rate, minter, Closable},
+    utils::{close_account, minter, Closable},
 };
 
 #[derive(Accounts)]
 #[instruction(request_id: u64)]
-pub struct SafeApproveMintRequestAtCurrentRate<'info> {
+pub struct SafeApproveMintRequest<'info> {
     /// Account with request manager role
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -43,7 +42,7 @@ pub struct SafeApproveMintRequestAtCurrentRate<'info> {
     #[account(
         address = minter_vault.common_vault
     )]
-    pub vault_common: Box<Account<'info, VaultCommonState>>,
+    pub vault_common: Account<'info, VaultCommonState>,
 
     /// Request manager role of authority
     #[account(
@@ -51,7 +50,7 @@ pub struct SafeApproveMintRequestAtCurrentRate<'info> {
         seeds::program = AccessControl::id(),
         bump,
     )]
-    pub authority_ac_role: Box<Account<'info, AccountAccessControlRoleState>>,
+    pub authority_ac_role: Account<'info, AccountAccessControlRoleState>,
 
     /// Vault minter role
     #[account(
@@ -59,7 +58,7 @@ pub struct SafeApproveMintRequestAtCurrentRate<'info> {
         seeds::program = AccessControl::id(),
         bump,
     )]
-    pub vault_minter_role: Box<Account<'info, AccountAccessControlRoleState>>,
+    pub vault_minter_role: Account<'info, AccountAccessControlRoleState>,
 
     /// Minter vault state account
     #[account(
@@ -67,7 +66,7 @@ pub struct SafeApproveMintRequestAtCurrentRate<'info> {
         seeds = [MinterVaultState::SEED, vault_common.key().as_ref()],
         bump
     )]
-    pub minter_vault: Box<Account<'info, MinterVaultState>>,
+    pub minter_vault: Account<'info, MinterVaultState>,
 
     /// Mint vault request state account
     #[account(
@@ -75,7 +74,7 @@ pub struct SafeApproveMintRequestAtCurrentRate<'info> {
         seeds = [MintVaultRequestState::SEED, minter_vault.key().as_ref(), &request_id.to_le_bytes()],
         bump
     )]
-    pub mint_request: Box<Account<'info, MintVaultRequestState>>,
+    pub mint_request: Account<'info, MintVaultRequestState>,
 
     /// Token authority state account (token-authority program)
     #[account(
@@ -83,7 +82,7 @@ pub struct SafeApproveMintRequestAtCurrentRate<'info> {
         address = minter_vault.mint_authority_pda,
         owner = TokenAuthority::id()
     )]
-    pub token_authority: Box<Account<'info, TokenAuthorityState>>,
+    pub token_authority: Account<'info, TokenAuthorityState>,
 
     /// mMint ATA of `user_account`
     #[account(
@@ -102,19 +101,6 @@ pub struct SafeApproveMintRequestAtCurrentRate<'info> {
     )]
     pub m_mint: Box<InterfaceAccount<'info, Mint>>,
 
-    /// mMint data feed state account
-    #[account(
-        address = vault_common.m_mint_feed
-    )]
-    pub m_mint_data_feed: Box<Account<'info, FeedState>>,
-
-    /// CHECK:
-    /// mMint underlying feed account
-    #[account(
-        address = m_mint_data_feed.underlying_feed
-    )]
-    pub m_mint_feed: AccountInfo<'info>,
-
     /// SPL token program for mMint
     pub m_mint_token_program: Interface<'info, TokenInterface>,
     /// Token authority program
@@ -123,7 +109,7 @@ pub struct SafeApproveMintRequestAtCurrentRate<'info> {
     pub system_program: Program<'info, System>,
 }
 
-impl<'info> Closable for SafeApproveMintRequestAtCurrentRate<'info> {
+impl<'info> Closable for SafeApproveMintRequest<'info> {
     /// close implementation for closing mint request
     /// after it was processed
     fn close(&mut self) -> Result<()> {
@@ -137,26 +123,22 @@ impl<'info> Closable for SafeApproveMintRequestAtCurrentRate<'info> {
     }
 }
 
-/// Safely approves mint request at the current mToken rate from data feed.
-/// Validates variation tolerance between request rate and current rate.
+/// Safely approves mint request, mints tokens to user account and emits an event.
 /// Will close mint request account after processing.
 /// Can only be called by the request manager.
 ///
 /// # Arguments
 ///
 /// - `request_id` - id of the mint request
+/// - `new_out_rate` - new out rate for the mint request.
+///   Using this value admin can correct the output mToken amount
 /// - `skip_on_supply_cap_exceeded` - if true, will skip minting and return success
 pub fn handle(
-    ctx: Context<SafeApproveMintRequestAtCurrentRate>,
+    ctx: Context<SafeApproveMintRequest>,
     request_id: u64,
+    new_out_rate: u64,
     skip_on_supply_cap_exceeded: bool,
 ) -> Result<()> {
-    let current_rate = get_token_rate(
-        &ctx.accounts.m_mint_data_feed,
-        &ctx.accounts.m_mint_feed,
-        false,
-    )?;
-
     if minter::approve_mint_request(
         &ctx.accounts.mint_request,
         &ctx.accounts.account_ac,
@@ -170,7 +152,7 @@ pub fn handle(
         &ctx.accounts.system_program,
         &ctx.accounts.token_authority_program,
         request_id,
-        current_rate,
+        new_out_rate.into(),
         true,
         skip_on_supply_cap_exceeded,
     )? {

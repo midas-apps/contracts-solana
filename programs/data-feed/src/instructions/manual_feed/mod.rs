@@ -10,6 +10,10 @@ pub mod update_manual_feed_price;
 #[allow(ambiguous_glob_reexports)]
 pub use update_manual_feed_price::*;
 
+pub mod safe_update_manual_feed_price;
+#[allow(ambiguous_glob_reexports)]
+pub use safe_update_manual_feed_price::*;
+
 pub mod migrations;
 #[allow(ambiguous_glob_reexports)]
 pub use migrations::*;

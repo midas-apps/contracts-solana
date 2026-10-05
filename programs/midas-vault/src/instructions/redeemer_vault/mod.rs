@@ -22,6 +22,10 @@ pub mod approve_redeem_request;
 #[allow(ambiguous_glob_reexports)]
 pub use approve_redeem_request::*;
 
+pub mod safe_approve_redeem_request;
+#[allow(ambiguous_glob_reexports)]
+pub use safe_approve_redeem_request::*;
+
 pub mod approve_redeem_request_fiat;
 #[allow(ambiguous_glob_reexports)]
 pub use approve_redeem_request_fiat::*;

@@ -446,7 +446,7 @@ export type MidasVaults = {
         {
           "name": "authority",
           "docs": [
-            "Account with request manager role"
+            "Account with vault admin role"
           ],
           "writable": true,
           "signer": true
@@ -538,7 +538,7 @@ export type MidasVaults = {
         {
           "name": "authorityAcRole",
           "docs": [
-            "Request manager role of authority"
+            "Vault admin role of authority"
           ],
           "pda": {
             "seeds": [
@@ -574,21 +574,17 @@ export type MidasVaults = {
               {
                 "kind": "const",
                 "value": [
-                  114,
-                  101,
-                  113,
+                  118,
+                  97,
                   117,
-                  101,
-                  115,
+                  108,
                   116,
                   95,
+                  97,
+                  100,
                   109,
-                  97,
+                  105,
                   110,
-                  97,
-                  103,
-                  101,
-                  114,
                   95,
                   114,
                   111,
@@ -909,10 +905,6 @@ export type MidasVaults = {
           "type": "u64"
         },
         {
-          "name": "isSafe",
-          "type": "bool"
-        },
-        {
           "name": "skipOnSupplyCapExceeded",
           "type": "bool"
         }
@@ -934,7 +926,7 @@ export type MidasVaults = {
         {
           "name": "authority",
           "docs": [
-            "Account with request manager role"
+            "Account with vault admin role"
           ],
           "writable": true,
           "signer": true
@@ -1033,7 +1025,7 @@ export type MidasVaults = {
         {
           "name": "authorityAcRole",
           "docs": [
-            "Request manager role of authority"
+            "Vault admin role of authority"
           ],
           "pda": {
             "seeds": [
@@ -1069,21 +1061,17 @@ export type MidasVaults = {
               {
                 "kind": "const",
                 "value": [
-                  114,
-                  101,
-                  113,
+                  118,
+                  97,
                   117,
-                  101,
-                  115,
+                  108,
                   116,
                   95,
+                  97,
+                  100,
                   109,
-                  97,
+                  105,
                   110,
-                  97,
-                  103,
-                  101,
-                  114,
                   95,
                   114,
                   111,
@@ -1471,10 +1459,6 @@ export type MidasVaults = {
           "type": "u64"
         },
         {
-          "name": "isSafe",
-          "type": "bool"
-        },
-        {
           "name": "safeValidateLiquidity",
           "type": "bool"
         }
@@ -1496,7 +1480,7 @@ export type MidasVaults = {
         {
           "name": "authority",
           "docs": [
-            "Account with request manager role"
+            "Account with vault admin role"
           ],
           "writable": true,
           "signer": true
@@ -1588,7 +1572,7 @@ export type MidasVaults = {
         {
           "name": "authorityAcRole",
           "docs": [
-            "Request manager role of authority"
+            "Vault admin role of authority"
           ],
           "pda": {
             "seeds": [
@@ -1624,21 +1608,17 @@ export type MidasVaults = {
               {
                 "kind": "const",
                 "value": [
-                  114,
-                  101,
-                  113,
+                  118,
+                  97,
                   117,
-                  101,
-                  115,
+                  108,
                   116,
                   95,
+                  97,
+                  100,
                   109,
-                  97,
+                  105,
                   110,
-                  97,
-                  103,
-                  101,
-                  114,
                   95,
                   114,
                   111,
@@ -6397,6 +6377,490 @@ export type MidasVaults = {
       ]
     },
     {
+      "name": "safeApproveMintRequest",
+      "discriminator": [
+        40,
+        70,
+        216,
+        24,
+        177,
+        66,
+        33,
+        156
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "Account with request manager role"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "userAccount",
+          "docs": [
+            "request user account"
+          ],
+          "writable": true
+        },
+        {
+          "name": "accountAc",
+          "docs": [
+            "AccountAccessControlState account"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault_common.ac",
+                "account": "vaultCommonState"
+              },
+              {
+                "kind": "account",
+                "path": "userAccount"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
+        },
+        {
+          "name": "vaultCommon",
+          "docs": [
+            "Vault common state account"
+          ]
+        },
+        {
+          "name": "authorityAcRole",
+          "docs": [
+            "Request manager role of authority"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99,
+                  95,
+                  114,
+                  111,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault_common.ac_role",
+                "account": "vaultCommonState"
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  113,
+                  117,
+                  101,
+                  115,
+                  116,
+                  95,
+                  109,
+                  97,
+                  110,
+                  97,
+                  103,
+                  101,
+                  114,
+                  95,
+                  114,
+                  111,
+                  108,
+                  101
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
+        },
+        {
+          "name": "vaultMinterRole",
+          "docs": [
+            "Vault minter role"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99,
+                  95,
+                  114,
+                  111,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "token_authority.ac_role",
+                "account": "tokenAuthorityState"
+              },
+              {
+                "kind": "account",
+                "path": "minterVault"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116,
+                  101,
+                  114,
+                  95,
+                  114,
+                  111,
+                  108,
+                  101
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
+        },
+        {
+          "name": "minterVault",
+          "docs": [
+            "Minter vault state account"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  101,
+                  114,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vaultCommon"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mintRequest",
+          "docs": [
+            "Mint vault request state account"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  114,
+                  101,
+                  113,
+                  117,
+                  101,
+                  115,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "minterVault"
+              },
+              {
+                "kind": "arg",
+                "path": "requestId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "tokenAuthority",
+          "docs": [
+            "Token authority state account (token-authority program)"
+          ],
+          "writable": true
+        },
+        {
+          "name": "mMintUserAta",
+          "docs": [
+            "mMint ATA of `user_account`"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "userAccount"
+              },
+              {
+                "kind": "account",
+                "path": "mMintTokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "mMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "mMint",
+          "docs": [
+            "SPL mint account"
+          ],
+          "writable": true
+        },
+        {
+          "name": "mMintTokenProgram",
+          "docs": [
+            "SPL token program for mMint"
+          ]
+        },
+        {
+          "name": "tokenAuthorityProgram",
+          "docs": [
+            "Token authority program"
+          ],
+          "address": "MTA14NBri1ojys9tnxYuRKHTtVNAssT9bHo5Lt21vDa"
+        },
+        {
+          "name": "systemProgram",
+          "docs": [
+            "System program"
+          ],
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "requestId",
+          "type": "u64"
+        },
+        {
+          "name": "newOutRate",
+          "type": "u64"
+        },
+        {
+          "name": "skipOnSupplyCapExceeded",
+          "type": "bool"
+        }
+      ]
+    },
+    {
       "name": "safeApproveMintRequestAtCurrentRate",
       "discriminator": [
         167,
@@ -7364,6 +7828,564 @@ export type MidasVaults = {
         },
         {
           "name": "skipOnSupplyCapExceeded",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "safeApproveRedeemRequest",
+      "discriminator": [
+        43,
+        252,
+        118,
+        10,
+        7,
+        119,
+        108,
+        33
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "Account with request manager role"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "userAccount",
+          "docs": [
+            "request user account"
+          ],
+          "writable": true
+        },
+        {
+          "name": "accountAc",
+          "docs": [
+            "AccountAccessControlState account"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault_common.ac",
+                "account": "vaultCommonState"
+              },
+              {
+                "kind": "account",
+                "path": "userAccount"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
+        },
+        {
+          "name": "requestRedeemer",
+          "docs": [
+            "request redeemer account"
+          ],
+          "writable": true
+        },
+        {
+          "name": "vaultCommon",
+          "docs": [
+            "Vault common state account"
+          ]
+        },
+        {
+          "name": "authorityAcRole",
+          "docs": [
+            "Request manager role of authority"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  97,
+                  99,
+                  95,
+                  114,
+                  111,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault_common.ac_role",
+                "account": "vaultCommonState"
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  113,
+                  117,
+                  101,
+                  115,
+                  116,
+                  95,
+                  109,
+                  97,
+                  110,
+                  97,
+                  103,
+                  101,
+                  114,
+                  95,
+                  114,
+                  111,
+                  108,
+                  101
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
+          }
+        },
+        {
+          "name": "redeemerVault",
+          "docs": [
+            "Redeemer vault state account"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  100,
+                  101,
+                  101,
+                  109,
+                  101,
+                  114,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vaultCommon"
+              }
+            ]
+          }
+        },
+        {
+          "name": "paymentMintState",
+          "docs": [
+            "Payment mint state account"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  121,
+                  109,
+                  101,
+                  110,
+                  116,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vaultCommon"
+              },
+              {
+                "kind": "account",
+                "path": "paymentMint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "redeemRequest",
+          "docs": [
+            "Redeem request state account"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  100,
+                  101,
+                  101,
+                  109,
+                  101,
+                  114,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  114,
+                  101,
+                  113,
+                  117,
+                  101,
+                  115,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "redeemerVault"
+              },
+              {
+                "kind": "arg",
+                "path": "requestId"
+              }
+            ]
+          }
+        },
+        {
+          "name": "paymentMintUserAta",
+          "docs": [
+            "Payment mint user ATA"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "userAccount"
+              },
+              {
+                "kind": "account",
+                "path": "paymentMintTokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "paymentMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "paymentMint",
+          "docs": [
+            "Payment mint SPL account"
+          ],
+          "writable": true
+        },
+        {
+          "name": "paymentMintRedeemerAta",
+          "docs": [
+            "payment mint redeemer ATA"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "requestRedeemer"
+              },
+              {
+                "kind": "account",
+                "path": "paymentMintTokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "paymentMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "mMintVaultAta",
+          "docs": [
+            "mMint vault ATA"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "redeemerVault"
+              },
+              {
+                "kind": "account",
+                "path": "mMintTokenProgram"
+              },
+              {
+                "kind": "account",
+                "path": "mMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "mMint",
+          "docs": [
+            "mMint SPL account"
+          ],
+          "writable": true
+        },
+        {
+          "name": "mMintTokenProgram",
+          "docs": [
+            "mMint token program"
+          ]
+        },
+        {
+          "name": "paymentMintTokenProgram",
+          "docs": [
+            "Payment mint token program"
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "docs": [
+            "System program"
+          ],
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "requestId",
+          "type": "u64"
+        },
+        {
+          "name": "newMTokenRate",
+          "type": "u64"
+        },
+        {
+          "name": "safeValidateLiquidity",
           "type": "bool"
         }
       ]

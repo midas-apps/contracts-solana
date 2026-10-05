@@ -5,15 +5,16 @@ use access_control::{
 use anchor_lang::prelude::*;
 
 use crate::{
-    constants::ac_roles,
+    constants::{ac_roles, MANUAL_PRICE_UPDATE_DELAY},
+    errors::DataFeedError,
     events::ManualFeedUpdatedEventV2,
     state::{FeedState, ManualFeedState},
-    utils::update_manual_feed,
+    utils::{get_current_ts, get_deviation, update_manual_feed},
 };
 
 #[derive(Accounts)]
-pub struct UpdateManualFeedPrice<'info> {
-    /// Account with Feed Admin role
+pub struct SafeUpdateManualFeedPrice<'info> {
+    /// Account with Price Updater role
     #[account(mut)]
     pub authority: Signer<'info>,
 
@@ -31,9 +32,9 @@ pub struct UpdateManualFeedPrice<'info> {
     )]
     pub ac_role: Account<'info, AccessControlRoleState>,
 
-    /// Feed admin role of `authority`
+    /// Price Updater AC role of `authority`
     #[account(
-        seeds = [AccountAccessControlRoleState::SEED, ac_role.key().as_ref(), authority.key().as_ref(), ac_roles::FEED_ADMIN],
+        seeds = [AccountAccessControlRoleState::SEED, ac_role.key().as_ref(), authority.key().as_ref(), ac_roles::PRICE_UPDATER],
         seeds::program = AccessControl::id(),
         bump,
     )]
@@ -44,13 +45,27 @@ pub struct UpdateManualFeedPrice<'info> {
     pub base_feed: Account<'info, FeedState>,
 }
 
-/// Updates `manual_feed` price
+/// Safely updates `manual_feed` price
 ///
 /// # Arguments
 ///
 /// - `price` - new price value for `ManualFeedState.price`
-pub fn handle(ctx: Context<UpdateManualFeedPrice>, price: u64) -> Result<()> {
+pub fn handle(ctx: Context<SafeUpdateManualFeedPrice>, price: u64) -> Result<()> {
     let state = &mut ctx.accounts.manual_feed;
+
+    let deviation = get_deviation(state.price as u128, price as u128, state.decimals)?;
+    require_gte!(
+        state.max_answer_deviation as u128,
+        deviation,
+        DataFeedError::DeviationTooHigh
+    );
+    require_gt!(
+        get_current_ts()?
+            .checked_sub(state.last_updated_at)
+            .ok_or(DataFeedError::ArithmeticOverflow)?,
+        MANUAL_PRICE_UPDATE_DELAY,
+        DataFeedError::NotEnoughTimeHasPassedSinceLastUpdate
+    );
 
     update_manual_feed(state, Some(price), None, None)?;
 

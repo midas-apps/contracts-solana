@@ -62,14 +62,26 @@ pub mod midas_vaults {
         ctx: Context<ApproveMintRequest>,
         request_id: u64,
         new_out_rate: u64,
-        is_safe: bool,
         skip_on_supply_cap_exceeded: bool,
     ) -> Result<()> {
         minter_vault::approve_mint_request::handle(
             ctx,
             request_id,
             new_out_rate,
-            is_safe,
+            skip_on_supply_cap_exceeded,
+        )
+    }
+
+    pub fn safe_approve_mint_request(
+        ctx: Context<SafeApproveMintRequest>,
+        request_id: u64,
+        new_out_rate: u64,
+        skip_on_supply_cap_exceeded: bool,
+    ) -> Result<()> {
+        minter_vault::safe_approve_mint_request::handle(
+            ctx,
+            request_id,
+            new_out_rate,
             skip_on_supply_cap_exceeded,
         )
     }
@@ -155,14 +167,26 @@ pub mod midas_vaults {
         ctx: Context<ApproveRedeemRequest>,
         request_id: u64,
         new_m_token_rate: u64,
-        is_safe: bool,
         safe_validate_liquidity: bool,
     ) -> Result<()> {
         redeemer_vault::approve_redeem_request::handle(
             ctx,
             request_id,
             new_m_token_rate,
-            is_safe,
+            safe_validate_liquidity,
+        )
+    }
+
+    pub fn safe_approve_redeem_request(
+        ctx: Context<SafeApproveRedeemRequest>,
+        request_id: u64,
+        new_m_token_rate: u64,
+        safe_validate_liquidity: bool,
+    ) -> Result<()> {
+        redeemer_vault::safe_approve_redeem_request::handle(
+            ctx,
+            request_id,
+            new_m_token_rate,
             safe_validate_liquidity,
         )
     }

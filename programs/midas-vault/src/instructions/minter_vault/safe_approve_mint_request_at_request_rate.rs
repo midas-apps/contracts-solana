@@ -126,7 +126,7 @@ impl<'info> Closable for SafeApproveMintRequestAtRequestRate<'info> {
 /// Safely approves mint request at the rate saved when the request was created.
 /// Uses the original request rate, so variation tolerance is guaranteed to pass.
 /// Will close mint request account after processing.
-/// Can only be called by the vault admin.
+/// Can only be called by the request manager.
 ///
 /// # Arguments
 ///

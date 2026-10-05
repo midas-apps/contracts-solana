@@ -584,7 +584,28 @@ describe('data-feed', () => {
       );
     });
 
-    it('should fail: call from non-authority that has feed admin role', async () => {
+    it('should fail: call (safe) from non-authority', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultDataFeed(fixture);
+
+      await timeTravel(fixture.context, 3601n);
+
+      await updateManualFeedPrice(
+        fixture,
+        {
+          baseFeed,
+          price: parseUnits('1'),
+          isSafe: true,
+        },
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('update price (unsafe) from account that has only feed admin role', async () => {
       const fixture = await dataFeedFixture();
 
       const baseFeed = await createDefaultDataFeed(fixture);
@@ -603,9 +624,101 @@ describe('data-feed', () => {
         },
         {
           from: fixture.regularAccounts[0],
+        },
+      );
+    });
+
+    it('should fail: update price (unsafe) from account that has only price updater role', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultDataFeed(fixture);
+
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: DATA_FEED_AC_ROLES.PRICE_UPDATER,
+        acRole: (await fetchDataFeedState(fixture.dataFeedProgram, baseFeed)).acRole,
+      });
+
+      await updateManualFeedPrice(
+        fixture,
+        {
+          baseFeed,
+          price: parseUnits('1.2'),
+        },
+        {
+          from: fixture.regularAccounts[0],
           revertedWith: CommonError.AccountIsNotInitialized,
         },
       );
+    });
+
+    it('update price (safe) from account that has only price updater role', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultDataFeed(fixture);
+
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: DATA_FEED_AC_ROLES.PRICE_UPDATER,
+        acRole: (await fetchDataFeedState(fixture.dataFeedProgram, baseFeed)).acRole,
+      });
+
+      await timeTravel(fixture.context, 3601n);
+
+      await updateManualFeedPrice(
+        fixture,
+        {
+          baseFeed,
+          price: parseUnits('1'),
+          isSafe: true,
+        },
+        {
+          from: fixture.regularAccounts[0],
+        },
+      );
+    });
+
+    it('should fail: update price (safe) from account that has only feed admin role', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultDataFeed(fixture);
+
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: DATA_FEED_AC_ROLES.FEED_ADMIN,
+        acRole: (await fetchDataFeedState(fixture.dataFeedProgram, baseFeed)).acRole,
+      });
+
+      await timeTravel(fixture.context, 3601n);
+
+      await updateManualFeedPrice(
+        fixture,
+        {
+          baseFeed,
+          price: parseUnits('1'),
+          isSafe: true,
+        },
+        {
+          from: fixture.regularAccounts[0],
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('update price (unsafe) ignores 1h delay since last update', async () => {
+      const fixture = await dataFeedFixture();
+
+      const baseFeed = await createDefaultDataFeed(fixture);
+
+      await updateManualFeedPrice(fixture, {
+        baseFeed,
+        price: parseUnits('1.5'),
+      });
+
+      await updateManualFeedPrice(fixture, {
+        baseFeed,
+        price: parseUnits('2'),
+      });
     });
 
     it('should fail: update price (safe) when deviation is too high', async () => {
@@ -772,7 +885,7 @@ describe('data-feed', () => {
     });
 
     it('update price (unsafe) with extreme deviation bypasses check', async () => {
-      // is_safe=false skips all deviation and time checks regardless of magnitude.
+      // update_manual_feed_price (unsafe) skips all deviation and time checks regardless of magnitude.
       const fixture = await dataFeedFixture();
       const baseFeed = await createDefaultDataFeed(fixture);
 

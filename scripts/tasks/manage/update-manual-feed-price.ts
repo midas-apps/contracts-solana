@@ -22,7 +22,9 @@ async function main(provider: AnchorProvider, payer: Wallet) {
   const mtoken = getMtoken();
   const network = getNetwork();
   const priceArg = getOptionalArg('price');
-  // When true, bypasses the on-chain max-answer-deviation safety check.
+  // When true, uses safe_update_manual_feed_price (price updater role) which enforces
+  // the max-answer-deviation and update delay checks. Otherwise uses the unsafe
+  // update_manual_feed_price (feed admin role).
   const isSafe = getOptionalArg('is-safe') === 'true';
 
   if (!priceArg) {
@@ -73,9 +75,12 @@ async function main(provider: AnchorProvider, payer: Wallet) {
   console.log(`   New Price: $${price} (raw: ${priceRaw.toString()})`);
   console.log(`   Decimals: ${MANUAL_FEED_DECIMALS}`);
 
+  const updateMethod = isSafe
+    ? feedProgram.methods.safeUpdateManualFeedPrice(priceRaw)
+    : feedProgram.methods.updateManualFeedPrice(priceRaw);
+
   const tx = new Transaction().add(
-    await feedProgram.methods
-      .updateManualFeedPrice(priceRaw, isSafe)
+    await updateMethod
       .accountsPartial({
         authority: payer.publicKey,
         manualFeed: manualFeedPda,
@@ -84,7 +89,7 @@ async function main(provider: AnchorProvider, payer: Wallet) {
         authorityAcRole: getAccountAcRoleStatePda(
           state.acRole,
           payer.publicKey,
-          DATA_FEED_AC_ROLES.PRICE_UPDATER,
+          isSafe ? DATA_FEED_AC_ROLES.PRICE_UPDATER : DATA_FEED_AC_ROLES.FEED_ADMIN,
         ),
       })
       .instruction(),
