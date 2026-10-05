@@ -29,7 +29,7 @@ export const SOLANA_ROLES = {
 
   // Data Feed Roles
   FEED_ADMIN: 'data_feed_admin',
-  PRICE_UPDATER: 'price_updater_role',
+  PRICE_UPDATER: 'price_updater',
 } as const;
 
 export const ROLE_GROUPS = {
@@ -51,10 +51,12 @@ export const ROLE_GROUPS = {
   VAULTS_MANAGER: [
     SOLANA_ROLES.VAULT_ADMIN, // Manage both minter and redeemer vaults
     SOLANA_ROLES.VAULT_PAUSER, // Pause vault operations
+    SOLANA_ROLES.REQUEST_MANAGER, // Approve/reject mint and redeem requests
   ],
 
   ORACLE_MANAGER: [
-    SOLANA_ROLES.FEED_ADMIN, // Update price feeds
+    SOLANA_ROLES.FEED_ADMIN, // Update feed configuration
+    SOLANA_ROLES.PRICE_UPDATER, // Update manual feed prices
   ],
 } as const;
 
