@@ -5,10 +5,12 @@ import { mTBILLConfig } from './mTBILL';
 import { pSVConfig } from './pSV';
 import { solmFONEConfig } from './solmFONE';
 import { solmHYPERConfig } from './solmHYPER';
+import { solStockMarketTRBasisTradeConfig } from './solStockMarketTRBasisTrade';
 
 export const tokenConfigs: Partial<Record<MProduct, TokenConfigWithNetworks>> = {
-  [MProduct.MTBILL]: mTBILLConfig,
-  [MProduct.SOLMFONE]: solmFONEConfig,
-  [MProduct.SOLMHYPER]: solmHYPERConfig,
-  [MProduct.PSV]: pSVConfig,
+  [MProduct.mTBILL]: mTBILLConfig,
+  [MProduct.solmFONE]: solmFONEConfig,
+  [MProduct.solmHYPER]: solmHYPERConfig,
+  [MProduct.pSV]: pSVConfig,
+  [MProduct.solStockMarketTRBasisTrade]: solStockMarketTRBasisTradeConfig,
 };

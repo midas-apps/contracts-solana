@@ -55,7 +55,7 @@ export const addresses: Record<string, NetworkAddresses> = {
       vault: new PublicKey('3XeBT7F1H3cbSETdHvTFDr8Wz47yNZZ6dYZsQJScdm9u'),
     },
     tokens: {
-      [MProduct.SOLMFONE]: {
+      [MProduct.solmFONE]: {
         acRole: new PublicKey('2SAaMSzZd9DuNsR3QWNy8mZjNJPnMqdsC4rXz8wgnfFR'),
         mToken: new PublicKey('Ds5juQNpMUwZamY8fbynBrCyBNR8dGnSy2yeFAD3YKRq'),
         tokenAuthority: {
@@ -95,25 +95,7 @@ export const addresses: Record<string, NetworkAddresses> = {
     acRoleGlobal: new PublicKey('39tDSAtrYuy7cA6ipj1N9c8jzs5kRPbWAj5ztmW3sMa6'),
     ac: new PublicKey('2dGjhqtMhDk1zuhv8NhiTS52fDudaSQt8DHhPbtrit3a'),
     tokens: {
-      [MProduct.SOLMFONE]: {
-        acRole: new PublicKey('CVUnxqMxQGeUyEn1Pd7DXmZawQMpGruWGLikFe2E7u5k'),
-        mToken: new PublicKey('ESS9fuAbDiyDXy6y1ZAt9VSaiGPSqG8NwaWVX7dePdR7'),
-        tokenAuthority: {
-          account: new PublicKey('4ZifxnpKCVVi6tJLktGJC3dZQWvkXtSzkEVNSE4szMsb'),
-          seed: 'mfone-token-authority',
-        },
-        mTokenDataFeed: new PublicKey('7UVwLrMTEDVvzQRaitJi7YLJcxFY8RTmXrHvSPMjTGDm'),
-        mTokenUnderlyingFeed: new PublicKey('HHwwM9t8eEeNDnGpXQnkHth2xHHxkD531qqBqz5H7meX'),
-        minter: {
-          commonVault: new PublicKey('BzKC2gazYSmB9QE2yUKGZe8K2iedFREYpGZesCHEqRbg'),
-          account: new PublicKey('EaXc6FVh6m7R4cEZp1T4h6At95qguP8b8UNFe3pbYoH1'),
-        },
-        redeemer: {
-          commonVault: new PublicKey('Gzu6rgQ6ezGkNYExQ2WZJvV7Y9LidUKSUAjUZWb5v1c2'),
-          account: new PublicKey('DNJMfdgrrVHKp1nFY5Qoqq14erqzdJoMve5THgKpCkrb'),
-        },
-      },
-      [MProduct.PSV]: {
+      [MProduct.pSV]: {
         acRole: new PublicKey('77YMLUMHD5Pdq2qvYCjTNL5oP1Z5hKPK4yuak2EaLJya'),
         acGlobalOverride: {
           ac: new PublicKey('6kGJVtfqxi2Jv5Ejb7W8UwWd9yuhckA69u9zjpRnVQiW'),
@@ -135,7 +117,25 @@ export const addresses: Record<string, NetworkAddresses> = {
           account: new PublicKey('DKp86fdtsZMbegJNcxH3ea9eGhahXDWsxaSXCe79MYXZ'),
         },
       },
-      [MProduct.SOLMHYPER]: {
+      [MProduct.solmFONE]: {
+        acRole: new PublicKey('CVUnxqMxQGeUyEn1Pd7DXmZawQMpGruWGLikFe2E7u5k'),
+        mToken: new PublicKey('ESS9fuAbDiyDXy6y1ZAt9VSaiGPSqG8NwaWVX7dePdR7'),
+        tokenAuthority: {
+          account: new PublicKey('4ZifxnpKCVVi6tJLktGJC3dZQWvkXtSzkEVNSE4szMsb'),
+          seed: 'mfone-token-authority',
+        },
+        mTokenDataFeed: new PublicKey('7UVwLrMTEDVvzQRaitJi7YLJcxFY8RTmXrHvSPMjTGDm'),
+        mTokenUnderlyingFeed: new PublicKey('HHwwM9t8eEeNDnGpXQnkHth2xHHxkD531qqBqz5H7meX'),
+        minter: {
+          commonVault: new PublicKey('BzKC2gazYSmB9QE2yUKGZe8K2iedFREYpGZesCHEqRbg'),
+          account: new PublicKey('EaXc6FVh6m7R4cEZp1T4h6At95qguP8b8UNFe3pbYoH1'),
+        },
+        redeemer: {
+          commonVault: new PublicKey('Gzu6rgQ6ezGkNYExQ2WZJvV7Y9LidUKSUAjUZWb5v1c2'),
+          account: new PublicKey('DNJMfdgrrVHKp1nFY5Qoqq14erqzdJoMve5THgKpCkrb'),
+        },
+      },
+      [MProduct.solmHYPER]: {
         acRole: new PublicKey('66uBL5bq5nXg8SKGUzgCvuQ73HWg1TmnSkEGkHBXVWW'),
         mToken: new PublicKey('2svm1UkdXq5sygCm7gJmUDS7qa9DCshsj8KSVKZimHpp'),
         tokenAuthority: {
@@ -151,6 +151,24 @@ export const addresses: Record<string, NetworkAddresses> = {
         redeemer: {
           commonVault: new PublicKey('GJ23UDbiRTu7foXjWaTimaPdmVT3KFYs8YdVdB5ecFsS'),
           account: new PublicKey('DesvLajywoN5bR8rsGXSgtbmDBwKtxdcpdcMguhqabJo'),
+        },
+      },
+      [MProduct.solStockMarketTRBasisTrade]: {
+        acRole: new PublicKey('jVFiZbeqMFadzNVyt4m3xVyWAQrfjrk8Ed3aZ4cbZ4X'),
+        mToken: new PublicKey('Ddvib7U8BNpM9JTNnBht8gM9pMGLYGsgq5JTb6qvvnme'),
+        tokenAuthority: {
+          account: new PublicKey('CTg7xiPrYLezopASXzJKM93JPHABNEq7XxQ8QHgTBfRu'),
+          seed: '95e43dffc177c15aa67707807046bf041466555d0fceb0cdc6f5fcb6d2a5bbbe',
+        },
+        mTokenDataFeed: new PublicKey('3uQ1qGnN7tzFeFiLRE1xfEZYPxu6EcZT9pcQFVzzkF2N'),
+        mTokenUnderlyingFeed: new PublicKey('EYStaGF7wtPzyppDWAS49nzBVSEafscGXXkrVKXVeXoh'),
+        minter: {
+          commonVault: new PublicKey('CqUUDkm9jpGcvsVtNNPRG2wromBjNDZyPibmDw9t4gYS'),
+          account: new PublicKey('7k1qwkT1k8hD26J9xv9diRmsLzgVcbZvaHkuPqLQzDoe'),
+        },
+        redeemer: {
+          commonVault: new PublicKey('5umJUJdbGWpK41xkLrd8XKFDtJS8RN7ZVBWjjxpnNZBG'),
+          account: new PublicKey('H91823p4P8dBgUU2KHWJQtLE3EMJxouq4fhv5nM2Ppo1'),
         },
       },
     },
