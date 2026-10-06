@@ -70,7 +70,7 @@ ticket symbol verbatim. If it isn't obvious, grep `common/tokenTypes.ts`.
 ## 1. Locate the artifacts
 
 - Token config: `scripts/configs/tokens/<MProduct>.ts`, exporting `<MProduct>Config:
-  TokenConfigWithNetworks`.
+TokenConfigWithNetworks`.
 - Registrations:
   - `common/tokenTypes.ts`: `MProduct` enum entry (key and string value both
     `<MProduct>`, matching sibling style).
@@ -93,14 +93,14 @@ If the token config file or a registration is missing, that's a ✗.
 
 Config values are **human-readable strings**. The deploy scripts convert them like this:
 
-| Config field | Conversion (deploy script) | On-chain meaning | Ticket → config example |
-|---|---|---|---|
-| `instantFee`, `variationTolerance`, payment-token `fee` | `parsePercent(x)` = `parseUnits(x, 2)` | bps, `ONE_HUNDRED_PERCENT = 10000` | ticket `50 bps` / raw `50` / `0.5%` → `'0.5'`; `100 bps` → `'1'`; `0` → `'0'` |
-| `instantDailyLimit`, `minAmount`, `firstMintMinMTokens`, `minFiatRedeemAmount`, `fiatFlatFee`, payment-token `allowance` | `parseUnits(x)`, **9 decimals** | 9-dp integer | `30` → `'30'`. If the ticket gives a raw 18-dp EVM integer (e.g. `30000000000000000000`), divide by 1e18 → `'30'` |
-| infinite / uncapped | `UNLIMITED` from `@/scripts/constants/pricing` | ≈ `MAX_U128` after scaling | "infinite"/"unlimited" daily limit or allowance → `UNLIMITED` |
-| `dataFeed.minPrice` / `maxPrice` | `floor(x * 1e9)` | 9-dp price bound | ticket raw 8-dp `99640000` → `'0.9964'` |
-| `dataFeed.initialPrice` | `floor(x * 1e8)` | 8-dp initial answer | `1` → `'1'` |
-| `dataFeed.maxStaleness` | seconds, int | — | `30 days` → `2592000` |
+| Config field                                                                                                             | Conversion (deploy script)                     | On-chain meaning                   | Ticket → config example                                                                                           |
+| ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `instantFee`, `variationTolerance`, payment-token `fee`                                                                  | `parsePercent(x)` = `parseUnits(x, 2)`         | bps, `ONE_HUNDRED_PERCENT = 10000` | ticket `50 bps` / raw `50` / `0.5%` → `'0.5'`; `100 bps` → `'1'`; `0` → `'0'`                                     |
+| `instantDailyLimit`, `minAmount`, `firstMintMinMTokens`, `minFiatRedeemAmount`, `fiatFlatFee`, payment-token `allowance` | `parseUnits(x)`, **9 decimals**                | 9-dp integer                       | `30` → `'30'`. If the ticket gives a raw 18-dp EVM integer (e.g. `30000000000000000000`), divide by 1e18 → `'30'` |
+| infinite / uncapped                                                                                                      | `UNLIMITED` from `@/scripts/constants/pricing` | ≈ `MAX_U128` after scaling         | "infinite"/"unlimited" daily limit or allowance → `UNLIMITED`                                                     |
+| `dataFeed.minPrice` / `maxPrice`                                                                                         | `floor(x * 1e9)`                               | 9-dp price bound                   | ticket raw 8-dp `99640000` → `'0.9964'`                                                                           |
+| `dataFeed.initialPrice`                                                                                                  | `floor(x * 1e8)`                               | 8-dp initial answer                | `1` → `'1'`                                                                                                       |
+| `dataFeed.maxStaleness`                                                                                                  | seconds, int                                   | —                                  | `30 days` → `2592000`                                                                                             |
 
 Oracle tolerance: when the ticket gives only a tolerance `P%` and an initial price `X`,
 the expected bounds are `minPrice = X·(1 − P/100)`, `maxPrice = X·(1 + P/100)`. Compute
@@ -110,6 +110,7 @@ Max/MinExpectedAnswer, those take precedence over the tolerance-derived values; 
 are given and inconsistent, report that as a ticket inconsistency.
 
 Reminders:
+
 - Schema enforces `minPrice < maxPrice` and `minPrice ≤ initialPrice ≤ maxPrice`.
 - `pyth` mode **requires** `underlyingFeed`; `switchboard` mode requires a `switchboard`
   block. `manual` with no `underlyingFeed` creates a new feed PDA.
@@ -140,7 +141,7 @@ Reminders:
   value as ✓. When a config field has no counterpart under that vault in the ticket,
   mark the row **"not in ticket"** (⚠️, non-blocking) rather than ✓, even if the value
   equals the other vault's. "Same as dv" in a ticket line is the one explicit
-  cross-reference: those values *should* be identical, so a divergence is a ✗.
+  cross-reference: those values _should_ be identical, so a divergence is a ✗.
 - `paymentTokens` (per vault): symbol is a valid `PaymentToken`, and
   fee/allowance/stable/isFiat match the ticket. Minter and redeemer lists may differ, so
   check each list.
@@ -150,7 +151,7 @@ Reminders:
   - token manager → `m_minter_role`, `m_burner_role`, `m_freezer_role`
   - vaults manager → `vault_admin_role`, `vault_pauser_role`
   - oracle manager → `data_feed_admin`
-  If the ticket assigns a role to a different party than this grouping implies, flag it.
+    If the ticket assigns a role to a different party than this grouping implies, flag it.
 - `postDeploy.pauseFunctions`: map ticket function names/selectors to the allowed
   names in `vaultFunctionNameSchema` (`scripts/configs/types.ts`), resolved via
   `scripts/utils/vaultPause.ts`:
@@ -182,7 +183,7 @@ Reminders:
   ```
 
   This catches missing imports/registrations (`ReferenceError: <MProduct>Config is not
-  defined`) and runs the zod schema (publicKey validity, price ordering, required
+defined`) and runs the zod schema (publicKey validity, price ordering, required
   fields). Any failure is a ✗ blocker. On success, use the printed merged config as the
   source of truth for the tables.
 
@@ -190,6 +191,7 @@ Reminders:
 
 For each payment token in the ticket, under the ticket's network, check these
 programmatically (using the script at the top):
+
 - `addresses[<network>].feeds[PaymentToken.X].token` equals the ticket mint address.
 - `addresses[<network>].feeds[PaymentToken.X].dataFeed` equals the ticket's "reuse"
   data feed address.
@@ -212,6 +214,7 @@ Report in this order: **tables first, all prose last**.
    not above the tables. Do **not** put a summary or blocker callout before the tables.
 
 A row's status is driven by what the ticket says about **that vault**:
+
 - ticket value present and equal → ✓
 - ticket value present and different → ✗ (blocker)
 - **no ticket value for that vault** → ⚠️ "not in ticket" (non-blocking), never ✓.
