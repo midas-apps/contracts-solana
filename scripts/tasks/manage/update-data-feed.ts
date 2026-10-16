@@ -15,12 +15,7 @@ async function main(provider: AnchorProvider, payer: Wallet) {
   const mtoken = getMtoken();
   const network = getNetwork();
   const newUnderlyingFeed = getOptionalArg('new-underlying-feed');
-  const newMode = getOptionalArg('new-mode') as
-    | 'manual'
-    | 'switchboard'
-    | 'pyth'
-    | 'chainlink'
-    | undefined;
+  const newMode = getOptionalArg('new-mode') as 'manual' | 'switchboard' | 'pyth' | undefined;
 
   const params = [];
   if (newUnderlyingFeed) params.push(`feed: ${newUnderlyingFeed}`);

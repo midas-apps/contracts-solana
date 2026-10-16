@@ -31,7 +31,7 @@ pub struct RedeemInstant<'info> {
         mut,
         address = redeemer_vault.common_vault
     )]
-    pub vault_common: Account<'info, VaultCommonState>,
+    pub vault_common: Box<Account<'info, VaultCommonState>>,
 
     /// user vault common account
     #[account(
@@ -39,7 +39,7 @@ pub struct RedeemInstant<'info> {
         seeds = [VaultCommonAccountState::SEED, vault_common.key().as_ref(), signer.key().as_ref()],
         bump
     )]
-    pub vault_common_signer: Account<'info, VaultCommonAccountState>,
+    pub vault_common_signer: Box<Account<'info, VaultCommonAccountState>>,
 
     /// Redeemer vault state account
     #[account(
@@ -47,14 +47,14 @@ pub struct RedeemInstant<'info> {
         seeds = [RedeemerVaultState::SEED, vault_common.key().as_ref()],
         bump
     )]
-    pub redeemer_vault: Account<'info, RedeemerVaultState>,
+    pub redeemer_vault: Box<Account<'info, RedeemerVaultState>>,
 
     /// AccessControlState account
     #[account(
         address = vault_common.ac,
         owner = AccessControl::id(),
     )]
-    pub ac: Account<'info, AccessControlState>,
+    pub ac: Box<Account<'info, AccessControlState>>,
 
     /// Account access control state account
     #[account(
@@ -62,7 +62,7 @@ pub struct RedeemInstant<'info> {
         seeds::program = AccessControl::id(),
         bump
     )]
-    pub account_ac: Account<'info, AccountAccessControlState>,
+    pub account_ac: Box<Account<'info, AccountAccessControlState>>,
 
     /// Payment mint state account
     #[account(
@@ -112,7 +112,7 @@ pub struct RedeemInstant<'info> {
         seeds = [PaymentMintState::SEED, vault_common.key().as_ref(), payment_mint.key().as_ref()],
         bump
     )]
-    pub payment_mint_state: Account<'info, PaymentMintState>,
+    pub payment_mint_state: Box<Account<'info, PaymentMintState>>,
 
     /// mMint account
     #[account(
@@ -126,7 +126,7 @@ pub struct RedeemInstant<'info> {
     #[account(
         address = vault_common.m_mint_feed
     )]
-    pub m_mint_data_feed: Account<'info, FeedState>,
+    pub m_mint_data_feed: Box<Account<'info, FeedState>>,
 
     /// CHECK:
     /// mMint underlying feed account
@@ -139,7 +139,7 @@ pub struct RedeemInstant<'info> {
     #[account(
         address = payment_mint_state.data_feed
     )]
-    pub payment_mint_data_feed: Account<'info, FeedState>,
+    pub payment_mint_data_feed: Box<Account<'info, FeedState>>,
 
     /// CHECK:
     /// payment mint underlying feed account
@@ -153,7 +153,7 @@ pub struct RedeemInstant<'info> {
         seeds = [PauseInxState::SEED, vault_common.key().as_ref(), (VaultActionId::RedeemInstant as u8).to_le_bytes().as_ref()],
         bump
     )]
-    pub pause_inx_state: Account<'info, PauseInxState>,
+    pub pause_inx_state: Box<Account<'info, PauseInxState>>,
 
     /// payment mint token program
     pub payment_mint_token_program: Interface<'info, TokenInterface>,
@@ -169,7 +169,7 @@ impl<'info> Validate<'info> for RedeemInstant<'info> {
         validate_common(
             &self.vault_common,
             &self.account_ac,
-            &self.pause_inx_state,
+            Some(&self.pause_inx_state),
             false,
         )?;
         Ok(())
@@ -189,10 +189,10 @@ pub fn handle(
     min_receive_amount: u64,
 ) -> Result<()> {
     let params = redeemer::calc_and_validate_redeem(
-        &mut ctx.accounts.payment_mint_state,
+        &ctx.accounts.payment_mint_state,
         &ctx.accounts.vault_common,
-        &mut ctx.accounts.vault_common_signer,
-        &mut ctx.accounts.redeemer_vault,
+        &ctx.accounts.vault_common_signer,
+        &ctx.accounts.redeemer_vault,
         amount_m_token.into(),
         true,
         false,
@@ -219,9 +219,9 @@ pub fn handle(
         params
             .m_token_amount_wo_fee
             .checked_mul(m_token_rate)
-            .unwrap()
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?
             .checked_div(payment_token_rate)
-            .unwrap(),
+            .ok_or(MidasVaultsError::ArithmeticOverflow)?,
         decimals,
     )?;
 

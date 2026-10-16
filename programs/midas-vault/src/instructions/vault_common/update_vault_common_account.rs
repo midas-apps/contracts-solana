@@ -48,11 +48,11 @@ pub struct UpdateVaultCommonAccount<'info> {
 /// # Arguments
 ///
 /// - `free_from_min_amount` - new value for `free_from_min_amount`.
-/// If true - vault wont check this account for min mint/redeem boundary
+///   If true - vault wont check this account for min mint/redeem boundary
 /// - `free_from_min_first_mint` - new value for `free_from_min_first_mint`
-/// If true - vault wont check this account for min mint boundary on first mint
+///   If true - vault wont check this account for min mint boundary on first mint
 /// - `waived_fee` - new value for `waived_fee`
-/// If true - vault wont charge fee for this account
+///   If true - vault wont charge fee for this account
 pub fn handle(
     ctx: Context<UpdateVaultCommonAccount>,
     free_from_min_amount: Option<bool>,

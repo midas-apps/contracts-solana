@@ -29,12 +29,6 @@
           "signer": true
         },
         {
-          "name": "from",
-          "docs": [
-            "account to burn from"
-          ]
-        },
-        {
           "name": "token_authority",
           "docs": [
             "Token authority PDA"
@@ -123,7 +117,44 @@
                   101
                 ]
               }
-            ]
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
           }
         },
         {
@@ -134,64 +165,11 @@
           "writable": true
         },
         {
-          "name": "from_ata",
+          "name": "from_token_account",
           "docs": [
-            "ATA of `from` (ThawAccount::from)"
+            "Token account to burn from (Burn::from). Canonical ATA is not required."
           ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "from"
-              },
-              {
-                "kind": "account",
-                "path": "token_program"
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
+          "writable": true
         },
         {
           "name": "token_program",
@@ -231,12 +209,6 @@
           ],
           "writable": true,
           "signer": true
-        },
-        {
-          "name": "to_freeze",
-          "docs": [
-            "account to freeze"
-          ]
         },
         {
           "name": "token_authority",
@@ -328,7 +300,44 @@
                   101
                 ]
               }
-            ]
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
           }
         },
         {
@@ -339,64 +348,11 @@
           "writable": true
         },
         {
-          "name": "to_freeze_ata",
+          "name": "to_freeze_token_account",
           "docs": [
-            "ATA of `to_to_freeze` (FreezeAccount::account)"
+            "Token account to freeze (FreezeAccount::account). Canonical ATA is not required."
           ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "to_freeze"
-              },
-              {
-                "kind": "account",
-                "path": "token_program"
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
+          "writable": true
         },
         {
           "name": "token_program",
@@ -431,12 +387,6 @@
           ],
           "writable": true,
           "signer": true
-        },
-        {
-          "name": "receiver",
-          "docs": [
-            "receiver of tokens"
-          ]
         },
         {
           "name": "token_authority",
@@ -527,7 +477,44 @@
                   101
                 ]
               }
-            ]
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
           }
         },
         {
@@ -538,64 +525,11 @@
           "writable": true
         },
         {
-          "name": "receiver_ata",
+          "name": "receiver_token_account",
           "docs": [
-            "ATA of `receiver` (MintTo::account)"
+            "Token account to mint to (MintTo::to). Canonical ATA is not required."
           ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "receiver"
-              },
-              {
-                "kind": "account",
-                "path": "token_program"
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
+          "writable": true
         },
         {
           "name": "token_program",
@@ -693,147 +627,6 @@
       ]
     },
     {
-      "name": "set_authority",
-      "discriminator": [
-        133,
-        250,
-        37,
-        21,
-        110,
-        163,
-        26,
-        121
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "docs": [
-            "Account with admin role"
-          ],
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "token_authority",
-          "docs": [
-            "Token authority PDA"
-          ],
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  116,
-                  111,
-                  107,
-                  101,
-                  110,
-                  95,
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "token_authority.base_seed",
-                "account": "TokenAuthorityState"
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority_admin_role",
-          "docs": [
-            "`authority` admin role"
-          ],
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  97,
-                  99,
-                  99,
-                  111,
-                  117,
-                  110,
-                  116,
-                  95,
-                  97,
-                  99,
-                  95,
-                  114,
-                  111,
-                  108,
-                  101
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "token_authority.ac_role",
-                "account": "TokenAuthorityState"
-              },
-              {
-                "kind": "account",
-                "path": "authority"
-              },
-              {
-                "kind": "const",
-                "value": [
-                  97,
-                  100,
-                  109,
-                  105,
-                  110,
-                  95,
-                  114,
-                  111,
-                  108,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "account_or_mint",
-          "docs": [
-            "account update authority on (SplSetAuthority::account_or_mint)"
-          ],
-          "writable": true
-        },
-        {
-          "name": "token_program",
-          "docs": [
-            "SPL token program"
-          ]
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "authority_type",
-          "type": "u8"
-        },
-        {
-          "name": "new_authority",
-          "type": {
-            "option": "pubkey"
-          }
-        }
-      ]
-    },
-    {
       "name": "thaw",
       "discriminator": [
         226,
@@ -853,12 +646,6 @@
           ],
           "writable": true,
           "signer": true
-        },
-        {
-          "name": "to_thaw",
-          "docs": [
-            "account to thaw"
-          ]
         },
         {
           "name": "token_authority",
@@ -950,7 +737,44 @@
                   101
                 ]
               }
-            ]
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                5,
+                42,
+                1,
+                206,
+                20,
+                109,
+                129,
+                76,
+                211,
+                127,
+                66,
+                241,
+                232,
+                145,
+                191,
+                17,
+                48,
+                56,
+                122,
+                134,
+                121,
+                111,
+                238,
+                95,
+                162,
+                111,
+                247,
+                120,
+                137,
+                239,
+                43,
+                6
+              ]
+            }
           }
         },
         {
@@ -961,64 +785,11 @@
           "writable": true
         },
         {
-          "name": "to_thaw_ata",
+          "name": "to_thaw_token_account",
           "docs": [
-            "ATA of `to_thaw` (ThawAccount::account)"
+            "Token account to thaw (ThawAccount::account). Canonical ATA is not required."
           ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "to_thaw"
-              },
-              {
-                "kind": "account",
-                "path": "token_program"
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
+          "writable": true
         },
         {
           "name": "token_program",
@@ -1077,9 +848,6 @@
     },
     {
       "name": "TokenAuthorityState",
-      "docs": [
-        ""
-      ],
       "type": {
         "kind": "struct",
         "fields": [

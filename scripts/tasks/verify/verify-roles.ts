@@ -20,6 +20,8 @@ const ALL_ROLES = [
   SOLANA_ROLES.M_BURNER,
   SOLANA_ROLES.M_FREEZER,
   SOLANA_ROLES.FEED_ADMIN,
+  SOLANA_ROLES.REQUEST_MANAGER,
+  SOLANA_ROLES.PRICE_UPDATER,
 ];
 
 async function main(provider: AnchorProvider, payer: Wallet, network: string) {

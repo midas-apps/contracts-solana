@@ -47,7 +47,6 @@ interface FeedState {
     manual?: Record<string, never>;
     switchboard?: Record<string, never>;
     pyth?: Record<string, never>;
-    chainlink?: Record<string, never>;
   };
   minPrice: { toString: () => string };
   maxPrice: { toString: () => string };
@@ -97,7 +96,6 @@ function formatMode(mode: FeedState['mode']): string {
   if (mode.manual) return 'manual';
   if (mode.switchboard) return 'switchboard';
   if (mode.pyth) return 'pyth';
-  if (mode.chainlink) return 'chainlink';
   return 'unknown';
 }
 

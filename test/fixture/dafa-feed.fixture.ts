@@ -1,6 +1,6 @@
 import { Program } from '@coral-xyz/anchor';
 import { Keypair, PublicKey, Transaction } from '@solana/web3.js';
-import { ProgramTestContext } from 'solana-bankrun';
+import { LiteSVM } from 'litesvm';
 
 import { DataFeed } from 'target/types/data_feed';
 
@@ -10,7 +10,7 @@ import { DATA_FEED_AC_ROLES } from '../constants/data-feed.constants';
 import { acRoleToBuffer, getAccountAcRoleStatePda } from '../helpers/ac.helpers';
 import {
   formatUnits,
-  InitBankrunReturnType,
+  InitLiteSVMReturnType,
   parseUnits,
   processTransaction,
   toBN,
@@ -23,7 +23,7 @@ import {
 
 import { acFixture } from './ac.fixture';
 
-const initMockedFeeds = async (context: ProgramTestContext) => {
+const initMockedFeeds = async (context: LiteSVM) => {
   // mainnet pyth SOL/USD account
   const pythHealhyFeed = [
     Keypair.generate(),
@@ -71,7 +71,7 @@ const initMockedFeeds = async (context: ProgramTestContext) => {
   };
 };
 
-export const dataFeedFixture = async (fixture?: InitBankrunReturnType, initSlot?: bigint) => {
+export const dataFeedFixture = async (fixture?: InitLiteSVMReturnType, initSlot?: bigint) => {
   const acF = await acFixture(fixture, initSlot);
 
   const {
@@ -127,6 +127,24 @@ export const dataFeedFixture = async (fixture?: InitBankrunReturnType, initSlot?
           ),
         })
         .instruction(),
+      await acProgram.methods
+        .grantRole(acRoleToBuffer(DATA_FEED_AC_ROLES.PRICE_UPDATER))
+        .accountsPartial({
+          account: authority.publicKey,
+          acRole: acRole,
+          authority: authority.publicKey,
+          authorityAcAdminRole: getAccountAcRoleStatePda(
+            acRole,
+            authority.publicKey,
+            AC_ROLES.ADMIN,
+          ),
+          accountAcRole: getAccountAcRoleStatePda(
+            acRole,
+            authority.publicKey,
+            DATA_FEED_AC_ROLES.PRICE_UPDATER,
+          ),
+        })
+        .instruction(),
       await dataFeedProgram.methods
         .newFeed(
           acRole,
@@ -134,7 +152,7 @@ export const dataFeedFixture = async (fixture?: InitBankrunReturnType, initSlot?
           DataFeedMode.manual,
           toBN(minPrice),
           toBN(maxPrice),
-          3600,
+          24 * 3600,
         )
         .accounts({
           feed: feed.publicKey,
@@ -142,7 +160,7 @@ export const dataFeedFixture = async (fixture?: InitBankrunReturnType, initSlot?
         })
         .instruction(),
       await dataFeedProgram.methods
-        .newManualFeed(toBN(parseUnits('1')), 9)
+        .newManualFeed(toBN(parseUnits('1')), 9, toBN(parseUnits('1', 2)))
         .accountsPartial({
           baseFeed: feed.publicKey,
           authority: authority.publicKey,

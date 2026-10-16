@@ -80,7 +80,7 @@ pub struct WithdrawTokens<'info> {
 /// - `amount` - amount to withdraw
 pub fn handle(ctx: Context<WithdrawTokens>, vault_seed: Vec<u8>, amount: u64) -> Result<()> {
     let amount_base9 =
-        decimals_conversion::convert_to_base_9(amount.into(), ctx.accounts.mint.decimals).unwrap();
+        decimals_conversion::convert_to_base_9(amount.into(), ctx.accounts.mint.decimals)?;
 
     require!(
         MinterVaultState::SEED.to_vec() == vault_seed

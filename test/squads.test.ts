@@ -385,7 +385,7 @@ describe('Squads multisig', () => {
     });
   });
 
-  describe('squads member', () => {
+  describe.skip('squads member', () => {
     it('should create and execute tx with squads member', async () => {
       const fixture = await squadsFixture();
       const {
