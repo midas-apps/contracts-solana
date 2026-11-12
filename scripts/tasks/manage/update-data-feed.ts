@@ -15,12 +15,7 @@ async function main(provider: AnchorProvider, payer: Wallet) {
   const mtoken = getMtoken();
   const network = getNetwork();
   const newUnderlyingFeed = getOptionalArg('new-underlying-feed');
-  const newMode = getOptionalArg('new-mode') as
-    | 'manual'
-    | 'switchboard'
-    | 'pyth'
-    | 'chainlink'
-    | undefined;
+  const newMode = getOptionalArg('new-mode') as 'manual' | 'switchboard' | 'pyth' | undefined;
 
   const params = [];
   if (newUnderlyingFeed) params.push(`feed: ${newUnderlyingFeed}`);
@@ -51,7 +46,7 @@ async function main(provider: AnchorProvider, payer: Wallet) {
 
   const tx = new Transaction().add(
     await feedProgram.methods
-      .updateFeed(null, newUnderlyingFeedPubkey, newModeEnum, null, null, null)
+      .updateFeed(newUnderlyingFeedPubkey, newModeEnum, null, null, null)
       .accountsPartial({
         authority: payer.publicKey,
         feed: tokenAddrs.mTokenDataFeed,

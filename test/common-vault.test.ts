@@ -1,4 +1,5 @@
 import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
+import { Keypair } from '@solana/web3.js';
 
 import { CommonError, DEFAULT_PUBKEY } from './constants/common.constants';
 import { VaultError, VAULTS_SEEDS } from './constants/vaults.constants';
@@ -67,6 +68,84 @@ describe('common-vault', () => {
         },
         {
           revertedWith: VaultError.InvalidFee,
+        },
+      );
+    });
+
+    it('call with non-default ac_role', async () => {
+      const fixture = await vaultsFixture();
+
+      await newVaultCommon(fixture, {
+        acRole: fixture.acRoleGlobal.publicKey,
+      });
+    });
+
+    it('should fail: when ac_role is not initialized', async () => {
+      const fixture = await vaultsFixture();
+
+      await newVaultCommon(
+        fixture,
+        {
+          acRole: Keypair.generate().publicKey,
+        },
+        {
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('should fail: when ac_role is owned by another program', async () => {
+      const fixture = await vaultsFixture();
+
+      await newVaultCommon(
+        fixture,
+        {
+          acRole: fixture.dataFeedMTBill.publicKey,
+        },
+        {
+          revertedWith: CommonError.AccountOwnedByWrongProgram,
+        },
+      );
+    });
+
+    it('should fail: when ac_role is an AccessControlState account', async () => {
+      const fixture = await vaultsFixture();
+
+      await newVaultCommon(
+        fixture,
+        {
+          acRole: fixture.ac.publicKey,
+        },
+        {
+          revertedWith: CommonError.AccountDiscriminatorMismatch,
+        },
+      );
+    });
+
+    it('should fail: when ac is not initialized', async () => {
+      const fixture = await vaultsFixture();
+
+      await newVaultCommon(
+        fixture,
+        {
+          ac: Keypair.generate().publicKey,
+        },
+        {
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('should fail: when ac is an AccessControlRoleState account', async () => {
+      const fixture = await vaultsFixture();
+
+      await newVaultCommon(
+        fixture,
+        {
+          ac: fixture.acRoleMTbill.publicKey,
+        },
+        {
+          revertedWith: CommonError.AccountDiscriminatorMismatch,
         },
       );
     });

@@ -1,3 +1,7 @@
+use access_control::{
+    program::AccessControl,
+    state::{AccessControlRoleState, AccessControlState},
+};
 use anchor_lang::prelude::*;
 
 use crate::{
@@ -10,6 +14,16 @@ pub struct NewVaultCommon<'info> {
     /// Signer and Payer
     #[account(mut)]
     pub signer: Signer<'info>,
+
+    /// `AccessControlState` instance
+    #[account(
+        owner = AccessControl::id()
+    )]
+    pub ac: Account<'info, AccessControlState>,
+
+    /// AC Role state account
+    #[account(owner = AccessControl::id())]
+    pub ac_role: Account<'info, AccessControlRoleState>,
 
     /// New vault common account
     #[account(
@@ -29,13 +43,9 @@ pub struct NewVaultCommon<'info> {
 ///
 /// # Arguments
 ///
-/// - `ac` - access_control::AccessControlState pubkey that will be used
-/// for green/black lists checks
 /// - `m_mint` - mToken mint pubkey
 /// - `m_mint_feed` - mToken data_feed::FeedState pubkey
 /// - `greenlist_enforced` - if true, only greenlisted accounts can interact with the vault
-/// - `ac_role` - access_control::AccountAccessControlRoleState pubkey that will be used
-/// to manage access control
 /// - `tokens_receiver` - pubkey that will receive tokens from the vault (not ATA)
 /// - `fee_receiver` - pubkey that will receive fees from the vault (not ATA)
 /// - `instant_fee` - % fee that will be charged for instant swaps
@@ -44,11 +54,9 @@ pub struct NewVaultCommon<'info> {
 /// - `min_amount` - min amount for all operations in mToken
 pub fn handle(
     ctx: Context<NewVaultCommon>,
-    ac: Pubkey,
     m_mint: Pubkey,
     m_mint_feed: Pubkey,
     greenlist_enforced: bool,
-    ac_role: Pubkey,
     tokens_receiver: Pubkey,
     fee_receiver: Pubkey,
     instant_fee: u64,
@@ -57,6 +65,9 @@ pub fn handle(
     min_amount: u64,
 ) -> Result<()> {
     let state = &mut ctx.accounts.vault_common;
+
+    let ac = ctx.accounts.ac.key();
+    let ac_role = ctx.accounts.ac_role.key();
 
     state.ac = ac;
     state.m_mint = m_mint;

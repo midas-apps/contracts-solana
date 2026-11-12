@@ -89,11 +89,9 @@ export const newVaultCommon = async (
 
   const tx = await vaultsProgram.methods
     .newCommonVault(
-      ac,
       mMint,
       mDataFeed,
       greenlistEnforced,
-      acRole,
       tokensReceiver,
       feeReceiver,
       toBN(instantFee),
@@ -104,6 +102,8 @@ export const newVaultCommon = async (
     .accounts({
       signer: from.publicKey,
       vaultCommon: vaultCommon.publicKey,
+      ac,
+      acRole,
     })
     .transaction();
 
@@ -139,7 +139,6 @@ export const newVaultCommon = async (
 export const updateVaultCommon = async (
   fixture: CommonVaultsParams,
   {
-    acRole,
     feeReceiver,
     instantDailyLimit,
     instantFee,
@@ -150,7 +149,6 @@ export const updateVaultCommon = async (
     tokensReceiver,
   }: {
     vaultCommon?: PublicKey;
-    acRole?: PublicKey;
     greenlistEnforced?: boolean;
     tokensReceiver?: PublicKey;
     feeReceiver?: PublicKey;
@@ -165,7 +163,6 @@ export const updateVaultCommon = async (
   const { vaultsProgram, authority: owner, context } = fixture;
   const from = opt?.from ?? owner;
 
-  acRole ??= null;
   tokensReceiver ??= null;
   feeReceiver ??= null;
   instantFee ??= null;
@@ -188,7 +185,6 @@ export const updateVaultCommon = async (
   const tx = await vaultsProgram.methods
     .updateCommonVault(
       greenlistEnforced,
-      acRole,
       tokensReceiver,
       feeReceiver,
       toBNNullable(instantFee),
@@ -216,9 +212,9 @@ export const updateVaultCommon = async (
 
   const stateAfter = await fetchState();
 
-  if (acRole !== null) {
-    expect(stateAfter.common.acRole.equals(acRole)).toBe(true);
-  }
+  // ac and ac_role are immutable after creation
+  expect(stateAfter.common.ac.equals(stateBefore.common.ac)).toBe(true);
+  expect(stateAfter.common.acRole.equals(stateBefore.common.acRole)).toBe(true);
 
   if (tokensReceiver !== null) {
     expect(stateAfter.common.tokensReceiver.equals(tokensReceiver)).toBe(true);

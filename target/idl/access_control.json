@@ -770,6 +770,16 @@
       "code": 6001,
       "name": "BothBlacklistedAndWhitelisted",
       "msg": "Cannot be both blacklisted and whitelisted"
+    },
+    {
+      "code": 6002,
+      "name": "ArithmeticOverflow",
+      "msg": "Arithmetic overflow or underflow"
+    },
+    {
+      "code": 6003,
+      "name": "CannotRevokeOwnAdminRole",
+      "msg": "Cannot revoke own admin role"
     }
   ],
   "types": [

@@ -776,6 +776,16 @@ export type AccessControl = {
       "code": 6001,
       "name": "bothBlacklistedAndWhitelisted",
       "msg": "Cannot be both blacklisted and whitelisted"
+    },
+    {
+      "code": 6002,
+      "name": "arithmeticOverflow",
+      "msg": "Arithmetic overflow or underflow"
+    },
+    {
+      "code": 6003,
+      "name": "cannotRevokeOwnAdminRole",
+      "msg": "Cannot revoke own admin role"
     }
   ],
   "types": [

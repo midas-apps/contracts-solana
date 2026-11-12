@@ -11,7 +11,12 @@ import * as multisig from '@sqds/multisig';
 
 import { DAY } from '../constants/common.constants';
 import { SquadsFixtureReturnType } from '../fixture/squads.fixture';
-import { expectTxNotReverted, expectTxReverted, timeTravel } from '../helpers/common.helpers';
+import {
+  expectTxNotReverted,
+  expectTxReverted,
+  getTime,
+  timeTravel,
+} from '../helpers/common.helpers';
 
 const wrapTxWithSquadsSigner = async (
   fixture: SquadsFixtureReturnType,
@@ -43,7 +48,7 @@ const wrapTxWithSquadsSigner = async (
 
   const txMessage = new TransactionMessage({
     payerKey: vaultPda,
-    recentBlockhash: fixture.context.lastBlockhash,
+    recentBlockhash: fixture.context.latestBlockhash(),
     instructions: instructions,
   });
 
@@ -68,23 +73,19 @@ const wrapTxWithSquadsSigner = async (
       member,
     }),
   );
+  tx.feePayer = payer;
 
   const getTxExecute = async () => {
-    const { instruction, lookupTableAccounts } =
-      await multisig.instructions.vaultTransactionExecute({
-        multisigPda: fixture.multisigSignerPda as any,
-        member,
-        transactionIndex: newTransactionIndex,
-        connection: fixture.squadsConnection,
-      });
+    const { instruction } = await multisig.instructions.vaultTransactionExecute({
+      multisigPda: fixture.multisigSignerPda as any,
+      member,
+      transactionIndex: newTransactionIndex,
+      connection: fixture.squadsConnection,
+    });
 
-    const txExecute = new VersionedTransaction(
-      new TransactionMessage({
-        payerKey: payer,
-        recentBlockhash: fixture.context.lastBlockhash,
-        instructions: [instruction],
-      }).compileToV0Message(lookupTableAccounts),
-    );
+    // Use legacy Transaction to avoid LiteSVM v0/ALT issues
+    const txExecute = new Transaction().add(instruction);
+    txExecute.feePayer = payer;
 
     return txExecute;
   };
@@ -144,7 +145,7 @@ export const sendSquadsTxWithTimelock = async (
   // Build a message with instructions we want to execute
   const txMessage = new TransactionMessage({
     payerKey: vaultPda,
-    recentBlockhash: fixture.context.lastBlockhash,
+    recentBlockhash: fixture.context.latestBlockhash(),
     instructions: instructions,
   });
 
@@ -171,7 +172,7 @@ export const sendSquadsTxWithTimelock = async (
     }),
   );
 
-  let getTxCreateExecute: () => Promise<VersionedTransaction>;
+  let getTxCreateExecute: () => Promise<VersionedTransaction | Transaction>;
 
   if (squadsSigner) {
     const res = await wrapTxWithSquadsSigner(fixture, {
@@ -216,20 +217,16 @@ export const sendSquadsTxWithTimelock = async (
     transactionIndex: newTransactionIndex,
   });
 
-  let txExecute: Transaction | VersionedTransaction = new VersionedTransaction(
-    new TransactionMessage({
-      payerKey: fromExecute.publicKey,
-      recentBlockhash: fixture.context.lastBlockhash,
-      instructions: [inxExecute.instruction],
-    }).compileToV0Message(inxExecute.lookupTableAccounts),
-  );
+  // Use legacy Transaction to avoid LiteSVM v0/ALT issues
+  let txExecute: Transaction = new Transaction().add(inxExecute.instruction);
+  txExecute.feePayer = fromExecute.publicKey;
 
-  let getTxExecuteExecute: () => Promise<VersionedTransaction>;
+  let getTxExecuteExecute: () => Promise<VersionedTransaction | Transaction>;
 
   if (squadsSigner) {
+    // Omit addressLookupTableAccounts so inner create uses legacy format (avoids LiteSVM v0/ALT Error 7)
     const res = await wrapTxWithSquadsSigner(fixture, {
       instructions: [inxExecute.instruction],
-      addressLookupTableAccounts: inxExecute.lookupTableAccounts,
       member: fromExecute.publicKey,
       payer: fromExecute.publicKey,
     });
@@ -239,9 +236,7 @@ export const sendSquadsTxWithTimelock = async (
   }
 
   if (waitForTimelock) {
-    const currentTime = await fixture.context.banksClient
-      .getClock()
-      .then((clock) => clock.unixTimestamp);
+    const currentTime = await getTime(fixture.context);
     const txApprovedAt = BigInt(
       createdProposal.status.__kind === 'Approved'
         ? createdProposal.status.timestamp.toString()
@@ -260,11 +255,11 @@ export const sendSquadsTxWithTimelock = async (
     return;
   }
 
-  await expectTxNotReverted(fixture.context, txExecute, [fromExecute]);
+  await expectTxNotReverted(fixture.context, txExecute, [authority, fromExecute]);
 
   if (getTxExecuteExecute) {
     const txExecuteExecute = await getTxExecuteExecute();
-    await expectTxNotReverted(fixture.context, txExecuteExecute, [fromExecute]);
+    await expectTxNotReverted(fixture.context, txExecuteExecute, [authority, fromExecute]);
   }
 
   const proposalStatusAfter = await multisig.accounts.Proposal.fromAccountAddress(
@@ -337,7 +332,7 @@ export const sendSquadsConfigurationTxWithTimelock = async (
     }),
   );
 
-  let getTxCreateExecute: () => Promise<VersionedTransaction>;
+  let getTxCreateExecute: () => Promise<VersionedTransaction | Transaction>;
 
   if (squadsSigner) {
     const res = await wrapTxWithSquadsSigner(fixture, {
@@ -376,9 +371,7 @@ export const sendSquadsConfigurationTxWithTimelock = async (
   expect(createdProposal.status.__kind).toBe('Approved');
 
   if (waitForTimelock) {
-    const currentTime = await fixture.context.banksClient
-      .getClock()
-      .then((clock) => clock.unixTimestamp);
+    const currentTime = await getTime(fixture.context);
     const txApprovedAt = BigInt(
       createdProposal.status.__kind === 'Approved'
         ? createdProposal.status.timestamp.toString()
@@ -396,9 +389,11 @@ export const sendSquadsConfigurationTxWithTimelock = async (
     transactionIndex: newTransactionIndex,
   });
 
+  // Use legacy Transaction to avoid LiteSVM v0/ALT issues
   let txExecute = new Transaction().add(inxExecute);
+  txExecute.feePayer = fromExecute.publicKey;
 
-  let getTxExecuteExecute: () => Promise<VersionedTransaction>;
+  let getTxExecuteExecute: () => Promise<VersionedTransaction | Transaction>;
 
   if (squadsSigner) {
     const res = await wrapTxWithSquadsSigner(fixture, {
@@ -412,7 +407,7 @@ export const sendSquadsConfigurationTxWithTimelock = async (
   }
 
   if (opt?.revertedWithExecute !== undefined) {
-    await expectTxReverted(fixture.context, txExecute, [authority, fromExecute], {
+    await expectTxReverted(fixture.context, txExecute, [fromExecute], {
       revertedWith: opt.revertedWithExecute,
     });
     return;

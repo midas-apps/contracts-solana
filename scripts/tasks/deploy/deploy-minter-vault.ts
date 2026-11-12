@@ -102,6 +102,7 @@ async function main(provider: AnchorProvider, payer: Wallet, network: string) {
       variationTolerance: parsePercent(parseFloat(config.minter.variationTolerance)),
       minAmount: parseUnits(config.minter.minAmount),
       firstMintMinMTokens: parseUnits(config.minter.firstMintMinMTokens),
+      maxSupplyCap: config.minter.maxSupplyCap ? parseUnits(config.minter.maxSupplyCap) : undefined,
       greenListEnforced: config.minter.greenListEnforced,
       tokensReceiver: new PublicKey(config.minter.tokensReceiver),
       feeReceiver: new PublicKey(config.minter.feeReceiver),

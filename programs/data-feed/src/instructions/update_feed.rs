@@ -42,16 +42,19 @@ pub struct UpdateFeed<'info> {
 /// # Arguments
 ///
 /// - `ac_role` - AccessControlRole instance that will be used to control access
-/// to management instructions of data-feed program
+///   to management instructions of data-feed program
 /// - `underlying_feed` - Account that holds the price. Currently it might be one of the
-/// next supported account types: PriceUpdateV2 (PYTH), PullFeedAccountData (Switchboard), ManualFeedState
+///   next supported account types:
+/// - PriceUpdateV2 (PYTH)
+/// - PullFeedAccountData (Switchboard)
+/// - ManualFeedState (Manual)
+///
 /// - `mode` - type of underlying feed
 /// - `min_price` - min_price that feed can return. Should be lower than `max_price`
 /// - `max_price` - max_price that feed can return. Should be higher than `min_price`
 /// - `max_staleness` - max. seconds between last price update and current timestamp.
 pub fn handle(
     ctx: Context<UpdateFeed>,
-    ac_role: Option<Pubkey>,
     underlying_feed: Option<Pubkey>,
     mode: Option<FeedMode>,
     min_price: Option<u64>,
@@ -62,7 +65,7 @@ pub fn handle(
 
     update_feed(
         state,
-        ac_role,
+        None,
         underlying_feed,
         mode.clone(),
         min_price,
@@ -72,7 +75,7 @@ pub fn handle(
 
     emit!(FeedUpdatedEvent {
         feed: ctx.accounts.feed.key(),
-        ac_role,
+        ac_role: None,
         underlying_feed,
         mode: mode.clone(),
         min_price,

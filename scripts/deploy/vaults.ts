@@ -4,6 +4,7 @@ import { Keypair, PublicKey, Transaction } from '@solana/web3.js';
 
 import { sendAndWaitForCustomSolanaTxSign } from '@/common/solanaTxHelper';
 import { MidasVaults } from '@/target/types/midas_vaults';
+import { MAX_U64 } from '@/test/constants/common.constants';
 import { TOKEN_AUTHORITY_ROLES } from '@/test/constants/token-authority.constants';
 import { VAULT_AC_ROLES, VaultActionIds } from '@/test/constants/vaults.constants';
 import { createAtaInx, findATA, toBN } from '@/test/helpers/common.helpers';
@@ -36,6 +37,7 @@ export interface DeployMinterVaultConfig {
   minAmount: bigint;
   tokenAuthority: PublicKey;
   firstMintMinMTokens: bigint;
+  maxSupplyCap?: bigint; // If not set, defaults to unlimited (MAX_U64)
 }
 
 export interface DeployRedeemerVaultConfig {
@@ -66,6 +68,7 @@ export const deployMinterVault = async (
     mToken,
     tokenAuthority,
     firstMintMinMTokens,
+    maxSupplyCap,
     greenListEnforced,
     instantDailyLimit,
     instantFee,
@@ -137,11 +140,9 @@ export const deployMinterVault = async (
       .instruction(),
     await vaultsProgram.methods
       .newCommonVault(
-        ac,
         mToken,
         mTokenFeed,
         greenListEnforced,
-        acRole,
         tokensReceiver,
         feeReceiver,
         toBN(instantFee),
@@ -152,10 +153,12 @@ export const deployMinterVault = async (
       .accountsPartial({
         vaultCommon: commonVault.publicKey,
         signer: common.payer.publicKey,
+        ac,
+        acRole,
       })
       .instruction(),
     await vaultsProgram.methods
-      .newMinterVault(toBN(firstMintMinMTokens))
+      .newMinterVault(toBN(firstMintMinMTokens), toBN(maxSupplyCap ?? MAX_U64))
       .accountsPartial({
         vaultCommon: commonVault.publicKey,
         authority: common.payer.publicKey,
@@ -266,11 +269,9 @@ export const deployRedeemerVault = async (
   const tx = new Transaction().add(
     await vaultsProgram.methods
       .newCommonVault(
-        ac,
         mToken,
         mTokenFeed,
         greenListEnforced,
-        acRole,
         tokensReceiver,
         feeReceiver,
         toBN(instantFee),
@@ -281,6 +282,8 @@ export const deployRedeemerVault = async (
       .accountsPartial({
         vaultCommon: commonVault.publicKey,
         signer: common.payer.publicKey,
+        ac,
+        acRole,
       })
       .instruction(),
     await vaultsProgram.methods

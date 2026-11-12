@@ -108,12 +108,20 @@ async function main(provider: AnchorProvider, payer: Wallet) {
         feedAddr.tokenProgram,
       );
 
-  // Pull Switchboard feeds if needed
+  // Pull Switchboard feeds if stale
   await pullSwitchboardFeeds(
     provider,
     [
-      { feed: mFeed.underlyingFeed, isSwitchboard: 'switchboard' in mFeed.mode },
-      { feed: paymentFeed.underlyingFeed, isSwitchboard: 'switchboard' in paymentFeed.mode },
+      {
+        feed: mFeed.underlyingFeed,
+        isSwitchboard: 'switchboard' in mFeed.mode,
+        maxStalenessSeconds: mFeed.maxStaleness,
+      },
+      {
+        feed: paymentFeed.underlyingFeed,
+        isSwitchboard: 'switchboard' in paymentFeed.mode,
+        maxStalenessSeconds: paymentFeed.maxStaleness,
+      },
     ],
     network,
   );
@@ -195,3 +203,5 @@ async function main(provider: AnchorProvider, payer: Wallet) {
 
 const network = getNetwork();
 executeNetworkScript(network, main);
+
+// Usage: yarn tsx scripts/mint-request.ts --mtoken mTBILL --network devnet --payment-token USDC --amount 1000

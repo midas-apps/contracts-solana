@@ -56,7 +56,7 @@ pub fn handle(ctx: Context<UpdatePauseInx>, fn_id: u8, paused: bool) -> Result<(
     ctx.accounts.pause_inx_state.paused = paused;
 
     emit!(PauseInxUpdatedEvent {
-        paused: paused,
+        paused,
         fn_id,
         common_vault: ctx.accounts.vault_common.key()
     });

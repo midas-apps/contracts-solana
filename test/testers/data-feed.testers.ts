@@ -1,5 +1,7 @@
 import { Keypair, PublicKey } from '@solana/web3.js';
 
+import { AC_ROLES } from '../constants/ac.constants';
+import { MAX_U64 } from '../constants/common.constants';
 import { DATA_FEED_AC_ROLES } from '../constants/data-feed.constants';
 import { DataFeedFixtureReturnType } from '../fixture/dafa-feed.fixture';
 import { getAccountAcRoleStatePda } from '../helpers/ac.helpers';
@@ -58,17 +60,11 @@ export const createNewFeed = async (
   const from = opt?.from ?? owner;
 
   const tx = await dataFeedProgram.methods
-    .newFeed(
-      acRole,
-      underlyingFeed,
-      DataFeedMode[mode],
-      toBN(minPrice),
-      toBN(maxPrice),
-      maxStaleness,
-    )
+    .newFeed(underlyingFeed, DataFeedMode[mode], toBN(minPrice), toBN(maxPrice), maxStaleness)
     .accounts({
       feed: feed.publicKey,
       payer: from.publicKey,
+      acRole,
     })
     .transaction();
 
@@ -110,12 +106,10 @@ export const updateFeed = async (
     feed,
     underlyingFeed,
     mode,
-    acRole,
     maxPrice,
     maxStaleness,
     minPrice,
   }: {
-    acRole?: PublicKey | null;
     feed?: PublicKey | null;
     mode?: keyof typeof DataFeedMode;
     underlyingFeed?: PublicKey | null;
@@ -127,7 +121,6 @@ export const updateFeed = async (
 ) => {
   const { dataFeedProgram, authority: owner, context } = fixture;
 
-  acRole ??= null;
   feed ??= fixture.dataFeedMTBill.publicKey;
   minPrice ??= null;
   maxPrice ??= null;
@@ -141,7 +134,6 @@ export const updateFeed = async (
 
   const tx = await dataFeedProgram.methods
     .updateFeed(
-      acRole,
       underlyingFeed,
       mode ? DataFeedMode[mode] : null,
       toBNNullable(minPrice),
@@ -170,7 +162,7 @@ export const updateFeed = async (
       name: 'feedUpdatedEvent',
       data: {
         feed: feed,
-        acRole: acRole,
+        acRole: null,
         underlyingFeed: underlyingFeed,
         mode: DataFeedMode[mode],
         minPrice: minPrice,
@@ -182,9 +174,8 @@ export const updateFeed = async (
 
   const feedFetched = await fetchDataFeedState(dataFeedProgram, feed);
 
-  if (acRole) {
-    expect(feedFetched.acRole.equals(acRole)).toBe(true);
-  }
+  // ac_role is immutable after creation
+  expect(feedFetched.acRole.equals(baseFeedStateBefore.acRole)).toBe(true);
 
   if (underlyingFeed) {
     expect(feedFetched.underlyingFeed.equals(underlyingFeed)).toBe(true);
@@ -215,10 +206,12 @@ export const createNewManualFeed = async (
     baseFeed,
     decimals,
     initialPrice,
+    maxAnswerDeviation,
   }: {
     baseFeed?: PublicKey;
     decimals?: number;
     initialPrice?: bigint;
+    maxAnswerDeviation?: bigint;
   },
   opt?: OptionalCommonParams,
 ) => {
@@ -227,6 +220,7 @@ export const createNewManualFeed = async (
   baseFeed ??= dataFeedMTBill.publicKey;
   decimals ??= 9;
   initialPrice ??= parseUnits('1', decimals);
+  maxAnswerDeviation ??= parseUnits('1', decimals);
 
   const feedPda = getManualFeedStatePda(baseFeed);
 
@@ -234,7 +228,7 @@ export const createNewManualFeed = async (
   const baseFeedState = await fetchDataFeedState(dataFeedProgram, baseFeed);
 
   const tx = await dataFeedProgram.methods
-    .newManualFeed(toBN(initialPrice), decimals)
+    .newManualFeed(toBN(initialPrice), decimals, toBN(maxAnswerDeviation))
     .accountsPartial({
       baseFeed: baseFeed,
       authority: from.publicKey,
@@ -255,7 +249,7 @@ export const createNewManualFeed = async (
 
   await expectEvents(await expectTxNotReverted(context, tx, [from]), dataFeedProgram, [
     {
-      name: 'manualFeedUpdatedEvent',
+      name: 'manualFeedUpdatedEventV2',
       data: {
         baseFeed: baseFeed,
         manualFeed: getManualFeedStatePda(baseFeed),
@@ -271,16 +265,65 @@ export const createNewManualFeed = async (
   expect(fromBN(feedFetched.price)).toBe(initialPrice);
 };
 
+export const migrateManualFeedToV2 = async (
+  fixture: CommonDataFeedParams,
+  {
+    baseFeed,
+  }: {
+    baseFeed?: PublicKey;
+  },
+  opt?: OptionalCommonParams,
+) => {
+  const { dataFeedProgram, authority: owner, context, dataFeedMTBill } = fixture;
+  baseFeed ??= dataFeedMTBill.publicKey;
+  const from = opt?.from ?? owner;
+  const feedPda = getManualFeedStatePda(baseFeed);
+
+  const stateBefore = await fixture.provider.connection.getAccountInfo(feedPda);
+  const dataWithMaxSupplyCapRaw = Buffer.concat([stateBefore.data, toBN(0n).toBuffer('le')]);
+  const manualFeedStateBefore =
+    (await dataFeedProgram.account.manualFeedState.coder.accounts.decode(
+      'manualFeedState',
+      dataWithMaxSupplyCapRaw,
+    )) as Awaited<ReturnType<typeof fetchManualFeedState>>;
+  const baseFeedState = await fetchDataFeedState(dataFeedProgram, baseFeed);
+
+  const tx = await dataFeedProgram.methods
+    .migrateManualFeedToV2()
+    .accountsPartial({
+      baseFeed: baseFeed,
+      authority: from.publicKey,
+      authorityAcRole: getAccountAcRoleStatePda(
+        baseFeedState.acRole,
+        from.publicKey,
+        AC_ROLES.ADMIN,
+      ),
+    })
+    .transaction();
+
+  if (opt?.revertedWith !== undefined) {
+    await expectTxReverted(context, tx, [from], opt);
+    return;
+  }
+  await expectTxNotReverted(context, tx, [from]);
+
+  const feedFetchedAfter = await fetchManualFeedState(dataFeedProgram, feedPda);
+  expect(feedFetchedAfter.decimals).toBe(manualFeedStateBefore.decimals);
+  expect(feedFetchedAfter.lastUpdatedAt).toBe(manualFeedStateBefore.lastUpdatedAt);
+  expect(fromBN(feedFetchedAfter.price)).toBe(fromBN(manualFeedStateBefore.price));
+  expect(fromBN(feedFetchedAfter.maxAnswerDeviation)).toBe(MAX_U64);
+};
+
 export const updateManualFeed = async (
   fixture: CommonDataFeedParams,
   {
     baseFeed,
     decimals,
-    price,
+    maxAnswerDeviation,
   }: {
     baseFeed?: PublicKey;
     decimals?: number;
-    price?: bigint;
+    maxAnswerDeviation?: bigint;
   },
   opt?: OptionalCommonParams,
 ) => {
@@ -288,7 +331,7 @@ export const updateManualFeed = async (
 
   baseFeed ??= dataFeedMTBill.publicKey;
   decimals ??= null;
-  price ??= null;
+  maxAnswerDeviation ??= null;
 
   const feedPda = getManualFeedStatePda(baseFeed);
 
@@ -296,7 +339,7 @@ export const updateManualFeed = async (
   const baseFeedStateBefore = await fetchDataFeedState(dataFeedProgram, baseFeed);
 
   const tx = await dataFeedProgram.methods
-    .updateManualFeed(toBNNullable(price), decimals)
+    .updateManualFeed(decimals, toBNNullable(maxAnswerDeviation))
     .accountsPartial({
       baseFeed: baseFeed,
       authority: from.publicKey,
@@ -317,12 +360,12 @@ export const updateManualFeed = async (
 
   await expectEvents(await expectTxNotReverted(context, tx, [from]), dataFeedProgram, [
     {
-      name: 'manualFeedUpdatedEvent',
+      name: 'manualFeedUpdatedEventV2',
       data: {
         baseFeed: baseFeed,
         manualFeed: getManualFeedStatePda(baseFeed),
         decimals,
-        price,
+        maxAnswerDeviation,
       },
     },
   ]);
@@ -333,20 +376,95 @@ export const updateManualFeed = async (
     expect(feedFetched.decimals).toBe(decimals);
   }
 
-  if (price !== null) {
-    expect(fromBN(feedFetched.price)).toBe(price);
+  if (maxAnswerDeviation !== null) {
+    expect(fromBN(feedFetched.maxAnswerDeviation)).toBe(maxAnswerDeviation);
   }
 
-  if (price !== null || decimals !== null) {
+  if (decimals !== null) {
     const currentTs = await getTime(fixture.context);
     expect(BigInt(feedFetched.lastUpdatedAt)).toBe(currentTs);
   }
 };
 
-export const createDefaultDataFeed = async (fixture: CommonDataFeedParams) => {
+export const updateManualFeedPrice = async (
+  fixture: CommonDataFeedParams,
+  {
+    baseFeed,
+    price,
+    isSafe,
+  }: {
+    baseFeed?: PublicKey;
+    price: bigint;
+    isSafe?: boolean;
+  },
+  opt?: OptionalCommonParams,
+) => {
+  const { dataFeedProgram, authority: owner, context, dataFeedMTBill } = fixture;
+
+  baseFeed ??= dataFeedMTBill.publicKey;
+  isSafe ??= false;
+
+  const feedPda = getManualFeedStatePda(baseFeed);
+
+  const from = opt?.from ?? owner;
+  const baseFeedStateBefore = await fetchDataFeedState(dataFeedProgram, baseFeed);
+
+  const accounts = {
+    baseFeed: baseFeed,
+    authority: from.publicKey,
+    manualFeed: feedPda,
+    acRole: baseFeedStateBefore.acRole,
+    authorityAcRole: getAccountAcRoleStatePda(
+      baseFeedStateBefore.acRole,
+      from.publicKey,
+      isSafe ? DATA_FEED_AC_ROLES.PRICE_UPDATER : DATA_FEED_AC_ROLES.FEED_ADMIN,
+    ),
+  };
+
+  const tx = isSafe
+    ? await dataFeedProgram.methods
+        .safeUpdateManualFeedPrice(toBN(price))
+        .accountsPartial(accounts)
+        .transaction()
+    : await dataFeedProgram.methods
+        .updateManualFeedPrice(toBN(price))
+        .accountsPartial(accounts)
+        .transaction();
+
+  if (opt?.revertedWith !== undefined) {
+    await expectTxReverted(context, tx, [from], opt);
+    return;
+  }
+
+  await expectEvents(await expectTxNotReverted(context, tx, [from]), dataFeedProgram, [
+    {
+      name: 'manualFeedUpdatedEventV2',
+      data: {
+        baseFeed: baseFeed,
+        manualFeed: getManualFeedStatePda(baseFeed),
+        decimals: null,
+        maxAnswerDeviation: null,
+        price,
+      },
+    },
+  ]);
+
+  const feedFetched = await fetchManualFeedState(dataFeedProgram, feedPda);
+
+  expect(fromBN(feedFetched.price)).toBe(price);
+
+  const currentTs = await getTime(fixture.context);
+  expect(BigInt(feedFetched.lastUpdatedAt)).toBe(currentTs);
+};
+
+export const createDefaultDataFeed = async (
+  fixture: CommonDataFeedParams,
+  opts?: { initialPrice?: bigint; maxAnswerDeviation?: bigint },
+) => {
   const feed = await createNewFeed(fixture, {});
   await createNewManualFeed(fixture, {
     baseFeed: feed.publicKey,
+    ...opts,
   });
   return feed.publicKey;
 };

@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     constants::ac_roles,
+    errors::AccessControlError,
     events::AccountAcRoleUpdatedEvent,
     state::{AccessControlRoleState, AccountAccessControlRoleState},
 };
@@ -41,12 +42,19 @@ pub struct RevokeRole<'info> {
     pub system_program: Program<'info, System>,
 }
 
-/// Remove  `role` from a `ctx.account` and emits an event
+/// Remove  `role` from a `ctx.account` and emits an event.
+/// Reverts if the signer tries to revoke their own `ADMIN` role.
 ///
 /// # Arguments
 ///
 /// - `role` - role identifier
 pub fn handle(ctx: Context<RevokeRole>, role: Vec<u8>) -> Result<()> {
+    require!(
+        !(role.as_slice() == ac_roles::ADMIN.as_slice()
+            && ctx.accounts.account.key() == ctx.accounts.authority.key()),
+        AccessControlError::CannotRevokeOwnAdminRole
+    );
+
     emit!(AccountAcRoleUpdatedEvent {
         ac_role: ctx.accounts.ac_role.key(),
         account: ctx.accounts.account.key(),

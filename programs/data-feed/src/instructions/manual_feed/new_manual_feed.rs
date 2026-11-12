@@ -6,22 +6,24 @@ use anchor_lang::prelude::*;
 
 use crate::{
     constants::ac_roles,
-    events::ManualFeedUpdatedEvent,
+    events::ManualFeedUpdatedEventV2,
     state::{FeedState, ManualFeedState},
     utils::update_manual_feed,
 };
 
 #[derive(Accounts)]
-pub struct UpdateManualFeed<'info> {
+pub struct NewManualFeed<'info> {
     /// Account with Feed Admin role
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    /// `ManualFeedState` instance
+    /// New `ManualFeedState` instance
     #[account(
-        mut,
+        init,
+        payer = authority,
         seeds = [ManualFeedState::SEED, base_feed.key().as_ref()],
         bump,
+        space = 8 + ManualFeedState::INIT_SPACE
     )]
     pub manual_feed: Account<'info, ManualFeedState>,
 
@@ -42,29 +44,38 @@ pub struct UpdateManualFeed<'info> {
     /// `DataFeed` account
     #[account()]
     pub base_feed: Account<'info, FeedState>,
+
+    pub system_program: Program<'info, System>,
 }
 
-/// Updates `manual_feed` account
-/// Parameter will be updated only if its not None
+/// Initializes new `manual_feed` account
 ///
 /// # Arguments
 ///
-/// - `price` - new value for `ManualFeedState.price`
-/// - `decimals` - new decimals value for `ManualFeedState.decimals`
+/// - `initial_price` - initial value for `ManualFeedState.price`
+/// - `decimals` - decimals value for `ManualFeedState.decimals`
+/// - `max_answer_deviation` - max answer deviation value for `ManualFeedState.max_answer_deviation`
 pub fn handle(
-    ctx: Context<UpdateManualFeed>,
-    price: Option<u64>,
-    decimals: Option<u8>,
+    ctx: Context<NewManualFeed>,
+    initial_price: u64,
+    decimals: u8,
+    max_answer_deviation: u64,
 ) -> Result<()> {
     let state = &mut ctx.accounts.manual_feed;
 
-    update_manual_feed(state, price, decimals)?;
+    update_manual_feed(
+        state,
+        Some(initial_price),
+        Some(decimals),
+        Some(max_answer_deviation),
+    )?;
 
-    emit!(ManualFeedUpdatedEvent {
+    emit!(ManualFeedUpdatedEventV2 {
         manual_feed: ctx.accounts.manual_feed.key(),
         base_feed: ctx.accounts.base_feed.key(),
-        decimals,
-        price
+        decimals: Some(decimals),
+        price: Some(initial_price),
+        max_answer_deviation: Some(max_answer_deviation)
     });
 
     Ok(())
