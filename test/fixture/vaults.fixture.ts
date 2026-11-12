@@ -273,11 +273,9 @@ export const vaultsFixture = async (fixture?: InitLiteSVMReturnType, initSlot?: 
   const createMinterVaultTx = new Transaction().add(
     await vaultsProgram.methods
       .newCommonVault(
-        ac.publicKey,
         mTBillMint.publicKey,
         dataFeedMTBill.publicKey,
         false,
-        acRoleMTbill.publicKey,
         tokensReceiver.publicKey,
         feeReceiver.publicKey,
         toBN(0),
@@ -288,6 +286,8 @@ export const vaultsFixture = async (fixture?: InitLiteSVMReturnType, initSlot?: 
       .accountsPartial({
         vaultCommon: minterCommonVault.publicKey,
         signer: authority.publicKey,
+        ac: ac.publicKey,
+        acRole: acRoleMTbill.publicKey,
       })
       .instruction(),
     await vaultsProgram.methods
@@ -343,11 +343,9 @@ export const vaultsFixture = async (fixture?: InitLiteSVMReturnType, initSlot?: 
   const createRedeemerVaultTx = new Transaction().add(
     await vaultsProgram.methods
       .newCommonVault(
-        ac.publicKey,
         mTBillMint.publicKey,
         dataFeedMTBill.publicKey,
         false,
-        acRoleMTbill.publicKey,
         tokensReceiver.publicKey,
         feeReceiver.publicKey,
         toBN(0),
@@ -358,6 +356,8 @@ export const vaultsFixture = async (fixture?: InitLiteSVMReturnType, initSlot?: 
       .accountsPartial({
         vaultCommon: redeemerCommonVault.publicKey,
         signer: authority.publicKey,
+        ac: ac.publicKey,
+        acRole: acRoleMTbill.publicKey,
       })
       .instruction(),
     await vaultsProgram.methods

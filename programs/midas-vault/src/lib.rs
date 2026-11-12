@@ -28,13 +28,11 @@ pub mod midas_vaults {
     pub fn update_minter_vault(
         ctx: Context<UpdateMinterVault>,
         new_first_deposit_min_m_tokens: Option<u64>,
-        mint_authority_pda: Option<Pubkey>,
         max_supply_cap: Option<u64>,
     ) -> Result<()> {
         minter_vault::update_minter_vault::handle(
             ctx,
             new_first_deposit_min_m_tokens,
-            mint_authority_pda,
             max_supply_cap,
         )
     }
@@ -237,11 +235,9 @@ pub mod midas_vaults {
 
     pub fn new_common_vault(
         ctx: Context<NewVaultCommon>,
-        ac: Pubkey,
         m_mint: Pubkey,
         m_mint_feed: Pubkey,
         greenlist_enforced: bool,
-        ac_role: Pubkey,
         tokens_receiver: Pubkey,
         fee_receiver: Pubkey,
         instant_fee: u64,
@@ -251,11 +247,9 @@ pub mod midas_vaults {
     ) -> Result<()> {
         vault_common::new_vault_common::handle(
             ctx,
-            ac,
             m_mint,
             m_mint_feed,
             greenlist_enforced,
-            ac_role,
             tokens_receiver,
             fee_receiver,
             instant_fee,
@@ -268,7 +262,6 @@ pub mod midas_vaults {
     pub fn update_common_vault(
         ctx: Context<UpdateVaultCommon>,
         greenlist_enforced: Option<bool>,
-        ac_role: Option<Pubkey>,
         tokens_receiver: Option<Pubkey>,
         fee_receiver: Option<Pubkey>,
         instant_fee: Option<u64>,
@@ -279,7 +272,6 @@ pub mod midas_vaults {
         vault_common::update_vault_common::handle(
             ctx,
             greenlist_enforced,
-            ac_role,
             tokens_receiver,
             fee_receiver,
             instant_fee,

@@ -43,20 +43,14 @@ pub struct UpdateMinterVault<'info> {
 /// # Arguments
 ///
 /// - `first_deposit_min_m_tokens` - new value for `first_deposit_min_m_tokens`
-/// - `mint_authority_pda` - new value for `mint_authority_pda`
 /// - `max_supply_cap` - new value for `max_supply_cap` (use u64::MAX for no cap)
 pub fn handle(
     ctx: Context<UpdateMinterVault>,
     first_deposit_min_m_tokens: Option<u64>,
-    mint_authority_pda: Option<Pubkey>,
     max_supply_cap: Option<u64>,
 ) -> Result<()> {
     if let Some(first_deposit_min_m_tokens) = first_deposit_min_m_tokens {
         ctx.accounts.minter_vault.first_deposit_min_m_tokens = first_deposit_min_m_tokens;
-    }
-
-    if let Some(mint_authority_pda) = mint_authority_pda {
-        ctx.accounts.minter_vault.mint_authority_pda = mint_authority_pda;
     }
 
     if let Some(max_supply_cap) = max_supply_cap {
@@ -66,7 +60,7 @@ pub fn handle(
     emit!(MinterVaultUpdatedEventV2 {
         common_vault: ctx.accounts.vault_common.key(),
         first_deposit_min_m_tokens,
-        mint_authority_pda,
+        mint_authority_pda: None,
         max_supply_cap,
     });
 

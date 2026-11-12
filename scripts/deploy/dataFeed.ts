@@ -63,17 +63,11 @@ export const deployDataFeed = async (common: CommonParams, config: DeployDataFee
 
   const tx = new Transaction().add(
     await dataFeedProgram.methods
-      .newFeed(
-        acRole,
-        underlyingFeed!,
-        DataFeedMode[mode],
-        toBN(minPrice),
-        toBN(maxPrice),
-        maxStaleness,
-      )
+      .newFeed(underlyingFeed!, DataFeedMode[mode], toBN(minPrice), toBN(maxPrice), maxStaleness)
       .accounts({
         feed: feed.publicKey,
         payer: common.payer.publicKey,
+        acRole,
       })
       .instruction(),
   );

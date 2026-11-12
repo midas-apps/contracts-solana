@@ -46,7 +46,7 @@ async function main(provider: AnchorProvider, payer: Wallet) {
 
   const tx = new Transaction().add(
     await feedProgram.methods
-      .updateFeed(null, newUnderlyingFeedPubkey, newModeEnum, null, null, null)
+      .updateFeed(newUnderlyingFeedPubkey, newModeEnum, null, null, null)
       .accountsPartial({
         authority: payer.publicKey,
         feed: tokenAddrs.mTokenDataFeed,

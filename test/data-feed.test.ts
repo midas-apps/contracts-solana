@@ -1,3 +1,5 @@
+import { Keypair } from '@solana/web3.js';
+
 import { CommonError, DEFAULT_PUBKEY } from './constants/common.constants';
 import {
   DATA_FEED_AC_ROLES,
@@ -46,7 +48,7 @@ describe('data-feed', () => {
           minPrice: 2n,
         },
         {
-          revertedWith: DataFeedError.InvalidMinPrice,
+          revertedWith: DataFeedError.InvalidMaxPrice,
         },
       );
     });
@@ -89,6 +91,51 @@ describe('data-feed', () => {
         },
         {
           revertedWith: DataFeedError.InvalidStaleness,
+        },
+      );
+    });
+
+    it('create new feed with min price equal to max price', async () => {
+      const fixture = await dataFeedFixture();
+
+      await createNewFeed(fixture, {
+        minPrice: parseUnits('1'),
+        maxPrice: parseUnits('1'),
+      });
+    });
+
+    it('create new feed with non-global ac_role', async () => {
+      const fixture = await dataFeedFixture();
+
+      await createNewFeed(fixture, {
+        acRole: fixture.acRoleMTbill.publicKey,
+      });
+    });
+
+    it('should fail: when ac_role is not initialized', async () => {
+      const fixture = await dataFeedFixture();
+
+      await createNewFeed(
+        fixture,
+        {
+          acRole: Keypair.generate().publicKey,
+        },
+        {
+          revertedWith: CommonError.AccountIsNotInitialized,
+        },
+      );
+    });
+
+    it('should fail: when ac_role is owned by another program', async () => {
+      const fixture = await dataFeedFixture();
+
+      await createNewFeed(
+        fixture,
+        {
+          acRole: fixture.dataFeedMTBill.publicKey,
+        },
+        {
+          revertedWith: CommonError.AccountOwnedByWrongProgram,
         },
       );
     });
@@ -171,31 +218,110 @@ describe('data-feed', () => {
       });
     });
 
-    it('update ac_role', async () => {
+    it('move price band down in a single call', async () => {
       const fixture = await dataFeedFixture();
 
+      // default band is [0.1, 10]; new max is below the old min
       const feed = await createDefaultDataFeed(fixture);
 
       await updateFeed(fixture, {
         feed,
-        acRole: fixture.acRoleMTbill.publicKey,
+        minPrice: parseUnits('0.01'),
+        maxPrice: parseUnits('0.05'),
       });
     });
 
-    it('update authority and call update mode', async () => {
+    it('move price band up in a single call', async () => {
+      const fixture = await dataFeedFixture();
+
+      // default band is [0.1, 10]; new min is above the old max
+      const feed = await createDefaultDataFeed(fixture);
+
+      await updateFeed(fixture, {
+        feed,
+        minPrice: parseUnits('20'),
+        maxPrice: parseUnits('50'),
+      });
+    });
+
+    it('update min price equal to max price', async () => {
       const fixture = await dataFeedFixture();
 
       const feed = await createDefaultDataFeed(fixture);
 
       await updateFeed(fixture, {
         feed,
-        acRole: fixture.acRoleMTbill.publicKey,
+        minPrice: parseUnits('10'),
       });
+    });
 
-      await updateFeed(fixture, {
-        feed,
-        mode: 'switchboard',
-      });
+    it('should fail: update only min price above current max price', async () => {
+      const fixture = await dataFeedFixture();
+
+      const feed = await createDefaultDataFeed(fixture);
+
+      await updateFeed(
+        fixture,
+        {
+          feed,
+          minPrice: parseUnits('20'),
+        },
+        {
+          revertedWith: DataFeedError.InvalidMaxPrice,
+        },
+      );
+    });
+
+    it('should fail: update only max price below current min price', async () => {
+      const fixture = await dataFeedFixture();
+
+      const feed = await createDefaultDataFeed(fixture);
+
+      await updateFeed(
+        fixture,
+        {
+          feed,
+          maxPrice: parseUnits('0.05'),
+        },
+        {
+          revertedWith: DataFeedError.InvalidMaxPrice,
+        },
+      );
+    });
+
+    it('should fail: update min price above max price in a single call', async () => {
+      const fixture = await dataFeedFixture();
+
+      const feed = await createDefaultDataFeed(fixture);
+
+      await updateFeed(
+        fixture,
+        {
+          feed,
+          minPrice: parseUnits('5'),
+          maxPrice: parseUnits('1'),
+        },
+        {
+          revertedWith: DataFeedError.InvalidMaxPrice,
+        },
+      );
+    });
+
+    it('should fail: update min price to 0', async () => {
+      const fixture = await dataFeedFixture();
+
+      const feed = await createDefaultDataFeed(fixture);
+
+      await updateFeed(
+        fixture,
+        {
+          feed,
+          minPrice: 0n,
+        },
+        {
+          revertedWith: DataFeedError.InvalidMinPrice,
+        },
+      );
     });
 
     it('update underlying feed', async () => {

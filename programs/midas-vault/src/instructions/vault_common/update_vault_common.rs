@@ -34,7 +34,6 @@ pub struct UpdateVaultCommon<'info> {
 /// # Arguments
 ///
 /// - `greenlist_enforced` - new value for `greenlist_enforced`
-/// - `ac_role` - new value for `ac_role`
 /// - `tokens_receiver` - new value for `tokens_receiver`
 /// - `fee_receiver` - new value for `fee_receiver`
 /// - `instant_fee` - new value for `instant_fee`
@@ -44,7 +43,6 @@ pub struct UpdateVaultCommon<'info> {
 pub fn handle(
     ctx: Context<UpdateVaultCommon>,
     greenlist_enforced: Option<bool>,
-    ac_role: Option<Pubkey>,
     tokens_receiver: Option<Pubkey>,
     fee_receiver: Option<Pubkey>,
     instant_fee: Option<u64>,
@@ -57,7 +55,7 @@ pub fn handle(
     update_common_vault(
         state,
         greenlist_enforced,
-        ac_role,
+        None,
         tokens_receiver,
         fee_receiver,
         instant_fee,
@@ -69,7 +67,7 @@ pub fn handle(
     emit!(CommonVaultUpdatedEvent {
         vault_common: ctx.accounts.vault_common.key(),
         greenlist_enforced,
-        ac_role,
+        ac_role: None,
         tokens_receiver,
         fee_receiver,
         instant_fee,

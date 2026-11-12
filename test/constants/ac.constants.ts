@@ -17,4 +17,6 @@ export const AC_ROLES = {
 export enum AcError {
   NotAuthority = 6000,
   BothBlacklistedAndWhitelisted,
+  ArithmeticOverflow,
+  CannotRevokeOwnAdminRole,
 }

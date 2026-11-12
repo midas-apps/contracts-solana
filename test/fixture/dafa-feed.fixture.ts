@@ -147,7 +147,6 @@ export const dataFeedFixture = async (fixture?: InitLiteSVMReturnType, initSlot?
         .instruction(),
       await dataFeedProgram.methods
         .newFeed(
-          acRole,
           getManualFeedStatePda(feed.publicKey),
           DataFeedMode.manual,
           toBN(minPrice),
@@ -157,6 +156,7 @@ export const dataFeedFixture = async (fixture?: InitLiteSVMReturnType, initSlot?
         .accounts({
           feed: feed.publicKey,
           payer: authority.publicKey,
+          acRole,
         })
         .instruction(),
       await dataFeedProgram.methods

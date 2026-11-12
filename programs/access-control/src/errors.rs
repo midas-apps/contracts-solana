@@ -8,4 +8,6 @@ pub enum AccessControlError {
     BothBlacklistedAndWhitelisted,
     #[msg("Arithmetic overflow or underflow")]
     ArithmeticOverflow,
+    #[msg("Cannot revoke own admin role")]
+    CannotRevokeOwnAdminRole,
 }

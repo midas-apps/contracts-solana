@@ -1,4 +1,4 @@
-import { AcError } from './constants/ac.constants';
+import { AC_ROLES, AcError } from './constants/ac.constants';
 import { CommonError } from './constants/common.constants';
 import { acFixture } from './fixture/ac.fixture';
 import {
@@ -160,6 +160,45 @@ describe('access-control', () => {
           revertedWith: CommonError.AccountIsNotInitialized,
         },
       );
+    });
+
+    it('should fail: revoke own admin role', async () => {
+      const fixture = await acFixture();
+
+      await revokeRole(
+        fixture,
+        {
+          account: fixture.authority.publicKey,
+          role: AC_ROLES.ADMIN,
+        },
+        {
+          revertedWith: AcError.CannotRevokeOwnAdminRole,
+        },
+      );
+    });
+
+    it('revoke admin role from another admin', async () => {
+      const fixture = await acFixture();
+
+      await grantRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: AC_ROLES.ADMIN,
+      });
+
+      await revokeRole(fixture, {
+        account: fixture.regularAccounts[0].publicKey,
+        role: AC_ROLES.ADMIN,
+      });
+    });
+
+    it('revoke own non-admin role', async () => {
+      const fixture = await acFixture();
+
+      // acFixture already grants UPDATE_ACCOUNT_AC to the authority on acRoleGlobal
+      await revokeRole(fixture, {
+        account: fixture.authority.publicKey,
+        role: AC_ROLES.UPDATE_ACCOUNT_AC,
+      });
     });
 
     it('should fail: call from non-admin account', async () => {

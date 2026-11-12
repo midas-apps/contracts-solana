@@ -3312,6 +3312,18 @@ export type MidasVaults = {
           "signer": true
         },
         {
+          "name": "ac",
+          "docs": [
+            "`AccessControlState` instance"
+          ]
+        },
+        {
+          "name": "acRole",
+          "docs": [
+            "AC Role state account"
+          ]
+        },
+        {
           "name": "vaultCommon",
           "docs": [
             "New vault common account"
@@ -3329,10 +3341,6 @@ export type MidasVaults = {
       ],
       "args": [
         {
-          "name": "ac",
-          "type": "pubkey"
-        },
-        {
           "name": "mMint",
           "type": "pubkey"
         },
@@ -3343,10 +3351,6 @@ export type MidasVaults = {
         {
           "name": "greenlistEnforced",
           "type": "bool"
-        },
-        {
-          "name": "acRole",
-          "type": "pubkey"
         },
         {
           "name": "tokensReceiver",
@@ -9651,12 +9655,6 @@ export type MidasVaults = {
           }
         },
         {
-          "name": "acRole",
-          "type": {
-            "option": "pubkey"
-          }
-        },
-        {
           "name": "tokensReceiver",
           "type": {
             "option": "pubkey"
@@ -10066,12 +10064,6 @@ export type MidasVaults = {
           "name": "newFirstDepositMinMTokens",
           "type": {
             "option": "u64"
-          }
-        },
-        {
-          "name": "mintAuthorityPda",
-          "type": {
-            "option": "pubkey"
           }
         },
         {
@@ -11086,6 +11078,19 @@ export type MidasVaults = {
   ],
   "accounts": [
     {
+      "name": "accessControlRoleState",
+      "discriminator": [
+        91,
+        24,
+        64,
+        231,
+        44,
+        138,
+        91,
+        20
+      ]
+    },
+    {
       "name": "accessControlState",
       "discriminator": [
         224,
@@ -11604,6 +11609,22 @@ export type MidasVaults = {
     }
   ],
   "types": [
+    {
+      "name": "accessControlRoleState",
+      "docs": [
+        "State layout for Access Control Role base account",
+        "As accounts that holds it are not a PDA",
+        "We declare a layout struct so anchor will generate a discriminator",
+        "Accounts that will hold roles will be PDAs that are using this",
+        "account as one of the keys",
+        "For different mProducts different AccessControlRole accounts will be used",
+        "To make products more decoupled from each other"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": []
+      }
+    },
     {
       "name": "accessControlState",
       "docs": [

@@ -3306,6 +3306,18 @@
           "signer": true
         },
         {
+          "name": "ac",
+          "docs": [
+            "`AccessControlState` instance"
+          ]
+        },
+        {
+          "name": "ac_role",
+          "docs": [
+            "AC Role state account"
+          ]
+        },
+        {
           "name": "vault_common",
           "docs": [
             "New vault common account"
@@ -3323,10 +3335,6 @@
       ],
       "args": [
         {
-          "name": "ac",
-          "type": "pubkey"
-        },
-        {
           "name": "m_mint",
           "type": "pubkey"
         },
@@ -3337,10 +3345,6 @@
         {
           "name": "greenlist_enforced",
           "type": "bool"
-        },
-        {
-          "name": "ac_role",
-          "type": "pubkey"
         },
         {
           "name": "tokens_receiver",
@@ -9645,12 +9649,6 @@
           }
         },
         {
-          "name": "ac_role",
-          "type": {
-            "option": "pubkey"
-          }
-        },
-        {
           "name": "tokens_receiver",
           "type": {
             "option": "pubkey"
@@ -10060,12 +10058,6 @@
           "name": "new_first_deposit_min_m_tokens",
           "type": {
             "option": "u64"
-          }
-        },
-        {
-          "name": "mint_authority_pda",
-          "type": {
-            "option": "pubkey"
           }
         },
         {
@@ -11080,6 +11072,19 @@
   ],
   "accounts": [
     {
+      "name": "AccessControlRoleState",
+      "discriminator": [
+        91,
+        24,
+        64,
+        231,
+        44,
+        138,
+        91,
+        20
+      ]
+    },
+    {
       "name": "AccessControlState",
       "discriminator": [
         224,
@@ -11598,6 +11603,22 @@
     }
   ],
   "types": [
+    {
+      "name": "AccessControlRoleState",
+      "docs": [
+        "State layout for Access Control Role base account",
+        "As accounts that holds it are not a PDA",
+        "We declare a layout struct so anchor will generate a discriminator",
+        "Accounts that will hold roles will be PDAs that are using this",
+        "account as one of the keys",
+        "For different mProducts different AccessControlRole accounts will be used",
+        "To make products more decoupled from each other"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": []
+      }
+    },
     {
       "name": "AccessControlState",
       "docs": [

@@ -19,7 +19,6 @@ pub mod data_feed {
 
     pub fn new_feed(
         ctx: Context<NewFeed>,
-        ac_role: Pubkey,
         underlying_feed: Pubkey,
         mode: state::FeedMode,
         min_price: u64,
@@ -28,7 +27,6 @@ pub mod data_feed {
     ) -> Result<()> {
         new_feed::handle(
             ctx,
-            ac_role,
             underlying_feed,
             mode,
             min_price,
@@ -39,7 +37,6 @@ pub mod data_feed {
 
     pub fn update_feed(
         ctx: Context<UpdateFeed>,
-        ac_role: Option<Pubkey>,
         underlying_feed: Option<Pubkey>,
         mode: Option<state::FeedMode>,
         min_price: Option<u64>,
@@ -48,7 +45,6 @@ pub mod data_feed {
     ) -> Result<()> {
         update_feed::handle(
             ctx,
-            ac_role,
             underlying_feed,
             mode,
             min_price,

@@ -60,17 +60,11 @@ export const createNewFeed = async (
   const from = opt?.from ?? owner;
 
   const tx = await dataFeedProgram.methods
-    .newFeed(
-      acRole,
-      underlyingFeed,
-      DataFeedMode[mode],
-      toBN(minPrice),
-      toBN(maxPrice),
-      maxStaleness,
-    )
+    .newFeed(underlyingFeed, DataFeedMode[mode], toBN(minPrice), toBN(maxPrice), maxStaleness)
     .accounts({
       feed: feed.publicKey,
       payer: from.publicKey,
+      acRole,
     })
     .transaction();
 
@@ -112,12 +106,10 @@ export const updateFeed = async (
     feed,
     underlyingFeed,
     mode,
-    acRole,
     maxPrice,
     maxStaleness,
     minPrice,
   }: {
-    acRole?: PublicKey | null;
     feed?: PublicKey | null;
     mode?: keyof typeof DataFeedMode;
     underlyingFeed?: PublicKey | null;
@@ -129,7 +121,6 @@ export const updateFeed = async (
 ) => {
   const { dataFeedProgram, authority: owner, context } = fixture;
 
-  acRole ??= null;
   feed ??= fixture.dataFeedMTBill.publicKey;
   minPrice ??= null;
   maxPrice ??= null;
@@ -143,7 +134,6 @@ export const updateFeed = async (
 
   const tx = await dataFeedProgram.methods
     .updateFeed(
-      acRole,
       underlyingFeed,
       mode ? DataFeedMode[mode] : null,
       toBNNullable(minPrice),
@@ -172,7 +162,7 @@ export const updateFeed = async (
       name: 'feedUpdatedEvent',
       data: {
         feed: feed,
-        acRole: acRole,
+        acRole: null,
         underlyingFeed: underlyingFeed,
         mode: DataFeedMode[mode],
         minPrice: minPrice,
@@ -184,9 +174,8 @@ export const updateFeed = async (
 
   const feedFetched = await fetchDataFeedState(dataFeedProgram, feed);
 
-  if (acRole) {
-    expect(feedFetched.acRole.equals(acRole)).toBe(true);
-  }
+  // ac_role is immutable after creation
+  expect(feedFetched.acRole.equals(baseFeedStateBefore.acRole)).toBe(true);
 
   if (underlyingFeed) {
     expect(feedFetched.underlyingFeed.equals(underlyingFeed)).toBe(true);

@@ -123,7 +123,7 @@ pub fn validate_common(
 /// but only in case if user is not free from min amount check
 /// If minter vault is passed, also does the min firs mint check,
 /// but only user wasnt manually freed by vault admin or didnt make
-/// any mints before  
+/// any mints before
 pub fn require_and_update_min_amount(
     common: &VaultCommonState,
     common_account: &mut VaultCommonAccountState,

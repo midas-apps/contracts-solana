@@ -83,17 +83,6 @@ describe('minter-vault', () => {
       });
     });
 
-    it('update mint_authority_pda', async () => {
-      const fixture = await vaultsFixture();
-
-      const commonVault = await newVaultCommon(fixture, {});
-      await newMinterVault(fixture, { commonVault });
-      await updateMinterVault(fixture, {
-        commonVault,
-        tokenAuthority: fixture.regularAccounts[0].publicKey,
-      });
-    });
-
     it('update max_supply_cap', async () => {
       const fixture = await vaultsFixture();
 

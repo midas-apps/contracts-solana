@@ -176,12 +176,10 @@ export const updateMinterVault = async (
   fixture: CommonMinterVaultParams,
   {
     commonVault,
-    tokenAuthority,
     firstDepositMinMTokens,
     maxSupplyCap,
   }: {
     commonVault?: PublicKey;
-    tokenAuthority?: PublicKey;
     firstDepositMinMTokens?: bigint;
     maxSupplyCap?: bigint;
   },
@@ -192,7 +190,6 @@ export const updateMinterVault = async (
   const from = opt?.from ?? owner;
 
   commonVault ??= minterCommonVault.publicKey;
-  tokenAuthority ??= null;
   firstDepositMinMTokens ??= null;
   maxSupplyCap ??= null;
 
@@ -209,11 +206,7 @@ export const updateMinterVault = async (
   const stateBefore = await fetchState();
 
   const tx = await vaultsProgram.methods
-    .updateMinterVault(
-      toBNNullable(firstDepositMinMTokens),
-      tokenAuthority,
-      toBNNullable(maxSupplyCap),
-    )
+    .updateMinterVault(toBNNullable(firstDepositMinMTokens), toBNNullable(maxSupplyCap))
     .accountsPartial({
       authority: from.publicKey,
       vaultCommon: commonVault,
@@ -236,9 +229,8 @@ export const updateMinterVault = async (
 
   expect(stateAfter.minter.commonVault.equals(commonVault)).toBe(true);
 
-  if (tokenAuthority !== null) {
-    expect(stateAfter.minter.mintAuthorityPda.equals(tokenAuthority)).toBe(true);
-  }
+  // mint_authority_pda is immutable after creation
+  expect(stateAfter.minter.mintAuthorityPda.equals(stateBefore.minter.mintAuthorityPda)).toBe(true);
 
   if (firstDepositMinMTokens !== null) {
     expect(fromBN(stateAfter.minter.firstDepositMinMTokens)).toEqual(firstDepositMinMTokens);

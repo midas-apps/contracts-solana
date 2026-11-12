@@ -140,11 +140,9 @@ export const deployMinterVault = async (
       .instruction(),
     await vaultsProgram.methods
       .newCommonVault(
-        ac,
         mToken,
         mTokenFeed,
         greenListEnforced,
-        acRole,
         tokensReceiver,
         feeReceiver,
         toBN(instantFee),
@@ -155,6 +153,8 @@ export const deployMinterVault = async (
       .accountsPartial({
         vaultCommon: commonVault.publicKey,
         signer: common.payer.publicKey,
+        ac,
+        acRole,
       })
       .instruction(),
     await vaultsProgram.methods
@@ -269,11 +269,9 @@ export const deployRedeemerVault = async (
   const tx = new Transaction().add(
     await vaultsProgram.methods
       .newCommonVault(
-        ac,
         mToken,
         mTokenFeed,
         greenListEnforced,
-        acRole,
         tokensReceiver,
         feeReceiver,
         toBN(instantFee),
@@ -284,6 +282,8 @@ export const deployRedeemerVault = async (
       .accountsPartial({
         vaultCommon: commonVault.publicKey,
         signer: common.payer.publicKey,
+        ac,
+        acRole,
       })
       .instruction(),
     await vaultsProgram.methods

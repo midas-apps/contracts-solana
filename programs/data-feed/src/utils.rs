@@ -160,15 +160,19 @@ pub fn update_feed(
 
     if let Some(max_price) = max_price {
         require_gt!(max_price, 0, DataFeedError::InvalidMaxPrice);
-        require_gt!(max_price, state.min_price, DataFeedError::InvalidMaxPrice);
         state.max_price = max_price;
     }
 
     if let Some(min_price) = min_price {
         require_gt!(min_price, 0, DataFeedError::InvalidMinPrice);
-        require_gt!(state.max_price, min_price, DataFeedError::InvalidMinPrice);
         state.min_price = min_price;
     }
+
+    require_gte!(
+        state.max_price,
+        state.min_price,
+        DataFeedError::InvalidMaxPrice
+    );
 
     if let Some(max_staleness) = max_staleness {
         require_gt!(max_staleness, 0, DataFeedError::InvalidStaleness);

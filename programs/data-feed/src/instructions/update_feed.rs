@@ -55,7 +55,6 @@ pub struct UpdateFeed<'info> {
 /// - `max_staleness` - max. seconds between last price update and current timestamp.
 pub fn handle(
     ctx: Context<UpdateFeed>,
-    ac_role: Option<Pubkey>,
     underlying_feed: Option<Pubkey>,
     mode: Option<FeedMode>,
     min_price: Option<u64>,
@@ -66,7 +65,7 @@ pub fn handle(
 
     update_feed(
         state,
-        ac_role,
+        None,
         underlying_feed,
         mode.clone(),
         min_price,
@@ -76,7 +75,7 @@ pub fn handle(
 
     emit!(FeedUpdatedEvent {
         feed: ctx.accounts.feed.key(),
-        ac_role,
+        ac_role: None,
         underlying_feed,
         mode: mode.clone(),
         min_price,

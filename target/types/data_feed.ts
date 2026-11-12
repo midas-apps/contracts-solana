@@ -197,6 +197,12 @@ export type DataFeed = {
           "signer": true
         },
         {
+          "name": "acRole",
+          "docs": [
+            "AC Role state account"
+          ]
+        },
+        {
           "name": "feed",
           "docs": [
             "New `FeedState` instance"
@@ -210,10 +216,6 @@ export type DataFeed = {
         }
       ],
       "args": [
-        {
-          "name": "acRole",
-          "type": "pubkey"
-        },
         {
           "name": "underlyingFeed",
           "type": "pubkey"
@@ -727,12 +729,6 @@ export type DataFeed = {
         }
       ],
       "args": [
-        {
-          "name": "acRole",
-          "type": {
-            "option": "pubkey"
-          }
-        },
         {
           "name": "underlyingFeed",
           "type": {

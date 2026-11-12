@@ -1,3 +1,4 @@
+use access_control::{program::AccessControl, state::AccessControlRoleState};
 use anchor_lang::prelude::*;
 
 use crate::{
@@ -11,6 +12,10 @@ pub struct NewFeed<'info> {
     /// Payer and signer
     #[account(mut)]
     pub payer: Signer<'info>,
+
+    /// AC Role state account
+    #[account(owner = AccessControl::id())]
+    pub ac_role: Account<'info, AccessControlRoleState>,
 
     /// New `FeedState` instance
     #[account(
@@ -41,7 +46,6 @@ pub struct NewFeed<'info> {
 /// - `max_staleness` - max. seconds between last price update and current timestamp.
 pub fn handle(
     ctx: Context<NewFeed>,
-    ac_role: Pubkey,
     underlying_feed: Pubkey,
     mode: FeedMode,
     min_price: u64,
@@ -49,6 +53,8 @@ pub fn handle(
     max_staleness: u32,
 ) -> Result<()> {
     let state = &mut ctx.accounts.feed;
+
+    let ac_role = ctx.accounts.ac_role.key();
 
     update_feed(
         state,

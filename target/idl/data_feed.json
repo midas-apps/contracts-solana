@@ -191,6 +191,12 @@
           "signer": true
         },
         {
+          "name": "ac_role",
+          "docs": [
+            "AC Role state account"
+          ]
+        },
+        {
           "name": "feed",
           "docs": [
             "New `FeedState` instance"
@@ -204,10 +210,6 @@
         }
       ],
       "args": [
-        {
-          "name": "ac_role",
-          "type": "pubkey"
-        },
         {
           "name": "underlying_feed",
           "type": "pubkey"
@@ -721,12 +723,6 @@
         }
       ],
       "args": [
-        {
-          "name": "ac_role",
-          "type": {
-            "option": "pubkey"
-          }
-        },
         {
           "name": "underlying_feed",
           "type": {
